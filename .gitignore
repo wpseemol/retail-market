@@ -1,0 +1,16 @@
+# Node modules
+node_modules/
+
+# Build outputs
+**/dist/
+frontend/.next/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Tools/other
+.pnpm-store
+.DS_Store
+*.log
