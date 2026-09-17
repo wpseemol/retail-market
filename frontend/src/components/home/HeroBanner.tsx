@@ -10,9 +10,9 @@ export default function HeroBanner() {
         >
             <div className="container mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
                 {/* ================= Left: Main Hero Banner (Canon DSLR) ================= */}
-                <article className="lg:col-span-8 relative overflow-hidden rounded-xl bg-bg-surface border border-border-default flex flex-col md:flex-row items-center justify-between p-8 sm:p-12 min-h-[380px]">
-                    {/* Subtle Halftone/Wave Background Graphic */}
-                    <div className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-10 z-0">
+                <article className="lg:col-span-8 relative overflow-hidden rounded-2xl bg-bg-surface border border-border-default flex flex-col md:flex-row items-center justify-between p-8 sm:p-12 lg:p-14 min-h-[420px]">
+                    {/* Subtle Halftone Background Graphic */}
+                    <div className="absolute inset-0 pointer-events-none opacity-50 dark:opacity-10 z-0">
                         <Image
                             src="/images/hero_bg_06 1.png"
                             alt=""
@@ -24,39 +24,47 @@ export default function HeroBanner() {
                     </div>
 
                     {/* Left Content Area */}
-                    <div className="relative z-10 flex flex-col items-start max-w-sm">
-                        <span className="text-brand-primary text-xs sm:text-sm font-medium tracking-wide mb-2">
-                            Widescreen 4k .......
-                        </span>
-
-                        <h1 className="text-text-primary text-2xl sm:text-3xl font-extrabold leading-tight tracking-tight uppercase mb-3 flex items-center gap-2">
-                            <span>DIGITAL SLR CAMERA HIGH DEFINATION</span>
+                    <div className="relative z-10 flex flex-col items-start max-w-[340px] sm:max-w-[380px]">
+                        {/* Tagline with Floating Green Triangle */}
+                        <div className="relative w-full mb-3">
+                            <span className="text-brand-primary text-xs sm:text-sm font-medium tracking-wide">
+                                Widesceen 4k .......
+                            </span>
                             <Image
                                 src="/icons/hero_Polygon 1.svg"
                                 alt=""
-                                width={14}
-                                height={14}
-                                className="inline-block shrink-0"
+                                width={16}
+                                height={16}
+                                className="absolute right-0 -top-1"
                                 aria-hidden="true"
                             />
+                        </div>
+
+                        {/* Main Headline */}
+                        <h1 className="text-text-primary text-2xl sm:text-3xl lg:text-[32px] font-extrabold leading-[1.15] tracking-tight uppercase mb-3">
+                            DIGITAL SLR CAMERA HIGH DEFINATION
                         </h1>
 
-                        <p className="text-text-secondary text-xs sm:text-sm mb-4 leading-relaxed">
+                        {/* Subtext */}
+                        <p className="text-text-secondary text-xs sm:text-sm font-normal mb-5 leading-relaxed">
                             Sumptuous, filling, and temptingly
                         </p>
 
                         {/* Discount & Price Badges */}
-                        <div className="flex items-center gap-3 mb-6">
+                        <div className="flex items-center gap-6 mb-7">
                             <div className="flex items-baseline text-brand-primary">
-                                <span className="text-xs font-semibold uppercase mr-1">
-                                    Up To
+                                <span className="flex flex-col text-[11px] font-bold uppercase leading-none mr-1.5 self-center">
+                                    <span>Up</span>
+                                    <span>To</span>
                                 </span>
-                                <span className="text-3xl sm:text-4xl font-black">
+                                <span className="text-4xl sm:text-5xl font-black leading-none">
                                     70
                                 </span>
-                                <span className="text-lg font-bold">%</span>
+                                <span className="text-lg font-bold ml-0.5">
+                                    %
+                                </span>
                             </div>
-                            <span className="text-brand-primary text-lg sm:text-xl font-bold">
+                            <span className="text-brand-primary text-xl sm:text-2xl font-bold">
                                 $ 180.99
                             </span>
                         </div>
@@ -64,80 +72,103 @@ export default function HeroBanner() {
                         {/* CTA Button */}
                         <Link
                             href="/shop"
-                            className="inline-flex items-center gap-2 bg-text-primary text-bg-base hover:bg-brand-primary hover:text-white text-xs sm:text-sm font-semibold uppercase px-6 py-3 rounded-full transition-all duration-200"
+                            className="inline-flex items-center gap-3 bg-black text-white hover:bg-brand-primary text-xs sm:text-[13px] font-bold uppercase tracking-wider px-7 py-3.5 rounded-full transition-all duration-200 group shadow-sm"
                         >
                             <span>SHOP NOW</span>
-                            <span aria-hidden="true">&rarr;</span>
+                            <span
+                                aria-hidden="true"
+                                className="transition-transform group-hover:translate-x-1"
+                            >
+                                &rarr;
+                            </span>
                         </Link>
                     </div>
 
                     {/* Right Product Image Area */}
-                    <div className="relative z-10 mt-6 md:mt-0 w-full md:w-1/2 flex justify-center items-center">
-                        <div className="relative w-[280px] h-[230px] sm:w-[340px] sm:h-[280px]">
+                    <div className="relative z-10 mt-8 md:mt-0 w-full md:w-1/2 flex justify-center items-center">
+                        <div className="relative w-[300px] h-[250px] sm:w-[380px] sm:h-[310px] lg:w-[440px] lg:h-[350px]">
                             <Image
                                 src="/images/camera.png"
                                 alt="Canon EOS 77D DSLR Camera"
                                 fill
                                 priority
-                                className="object-contain drop-shadow-xl"
+                                className="object-contain"
                             />
                         </div>
                     </div>
                 </article>
 
                 {/* ================= Right: Sub Promotion Banner (Security & Phone) ================= */}
-                <aside className="lg:col-span-4 relative overflow-hidden rounded-xl bg-bg-surface border border-border-default flex flex-col justify-between p-6 sm:p-8 min-h-[380px]">
-                    {/* Offer Badge (Top Right Burst) */}
+                <aside className="lg:col-span-4 relative overflow-hidden rounded-2xl bg-bg-surface border border-border-default flex flex-col justify-between p-7 sm:p-8 min-h-[420px]">
+                    {/* Subtle Background Overlay */}
+                    <div className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-10 z-0">
+                        <Image
+                            src="/images/hero_bg_06 1.png"
+                            alt=""
+                            fill
+                            className="object-cover"
+                            aria-hidden="true"
+                        />
+                    </div>
+
+                    {/* 25% Offer Badge (Scalloped Green Rosette on Right) */}
                     <div
-                        className="absolute top-6 right-6 w-14 h-14 rounded-full bg-brand-primary text-white flex flex-col items-center justify-center text-center shadow-md z-20"
+                        className="absolute top-24 right-5 sm:right-7 w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-full bg-brand-primary text-white flex flex-col items-center justify-center text-center shadow-lg z-20"
                         aria-label="25 percent offer"
                     >
-                        <span className="text-xs font-black leading-none">
+                        <span className="text-base sm:text-lg font-black leading-none tracking-tight">
                             25%
                         </span>
-                        <span className="text-[10px] font-semibold leading-tight">
+                        <span className="text-xs sm:text-sm font-semibold leading-tight">
                             offer
                         </span>
                     </div>
 
                     {/* Top Content Area */}
-                    <div className="relative z-10 flex flex-col items-start pr-12">
-                        <span className="bg-brand-primary text-white text-[11px] font-bold uppercase px-2.5 py-0.5 rounded mb-3">
+                    <div className="relative z-10 flex flex-col items-start pr-16 sm:pr-20">
+                        <span className="bg-brand-primary text-white text-xs font-bold px-3 py-1 rounded mb-3.5 inline-block">
                             New
                         </span>
 
-                        <h2 className="text-text-primary text-base sm:text-lg font-bold uppercase leading-snug mb-2">
+                        <h2 className="text-text-primary text-lg sm:text-xl font-bold uppercase leading-snug mb-2.5">
                             CLOUD CAM, SECURITY CAMERA
                         </h2>
 
-                        <div className="flex items-baseline text-brand-primary mb-3">
-                            <span className="text-xs font-semibold uppercase mr-1">
-                                Up To
+                        {/* Discount Badge */}
+                        <div className="flex items-baseline text-brand-primary mb-5">
+                            <span className="flex flex-col text-[10px] font-bold uppercase leading-none mr-1.5 self-center">
+                                <span>Up</span>
+                                <span>To</span>
                             </span>
-                            <span className="text-2xl sm:text-3xl font-black">
+                            <span className="text-3xl sm:text-4xl font-black leading-none">
                                 70
                             </span>
-                            <span className="text-sm font-bold">%</span>
+                            <span className="text-sm font-bold ml-0.5">%</span>
                         </div>
 
                         {/* Outlined Pill Action */}
                         <Link
                             href="/shop"
-                            className="inline-flex items-center gap-2 border border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white text-xs font-bold uppercase px-4 py-1.5 rounded-full transition-all duration-200"
+                            className="inline-flex items-center gap-2 border-2 border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white text-xs sm:text-[13px] font-bold uppercase px-5 py-2 rounded-full transition-all duration-200 group bg-bg-surface"
                         >
                             <span>SHOP NOW</span>
-                            <span aria-hidden="true">&rarr;</span>
+                            <span
+                                aria-hidden="true"
+                                className="transition-transform group-hover:translate-x-1"
+                            >
+                                &rarr;
+                            </span>
                         </Link>
                     </div>
 
                     {/* Product Phones Graphic */}
-                    <div className="relative z-10 mt-4 w-full flex justify-center">
-                        <div className="relative w-[180px] h-[190px] sm:w-[200px] sm:h-[210px]">
+                    <div className="relative z-10 mt-4 w-full flex justify-center items-end">
+                        <div className="relative w-[190px] h-[210px] sm:w-[220px] sm:h-[240px]">
                             <Image
                                 src="/images/img_57 1.png"
                                 alt="Smartphone Device Offer"
                                 fill
-                                className="object-contain drop-shadow-lg"
+                                className="object-contain"
                             />
                         </div>
                     </div>
