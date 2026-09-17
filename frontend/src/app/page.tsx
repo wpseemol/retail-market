@@ -1,3 +1,4 @@
+import BestSellerSection from "@/components/home/BestSellerSection";
 import DealsBannerSection from "@/components/home/DealsBannerSection";
 import FeaturedSection from "@/components/home/FeaturedSection";
 import HeroBanner from "@/components/home/HeroBanner";
@@ -12,6 +13,7 @@ export default function Home() {
             <DealsBannerSection />
             <ProductGroupsSection />
             <PromoBannerSlider />
+            <BestSellerSection />
         </main>
     );
 }
