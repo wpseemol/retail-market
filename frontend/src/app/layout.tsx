@@ -4,6 +4,7 @@ import "./globals.css";
 import TopBar from "@/components/home/TopBar";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import Header from "@/components/home/Header";
+import Footer from "@/components/home/Footer";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                     <TopBar />
                     <Header />
                     {children}
+                    <Footer />
                 </ThemeProvider>
             </body>
         </html>
