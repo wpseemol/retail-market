@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 
 interface PromoSlide {
     id: number;
@@ -85,7 +85,7 @@ export default function PromoBannerSlider() {
         setCurrent(index);
     };
 
-    const slideVariants = {
+    const slideVariants: Variants = {
         initial: (dir: "up" | "down") => ({
             y: dir === "up" ? 80 : -80,
             opacity: 0,
