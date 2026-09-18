@@ -322,7 +322,7 @@ export default function BestSellerSection() {
             <div className="container mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
                     {/* ================= Left: Promo Banner ================= */}
-                    <aside className="lg:col-span-3 w-full relative overflow-hidden rounded-2xl bg-bg-surface border border-border-default flex flex-col justify-between p-6 sm:p-8 min-h-[520px]">
+                    <aside className="lg:col-span-3 w-full relative overflow-hidden rounded-2xl bg-bg-surface border border-border-default flex flex-col justify-between p-6 sm:p-8 min-h-130">
                         {/* 25% Offer Badge */}
                         <div
                             className="absolute top-16 right-5 w-16 h-16 rounded-full bg-brand-primary text-white flex flex-col items-center justify-center text-center shadow-lg z-20"
@@ -375,7 +375,7 @@ export default function BestSellerSection() {
 
                         {/* Desk Phone Image */}
                         <div className="relative z-10 mt-8 w-full flex justify-center items-end">
-                            <div className="relative w-[230px] h-[210px] sm:w-[250px] sm:h-[230px]">
+                            <div className="relative w-57.5 h-52.5 sm:w-62.5 sm:h-57.5">
                                 <Image
                                     src="/images/best_seller_product_banner_poset_image.png"
                                     alt="Cloud Cam Security Deskphone"
@@ -481,7 +481,7 @@ export default function BestSellerSection() {
                                             </div>
 
                                             {/* Enlarged Image Area */}
-                                            <div className="relative w-full h-[180px] sm:h-[210px] flex items-center justify-center my-2">
+                                            <div className="relative w-full h-45 sm:h-5. flex items-center justify-center my-2">
                                                 <Image
                                                     src={product.image}
                                                     alt={product.alt}
@@ -497,7 +497,7 @@ export default function BestSellerSection() {
                                                     rating={product.rating}
                                                 />
 
-                                                <h3 className="text-text-primary text-[13px] sm:text-[14px] font-medium leading-snug line-clamp-2 h-[38px] my-1 hover:text-brand-primary transition-colors">
+                                                <h3 className="text-text-primary text-[13px] sm:text-[14px] font-medium leading-snug line-clamp-2 h-9.5 my-1 hover:text-brand-primary transition-colors">
                                                     <Link
                                                         href={`/shop/product/${product.id}`}
                                                     >

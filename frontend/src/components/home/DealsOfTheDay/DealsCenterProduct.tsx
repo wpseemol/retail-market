@@ -135,7 +135,7 @@ export default function DealsCenterProduct() {
             onMouseLeave={() => setIsPaused(false)}
             className="w-full h-full rounded-xl bg-bg-surface border border-border-default p-5 sm:p-6 flex flex-col justify-between shadow-xs transition-colors duration-200"
         >
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center min-h-[270px]">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center min-h-67.5">
                 {/* Animated Details Column */}
                 <div className="md:col-span-6 flex flex-col items-start">
                     <AnimatePresence mode="wait">
@@ -242,7 +242,7 @@ export default function DealsCenterProduct() {
                 </div>
 
                 {/* Animated Main Image Column */}
-                <div className="md:col-span-6 relative w-full h-[230px] sm:h-[260px] flex items-center justify-center overflow-hidden">
+                <div className="md:col-span-6 relative w-full h-57.5 sm:h-65 flex items-center justify-center overflow-hidden">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={activeProduct.id}
@@ -274,7 +274,7 @@ export default function DealsCenterProduct() {
                             key={prod.id}
                             type="button"
                             onClick={() => setCurrentIndex(idx)}
-                            className={`relative w-full h-[65px] sm:h-[75px] rounded-lg border p-1.5 flex items-center justify-center bg-bg-subtle transition-all cursor-pointer ${
+                            className={`relative w-full h-16.25 sm:h-18.75 rounded-lg border p-1.5 flex items-center justify-center bg-bg-subtle transition-all cursor-pointer ${
                                 isSelected
                                     ? "border-brand-primary ring-2 ring-brand-primary/30 shadow-xs"
                                     : "border-border-default/60 hover:border-text-secondary opacity-70 hover:opacity-100"
