@@ -20,7 +20,8 @@ export default function Header() {
         const handleScroll = () => {
             setIsSticky(window.scrollY > 48);
         };
-        window.addEventListener("scroll", handleScroll);
+        handleScroll();
+        window.addEventListener("scroll", handleScroll, { passive: true });
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
@@ -49,10 +50,10 @@ export default function Header() {
     return (
         <header
             role="banner"
-            className={`w-full border-b border-border-default bg-bg-base transition-all duration-300 z-50 ${
+            className={`sticky top-0 left-0 w-full border-b border-border-default bg-bg-base z-50 transition-shadow duration-300 ${
                 isSticky
-                    ? "fixed top-0 left-0 shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
-                    : "relative"
+                    ? "shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
+                    : ""
             }`}
         >
             {/* ================= 1. Middle Main Section ================= */}
