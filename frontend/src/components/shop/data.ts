@@ -1,4 +1,9 @@
-import type { ShopProduct } from "./types";
+import type {
+    ProductQuestion,
+    ProductReview,
+    ProductSpecSection,
+    ShopProduct,
+} from "./types";
 
 export const PRICE_RANGE = { min: 10, max: 110 } as const;
 
@@ -345,3 +350,132 @@ export const shopProducts: ShopProduct[] = [
         tags: ["Laptop", "Samsung"],
     },
 ];
+
+export const DEFAULT_PRODUCT_GALLERY = [
+    "/images/best_seller_product (1).png",
+    "/images/Best Seller Product anather (1).png",
+    "/images/best_seller_product (2).png",
+    "/images/best_seller_product (4).png",
+] as const;
+
+export const DEFAULT_PRODUCT_SPECS: ProductSpecSection[] = [
+    {
+        title: "Processor",
+        rows: [
+            { label: "Processor Brand", value: "Intel" },
+            { label: "Processor Model", value: "Core i3-1215U" },
+            { label: "Generation", value: "12th Gen" },
+            { label: "Processor Frequency", value: "up to 4.40 GHz" },
+        ],
+    },
+    {
+        title: "Display",
+        rows: [
+            { label: "Display Size", value: '10.1"' },
+            { label: "Display Type", value: "IPS LCD" },
+            { label: "Resolution", value: "1920 x 1200 (Full HD)" },
+            { label: "Touch Screen", value: "Yes" },
+        ],
+    },
+    {
+        title: "Memory & Storage",
+        rows: [
+            { label: "RAM", value: "3 GB" },
+            { label: "Internal Storage", value: "32 GB" },
+            { label: "Expandable Storage", value: "Up to 1 TB via microSD" },
+        ],
+    },
+    {
+        title: "Connectivity",
+        rows: [
+            { label: "Wi-Fi", value: "Wi-Fi 5 (802.11ac)" },
+            { label: "Bluetooth", value: "Bluetooth 5.0" },
+            { label: "Ports", value: "USB-C, microSD" },
+        ],
+    },
+];
+
+export const PRODUCT_REVIEWS: ProductReview[] = [
+    {
+        id: 1,
+        author: "James Carter",
+        rating: 5,
+        date: "Jul 12, 2024",
+        comment:
+            "Excellent tablet for everyday use. The display is crisp and battery life easily lasts a full day of browsing and streaming.",
+    },
+    {
+        id: 2,
+        author: "Priya Sharma",
+        rating: 4,
+        date: "Jul 02, 2024",
+        comment:
+            "Great value for the price. Setup was simple and performance is smooth for reading, video calls, and light productivity.",
+    },
+    {
+        id: 3,
+        author: "Michael Chen",
+        rating: 4,
+        date: "Jun 21, 2024",
+        comment:
+            "Solid build quality and a bright screen. Would have preferred more storage out of the box, but expandable storage helps.",
+    },
+];
+
+export const PRODUCT_QUESTIONS: ProductQuestion[] = [
+    {
+        id: 1,
+        question: "Does this tablet support stylus input?",
+        answer: "Yes, it works with compatible capacitive styluses for note-taking and sketching.",
+        author: "Support Team",
+        date: "Jul 08, 2024",
+    },
+    {
+        id: 2,
+        question: "Is Google Play Store available on this device?",
+        answer: "Yes, the device includes access to the Google Play Store for apps and updates.",
+        author: "Support Team",
+        date: "Jun 30, 2024",
+    },
+    {
+        id: 3,
+        question: "What is included in the box?",
+        answer: "The box includes the tablet, a USB-C charging cable, and a quick start guide.",
+        author: "Support Team",
+        date: "Jun 18, 2024",
+    },
+];
+
+export function getProductById(id: number): ShopProduct | undefined {
+    return shopProducts.find((product) => product.id === id);
+}
+
+export function getRelatedProducts(
+    product: ShopProduct,
+    limit = 4,
+): ShopProduct[] {
+    const sameCategory = shopProducts.filter(
+        (item) => item.id !== product.id && item.category === product.category,
+    );
+    if (sameCategory.length >= limit) {
+        return sameCategory.slice(0, limit);
+    }
+
+    const extras = shopProducts.filter(
+        (item) =>
+            item.id !== product.id &&
+            !sameCategory.some((related) => related.id === item.id),
+    );
+
+    return [...sameCategory, ...extras].slice(0, limit);
+}
+
+export function getProductGallery(product: ShopProduct): string[] {
+    if (product.gallery && product.gallery.length > 0) {
+        return product.gallery;
+    }
+    const unique = Array.from(
+        new Set([product.image, ...DEFAULT_PRODUCT_GALLERY]),
+    );
+    return unique.slice(0, 4);
+}

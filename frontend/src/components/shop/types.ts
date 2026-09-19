@@ -29,6 +29,34 @@ export interface ShopProduct {
     categoryLabels?: string[];
 }
 
+export type ProductTabId = "specification" | "description" | "qa" | "review";
+
+export interface ProductSpecRow {
+    label: string;
+    value: string;
+}
+
+export interface ProductSpecSection {
+    title: string;
+    rows: ProductSpecRow[];
+}
+
+export interface ProductReview {
+    id: number;
+    author: string;
+    rating: number;
+    date: string;
+    comment: string;
+}
+
+export interface ProductQuestion {
+    id: number;
+    question: string;
+    answer: string;
+    author: string;
+    date: string;
+}
+
 export const VIEW_MODE_GRID_CLASS: Record<
     Exclude<ShopViewMode, "list">,
     string
