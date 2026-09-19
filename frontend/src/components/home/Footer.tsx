@@ -80,14 +80,14 @@ export default function Footer() {
                         {/* Dark / Light Mode Logo Toggle */}
                         <Link href="/" className="inline-block mb-4">
                             <Image
-                                src="/logo/niyenin-dark.png"
+                                src="/logo/niyenin-white.png"
                                 alt="Niyenin Logo"
                                 width={180}
                                 height={50}
                                 className="object-contain dark:hidden"
                             />
                             <Image
-                                src="/logo/niyenin-white.png"
+                                src="/logo/niyenin-dark.png"
                                 alt="Niyenin Logo"
                                 width={180}
                                 height={50}
