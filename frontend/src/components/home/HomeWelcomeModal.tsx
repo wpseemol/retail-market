@@ -4,16 +4,18 @@ import React, { useCallback, useEffect, useId, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-const COUNTDOWN_SECONDS = 15;
+const COUNTDOWN_SECONDS = 30;
 const SESSION_KEY = "home-welcome-modal-dismissed";
 
 export default function HomeWelcomeModal() {
     const titleId = useId();
     const [isOpen, setIsOpen] = useState(false);
     const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
+    const [isPaused, setIsPaused] = useState(false);
 
     const closeModal = useCallback(() => {
         setIsOpen(false);
+        setIsPaused(false);
         try {
             sessionStorage.setItem(SESSION_KEY, "1");
         } catch {
@@ -32,14 +34,15 @@ export default function HomeWelcomeModal() {
         const showTimer = window.setTimeout(() => {
             setIsOpen(true);
             setSecondsLeft(COUNTDOWN_SECONDS);
+            setIsPaused(false);
         }, 250);
 
         return () => window.clearTimeout(showTimer);
     }, []);
 
-    // 15s countdown + auto dismiss
+    // 30s countdown + auto dismiss (pauses while mouse is over the modal)
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen || isPaused) return;
 
         const interval = window.setInterval(() => {
             setSecondsLeft((prev) => {
@@ -53,7 +56,7 @@ export default function HomeWelcomeModal() {
         }, 1000);
 
         return () => window.clearInterval(interval);
-    }, [isOpen, closeModal]);
+    }, [isOpen, isPaused, closeModal]);
 
     // Esc to close + lock body scroll
     useEffect(() => {
@@ -76,8 +79,8 @@ export default function HomeWelcomeModal() {
     if (!isOpen) return null;
 
     const progress = secondsLeft / COUNTDOWN_SECONDS;
-    const ringSize = 88;
-    const stroke = 5;
+    const ringSize = 52;
+    const stroke = 3;
     const radius = (ringSize - stroke) / 2;
     const circumference = 2 * Math.PI * radius;
     const dashOffset = circumference * (1 - progress);
@@ -98,7 +101,9 @@ export default function HomeWelcomeModal() {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}
-                className="relative z-10 w-full max-w-[720px] overflow-hidden rounded-2xl border border-border-default bg-bg-surface shadow-[0_24px_64px_rgba(0,0,0,0.28)]"
+                onMouseEnter={() => setIsPaused(true)}
+                onMouseLeave={() => setIsPaused(false)}
+                className="relative z-10 w-full max-w-[720px] overflow-hidden rounded-[2px] border border-border-default bg-bg-surface shadow-[0_24px_64px_rgba(0,0,0,0.28)]"
             >
                 {/* Close */}
                 <button
@@ -185,10 +190,10 @@ export default function HomeWelcomeModal() {
                                 />
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="text-2xl font-black text-brand-primary leading-none tabular-nums">
+                                <span className="text-sm font-bold text-brand-primary leading-none tabular-nums">
                                     {secondsLeft}
                                 </span>
-                                <span className="text-[10px] font-semibold uppercase tracking-wide text-text-secondary mt-0.5">
+                                <span className="text-[8px] font-semibold uppercase tracking-wide text-text-secondary mt-0.5">
                                     sec
                                 </span>
                             </div>
