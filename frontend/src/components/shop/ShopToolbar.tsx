@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { SORT_OPTIONS } from "./data";
 import type { ShopSortOption, ShopViewMode } from "./types";
 
@@ -12,6 +13,97 @@ interface ShopToolbarProps {
     sortBy: ShopSortOption;
     onSortChange: (sort: ShopSortOption) => void;
 }
+
+const VIEW_OPTIONS: {
+    mode: ShopViewMode;
+    label: string;
+    icon: ReactNode;
+}[] = [
+    {
+        mode: "grid4",
+        label: "4 column grid",
+        icon: (
+            <svg
+                width="18"
+                height="18"
+                viewBox="0 0 18 18"
+                fill="currentColor"
+                aria-hidden="true"
+            >
+                <rect x="1" y="1" width="3.5" height="3.5" rx="0.5" />
+                <rect x="5.5" y="1" width="3.5" height="3.5" rx="0.5" />
+                <rect x="10" y="1" width="3.5" height="3.5" rx="0.5" />
+                <rect x="14.5" y="1" width="2.5" height="3.5" rx="0.5" />
+                <rect x="1" y="7" width="3.5" height="3.5" rx="0.5" />
+                <rect x="5.5" y="7" width="3.5" height="3.5" rx="0.5" />
+                <rect x="10" y="7" width="3.5" height="3.5" rx="0.5" />
+                <rect x="14.5" y="7" width="2.5" height="3.5" rx="0.5" />
+                <rect x="1" y="13" width="3.5" height="3.5" rx="0.5" />
+                <rect x="5.5" y="13" width="3.5" height="3.5" rx="0.5" />
+                <rect x="10" y="13" width="3.5" height="3.5" rx="0.5" />
+                <rect x="14.5" y="13" width="2.5" height="3.5" rx="0.5" />
+            </svg>
+        ),
+    },
+    {
+        mode: "grid3",
+        label: "3 column grid",
+        icon: (
+            <svg
+                width="18"
+                height="18"
+                viewBox="0 0 18 18"
+                fill="currentColor"
+                aria-hidden="true"
+            >
+                <rect x="1" y="1" width="4.5" height="4.5" rx="0.75" />
+                <rect x="6.75" y="1" width="4.5" height="4.5" rx="0.75" />
+                <rect x="12.5" y="1" width="4.5" height="4.5" rx="0.75" />
+                <rect x="1" y="6.75" width="4.5" height="4.5" rx="0.75" />
+                <rect x="6.75" y="6.75" width="4.5" height="4.5" rx="0.75" />
+                <rect x="12.5" y="6.75" width="4.5" height="4.5" rx="0.75" />
+                <rect x="1" y="12.5" width="4.5" height="4.5" rx="0.75" />
+                <rect x="6.75" y="12.5" width="4.5" height="4.5" rx="0.75" />
+                <rect x="12.5" y="12.5" width="4.5" height="4.5" rx="0.75" />
+            </svg>
+        ),
+    },
+    {
+        mode: "grid2",
+        label: "2 column grid",
+        icon: (
+            <svg
+                width="18"
+                height="18"
+                viewBox="0 0 18 18"
+                fill="currentColor"
+                aria-hidden="true"
+            >
+                <rect x="1" y="1" width="7" height="7" rx="1" />
+                <rect x="10" y="1" width="7" height="7" rx="1" />
+                <rect x="1" y="10" width="7" height="7" rx="1" />
+                <rect x="10" y="10" width="7" height="7" rx="1" />
+            </svg>
+        ),
+    },
+    {
+        mode: "list",
+        label: "List view",
+        icon: (
+            <svg
+                width="18"
+                height="18"
+                viewBox="0 0 18 18"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                aria-hidden="true"
+            >
+                <path d="M1 3h16M1 9h16M1 15h16" />
+            </svg>
+        ),
+    },
+];
 
 export default function ShopToolbar({
     from,
@@ -36,57 +128,30 @@ export default function ShopToolbar({
 
             <div className="flex items-center gap-3 sm:gap-4">
                 <div
-                    className="flex items-center gap-1.5"
+                    className="flex items-center gap-0.5 sm:gap-1"
                     role="group"
-                    aria-label="View mode"
+                    aria-label="Product layout"
                 >
-                    <button
-                        type="button"
-                        aria-label="Grid view"
-                        aria-pressed={viewMode === "grid"}
-                        onClick={() => onViewModeChange("grid")}
-                        className={`p-1.5 rounded transition-colors cursor-pointer ${
-                            viewMode === "grid"
-                                ? "text-brand-primary"
-                                : "text-text-secondary hover:text-text-primary"
-                        }`}
-                    >
-                        <svg
-                            width="18"
-                            height="18"
-                            viewBox="0 0 18 18"
-                            fill="currentColor"
-                            aria-hidden="true"
-                        >
-                            <rect x="1" y="1" width="6" height="6" rx="1" />
-                            <rect x="11" y="1" width="6" height="6" rx="1" />
-                            <rect x="1" y="11" width="6" height="6" rx="1" />
-                            <rect x="11" y="11" width="6" height="6" rx="1" />
-                        </svg>
-                    </button>
-                    <button
-                        type="button"
-                        aria-label="List view"
-                        aria-pressed={viewMode === "list"}
-                        onClick={() => onViewModeChange("list")}
-                        className={`p-1.5 rounded transition-colors cursor-pointer ${
-                            viewMode === "list"
-                                ? "text-brand-primary"
-                                : "text-text-secondary hover:text-text-primary"
-                        }`}
-                    >
-                        <svg
-                            width="18"
-                            height="18"
-                            viewBox="0 0 18 18"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.6"
-                            aria-hidden="true"
-                        >
-                            <path d="M1 3h16M1 9h16M1 15h16" />
-                        </svg>
-                    </button>
+                    {VIEW_OPTIONS.map((option) => {
+                        const isActive = viewMode === option.mode;
+                        return (
+                            <button
+                                key={option.mode}
+                                type="button"
+                                aria-label={option.label}
+                                aria-pressed={isActive}
+                                title={option.label}
+                                onClick={() => onViewModeChange(option.mode)}
+                                className={`p-1.5 rounded transition-colors cursor-pointer ${
+                                    isActive
+                                        ? "text-brand-primary bg-brand-tint/50"
+                                        : "text-text-secondary hover:text-text-primary"
+                                }`}
+                            >
+                                {option.icon}
+                            </button>
+                        );
+                    })}
                 </div>
 
                 <div className="relative">

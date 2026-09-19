@@ -13,6 +13,7 @@ import ShopProductCard from "./ShopProductCard";
 import ShopSidebar from "./ShopSidebar";
 import ShopToolbar from "./ShopToolbar";
 import type { ShopProduct, ShopSortOption, ShopViewMode } from "./types";
+import { VIEW_MODE_GRID_CLASS } from "./types";
 
 export default function ShopPageContent() {
     const [searchQuery, setSearchQuery] = useState("");
@@ -24,7 +25,7 @@ export default function ShopPageContent() {
     );
     const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
     const [selectedTag, setSelectedTag] = useState<string | null>(null);
-    const [viewMode, setViewMode] = useState<ShopViewMode>("grid");
+    const [viewMode, setViewMode] = useState<ShopViewMode>("grid3");
     const [sortBy, setSortBy] = useState<ShopSortOption>("default");
     const [currentPage, setCurrentPage] = useState(1);
     const [quickViewProduct, setQuickViewProduct] =
@@ -202,9 +203,9 @@ export default function ShopPageContent() {
                             ) : (
                                 <div
                                     className={
-                                        viewMode === "grid"
-                                            ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5"
-                                            : "flex flex-col gap-4"
+                                        viewMode === "list"
+                                            ? "flex flex-col gap-4"
+                                            : VIEW_MODE_GRID_CLASS[viewMode]
                                     }
                                 >
                                     {pageProducts.map((product) => (
