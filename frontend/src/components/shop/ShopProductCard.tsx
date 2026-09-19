@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { ShopProduct, ShopViewMode } from "./types";
 import { useAppDispatch } from "@/store/hooks";
 import { addToCart } from "@/store/cartSlice";
@@ -64,7 +65,11 @@ function ActionButton({
         <button
             type="button"
             aria-label={label}
-            onClick={onClick}
+            onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClick?.();
+            }}
             className="h-8 w-8 rounded-full bg-bg-surface border border-border-default flex items-center justify-center text-text-secondary hover:text-brand-primary hover:border-brand-primary cursor-pointer shadow-sm transition-colors"
         >
             {children}
@@ -88,6 +93,7 @@ function HeartIcon() {
     );
 }
 
+/** Eye — opens Quick View modal popup */
 function EyeIcon() {
     return (
         <svg
@@ -101,6 +107,28 @@ function EyeIcon() {
         >
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
             <circle cx="12" cy="12" r="3" />
+        </svg>
+    );
+}
+
+/** Expand — opens the full product details page */
+function ExpandIcon() {
+    return (
+        <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+        >
+            <polyline points="15 3 21 3 21 9" />
+            <polyline points="9 21 3 21 3 15" />
+            <line x1="21" y1="3" x2="14" y2="10" />
+            <line x1="3" y1="21" x2="10" y2="14" />
         </svg>
     );
 }
@@ -139,6 +167,7 @@ export default function ShopProductCard({
     viewMode,
     onQuickView,
 }: ShopProductCardProps) {
+    const router = useRouter();
     const dispatch = useAppDispatch();
 
     const handleAddToCart = () => {
@@ -152,6 +181,10 @@ export default function ShopProductCard({
                 quantity: 1,
             }),
         );
+    };
+
+    const handleExpandProduct = () => {
+        router.push(`/shop/${product.id}`);
     };
 
     if (viewMode === "list") {
@@ -218,6 +251,12 @@ export default function ShopProductCard({
                             onClick={() => onQuickView(product)}
                         >
                             <EyeIcon />
+                        </ActionButton>
+                        <ActionButton
+                            label="View full product"
+                            onClick={handleExpandProduct}
+                        >
+                            <ExpandIcon />
                         </ActionButton>
                         <button
                             type="button"
@@ -287,6 +326,12 @@ export default function ShopProductCard({
                         onClick={() => onQuickView(product)}
                     >
                         <EyeIcon />
+                    </ActionButton>
+                    <ActionButton
+                        label="View full product"
+                        onClick={handleExpandProduct}
+                    >
+                        <ExpandIcon />
                     </ActionButton>
                 </div>
             </div>
