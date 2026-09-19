@@ -55,25 +55,51 @@ function formatPrice(value: number) {
 function ActionButton({
     label,
     onClick,
+    tooltipSide = "top",
     children,
 }: {
     label: string;
     onClick?: () => void;
+    tooltipSide?: "top" | "left";
     children: ReactNode;
 }) {
+    const tooltipPosition =
+        tooltipSide === "left"
+            ? "right-full top-1/2 -translate-y-1/2 mr-2.5"
+            : "bottom-full left-1/2 -translate-x-1/2 mb-2.5";
+
+    const arrowPosition =
+        tooltipSide === "left"
+            ? "left-full top-1/2 -translate-y-1/2 border-y-4 border-y-transparent border-l-4 border-l-[#1A1A1A] dark:border-l-white"
+            : "top-full left-1/2 -translate-x-1/2 border-x-4 border-x-transparent border-t-4 border-t-[#1A1A1A] dark:border-t-white";
+
     return (
-        <button
-            type="button"
-            aria-label={label}
-            onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onClick?.();
-            }}
-            className="h-8 w-8 rounded-full bg-bg-surface border border-border-default flex items-center justify-center text-text-secondary hover:text-brand-primary hover:border-brand-primary cursor-pointer shadow-sm transition-colors"
-        >
-            {children}
-        </button>
+        <div className="relative inline-flex group/tip">
+            <button
+                type="button"
+                aria-label={label}
+                title={label}
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onClick?.();
+                }}
+                className="h-8 w-8 rounded-full bg-bg-surface border border-border-default flex items-center justify-center text-text-secondary hover:text-brand-primary hover:border-brand-primary cursor-pointer shadow-sm transition-colors"
+            >
+                {children}
+            </button>
+
+            <span
+                role="tooltip"
+                className={`pointer-events-none absolute z-30 whitespace-nowrap rounded-ex bg-[#1A1A1A] dark:bg-white px-2.5 py-1 text-[11px] font-medium tracking-wide text-white dark:text-[#1A1A1A] opacity-0 scale-95 shadow-[0_6px_16px_rgba(0,0,0,0.18)] transition-all duration-150 ease-out group-hover/tip:opacity-100 group-hover/tip:scale-100 ${tooltipPosition}`}
+            >
+                {label}
+                <span
+                    aria-hidden="true"
+                    className={`absolute h-0 w-0 ${arrowPosition}`}
+                />
+            </span>
+        </div>
     );
 }
 
@@ -142,9 +168,12 @@ function CompareIcon() {
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
             aria-hidden="true"
         >
-            <path d="M16 3h5v5M8 21H3v-5M21 3l-7 7M3 21l7-7" />
+            <rect x="3" y="3" width="7" height="18" rx="1" />
+            <rect x="14" y="8" width="7" height="13" rx="1" />
         </svg>
     );
 }
@@ -189,7 +218,7 @@ export default function ShopProductCard({
 
     if (viewMode === "list") {
         return (
-            <article className="group relative flex flex-col sm:flex-row gap-4 sm:gap-6 p-4 sm:p-5 bg-bg-surface border border-border-default rounded-lg overflow-hidden transition-all duration-200 hover:border-brand-primary hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+            <article className="group relative flex flex-col sm:flex-row gap-4 sm:gap-6 p-4 sm:p-5 bg-bg-surface border border-border-default rounded-lg transition-all duration-200 hover:border-brand-primary hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
                 <div className="relative w-full sm:w-52 md:w-60 h-48 sm:h-52 shrink-0 rounded-md overflow-hidden bg-bg-subtle">
                     {product.isNew && (
                         <span className="absolute top-3 left-0 z-10 -skew-x-12 bg-brand-primary text-white text-[10px] font-bold px-2.5 py-1 tracking-wider">
@@ -240,22 +269,24 @@ export default function ShopProductCard({
                     </p>
 
                     <div className="flex items-center gap-2 pt-2">
-                        <ActionButton label="Add to wishlist">
+                        <ActionButton label="Add to Wishlist">
                             <HeartIcon />
                         </ActionButton>
-                        <ActionButton
-                            label="View full product"
-                            onClick={handleExpandProduct}
-                        >
-                            <ExpandIcon />
+                        <ActionButton label="Compare">
+                            <CompareIcon />
                         </ActionButton>
                         <ActionButton
-                            label="Quick view"
+                            label="Quick View"
                             onClick={() => onQuickView(product)}
                         >
                             <EyeIcon />
                         </ActionButton>
-
+                        <ActionButton
+                            label="View Full Product"
+                            onClick={handleExpandProduct}
+                        >
+                            <ExpandIcon />
+                        </ActionButton>
                         <button
                             type="button"
                             onClick={handleAddToCart}
@@ -274,56 +305,70 @@ export default function ShopProductCard({
 
     return (
         <article
-            className={`group relative flex flex-col bg-bg-surface border border-border-default rounded-lg overflow-hidden transition-all duration-200 hover:border-brand-primary hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)] ${
+            className={`group relative flex flex-col bg-bg-surface border border-border-default rounded-lg transition-all duration-200 hover:border-brand-primary hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)] ${
                 isWide ? "sm:flex-row sm:items-stretch" : ""
             }`}
         >
             <div
-                className={`relative bg-bg-subtle ${
-                    isWide
-                        ? "w-full sm:w-[46%] aspect-4/3 sm:aspect-auto sm:min-h-56 shrink-0"
-                        : "w-full aspect-square"
+                className={`relative ${
+                    isWide ? "w-full sm:w-[46%] shrink-0" : "w-full"
                 }`}
             >
-                {product.isNew && (
-                    <span className="absolute top-3 left-0 z-10 -skew-x-12 bg-brand-primary text-white text-[10px] font-bold px-2.5 py-1 tracking-wider">
-                        <span className="skew-x-12 inline-block">NEW</span>
-                    </span>
-                )}
-
-                <Link
-                    href={`/shop/${product.id}`}
-                    className="absolute inset-0 flex items-center justify-center p-4"
+                <div
+                    className={`relative bg-bg-subtle overflow-hidden rounded-t-lg ${
+                        isWide
+                            ? "aspect-4/3 sm:aspect-auto sm:min-h-56 sm:rounded-l-lg sm:rounded-tr-none sm:h-full"
+                            : "w-full aspect-square"
+                    }`}
                 >
-                    <Image
-                        src={product.image}
-                        alt={product.alt}
-                        fill
-                        sizes={
-                            viewMode === "grid4"
-                                ? "(max-width: 768px) 50vw, 25vw"
-                                : viewMode === "grid2"
-                                  ? "(max-width: 768px) 100vw, 40vw"
-                                  : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        }
-                        className="object-contain p-3 transition-transform duration-300 group-hover:scale-105"
-                    />
-                </Link>
+                    {product.isNew && (
+                        <span className="absolute top-3 left-0 z-10 -skew-x-12 bg-brand-primary text-white text-[10px] font-bold px-2.5 py-1 tracking-wider">
+                            <span className="skew-x-12 inline-block">NEW</span>
+                        </span>
+                    )}
 
-                <div className="absolute bottom-3 right-3 flex flex-col gap-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-10">
-                    <ActionButton label="Add to wishlist">
+                    <Link
+                        href={`/shop/${product.id}`}
+                        className="absolute inset-0 flex items-center justify-center p-4"
+                    >
+                        <Image
+                            src={product.image}
+                            alt={product.alt}
+                            fill
+                            sizes={
+                                viewMode === "grid4"
+                                    ? "(max-width: 768px) 50vw, 25vw"
+                                    : viewMode === "grid2"
+                                      ? "(max-width: 768px) 100vw, 40vw"
+                                      : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            }
+                            className="object-contain p-3 transition-transform duration-300 group-hover:scale-105"
+                        />
+                    </Link>
+                </div>
+
+                <div className="absolute bottom-3 right-3 flex flex-col gap-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-20">
+                    <ActionButton label="Add to Wishlist" tooltipSide="left">
                         <HeartIcon />
                     </ActionButton>
                     {!isCompact && (
-                        <ActionButton label="Compare">
+                        <ActionButton label="Compare" tooltipSide="left">
                             <CompareIcon />
                         </ActionButton>
                     )}
                     <ActionButton
-                        label="Quick view"
+                        label="Quick View"
+                        tooltipSide="left"
                         onClick={() => onQuickView(product)}
                     >
                         <EyeIcon />
+                    </ActionButton>
+                    <ActionButton
+                        label="View Full Product"
+                        tooltipSide="left"
+                        onClick={handleExpandProduct}
+                    >
+                        <ExpandIcon />
                     </ActionButton>
                 </div>
             </div>
