@@ -3,12 +3,16 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import PromoAdSlider from "./PromoAdSlider";
 
 export default function Header() {
+    const pathname = usePathname();
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
+    const isHome = pathname === "/";
+    const isShop = pathname === "/shop" || pathname.startsWith("/shop/");
     const [isSticky, setIsSticky] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -289,7 +293,11 @@ export default function Header() {
                         <li>
                             <Link
                                 href="/"
-                                className="text-brand-primary font-semibold hover:text-brand-hover transition-colors"
+                                className={`hover:text-brand-hover transition-colors ${
+                                    isHome
+                                        ? "text-brand-primary font-semibold"
+                                        : "text-text-secondary hover:text-brand-primary"
+                                }`}
                             >
                                 Home
                             </Link>
@@ -297,7 +305,11 @@ export default function Header() {
                         <li>
                             <Link
                                 href="/shop"
-                                className="text-text-secondary hover:text-brand-primary transition-colors"
+                                className={`hover:text-brand-hover transition-colors ${
+                                    isShop
+                                        ? "text-brand-primary font-semibold"
+                                        : "text-text-secondary hover:text-brand-primary"
+                                }`}
                             >
                                 Shop
                             </Link>
@@ -479,14 +491,22 @@ export default function Header() {
                             <Link
                                 href="/"
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className="px-3 py-2 rounded-md text-brand-primary hover:bg-bg-subtle"
+                                className={`px-3 py-2 rounded-md hover:bg-bg-subtle ${
+                                    isHome
+                                        ? "text-brand-primary font-semibold"
+                                        : "text-text-primary"
+                                }`}
                             >
                                 Home
                             </Link>
                             <Link
                                 href="/shop"
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className="px-3 py-2 rounded-md text-text-primary hover:bg-bg-subtle"
+                                className={`px-3 py-2 rounded-md hover:bg-bg-subtle ${
+                                    isShop
+                                        ? "text-brand-primary font-semibold"
+                                        : "text-text-primary"
+                                }`}
                             >
                                 Shop
                             </Link>
