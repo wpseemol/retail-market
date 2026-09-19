@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ProductPageContent from "@/components/shop/ProductPageContent";
 import { getProductById, shopProducts } from "@/components/shop/data";
+import { createPageMetadata, siteConfig } from "@/config/site";
 
 interface ProductPageProps {
     params: Promise<{ id: string }>;
@@ -20,15 +21,21 @@ export async function generateMetadata({
     const product = getProductById(Number(id));
 
     if (!product) {
-        return { title: "Product Not Found | Retail Market" };
+        return createPageMetadata({
+            title: "Product Not Found",
+            path: `/shop/${id}`,
+            noIndex: true,
+        });
     }
 
-    return {
-        title: `${product.name} | Retail Market`,
+    return createPageMetadata({
+        title: product.name,
         description:
             product.description ??
-            `Buy ${product.name} at Retail Market. Browse specs, reviews, and related products.`,
-    };
+            `Buy ${product.name} at ${siteConfig.name}. Browse specs, reviews, and related products.`,
+        path: `/shop/${product.id}`,
+        image: product.gallery?.[0] ?? product.image ?? siteConfig.logo.og,
+    });
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {

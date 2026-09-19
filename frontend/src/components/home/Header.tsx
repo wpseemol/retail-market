@@ -113,12 +113,12 @@ export default function Header() {
                     {/* Brand Logo */}
                     <Link
                         href="/"
-                        aria-label="Retail Market Home"
+                        aria-label="Niyenin Home"
                         className="flex items-center shrink-0"
                     >
                         <Image
                             src="/logo/niyenin-white.png"
-                            alt="Retail Market"
+                            alt="Niyenin"
                             width={150}
                             height={40}
                             priority
@@ -126,7 +126,7 @@ export default function Header() {
                         />
                         <Image
                             src="/logo/niyenin-dark.png"
-                            alt="Retail Market"
+                            alt="Niyenin"
                             width={150}
                             height={40}
                             priority
