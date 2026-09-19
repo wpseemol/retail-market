@@ -117,12 +117,10 @@ export default function PromoBannerSlider() {
                 <div
                     onMouseEnter={() => setIsPaused(true)}
                     onMouseLeave={() => setIsPaused(false)}
-                    className="relative w-full overflow-hidden rounded-2xl bg-bg-surface border border-border-default min-h-77.5 md:min-h-85 flex items-center justify-between p-6 sm:p-10 lg:p-12 shadow-xs
-                    
-                    bg-[url('/images/PromoBannerSlider_bg.png')] bg-cover bg-center dark:bg-blend-luminosity dark:bg-none"
+                    className="relative flex w-full min-h-77.5 items-center justify-between overflow-hidden rounded-2xl border border-border-default bg-bg-surface bg-[url('/images/PromoBannerSlider_bg.png')] bg-cover bg-center p-6 shadow-xs sm:p-10 md:min-h-85 lg:p-12 dark:bg-none dark:bg-blend-luminosity"
                 >
                     {/* Animated Slide Content */}
-                    <AnimatePresence mode="wait" custom={direction}>
+                    <AnimatePresence mode="wait" custom={direction} initial={false}>
                         <motion.div
                             key={promoSlides[current].id}
                             custom={direction}
