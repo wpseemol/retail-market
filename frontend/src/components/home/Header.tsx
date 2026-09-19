@@ -26,6 +26,8 @@ export default function Header() {
     const isHome = pathname === "/";
     const isShop = pathname === "/shop" || pathname.startsWith("/shop/");
     const isCart = pathname === "/cart" || pathname.startsWith("/cart/");
+    const isContact =
+        pathname === "/contact" || pathname.startsWith("/contact/");
     const [isSticky, setIsSticky] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -386,7 +388,11 @@ export default function Header() {
                         <li>
                             <Link
                                 href="/contact"
-                                className="text-text-secondary hover:text-brand-primary transition-colors"
+                                className={`transition-colors ${
+                                    isContact
+                                        ? "text-brand-primary font-semibold"
+                                        : "text-text-secondary hover:text-brand-primary"
+                                }`}
                             >
                                 Contact
                             </Link>
@@ -627,7 +633,11 @@ export default function Header() {
                             <Link
                                 href="/contact"
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className="px-3 py-2 rounded-md text-text-primary hover:bg-bg-subtle"
+                                className={`px-3 py-2 rounded-md hover:bg-bg-subtle ${
+                                    isContact
+                                        ? "text-brand-primary font-semibold"
+                                        : "text-text-primary"
+                                }`}
                             >
                                 Contact
                             </Link>
