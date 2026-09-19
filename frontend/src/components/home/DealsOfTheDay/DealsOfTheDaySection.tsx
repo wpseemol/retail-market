@@ -15,7 +15,7 @@ export default function DealsOfTheDaySection() {
                     <h2 className="text-text-primary text-xl sm:text-2xl font-bold tracking-tight pb-2">
                         Deals of The Day
                     </h2>
-                    <span className="absolute bottom-0 left-0 w-28 h-[2px] bg-brand-primary" />
+                    <span className="absolute bottom-0 left-0 w-7 h-0.5 bg-brand-primary" />
                 </div>
 
                 {/* Responsive Grid: 3-column desktop layout matching exact proportions */}

@@ -110,7 +110,7 @@ export default function DealsRightProduct() {
             className="w-full h-full rounded-xl bg-bg-surface border border-border-default p-5 sm:p-6 flex flex-col justify-between shadow-xs transition-colors duration-200"
         >
             {/* Animated Main Image */}
-            <div className="relative w-full h-[200px] sm:h-[220px] flex items-center justify-center overflow-hidden">
+            <div className="relative w-full h-50 sm:h-55 flex items-center justify-center overflow-hidden">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeProduct.id}

@@ -117,7 +117,7 @@ export default function PromoBannerSlider() {
                 <div
                     onMouseEnter={() => setIsPaused(true)}
                     onMouseLeave={() => setIsPaused(false)}
-                    className="relative w-full overflow-hidden rounded-2xl bg-bg-surface border border-border-default min-h-[310px] md:min-h-[340px] flex items-center justify-between p-6 sm:p-10 lg:p-12 shadow-xs
+                    className="relative w-full overflow-hidden rounded-2xl bg-bg-surface border border-border-default min-h-77.5 md:min-h-85 flex items-center justify-between p-6 sm:p-10 lg:p-12 shadow-xs
                     
                     bg-[url('/images/PromoBannerSlider_bg.png')] bg-cover bg-center dark:bg-blend-luminosity dark:bg-none"
                 >
@@ -133,7 +133,7 @@ export default function PromoBannerSlider() {
                             className="relative z-10 w-full flex flex-col-reverse md:flex-row items-center justify-between gap-6"
                         >
                             {/* Product Visual */}
-                            <div className="relative w-[240px] h-[190px] sm:w-[320px] sm:h-[240px] lg:w-[380px] lg:h-[270px] shrink-0 flex items-center justify-center">
+                            <div className="relative w-60 h-47.5 sm:w-80 sm:h-60 lg:w-95 lg:h-67.5 shrink-0 flex items-center justify-center">
                                 <Image
                                     src={promoSlides[current].image}
                                     alt={promoSlides[current].imageAlt}

@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function DealsLeftPromo() {
     return (
-        <article className="relative w-full h-full min-h-[460px] rounded-xl overflow-hidden border border-border-default flex flex-col justify-between p-6 sm:p-7 shadow-xs">
+        <article className="relative w-full h-full min-h-115 rounded-xl overflow-hidden border border-border-default flex flex-col justify-between p-6 sm:p-7 shadow-xs">
             {/* Background Graphic */}
             <div className="absolute inset-0 pointer-events-none z-0">
                 <Image
@@ -23,13 +23,13 @@ export default function DealsLeftPromo() {
                     GET SAVE 30% OFF
                 </span>
 
-                <h3 className="text-text-primary text-[19px] sm:text-[21px] font-extrabold leading-[1.25] tracking-tight mb-5 max-w-[210px]">
+                <h3 className="text-text-primary text-4.75 sm:text-5.25 font-extrabold leading-tight  tracking-tight mb-5 max-w-52.5">
                     General Motors Buick Sonic Engine
                 </h3>
 
                 <Link
                     href="/shop?deals=buick-engine"
-                    className="inline-flex items-center gap-2 bg-brand-primary hover:bg-brand-hover text-white text-[13px] font-bold uppercase tracking-wider px-6 py-2.5 rounded-full transition-all duration-200 group shadow-xs"
+                    className="inline-flex items-center gap-2 bg-brand-primary hover:bg-brand-hover text-white text-3.25 font-bold uppercase tracking-wider px-6 py-2.5 rounded-full transition-all duration-200 group shadow-xs"
                 >
                     <span>SHOP NOW</span>
                     <span
@@ -42,7 +42,7 @@ export default function DealsLeftPromo() {
             </div>
 
             {/* Action Cam Product Image */}
-            <div className="relative z-10 w-full h-[220px] sm:h-[240px] flex items-center justify-center mt-4">
+            <div className="relative z-10 w-full h-55 sm:h-60 flex items-center justify-center mt-4">
                 <Image
                     src="/images/Deals of The Day left product image.png"
                     alt="Waterproof Splash Proof 4K Action Camera"

@@ -14,7 +14,9 @@ export default function Header() {
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
     useEffect(() => {
-        setMounted(true);
+        setTimeout(() => {
+            setMounted(true);
+        }, 100);
         const handleScroll = () => {
             setIsSticky(window.scrollY > 48);
         };
@@ -130,14 +132,14 @@ export default function Header() {
                             />
                             <span
                                 aria-label="2 items in wishlist"
-                                className="absolute -top-1 -right-1 bg-brand-hover text-white text-[10px] font-semibold h-4 min-w-[16px] px-1 rounded-full border border-white flex items-center justify-center"
+                                className="absolute -top-1 -right-1 bg-brand-hover text-white text-[10px] font-semibold h-4 min-w-4 px-1 rounded-full border border-white flex items-center justify-center"
                             >
                                 2
                             </span>
                         </Link>
 
                         <span
-                            className="hidden sm:inline-block w-[1px] h-5 bg-border-default"
+                            className="hidden sm:inline-block w- h-5 bg-border-default"
                             aria-hidden="true"
                         />
 
@@ -153,12 +155,12 @@ export default function Header() {
                                     alt=""
                                     width={28}
                                     height={28}
-                                    className="sm:w-[32px] sm:h-[32px]"
+                                    className="sm:w-8 sm:h-8"
                                     aria-hidden="true"
                                 />
                                 <span
                                     aria-label="2 items"
-                                    className="absolute -top-1 -right-1 bg-brand-hover text-white text-[10px] font-semibold h-4 min-w-[16px] px-1 rounded-full border border-white flex items-center justify-center"
+                                    className="absolute -top-1 -right-1 bg-brand-hover text-white text-[10px] font-semibold h-4 min-w-4 px-1 rounded-full border border-white flex items-center justify-center"
                                 >
                                     2
                                 </span>
@@ -182,7 +184,7 @@ export default function Header() {
                                     ? "Switch to light theme"
                                     : "Switch to dark theme"
                             }
-                            className={`w-6 h-10 rounded-full p-[3px] transition-colors duration-200 cursor-pointer flex flex-col justify-between items-center ${
+                            className={`w-6 h-10 rounded-full p-0.75 transition-colors duration-200 cursor-pointer flex flex-col justify-between items-center ${
                                 isDark ? "bg-brand-primary" : "bg-[#4D4D4D]"
                             }`}
                         >
@@ -404,7 +406,7 @@ export default function Header() {
                 onClick={() => setIsMobileMenuOpen(false)}
             >
                 <div
-                    className={`fixed top-0 left-0 bottom-0 w-[280px] sm:w-[320px] bg-bg-base border-r border-border-default p-5 flex flex-col justify-between overflow-y-auto transition-transform duration-300 ${
+                    className={`fixed top-0 left-0 bottom-0 w-70 sm:w-80 bg-bg-base border-r border-border-default p-5 flex flex-col justify-between overflow-y-auto transition-transform duration-300 ${
                         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
                     }`}
                     onClick={(e) => e.stopPropagation()}

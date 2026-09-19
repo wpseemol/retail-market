@@ -194,7 +194,7 @@ export default function ProductGroupsSection() {
                                         href={item.link}
                                         className="group flex flex-col items-start"
                                     >
-                                        <div className="relative w-full h-[88px] rounded-lg bg-bg-subtle p-2 flex items-center justify-center overflow-hidden border border-border-default/40">
+                                        <div className="relative w-full h-22 rounded-lg bg-bg-subtle p-2 flex items-center justify-center overflow-hidden border border-border-default/40">
                                             <Image
                                                 src={item.image}
                                                 alt={item.alt}
@@ -233,7 +233,7 @@ export default function ProductGroupsSection() {
                                         href={item.link}
                                         className="group flex flex-col items-start"
                                     >
-                                        <div className="relative w-full h-[88px] rounded-lg overflow-hidden border border-border-default/40 bg-bg-subtle">
+                                        <div className="relative w-full h-22 rounded-lg overflow-hidden border border-border-default/40 bg-bg-subtle">
                                             <Image
                                                 src={item.image}
                                                 alt={item.alt}
@@ -265,7 +265,7 @@ export default function ProductGroupsSection() {
                                 Launched in the last 30 days
                             </h2>
 
-                            <div className="grid grid-cols-12 gap-2.5 h-[196px]">
+                            <div className="grid grid-cols-12 gap-2.5 h-49">
                                 {/* 1. Featured Large Item (Left Column) */}
                                 {launchedProductsData
                                     .filter((item) => item.isLarge)
@@ -300,7 +300,7 @@ export default function ProductGroupsSection() {
                                                 href={smallItem.link}
                                                 className="group flex flex-col"
                                             >
-                                                <div className="relative w-full h-[74px] rounded-lg overflow-hidden border border-border-default/40 bg-bg-subtle">
+                                                <div className="relative w-full h-18.5 rounded-lg overflow-hidden border border-border-default/40 bg-bg-subtle">
                                                     <Image
                                                         src={smallItem.image}
                                                         alt={smallItem.alt}
@@ -336,7 +336,7 @@ export default function ProductGroupsSection() {
                                 Get discounts on popular items
                             </p>
 
-                            <div className="relative w-full h-[196px] bg-bg-base border border-border-default/50 rounded-lg p-3 flex flex-col items-center justify-between overflow-hidden">
+                            <div className="relative w-full h-49 bg-bg-base border border-border-default/50 rounded-lg p-3 flex flex-col items-center justify-between overflow-hidden">
                                 {/* Previous Button */}
                                 <button
                                     type="button"
@@ -359,7 +359,7 @@ export default function ProductGroupsSection() {
                                 </button>
 
                                 {/* Animated Slide */}
-                                <div className="relative w-full h-[140px] flex items-center justify-center">
+                                <div className="relative w-full h-35 flex items-center justify-center">
                                     <AnimatePresence mode="wait">
                                         <motion.div
                                             key={

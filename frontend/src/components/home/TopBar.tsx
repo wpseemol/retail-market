@@ -22,7 +22,7 @@ export default function TopBar() {
                             </span>
                             <div className="flex items-center gap-1">
                                 {/* Responsive Flag Circle */}
-                                <div className="w-[14px] h-[14px] rounded-full overflow-hidden flex items-center justify-center shrink-0">
+                                <div className="w-3.5 h-3.5 rounded-full overflow-hidden flex items-center justify-center shrink-0">
                                     {/* Shows USA on Light Mode */}
                                     <svg
                                         viewBox="0 0 16 16"
@@ -97,7 +97,7 @@ export default function TopBar() {
                     </div>
 
                     {/* Calendar Date Block */}
-                    <div className="hidden sm:flex items-center gap-[6px]">
+                    <div className="hidden sm:flex items-center gap-1.5">
                         <Image
                             src="/icons/CalendarBlank.svg"
                             alt="Calendar"
@@ -112,7 +112,7 @@ export default function TopBar() {
                 </div>
 
                 {/* Right Section: Email, Phone, Currency, Language, Social Media */}
-                <div className="flex items-center gap-[10px]">
+                <div className="flex items-center gap-2.5">
                     {/* Email */}
                     <div className="hidden md:flex items-center gap-1">
                         <Image
@@ -130,7 +130,7 @@ export default function TopBar() {
                         </a>
                     </div>
 
-                    <span className="hidden md:inline-block w-[1px] h-[15px] bg-border-default" />
+                    <span className="hidden md:inline-block w-px h-3.75 bg-border-default" />
 
                     {/* Phone */}
                     <div className="hidden lg:flex items-center gap-2">
@@ -149,10 +149,10 @@ export default function TopBar() {
                         </a>
                     </div>
 
-                    <span className="hidden lg:inline-block w-[1px] h-[15px] bg-border-default" />
+                    <span className="hidden lg:inline-block w-px h-3.75 bg-border-default" />
 
                     {/* Language Selector */}
-                    <div className="flex items-center gap-[6px] px-1 py-[2px] rounded bg-transparent dark:bg-bg-surface cursor-pointer text-text-secondary hover:text-brand-primary transition-colors">
+                    <div className="flex items-center gap-1.5 px-px py-0.5 rounded bg-transparent dark:bg-bg-surface cursor-pointer text-text-secondary hover:text-brand-primary transition-colors">
                         <span className="text-[12px] leading-[130%]">Eng</span>
                         <svg
                             width="7"
@@ -169,10 +169,10 @@ export default function TopBar() {
                         </svg>
                     </div>
 
-                    <span className="inline-block w-[1px] h-[15px] bg-border-default" />
+                    <span className="inline-block w-px h-3.75 bg-border-default" />
 
                     {/* Currency Selector */}
-                    <div className="flex items-center gap-[6px] px-1 py-[2px] rounded bg-transparent dark:bg-bg-surface cursor-pointer text-text-secondary hover:text-brand-primary transition-colors">
+                    <div className="flex items-center gap-1.5 px-px py-0.5 rounded bg-transparent dark:bg-bg-surface cursor-pointer text-text-secondary hover:text-brand-primary transition-colors">
                         <span className="text-[12px] leading-[130%]">USD</span>
                         <svg
                             width="7"
@@ -189,7 +189,7 @@ export default function TopBar() {
                         </svg>
                     </div>
 
-                    <span className="inline-block w-[1px] h-[15px] bg-border-default" />
+                    <span className="inline-block w-px h-3.75 bg-border-default" />
 
                     {/* Social Media Icons */}
                     <div className="flex items-center gap-2">

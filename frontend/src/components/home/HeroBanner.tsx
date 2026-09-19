@@ -10,7 +10,7 @@ export default function HeroBanner() {
         >
             <div className="container mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
                 {/* ================= Left: Main Hero Banner (Canon DSLR) ================= */}
-                <article className="lg:col-span-8 relative overflow-hidden rounded-2xl bg-bg-surface border border-border-default flex flex-col md:flex-row items-center justify-between p-8 sm:p-12 lg:p-14 min-h-[420px]">
+                <article className="lg:col-span-8 relative overflow-hidden rounded-2xl bg-bg-surface border border-border-default flex flex-col md:flex-row items-center justify-between p-8 sm:p-12 lg:p-14 min-h-105">
                     {/* Subtle Halftone Background Graphic */}
                     <div className="absolute inset-0 pointer-events-none opacity-50 dark:opacity-10 z-0">
                         <Image
@@ -24,10 +24,10 @@ export default function HeroBanner() {
                     </div>
 
                     {/* Left Content Area */}
-                    <div className="relative z-10 flex flex-col items-start max-w-[340px] sm:max-w-[380px]">
+                    <div className="relative z-10 flex flex-col items-start max-w-85 sm:max-w-95">
                         {/* Tagline with Floating Green Triangle */}
                         <div className="relative w-full mb-3">
-                            <span className="text-brand-primary text-xs sm:text-sm font-medium tracking-wide">
+                            <span className="text-brand-primary text-2 sm:text-3.25 font-medium tracking-wide">
                                 Widesceen 4k .......
                             </span>
                             <Image
@@ -86,7 +86,7 @@ export default function HeroBanner() {
 
                     {/* Right Product Image Area */}
                     <div className="relative z-10 mt-8 md:mt-0 w-full md:w-1/2 flex justify-center items-center">
-                        <div className="relative w-[300px] h-[250px] sm:w-[380px] sm:h-[310px] lg:w-[440px] lg:h-[350px]">
+                        <div className="relative w-75 h-62.5 sm:w-95 sm:h-77.5 lg:w-110 lg:h-87.5">
                             <Image
                                 src="/images/camera.png"
                                 alt="Canon EOS 77D DSLR Camera"
@@ -99,7 +99,7 @@ export default function HeroBanner() {
                 </article>
 
                 {/* ================= Right: Sub Promotion Banner (Security & Phone) ================= */}
-                <aside className="lg:col-span-4 relative overflow-hidden rounded-2xl bg-bg-surface border border-border-default flex flex-col justify-between p-7 sm:p-8 min-h-[420px]">
+                <aside className="lg:col-span-4 relative overflow-hidden rounded-2xl bg-bg-surface border border-border-default flex flex-col justify-between p-7 sm:p-8 min-h-105">
                     {/* Subtle Background Overlay */}
                     <div className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-10 z-0">
                         <Image
@@ -113,7 +113,7 @@ export default function HeroBanner() {
 
                     {/* 25% Offer Badge (Scalloped Green Rosette on Right) */}
                     <div
-                        className="absolute top-24 right-5 sm:right-7 w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-full bg-brand-primary text-white flex flex-col items-center justify-center text-center shadow-lg z-20"
+                        className="absolute top-24 right-5 sm:right-7 w-4 h-4 sm:w-18 sm:h-18 rounded-full bg-brand-primary text-white flex flex-col items-center justify-center text-center shadow-lg z-20"
                         aria-label="25 percent offer"
                     >
                         <span className="text-base sm:text-lg font-black leading-none tracking-tight">
@@ -163,7 +163,7 @@ export default function HeroBanner() {
 
                     {/* Product Phones Graphic */}
                     <div className="relative z-10 mt-4 w-full flex justify-center items-end">
-                        <div className="relative w-[190px] h-[210px] sm:w-[220px] sm:h-[240px]">
+                        <div className="relative w-47.5 h-52.5 sm:w-55 sm:h-60">
                             <Image
                                 src="/images/img_57 1.png"
                                 alt="Smartphone Device Offer"

@@ -9,7 +9,7 @@ export default function LaptopRepairBanner() {
             className="w-full py-6 bg-bg-base transition-colors duration-200"
         >
             <div className="container mx-auto">
-                <div className="relative w-full overflow-hidden rounded-xl bg-[#111315] border border-border-default min-h-[300px] md:min-h-[330px] flex items-center justify-between px-6 py-8 sm:px-10 lg:px-14 shadow-sm">
+                <div className="relative w-full overflow-hidden rounded-xl bg-[#111315] border border-border-default min-h-75 md:min-h-82.5 flex items-center justify-between px-6 py-8 sm:px-10 lg:px-14 shadow-sm">
                     {/* Diagonal Dark Background Graphic */}
                     <div className="absolute inset-0 pointer-events-none z-0">
                         <Image

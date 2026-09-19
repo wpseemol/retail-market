@@ -62,15 +62,15 @@ export default function DealsBannerSection() {
                     {dealsData.map((item) => (
                         <article
                             key={item.id}
-                            className="relative overflow-hidden rounded-xl bg-bg-surface border border-border-default p-3.5 sm:p-4 flex items-center justify-between min-h-[128px] transition-all duration-200 hover:shadow-md hover:border-brand-primary group"
+                            className="relative overflow-hidden rounded-xl bg-bg-surface border border-border-default p-3.5 sm:p-4 flex items-center justify-between min-h-32 sm:min-h-35 transition-all duration-200 hover:shadow-md hover:border-brand-primary group"
                         >
                             {/* Product Visual */}
-                            <div className="relative w-[105px] h-[95px] sm:w-[115px] sm:h-[100px] shrink-0 flex items-center justify-center">
+                            <div className="relative w-26.25 h-23.75 sm:w-28.75 sm:h-25 shrink-0 flex items-center justify-center">
                                 <Image
                                     src={item.image}
                                     alt={item.alt}
                                     fill
-                                    sizes="(max-width: 640px) 105px, 115px"
+                                    sizes="(max-width: 640px) 26.25px, 28.75px"
                                     className="object-contain transition-transform duration-300 group-hover:scale-105"
                                 />
                             </div>

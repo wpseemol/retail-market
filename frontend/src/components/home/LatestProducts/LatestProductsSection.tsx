@@ -287,7 +287,7 @@ export default function LatestProductsSection() {
                                 <h2 className="text-text-primary text-xl sm:text-2xl font-bold tracking-tight pb-2">
                                     Best Seller Product
                                 </h2>
-                                <span className="absolute bottom-0 left-0 w-28 h-[2px] bg-brand-primary" />
+                                <span className="absolute bottom-0 left-0 w-7 h-0.5 bg-brand-primary" />
                             </div>
 
                             <nav
@@ -301,7 +301,7 @@ export default function LatestProductsSection() {
                                             key={tab}
                                             type="button"
                                             onClick={() => setActiveTab(tab)}
-                                            className={`text-xs sm:text-[14px] font-medium transition-colors relative pb-2 whitespace-nowrap cursor-pointer ${
+                                            className={`text-2 sm:text-3.25 font-medium transition-colors relative pb-2 whitespace-nowrap cursor-pointer ${
                                                 isActive
                                                     ? "text-brand-primary font-semibold"
                                                     : "text-text-secondary hover:text-text-primary"
@@ -309,7 +309,7 @@ export default function LatestProductsSection() {
                                         >
                                             {tab}
                                             {isActive && (
-                                                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-brand-primary" />
+                                                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-brand-primary" />
                                             )}
                                         </button>
                                     );
@@ -344,7 +344,7 @@ export default function LatestProductsSection() {
                                                 )}
 
                                                 {/* Product Thumbnail */}
-                                                <div className="relative w-full h-[140px] sm:h-[160px] flex items-center justify-center">
+                                                <div className="relative w-full h-35 sm:h-40 flex items-center justify-center">
                                                     <Image
                                                         src={product.image}
                                                         alt={product.alt}
@@ -360,7 +360,7 @@ export default function LatestProductsSection() {
                                                         rating={product.rating}
                                                     />
 
-                                                    <h3 className="text-text-primary text-[13px] sm:text-[14px] font-medium leading-snug line-clamp-2 h-[38px] my-1 group-hover:text-brand-primary transition-colors">
+                                                    <h3 className="text-text-primary text-[13px] sm:text-[14px] font-medium leading-snug line-clamp-2 h-9.5 my-1 group-hover:text-brand-primary transition-colors">
                                                         <Link
                                                             href={`/shop/product/${product.id}`}
                                                         >
@@ -368,7 +368,7 @@ export default function LatestProductsSection() {
                                                         </Link>
                                                     </h3>
 
-                                                    <div className="flex items-center gap-1.5 text-xs sm:text-[13px] font-semibold mt-1">
+                                                    <div className="flex items-center gap-1.5 text-2 sm:text-3.25 font-semibold mt-1">
                                                         <span className="text-brand-primary">
                                                             ($
                                                             {
