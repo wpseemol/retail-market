@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function DealsLeftPromo() {
     return (
-        <article className="relative w-full h-full min-h-115 rounded-xl overflow-hidden border border-border-default flex flex-col justify-between p-6 sm:p-7 shadow-xs">
+        <article className="relative w-full h-full min-h-115 rounded-xl overflow-hidden border border-border-default flex flex-col justify-between p-6 sm:p-7 shadow-xs bg-bg-surface">
             {/* Background Graphic */}
             <div className="absolute inset-0 pointer-events-none z-0">
                 <Image
@@ -12,7 +12,7 @@ export default function DealsLeftPromo() {
                     alt=""
                     fill
                     sizes="(max-width: 1024px) 100vw, 25vw"
-                    className="object-cover opacity-90 dark:opacity-20"
+                    className="object-cover opacity-90 dark:opacity-30"
                     aria-hidden="true"
                 />
             </div>

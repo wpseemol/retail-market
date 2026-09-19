@@ -144,7 +144,7 @@ export default function Header() {
                         </Link>
 
                         <span
-                            className="hidden sm:inline-block w- h-5 bg-border-default"
+                            className="hidden sm:inline-block w-px h-5 bg-border-default"
                             aria-hidden="true"
                         />
 

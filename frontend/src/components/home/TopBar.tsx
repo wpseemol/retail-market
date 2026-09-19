@@ -4,11 +4,11 @@ import Image from "next/image";
 export default function TopBar() {
     return (
         <header className="w-full h-12 bg-bg-base border-b border-border-default transition-colors duration-200">
-            <div className="container h-full mx-auto flex items-center justify-between">
+            <div className="container h-full mx-auto flex items-center justify-between gap-2 overflow-hidden">
                 {/* Left Section: Deliver to & Date */}
-                <div className="flex items-center gap-13.5">
+                <div className="flex items-center gap-4 sm:gap-13.5 shrink-0 min-w-0">
                     {/* Deliver To Block */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                         <Image
                             src="/icons/Map Pin.svg"
                             alt="Location Pin"
@@ -16,7 +16,7 @@ export default function TopBar() {
                             height={18}
                             className="shrink-0"
                         />
-                        <div className="flex flex-col">
+                        <div className="flex flex-col min-w-0">
                             <span className="text-[10px] leading-[130%] text-text-secondary">
                                 Deliver to
                             </span>
@@ -89,7 +89,7 @@ export default function TopBar() {
                                         USA
                                     </span>
                                     <span className="hidden dark:inline">
-                                        Chine
+                                        China
                                     </span>
                                 </span>
                             </div>
@@ -112,7 +112,7 @@ export default function TopBar() {
                 </div>
 
                 {/* Right Section: Email, Phone, Currency, Language, Social Media */}
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
                     {/* Email */}
                     <div className="hidden md:flex items-center gap-1">
                         <Image
@@ -189,10 +189,10 @@ export default function TopBar() {
                         </svg>
                     </div>
 
-                    <span className="inline-block w-px h-3.75 bg-border-default" />
+                    <span className="hidden sm:inline-block w-px h-3.75 bg-border-default" />
 
-                    {/* Social Media Icons */}
-                    <div className="flex items-center gap-2">
+                    {/* Social Media Icons — hidden on narrow phones to avoid overflow */}
+                    <div className="hidden sm:flex items-center gap-2">
                         <a
                             href="https://facebook.com"
                             target="_blank"

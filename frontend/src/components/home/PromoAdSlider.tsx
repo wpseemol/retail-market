@@ -52,7 +52,7 @@ export default function PromoAdSlider() {
             aria-label="Promotional Announcement Slider"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
-            className="hidden xl:flex items-center rounded overflow-hidden h-12.5 w-135 relative mx-2 bg-black"
+            className="hidden xl:flex items-center rounded overflow-hidden h-12.5 w-135 relative mx-2 bg-bg-subtle border border-border-default/40"
         >
             <AnimatePresence mode="popLayout">
                 <motion.div
@@ -68,14 +68,14 @@ export default function PromoAdSlider() {
                 >
                     <Link
                         href={promoAds[currentIndex].link}
-                        className="w-full h-full flex items-center justify-center"
+                        className="relative w-full h-full"
                     >
                         <Image
                             src={promoAds[currentIndex].image}
                             alt={promoAds[currentIndex].alt}
-                            width={540}
-                            height={50}
-                            className="h-12 w-auto object-cover rounded"
+                            fill
+                            sizes="540px"
+                            className="object-cover"
                             priority
                         />
                     </Link>

@@ -128,7 +128,7 @@ export default function LatestItemsSidebar() {
             <div className="flex items-center justify-between pb-2 mb-2 border-b border-border-default/60">
                 <div className="relative">
                     <h2 className="text-text-primary text-4.25 sm:text-4.75 font-bold tracking-tight pb-2">
-                        Leatest Item
+                        Latest Item
                     </h2>
                     <span className="absolute bottom-0 left-0 w-6 h-0.5 bg-brand-primary" />
                 </div>

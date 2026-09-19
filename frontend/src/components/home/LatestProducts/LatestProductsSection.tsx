@@ -301,7 +301,7 @@ export default function LatestProductsSection() {
                                             key={tab}
                                             type="button"
                                             onClick={() => setActiveTab(tab)}
-                                            className={`text-2 sm:text-3.25 font-medium transition-colors relative pb-2 whitespace-nowrap cursor-pointer ${
+                                            className={`text-xs sm:text-sm font-medium transition-colors relative pb-2 whitespace-nowrap cursor-pointer ${
                                                 isActive
                                                     ? "text-brand-primary font-semibold"
                                                     : "text-text-secondary hover:text-text-primary"
@@ -368,22 +368,18 @@ export default function LatestProductsSection() {
                                                         </Link>
                                                     </h3>
 
-                                                    <div className="flex items-center gap-1.5 text-2 sm:text-3.25 font-semibold mt-1">
+                                                    <div className="flex items-center gap-1.5 text-xs sm:text-[13px] font-semibold mt-1">
                                                         <span className="text-brand-primary">
-                                                            ($
+                                                            $
                                                             {
                                                                 product.currentPrice
                                                             }
-                                                        </span>
-                                                        <span className="text-text-secondary font-normal">
-                                                            -
                                                         </span>
                                                         <span className="text-text-secondary line-through font-normal">
                                                             $
                                                             {
                                                                 product.originalPrice
                                                             }
-                                                            )
                                                         </span>
                                                     </div>
                                                 </div>

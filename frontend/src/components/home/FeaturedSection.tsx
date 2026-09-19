@@ -27,7 +27,7 @@ const featureData: FeatureItem[] = [
     {
         id: 3,
         title: "100% Secure Payment",
-        description: "We ensure your money is save",
+        description: "We ensure your money is safe",
         icon: "/icons/featured_Group-1.svg",
         alt: "Secure Bag Icon",
     },

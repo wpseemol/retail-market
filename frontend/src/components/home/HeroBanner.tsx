@@ -10,7 +10,7 @@ export default function HeroBanner() {
         >
             <div className="container mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
                 {/* ================= Left: Main Hero Banner (Canon DSLR) ================= */}
-                <article className="lg:col-span-8 relative overflow-hidden rounded-2xl bg-bg-surface border border-border-default flex flex-col md:flex-row items-center justify-between p-8 sm:p-12 lg:p-14 min-h-105">
+                <article className="lg:col-span-8 relative overflow-hidden rounded-2xl bg-bg-surface border border-border-default flex flex-col md:flex-row items-center justify-between p-6 sm:p-12 lg:p-14 min-h-90 sm:min-h-105">
                     {/* Subtle Halftone Background Graphic */}
                     <div className="absolute inset-0 pointer-events-none opacity-50 dark:opacity-10 z-0">
                         <Image
@@ -27,8 +27,8 @@ export default function HeroBanner() {
                     <div className="relative z-10 flex flex-col items-start max-w-85 sm:max-w-95">
                         {/* Tagline with Floating Green Triangle */}
                         <div className="relative w-full mb-3">
-                            <span className="text-brand-primary text-2 sm:text-3.25 font-medium tracking-wide">
-                                Widesceen 4k .......
+                            <span className="text-brand-primary text-[13px] sm:text-sm font-medium tracking-wide">
+                                Widescreen 4k .......
                             </span>
                             <Image
                                 src="/icons/hero_Polygon 1.svg"
@@ -42,7 +42,7 @@ export default function HeroBanner() {
 
                         {/* Main Headline */}
                         <h1 className="text-text-primary text-2xl sm:text-3xl lg:text-[32px] font-extrabold leading-[1.15] tracking-tight uppercase mb-3">
-                            DIGITAL SLR CAMERA HIGH DEFINATION
+                            DIGITAL SLR CAMERA HIGH DEFINITION
                         </h1>
 
                         {/* Subtext */}
@@ -72,7 +72,7 @@ export default function HeroBanner() {
                         {/* CTA Button */}
                         <Link
                             href="/shop"
-                            className="inline-flex items-center gap-3 bg-black text-white hover:bg-brand-primary text-xs sm:text-[13px] font-bold uppercase tracking-wider px-7 py-3.5 rounded-full transition-all duration-200 group shadow-sm"
+                            className="inline-flex items-center gap-3 bg-black dark:bg-white text-white dark:text-black hover:bg-brand-primary dark:hover:bg-brand-primary dark:hover:text-white text-xs sm:text-[13px] font-bold uppercase tracking-wider px-7 py-3.5 rounded-full transition-all duration-200 group shadow-sm"
                         >
                             <span>SHOP NOW</span>
                             <span
@@ -99,7 +99,7 @@ export default function HeroBanner() {
                 </article>
 
                 {/* ================= Right: Sub Promotion Banner (Security & Phone) ================= */}
-                <aside className="lg:col-span-4 relative overflow-hidden rounded-2xl bg-bg-surface border border-border-default flex flex-col justify-between p-7 sm:p-8 min-h-105">
+                <aside className="lg:col-span-4 relative overflow-hidden rounded-2xl bg-bg-surface border border-border-default flex flex-col justify-between p-6 sm:p-8 min-h-90 sm:min-h-105">
                     {/* Subtle Background Overlay */}
                     <div className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-10 z-0">
                         <Image
@@ -113,13 +113,13 @@ export default function HeroBanner() {
 
                     {/* 25% Offer Badge (Scalloped Green Rosette on Right) */}
                     <div
-                        className="absolute top-24 right-5 sm:right-7 w-4 h-4 sm:w-18 sm:h-18 rounded-full bg-brand-primary text-white flex flex-col items-center justify-center text-center shadow-lg z-20"
+                        className="absolute top-20 right-4 sm:top-24 sm:right-7 w-14 h-14 sm:w-18 sm:h-18 rounded-full bg-brand-primary text-white flex flex-col items-center justify-center text-center shadow-lg z-20"
                         aria-label="25 percent offer"
                     >
-                        <span className="text-base sm:text-lg font-black leading-none tracking-tight">
+                        <span className="text-sm sm:text-lg font-black leading-none tracking-tight">
                             25%
                         </span>
-                        <span className="text-xs sm:text-sm font-semibold leading-tight">
+                        <span className="text-[10px] sm:text-sm font-semibold leading-tight">
                             offer
                         </span>
                     </div>

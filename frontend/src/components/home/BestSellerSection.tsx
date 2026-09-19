@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -296,10 +296,30 @@ function StarRating({ rating }: { rating: number }) {
 export default function BestSellerSection() {
     const [activeTab, setActiveTab] = useState<TabCategory>("Fuel Tank");
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [itemsPerView, setItemsPerView] = useState(4);
+
+    useEffect(() => {
+        const updateItemsPerView = () => {
+            const width = window.innerWidth;
+            if (width >= 1280) setItemsPerView(4);
+            else if (width >= 768) setItemsPerView(3);
+            else if (width >= 640) setItemsPerView(2);
+            else setItemsPerView(1);
+        };
+
+        updateItemsPerView();
+        window.addEventListener("resize", updateItemsPerView);
+        return () => window.removeEventListener("resize", updateItemsPerView);
+    }, []);
 
     const products = bestSellerProductsByTab[activeTab];
-    const maxIndex = Math.max(0, products.length - 4);
-    const canSlide = products.length > 4;
+    const maxIndex = Math.max(0, products.length - itemsPerView);
+    const canSlide = products.length > itemsPerView;
+    const slidePercent = 100 / itemsPerView;
+
+    useEffect(() => {
+        setCurrentIndex((prev) => Math.min(prev, maxIndex));
+    }, [maxIndex]);
 
     const handleTabChange = (tab: TabCategory) => {
         setActiveTab(tab);
@@ -427,14 +447,14 @@ export default function BestSellerSection() {
                         </div>
 
                         {/* Height-Adjusted Frame (h-full flex-1) */}
-                        <div className="relative w-full flex-1 rounded-xl border-2 border-brand-primary bg-bg-surface p-4 sm:p-6 shadow-xs flex items-center">
+                        <div className="relative w-full flex-1 rounded-xl border-2 border-brand-primary bg-bg-surface p-4 sm:p-6 shadow-xs flex items-center overflow-hidden sm:overflow-visible">
                             {/* Conditional Previous Arrow */}
                             {canSlide && currentIndex > 0 && (
                                 <button
                                     type="button"
                                     onClick={handlePrev}
                                     aria-label="Previous products"
-                                    className="absolute -left-4 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-bg-surface border border-border-default text-brand-primary flex items-center justify-center shadow-md hover:bg-brand-primary hover:text-white transition-all cursor-pointer"
+                                    className="absolute left-1 sm:-left-4 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-bg-surface border border-border-default text-brand-primary flex items-center justify-center shadow-md hover:bg-brand-primary hover:text-white transition-all cursor-pointer"
                                 >
                                     <svg
                                         width="15"
@@ -456,7 +476,7 @@ export default function BestSellerSection() {
                                 <motion.div
                                     className="w-full flex flex-nowrap items-stretch divide-x divide-border-default/60"
                                     animate={{
-                                        x: `-${currentIndex * 25}%`,
+                                        x: `-${currentIndex * slidePercent}%`,
                                     }}
                                     transition={{
                                         type: "spring",
@@ -481,7 +501,7 @@ export default function BestSellerSection() {
                                             </div>
 
                                             {/* Enlarged Image Area */}
-                                            <div className="relative w-full h-45 sm:h-5. flex items-center justify-center my-2">
+                                            <div className="relative w-full h-44 sm:h-48 flex items-center justify-center my-2">
                                                 <Image
                                                     src={product.image}
                                                     alt={product.alt}
@@ -507,14 +527,10 @@ export default function BestSellerSection() {
 
                                                 <div className="flex items-center gap-1.5 text-xs sm:text-[13px] font-semibold mt-2">
                                                     <span className="text-brand-primary">
-                                                        (${product.currentPrice}
-                                                    </span>
-                                                    <span className="text-text-secondary font-normal">
-                                                        -
+                                                        ${product.currentPrice}
                                                     </span>
                                                     <span className="text-text-secondary line-through font-normal">
                                                         ${product.originalPrice}
-                                                        )
                                                     </span>
                                                 </div>
                                             </div>
@@ -529,7 +545,7 @@ export default function BestSellerSection() {
                                     type="button"
                                     onClick={handleNext}
                                     aria-label="Next products"
-                                    className="absolute -right-4 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-bg-surface border border-border-default text-brand-primary flex items-center justify-center shadow-md hover:bg-brand-primary hover:text-white transition-all cursor-pointer"
+                                    className="absolute right-1 sm:-right-4 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-bg-surface border border-border-default text-brand-primary flex items-center justify-center shadow-md hover:bg-brand-primary hover:text-white transition-all cursor-pointer"
                                 >
                                     <svg
                                         width="15"

@@ -9,7 +9,7 @@ export default function LaptopRepairBanner() {
             className="w-full py-6 bg-bg-base transition-colors duration-200"
         >
             <div className="container mx-auto">
-                <div className="relative w-full overflow-hidden rounded-xl bg-[#111315] border border-border-default min-h-75 md:min-h-82.5 flex items-center justify-between px-6 py-8 sm:px-10 lg:px-14 shadow-sm">
+                <div className="relative w-full overflow-hidden rounded-xl bg-[#111315] border border-border-default min-h-70 sm:min-h-75 md:min-h-82.5 flex items-center justify-between gap-3 px-5 py-7 sm:px-10 lg:px-14 shadow-sm">
                     {/* Diagonal Dark Background Graphic */}
                     <div className="absolute inset-0 pointer-events-none z-0">
                         <Image
@@ -25,7 +25,7 @@ export default function LaptopRepairBanner() {
 
                     {/* 30% Offer Scalloped Rosette Badge */}
                     <div
-                        className="absolute top-8 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-[41%] lg:left-[43%] w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-brand-primary text-white flex flex-col items-center justify-center text-center shadow-lg z-20"
+                        className="absolute top-5 right-4 sm:top-8 sm:right-auto sm:left-[41%] lg:left-[43%] w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-brand-primary text-white flex flex-col items-center justify-center text-center shadow-lg z-20"
                         aria-label="30 percent offer"
                     >
                         <span className="text-[13px] sm:text-[15px] font-black leading-none tracking-tight">
@@ -37,14 +37,14 @@ export default function LaptopRepairBanner() {
                     </div>
 
                     {/* Content Area */}
-                    <div className="relative z-10 flex flex-col items-start max-w-sm sm:max-w-md lg:max-w-lg">
+                    <div className="relative z-10 flex flex-col items-start max-w-[55%] sm:max-w-md lg:max-w-lg">
                         {/* Tag Badge */}
                         <span className="bg-brand-primary text-white text-xs font-semibold px-3 py-1 rounded mb-3 inline-block">
                             Expert Mechanic
                         </span>
 
                         {/* Headline */}
-                        <h2 className="text-white text-2xl sm:text-3xl lg:text-[34px] font-bold uppercase leading-[1.2] tracking-tight mb-3">
+                        <h2 className="text-white text-xl sm:text-3xl lg:text-[34px] font-bold uppercase leading-[1.2] tracking-tight mb-3">
                             <span>Repair Laptop Perfectly</span>
                             <br />
                             <span>From Expertist</span>
@@ -71,12 +71,12 @@ export default function LaptopRepairBanner() {
                     </div>
 
                     {/* Overlapping Laptop Fan Imagery */}
-                    <div className="relative z-10 w-65 h-55 sm:w-90 sm:h-67.5 lg:w-120 lg:h-77.5 shrink-0 hidden sm:flex items-center justify-center">
+                    <div className="relative z-10 w-36 h-32 sm:w-90 sm:h-67.5 lg:w-120 lg:h-77.5 shrink-0 flex items-center justify-center">
                         <Image
                             src="/images/ad_promation_product_imagesjpg.png"
                             alt="Multiple convertible laptop displays and hardware repair"
                             fill
-                            sizes="(max-width: 1024px) 360px, 480px"
+                            sizes="(max-width: 640px) 144px, (max-width: 1024px) 360px, 480px"
                             className="object-contain drop-shadow-2xl"
                             priority
                         />

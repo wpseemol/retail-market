@@ -72,11 +72,13 @@ export default function BottomBanners() {
 
                 {/* 25% Rosette Badge */}
                 <div
-                    className="absolute right-36.25 sm:right-43.75 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-brand-primary text-white flex flex-col items-center justify-center text-center shadow-md z-20"
+                    className="absolute right-[8.5rem] sm:right-[11rem] top-1/2 -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-brand-primary text-white flex flex-col items-center justify-center text-center shadow-md z-20"
                     aria-label="25 percent offer"
                 >
-                    <span className="text-xs font-black leading-none">25%</span>
-                    <span className="text-[10px] font-semibold leading-none">
+                    <span className="text-[11px] sm:text-xs font-black leading-none">
+                        25%
+                    </span>
+                    <span className="text-[9px] sm:text-[10px] font-semibold leading-none">
                         offer
                     </span>
                 </div>

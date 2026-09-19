@@ -70,7 +70,7 @@ export default function DealsBannerSection() {
                                     src={item.image}
                                     alt={item.alt}
                                     fill
-                                    sizes="(max-width: 640px) 26.25px, 28.75px"
+                                    sizes="(max-width: 640px) 105px, 115px"
                                     className="object-contain transition-transform duration-300 group-hover:scale-105"
                                 />
                             </div>

@@ -122,14 +122,14 @@ export default function TopBrandsSection() {
         >
             <div className="container mx-auto">
                 {/* Header with Angled Label */}
-                <div className="flex items-center justify-between border-b border-black pb-0 mb-6">
+                <div className="flex items-center justify-between border-b border-text-primary pb-0 mb-6">
                     <div className="relative">
                         {/* Dark Angled Badge */}
-                        <div className="relative z-10 bg-black text-white text-sm sm:text-base font-bold uppercase tracking-wider px-6 py-2.5 [clip-path:polygon(0_0,calc(100%-16px)_0,100%_100%,0_100%)] pr-10">
+                        <div className="relative z-10 bg-text-primary text-bg-base text-sm sm:text-base font-bold uppercase tracking-wider px-6 py-2.5 [clip-path:polygon(0_0,calc(100%-16px)_0,100%_100%,0_100%)] pr-10">
                             Top Brands
                         </div>
                         {/* Underline segment */}
-                        <span className="absolute bottom-0 left-0 w-full h-0.5 bg-black dark:bg-white" />
+                        <span className="absolute bottom-0 left-0 w-full h-0.5 bg-text-primary" />
                     </div>
 
                     {/* Right Action Link */}
