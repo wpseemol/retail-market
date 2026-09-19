@@ -243,8 +243,11 @@ export default function ShopProductCard({
                         <ActionButton label="Add to wishlist">
                             <HeartIcon />
                         </ActionButton>
-                        <ActionButton label="Compare">
-                            <CompareIcon />
+                        <ActionButton
+                            label="View full product"
+                            onClick={handleExpandProduct}
+                        >
+                            <ExpandIcon />
                         </ActionButton>
                         <ActionButton
                             label="Quick view"
@@ -252,12 +255,7 @@ export default function ShopProductCard({
                         >
                             <EyeIcon />
                         </ActionButton>
-                        <ActionButton
-                            label="View full product"
-                            onClick={handleExpandProduct}
-                        >
-                            <ExpandIcon />
-                        </ActionButton>
+
                         <button
                             type="button"
                             onClick={handleAddToCart}
@@ -283,7 +281,7 @@ export default function ShopProductCard({
             <div
                 className={`relative bg-bg-subtle ${
                     isWide
-                        ? "w-full sm:w-[46%] aspect-[4/3] sm:aspect-auto sm:min-h-56 shrink-0"
+                        ? "w-full sm:w-[46%] aspect-4/3 sm:aspect-auto sm:min-h-56 shrink-0"
                         : "w-full aspect-square"
                 }`}
             >
@@ -326,12 +324,6 @@ export default function ShopProductCard({
                         onClick={() => onQuickView(product)}
                     >
                         <EyeIcon />
-                    </ActionButton>
-                    <ActionButton
-                        label="View full product"
-                        onClick={handleExpandProduct}
-                    >
-                        <ExpandIcon />
                     </ActionButton>
                 </div>
             </div>
