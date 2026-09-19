@@ -13,6 +13,8 @@ import {
     getRelatedProducts,
 } from "./data";
 import type { ProductTabId, ShopProduct } from "./types";
+import { useAppDispatch } from "@/store/hooks";
+import { addToCart } from "@/store/cartSlice";
 
 interface ProductPageContentProps {
     product: ShopProduct;
@@ -103,6 +105,7 @@ function CartIcon() {
 }
 
 export default function ProductPageContent({ product }: ProductPageContentProps) {
+    const dispatch = useAppDispatch();
     const gallery = useMemo(() => getProductGallery(product), [product]);
     const relatedProducts = useMemo(
         () => getRelatedProducts(product, 4),
@@ -114,6 +117,19 @@ export default function ProductPageContent({ product }: ProductPageContentProps)
     const [activeTab, setActiveTab] = useState<ProductTabId>("specification");
     const [relatedIndex, setRelatedIndex] = useState(0);
     const [showBackToTop, setShowBackToTop] = useState(false);
+
+    const handleAddToCart = () => {
+        dispatch(
+            addToCart({
+                id: product.id,
+                name: product.name,
+                image: product.image,
+                alt: product.alt,
+                price: product.priceMin,
+                quantity,
+            }),
+        );
+    };
 
     const brandLabel =
         SHOP_BRANDS.find((b) => b.id === product.brand)?.label ?? product.brand;
@@ -311,6 +327,7 @@ export default function ProductPageContent({ product }: ProductPageContentProps)
 
                             <button
                                 type="button"
+                                onClick={handleAddToCart}
                                 className="h-11 px-6 rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[14px] font-semibold transition-colors cursor-pointer inline-flex items-center gap-2"
                             >
                                 <CartIcon />

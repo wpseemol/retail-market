@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { ShopProduct, ShopViewMode } from "./types";
+import { useAppDispatch } from "@/store/hooks";
+import { addToCart } from "@/store/cartSlice";
 
 function StarRating({
     rating,
@@ -137,6 +139,21 @@ export default function ShopProductCard({
     viewMode,
     onQuickView,
 }: ShopProductCardProps) {
+    const dispatch = useAppDispatch();
+
+    const handleAddToCart = () => {
+        dispatch(
+            addToCart({
+                id: product.id,
+                name: product.name,
+                image: product.image,
+                alt: product.alt,
+                price: product.priceMin,
+                quantity: 1,
+            }),
+        );
+    };
+
     if (viewMode === "list") {
         return (
             <article className="group relative flex flex-col sm:flex-row gap-4 sm:gap-6 p-4 sm:p-5 bg-bg-surface border border-border-default rounded-lg overflow-hidden transition-all duration-200 hover:border-brand-primary hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
@@ -204,6 +221,7 @@ export default function ShopProductCard({
                         </ActionButton>
                         <button
                             type="button"
+                            onClick={handleAddToCart}
                             className="ml-1 h-9 px-4 rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[13px] font-semibold transition-colors cursor-pointer"
                         >
                             Add to Cart
@@ -335,6 +353,7 @@ export default function ShopProductCard({
                 {isWide && (
                     <button
                         type="button"
+                        onClick={handleAddToCart}
                         className="mt-2 w-fit h-10 px-5 rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[13px] font-semibold transition-colors cursor-pointer"
                     >
                         Add to Cart

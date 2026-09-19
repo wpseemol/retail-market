@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { SHOP_BRANDS, SHOP_CATEGORIES } from "./data";
 import type { ShopProduct } from "./types";
+import { useAppDispatch } from "@/store/hooks";
+import { addToCart } from "@/store/cartSlice";
 
 interface QuickViewModalProps {
     product: ShopProduct;
@@ -66,6 +68,7 @@ export default function QuickViewModal({
     product,
     onClose,
 }: QuickViewModalProps) {
+    const dispatch = useAppDispatch();
     const titleId = useId();
     const gallery = useMemo(() => {
         if (product.gallery && product.gallery.length > 0) {
@@ -97,6 +100,19 @@ export default function QuickViewModal({
         product.description ??
         `${product.name} delivers reliable everyday performance with modern design. Enjoy smooth multitasking, crisp display quality, and long-lasting value for home, school, or work.`;
     const tags = product.tags.slice(0, 3).map((tag) => tag.toLowerCase());
+
+    const handleAddToCart = () => {
+        dispatch(
+            addToCart({
+                id: product.id,
+                name: product.name,
+                image: product.image,
+                alt: product.alt,
+                price: product.priceMin,
+                quantity,
+            }),
+        );
+    };
 
     useEffect(() => {
         const previousOverflow = document.body.style.overflow;
@@ -287,6 +303,7 @@ export default function QuickViewModal({
 
                             <button
                                 type="button"
+                                onClick={handleAddToCart}
                                 className="h-11 px-6 rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[14px] font-semibold transition-colors cursor-pointer"
                             >
                                 Add to Cart

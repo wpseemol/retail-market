@@ -6,6 +6,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import PromoAdSlider from "./PromoAdSlider";
+import { useAppSelector } from "@/store/hooks";
+import {
+    selectCartItemCount,
+    selectCartTotal,
+} from "@/store/cartSlice";
+
+function formatPrice(value: number) {
+    return value.toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+    });
+}
 
 export default function Header() {
     const pathname = usePathname();
@@ -13,9 +25,12 @@ export default function Header() {
     const [mounted, setMounted] = useState(false);
     const isHome = pathname === "/";
     const isShop = pathname === "/shop" || pathname.startsWith("/shop/");
+    const isCart = pathname === "/cart" || pathname.startsWith("/cart/");
     const [isSticky, setIsSticky] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+    const cartCount = useAppSelector(selectCartItemCount);
+    const cartTotal = useAppSelector(selectCartTotal);
 
     useEffect(() => {
         setTimeout(() => {
@@ -151,7 +166,7 @@ export default function Header() {
                         {/* Shopping Cart */}
                         <Link
                             href="/cart"
-                            aria-label="Shopping Cart containing 2 items, total $57.00"
+                            aria-label={`Shopping Cart containing ${cartCount} items, total ${formatPrice(cartTotal)}`}
                             className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity"
                         >
                             <div className="relative">
@@ -163,19 +178,27 @@ export default function Header() {
                                     className="sm:w-8 sm:h-8"
                                     aria-hidden="true"
                                 />
-                                <span
-                                    aria-label="2 items"
-                                    className="absolute -top-1 -right-1 bg-brand-hover text-white text-[10px] font-semibold h-4 min-w-4 px-1 rounded-full border border-white flex items-center justify-center"
-                                >
-                                    2
-                                </span>
+                                {cartCount > 0 && (
+                                    <span
+                                        aria-label={`${cartCount} items`}
+                                        className="absolute -top-1 -right-1 bg-brand-hover text-white text-[10px] font-semibold h-4 min-w-4 px-1 rounded-full border border-white flex items-center justify-center"
+                                    >
+                                        {cartCount}
+                                    </span>
+                                )}
                             </div>
                             <div className="hidden md:flex flex-col text-left">
                                 <span className="text-[11px] leading-tight text-text-secondary">
                                     Shopping cart:
                                 </span>
-                                <span className="text-[13px] font-semibold text-[#7B61FF]">
-                                    $57.00
+                                <span
+                                    className={`text-[13px] font-semibold ${
+                                        isCart
+                                            ? "text-brand-primary"
+                                            : "text-[#7B61FF]"
+                                    }`}
+                                >
+                                    {formatPrice(cartTotal)}
                                 </span>
                             </div>
                         </Link>
