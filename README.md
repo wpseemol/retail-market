@@ -1,64 +1,56 @@
 # Retail Market
 
-A full-stack e-commerce platform monorepo.
+Monorepo for the Niyenin multi-vendor platform. Architecture source of truth: `TARGET_REQUIREMENTS.md`.
 
-## Tech Stack
+## Apps
 
-- **Frontend**: Next.js 16 (App Router, TypeScript, Vanilla CSS)
-- **Backend**: Express.js (TypeScript)
+| App | Stack | Dev URL | Role |
+| --- | --- | --- | --- |
+| `frontend/` | Next.js (App Router) | http://localhost:3000 | Customer storefront (`www.niyenin.com`) |
+| `dashboard/` | Vite + React + ReactDOM SPA | http://localhost:5173 | Admin / Vendor dashboard |
+| `backend/` | Express (TypeScript) | http://localhost:8001 | API |
 
-## Development
+## Prerequisites
 
-This repository uses [pnpm workspaces](https://pnpm.io/workspaces).
+- [pnpm](https://pnpm.io/) (`packageManager` pinned in root `package.json`)
 
-### Prerequisites
+## Install (one place)
 
-- [pnpm](https://pnpm.io/) installed.
+```bash
+pnpm install
+```
 
-### Commands
+## Run
 
-From the project root:
+From the **repo root**:
 
-- `pnpm dev`: Runs both frontend and backend in parallel.
-- `pnpm build`: Builds both frontend and backend.
-- `pnpm lint`: Runs linting for the workspace.
-- `pnpm type-check`: Runs type-checking for the entire monorepo.
+```bash
+# all three apps in parallel (separate ports)
+pnpm dev
 
-## Project Structure
+# or host each server separately
+pnpm dev:frontend
+pnpm dev:dashboard
+pnpm dev:backend
+```
+
+Build:
+
+```bash
+pnpm build
+pnpm build:frontend
+pnpm build:dashboard
+pnpm build:backend
+```
+
+## Structure
 
 ```text
 retail-market/
-├── backend/                  # Server API (Node.js/Express or Laravel)
-│   ├── src/ (or app/)
-│   └── package.json
-│
-├── frontend/                 # Customer Storefront (Next.js App Router)
-│   ├── public/
-│   │   ├── icons/            # SVG icons
-│   │   ├── images/           # All product & promotional images
-│   │   └── logo/             # niyenin-dark.png & niyenin-white.png
-│   ├── src/
-│   │   ├── app/              # Next.js routes
-│   │   └── components/       # Storefront sections (Hero, Slider, Footer, etc.)
-│   ├── tailwind.config.ts
-│   └── package.json
-│
-├── dashboard/                # Management Dashboard (Vanilla React + ReactDOM SPA)
-│   ├── public/
-│   │   └── index.html        # HTML root mounting point (#root)
-│   ├── src/
-│   │   ├── assets/
-│   │   ├── components/       # Shared UI (Sidebar, Navbar, Tables, Badges)
-│   │   ├── layouts/          # Super Admin, Admin, Moderator, Vendor layouts
-│   │   ├── pages/            # Role-specific dashboard views
-│   │   ├── routes/           # React Router route guards (RBAC)
-│   │   ├── App.jsx (or .tsx)
-│   │   ├── main.jsx (or .tsx)# React 18 createRoot & ReactDOM mount
-│   │   └── index.css         # Tailwind directives
-│   ├── index.html            # Entry HTML (if using Vite)
-│   ├── package.json
-│   └── tailwind.config.js
-│
-├── .cursorrules              # Cursor IDE workspace rules
-└── TARGET_REQUIREMENTS.md    # Master architecture reference
+├── frontend/                 # Customer storefront (Next.js)
+├── dashboard/                # Management SPA (plain React + ReactDOM / Vite)
+├── backend/                  # API (Express)
+├── package.json              # Root workspace scripts
+├── pnpm-workspace.yaml
+└── TARGET_REQUIREMENTS.md    # Master requirements (do not remove)
 ```
