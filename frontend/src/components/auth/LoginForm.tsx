@@ -7,7 +7,11 @@ import OrDivider from "./OrDivider";
 import SocialAuthButtons from "./SocialAuthButtons";
 import { EnvelopeIcon, LockIcon } from "./icons";
 import { apiFetch, ApiError, type ApiUser } from "@/lib/api";
-import { loginSchema } from "@/lib/validators/customerAuth";
+import {
+  type LoginField,
+  validateLoginField,
+  validateLoginForm,
+} from "@/lib/validators/customerAuth";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/authSlice";
 import { dashboardLoginUrl } from "@/config/site";
@@ -21,48 +25,73 @@ const STAFF_ROLES = new Set([
   "vendor",
 ]);
 
-type FieldErrors = Partial<Record<"email" | "password", string>>;
+type FieldErrors = Partial<Record<LoginField, string>>;
 
 export default function LoginForm() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [rememberMe, setRememberMe] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [touched, setTouched] = useState<Partial<Record<LoginField, boolean>>>(
+    {},
+  );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const setFieldValue = (field: LoginField, value: string) => {
+    if (field === "email") setEmail(value);
+    else setPassword(value);
+
+    // Fast Zod check while typing once the field has been touched or already has an error.
+    if (touched[field] || fieldErrors[field]) {
+      const message = validateLoginField(field, value);
+      setFieldErrors((prev) => {
+        if (!message) {
+          if (!(field in prev)) return prev;
+          const next = { ...prev };
+          delete next[field];
+          return next;
+        }
+        if (prev[field] === message) return prev;
+        return { ...prev, [field]: message };
+      });
+    }
+  };
+
+  const handleBlur = (field: LoginField, value: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    const message = validateLoginField(field, value);
+    setFieldErrors((prev) => {
+      if (!message) {
+        if (!(field in prev)) return prev;
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      }
+      return { ...prev, [field]: message };
+    });
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
-    setFieldErrors({});
+    setTouched({ email: true, password: true });
 
-    const form = new FormData(event.currentTarget);
-    const parsed = loginSchema.safeParse({
-      email: String(form.get("email") ?? ""),
-      password: String(form.get("password") ?? ""),
-    });
-
-    if (!parsed.success) {
-      const next: FieldErrors = {};
-      for (const issue of parsed.error.issues) {
-        const key = issue.path[0];
-        if (
-          (key === "email" || key === "password") &&
-          next[key] === undefined
-        ) {
-          next[key] = issue.message;
-        }
-      }
-      setFieldErrors(next);
+    const result = validateLoginForm({ email, password });
+    if (!result.success) {
+      setFieldErrors(result.errors);
       return;
     }
 
+    setFieldErrors({});
     setLoading(true);
 
     try {
       const data = await apiFetch<{ token: string; user: ApiUser }>(
         "/api/auth/login",
-        { body: parsed.data },
+        { body: result.data },
       );
 
       // Extra guard: never keep a staff session in the storefront.
@@ -126,6 +155,9 @@ export default function LoginForm() {
           autoComplete="email"
           placeholder="Ex. Maguire@FlexUI.com"
           leadingIcon={<EnvelopeIcon />}
+          value={email}
+          onChange={(e) => setFieldValue("email", e.target.value)}
+          onBlur={(e) => handleBlur("email", e.target.value)}
           error={fieldErrors.email}
         />
 
@@ -136,6 +168,9 @@ export default function LoginForm() {
           placeholder="Enter your password"
           leadingIcon={<LockIcon />}
           showPasswordToggle
+          value={password}
+          onChange={(e) => setFieldValue("password", e.target.value)}
+          onBlur={(e) => handleBlur("password", e.target.value)}
           error={fieldErrors.password}
         />
 
