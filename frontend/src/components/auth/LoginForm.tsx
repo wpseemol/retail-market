@@ -7,6 +7,7 @@ import OrDivider from "./OrDivider";
 import SocialAuthButtons from "./SocialAuthButtons";
 import { EnvelopeIcon, LockIcon } from "./icons";
 import { apiFetch, ApiError, type ApiUser } from "@/lib/api";
+import { loginSchema } from "@/lib/validators/customerAuth";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/authSlice";
 import { dashboardLoginUrl } from "@/config/site";
@@ -20,26 +21,48 @@ const STAFF_ROLES = new Set([
   "vendor",
 ]);
 
+type FieldErrors = Partial<Record<"email" | "password", string>>;
+
 export default function LoginForm() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [rememberMe, setRememberMe] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
-    setLoading(true);
+    setFieldErrors({});
 
     const form = new FormData(event.currentTarget);
-    const email = String(form.get("email") ?? "");
-    const password = String(form.get("password") ?? "");
+    const parsed = loginSchema.safeParse({
+      email: String(form.get("email") ?? ""),
+      password: String(form.get("password") ?? ""),
+    });
+
+    if (!parsed.success) {
+      const next: FieldErrors = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0];
+        if (
+          (key === "email" || key === "password") &&
+          next[key] === undefined
+        ) {
+          next[key] = issue.message;
+        }
+      }
+      setFieldErrors(next);
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const data = await apiFetch<{ token: string; user: ApiUser }>(
         "/api/auth/login",
-        { body: { email, password } },
+        { body: parsed.data },
       );
 
       // Extra guard: never keep a staff session in the storefront.
@@ -96,14 +119,14 @@ export default function LoginForm() {
       <SocialAuthButtons />
       <OrDivider />
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
         <AuthInput
           name="email"
           type="email"
           autoComplete="email"
           placeholder="Ex. Maguire@FlexUI.com"
           leadingIcon={<EnvelopeIcon />}
-          required
+          error={fieldErrors.email}
         />
 
         <AuthInput
@@ -113,7 +136,7 @@ export default function LoginForm() {
           placeholder="Enter your password"
           leadingIcon={<LockIcon />}
           showPasswordToggle
-          required
+          error={fieldErrors.password}
         />
 
         <label className="flex items-center gap-2.5 cursor-pointer select-none mt-1">

@@ -7,18 +7,21 @@ type AuthInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className"> &
     label?: string;
     leadingIcon?: ReactNode;
     showPasswordToggle?: boolean;
+    error?: string;
 };
 
 export default function AuthInput({
     label,
     leadingIcon,
     showPasswordToggle = false,
+    error,
     type = "text",
     id,
     ...props
 }: AuthInputProps) {
     const generatedId = useId();
     const inputId = id ?? generatedId;
+    const errorId = `${inputId}-error`;
     const [visible, setVisible] = useState(false);
     const resolvedType =
         showPasswordToggle && type === "password"
@@ -46,9 +49,15 @@ export default function AuthInput({
                 <input
                     id={inputId}
                     type={resolvedType}
-                    className={`w-full h-11 rounded border border-border-default bg-bg-surface text-text-primary placeholder:text-text-secondary/70 text-sm outline-none transition-colors focus:border-brand-primary ${
-                        leadingIcon ? "pl-11" : "pl-3.5"
-                    } ${showPasswordToggle ? "pr-11" : "pr-3.5"}`}
+                    aria-invalid={error ? true : undefined}
+                    aria-describedby={error ? errorId : undefined}
+                    className={`w-full h-11 rounded border bg-bg-surface text-text-primary placeholder:text-text-secondary/70 text-sm outline-none transition-colors focus:border-brand-primary ${
+                        error
+                            ? "border-rose-500 focus:border-rose-500"
+                            : "border-border-default"
+                    } ${leadingIcon ? "pl-11" : "pl-3.5"} ${
+                        showPasswordToggle ? "pr-11" : "pr-3.5"
+                    }`}
                     {...props}
                 />
                 {showPasswordToggle ? (
@@ -62,6 +71,11 @@ export default function AuthInput({
                     </button>
                 ) : null}
             </div>
+            {error ? (
+                <p id={errorId} className="text-sm text-rose-600" role="alert">
+                    {error}
+                </p>
+            ) : null}
         </div>
     );
 }
