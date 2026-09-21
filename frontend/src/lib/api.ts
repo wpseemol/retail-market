@@ -118,6 +118,42 @@ export async function apiFetch<T>(
   return data as T;
 }
 
+/** Multipart upload (do not set Content-Type — browser sets boundary). */
+export async function apiUpload<T>(
+  path: string,
+  formData: FormData,
+): Promise<T> {
+  const url = path.startsWith("/api/backend/")
+    ? path
+    : path.startsWith("/api/")
+      ? `/api/backend/${path.slice("/api/".length)}`
+      : path;
+
+  const response = await fetch(url, {
+    method: "POST",
+    body: formData,
+    credentials: "same-origin",
+    headers: { Accept: "application/json" },
+  });
+
+  const data = (await response.json().catch(() => ({}))) as {
+    message?: string;
+    code?: string;
+    errors?: Record<string, string[] | undefined>;
+  };
+
+  if (!response.ok) {
+    throw new ApiError(
+      data.message ?? "Upload failed",
+      response.status,
+      data.errors,
+      data.code,
+    );
+  }
+
+  return data as T;
+}
+
 export async function fetchHealth() {
   return apiFetch<{
     status: string;

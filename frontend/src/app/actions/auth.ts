@@ -1,9 +1,11 @@
 "use server";
 
 import {
+  backendFetch,
   callBackendAuth,
   destroySessionCookies,
   readSessionFromCookies,
+  writeSessionCookies,
   type AuthActionResult,
 } from "@/lib/session";
 import type { ApiUser } from "@/lib/api";
@@ -51,4 +53,42 @@ export async function getSessionAction(): Promise<{
     return { authenticated: false, user: null };
   }
   return { authenticated: true, user: session.user };
+}
+
+/** Re-read `/api/auth/me` and refresh the sealed cookie user (avatar / profile). */
+export async function syncSessionUserAction(): Promise<AuthActionResult> {
+  const session = await readSessionFromCookies();
+  if (!session?.accessToken) {
+    return {
+      ok: false,
+      message: "Not authenticated",
+      status: 401,
+    };
+  }
+
+  const upstream = await backendFetch("/api/auth/me", {
+    method: "GET",
+    accessToken: session.accessToken,
+  });
+
+  const data = (await upstream.json().catch(() => ({}))) as {
+    user?: ApiUser;
+    message?: string;
+  };
+
+  if (!upstream.ok || !data.user) {
+    return {
+      ok: false,
+      message: data.message ?? "Failed to refresh profile",
+      status: upstream.status,
+    };
+  }
+
+  await writeSessionCookies({
+    accessToken: session.accessToken,
+    refreshToken: session.refreshToken,
+    user: data.user,
+  });
+
+  return { ok: true, user: data.user };
 }

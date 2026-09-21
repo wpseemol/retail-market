@@ -16,6 +16,9 @@ npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 
+# User-uploaded media
+uploads/
+
 # Operating system and editor files
 .DS_Store
 Thumbs.db

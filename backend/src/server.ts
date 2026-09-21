@@ -1,4 +1,5 @@
 import "./lib/env.js";
+import path from "node:path";
 import express from "express";
 import cors from "cors";
 import { env } from "./lib/env.js";
@@ -16,6 +17,14 @@ app.use(
   }),
 );
 app.use(express.json());
+
+// Public uploaded files — e.g. /uploads/users/photos/<file>
+app.use(
+  "/uploads",
+  express.static(path.resolve(process.cwd(), "uploads"), {
+    maxAge: env.nodeEnv === "production" ? "7d" : 0,
+  }),
+);
 
 app.use("/api/health", healthRouter);
 app.use("/api/auth", customerAuthRouter);

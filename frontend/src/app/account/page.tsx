@@ -1,15 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { type FormEvent, useEffect, useState } from "react";
+import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import AuthInput from "@/components/auth/AuthInput";
 import ApiHealthBadge from "@/components/ApiHealthBadge";
-import { apiFetch, ApiError, type ApiUser } from "@/lib/api";
+import { apiFetch, apiUpload, ApiError, type ApiUser } from "@/lib/api";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setUser } from "@/store/authSlice";
 import { logoutSession } from "@/lib/logoutSession";
+import {
+  type UpdateProfileField,
+  validateUpdateProfileField,
+  validateUpdateProfileForm,
+} from "@/lib/validators/customerAuth";
+import {
+  AVATAR_ALLOWED_MIMES,
+  AVATAR_MAX_BYTES,
+  validateAvatarFile,
+} from "@/lib/validators/avatarImage";
+import { syncSessionUserAction } from "@/app/actions/auth";
 
 function initials(user: ApiUser) {
   const a = user.first_name?.trim()?.[0] ?? "";
@@ -24,21 +35,29 @@ function providerLabel(provider?: string | null) {
   return `${provider} account`;
 }
 
+type FieldErrors = Partial<Record<UpdateProfileField, string>>;
+
 export default function AccountPageContent() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { token, user, hydrated } = useAppSelector((state) => state.auth);
+  const { user, hydrated } = useAppSelector((state) => state.auth);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [touched, setTouched] = useState<
+    Partial<Record<UpdateProfileField, boolean>>
+  >({});
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (hydrated && !token) {
+    if (hydrated && !user) {
       router.replace("/auth/login");
     }
-  }, [hydrated, token, router]);
+  }, [hydrated, user, router]);
 
-  if (!hydrated || !user || !token) {
+  if (!hydrated || !user) {
     return (
       <main className="flex-1 bg-bg-base">
         <div className="container mx-auto px-4 sm:px-6 py-16 text-sm text-text-secondary">
@@ -48,34 +67,96 @@ export default function AccountPageContent() {
     );
   }
 
+  const markTouched = (field: UpdateProfileField, value: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    setFieldErrors((prev) => ({
+      ...prev,
+      [field]: validateUpdateProfileField(field, value),
+    }));
+  };
+
+  const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setError(null);
+    setSuccess(null);
+
+    const checked = await validateAvatarFile(file);
+    if (!checked.ok) {
+      setError(checked.message);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    setAvatarLoading(true);
+    try {
+      const data = await apiUpload<{ user: ApiUser }>(
+        "/api/auth/me/avatar",
+        formData,
+      );
+      dispatch(setUser(data.user));
+      await syncSessionUserAction();
+      setSuccess("Profile photo updated");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Photo upload failed");
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
     setSuccess(null);
-    setLoading(true);
 
     const form = new FormData(event.currentTarget);
-    const body = {
+    const raw = {
       first_name: String(form.get("first_name") ?? ""),
       last_name: String(form.get("last_name") ?? ""),
-      phone: String(form.get("phone") ?? "") || null,
-      gender: (String(form.get("gender") ?? "") || null) as
-        | "male"
-        | "female"
-        | "other"
-        | null,
-      date_of_birth: String(form.get("date_of_birth") ?? "") || null,
+      phone: String(form.get("phone") ?? ""),
+      gender: String(form.get("gender") ?? ""),
+      date_of_birth: String(form.get("date_of_birth") ?? ""),
     };
 
+    const validated = validateUpdateProfileForm(raw);
+    if (!validated.success) {
+      setFieldErrors(validated.errors);
+      setTouched({
+        first_name: true,
+        last_name: true,
+        phone: true,
+        gender: true,
+        date_of_birth: true,
+      });
+      setError("Please fix the highlighted fields");
+      return;
+    }
+
+    setLoading(true);
     try {
       const data = await apiFetch<{ user: ApiUser }>("/api/auth/me", {
         method: "PATCH",
-        token,
-        body,
+        body: validated.data,
       });
       dispatch(setUser(data.user));
+      await syncSessionUserAction();
+      setFieldErrors({});
       setSuccess("Profile updated successfully");
     } catch (err) {
+      if (err instanceof ApiError && err.errors) {
+        const next: FieldErrors = {};
+        for (const key of Object.keys(err.errors) as UpdateProfileField[]) {
+          const msg = err.errors[key]?.[0];
+          if (msg) next[key] = msg;
+        }
+        if (Object.keys(next).length > 0) {
+          setFieldErrors(next);
+        }
+      }
       setError(err instanceof ApiError ? err.message : "Update failed");
     } finally {
       setLoading(false);
@@ -115,7 +196,6 @@ export default function AccountPageContent() {
           transition={{ duration: 0.35, ease: "easeOut" }}
           className="mx-auto max-w-3xl"
         >
-          {/* Profile strip */}
           <section
             aria-labelledby="account-heading"
             className="relative overflow-hidden rounded-2xl border border-border-default bg-bg-surface"
@@ -126,20 +206,38 @@ export default function AccountPageContent() {
             />
             <div className="relative px-5 sm:px-8 pt-8 sm:pt-10 pb-6 sm:pb-7 flex flex-col sm:flex-row sm:items-end gap-5">
               <div className="flex items-center gap-4 min-w-0 flex-1">
-                <div
-                  className="size-16 sm:size-20 shrink-0 rounded-full bg-brand-primary text-white flex items-center justify-center text-xl sm:text-2xl font-bold shadow-sm ring-4 ring-bg-surface"
-                  aria-hidden
-                >
-                  {user.avatar?.path ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={user.avatar.path}
-                      alt=""
-                      className="size-full rounded-full object-cover"
-                    />
-                  ) : (
-                    initials(user)
-                  )}
+                <div className="relative shrink-0">
+                  <div
+                    className="size-16 sm:size-20 rounded-full bg-brand-primary text-white flex items-center justify-center text-xl sm:text-2xl font-bold shadow-sm ring-4 ring-bg-surface overflow-hidden"
+                    aria-hidden
+                  >
+                    {user.avatar?.path ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={user.avatar.path}
+                        alt=""
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      initials(user)
+                    )}
+                  </div>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept={AVATAR_ALLOWED_MIMES.join(",")}
+                    className="sr-only"
+                    onChange={handleAvatarChange}
+                  />
+                  <button
+                    type="button"
+                    disabled={avatarLoading}
+                    onClick={() => avatarInputRef.current?.click()}
+                    className="absolute -bottom-1 -right-1 h-8 rounded-full border border-border-default bg-bg-surface px-2.5 text-[11px] font-semibold text-text-primary shadow-sm hover:border-brand-primary hover:text-brand-primary transition-colors disabled:opacity-60 cursor-pointer"
+                    title={`JPEG, PNG, WebP, or GIF · max ${Math.floor(AVATAR_MAX_BYTES / (1024 * 1024))} MB`}
+                  >
+                    {avatarLoading ? "…" : "Photo"}
+                  </button>
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-medium uppercase tracking-wider text-brand-primary mb-1">
@@ -183,7 +281,6 @@ export default function AccountPageContent() {
             </div>
           </section>
 
-          {/* Profile form */}
           <motion.section
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -204,21 +301,55 @@ export default function AccountPageContent() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col gap-4"
+              noValidate
+            >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <AuthInput
                   name="first_name"
                   label="First name"
                   defaultValue={user.first_name}
                   autoComplete="given-name"
+                  maxLength={100}
                   required
+                  error={
+                    touched.first_name ? fieldErrors.first_name : undefined
+                  }
+                  onBlur={(e) => markTouched("first_name", e.target.value)}
+                  onChange={(e) => {
+                    if (touched.first_name) {
+                      setFieldErrors((prev) => ({
+                        ...prev,
+                        first_name: validateUpdateProfileField(
+                          "first_name",
+                          e.target.value,
+                        ),
+                      }));
+                    }
+                  }}
                 />
                 <AuthInput
                   name="last_name"
                   label="Last name"
                   defaultValue={user.last_name}
                   autoComplete="family-name"
+                  maxLength={100}
                   required
+                  error={touched.last_name ? fieldErrors.last_name : undefined}
+                  onBlur={(e) => markTouched("last_name", e.target.value)}
+                  onChange={(e) => {
+                    if (touched.last_name) {
+                      setFieldErrors((prev) => ({
+                        ...prev,
+                        last_name: validateUpdateProfileField(
+                          "last_name",
+                          e.target.value,
+                        ),
+                      }));
+                    }
+                  }}
                 />
               </div>
 
@@ -230,6 +361,19 @@ export default function AccountPageContent() {
                 autoComplete="tel"
                 maxLength={30}
                 placeholder="Optional"
+                error={touched.phone ? fieldErrors.phone : undefined}
+                onBlur={(e) => markTouched("phone", e.target.value)}
+                onChange={(e) => {
+                  if (touched.phone) {
+                    setFieldErrors((prev) => ({
+                      ...prev,
+                      phone: validateUpdateProfileField(
+                        "phone",
+                        e.target.value,
+                      ),
+                    }));
+                  }
+                }}
               />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -244,13 +388,46 @@ export default function AccountPageContent() {
                     id="gender"
                     name="gender"
                     defaultValue={user.gender ?? ""}
-                    className="h-11 rounded border border-border-default bg-bg-surface px-3.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-primary"
+                    aria-invalid={
+                      touched.gender && fieldErrors.gender ? true : undefined
+                    }
+                    aria-describedby={
+                      touched.gender && fieldErrors.gender
+                        ? "gender-error"
+                        : undefined
+                    }
+                    onBlur={(e) => markTouched("gender", e.target.value)}
+                    onChange={(e) => {
+                      if (touched.gender) {
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          gender: validateUpdateProfileField(
+                            "gender",
+                            e.target.value,
+                          ),
+                        }));
+                      }
+                    }}
+                    className={`h-11 rounded border bg-bg-surface px-3.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-primary ${
+                      touched.gender && fieldErrors.gender
+                        ? "border-rose-500 focus:border-rose-500"
+                        : "border-border-default"
+                    }`}
                   >
                     <option value="">Prefer not to say</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
                     <option value="other">Other</option>
                   </select>
+                  {touched.gender && fieldErrors.gender ? (
+                    <p
+                      id="gender-error"
+                      className="text-sm text-rose-600"
+                      role="alert"
+                    >
+                      {fieldErrors.gender}
+                    </p>
+                  ) : null}
                 </div>
 
                 <AuthInput
@@ -260,6 +437,23 @@ export default function AccountPageContent() {
                   defaultValue={
                     user.date_of_birth ? user.date_of_birth.slice(0, 10) : ""
                   }
+                  error={
+                    touched.date_of_birth
+                      ? fieldErrors.date_of_birth
+                      : undefined
+                  }
+                  onBlur={(e) => markTouched("date_of_birth", e.target.value)}
+                  onChange={(e) => {
+                    if (touched.date_of_birth) {
+                      setFieldErrors((prev) => ({
+                        ...prev,
+                        date_of_birth: validateUpdateProfileField(
+                          "date_of_birth",
+                          e.target.value,
+                        ),
+                      }));
+                    }
+                  }}
                 />
               </div>
 

@@ -126,3 +126,160 @@ export function validateLoginForm(data: {
 
   return { success: true, data: parsed.data };
 }
+
+function withSafeInput(schema: z.ZodString) {
+  return schema.superRefine((value, ctx) => {
+    const reason = findUnsafeInputReason(value);
+    if (reason) {
+      ctx.addIssue({ code: "custom", message: reason });
+    }
+  });
+}
+
+const nameFieldSchema = withSafeInput(
+  z
+    .string()
+    .trim()
+    .min(1, "This field is required")
+    .max(100, "Must be at most 100 characters"),
+);
+
+const phoneFieldSchema = z
+  .string()
+  .trim()
+  .max(30, "Phone is too long")
+  .superRefine((value, ctx) => {
+    if (!value) return;
+    const unsafe = findUnsafeInputReason(value);
+    if (unsafe) {
+      ctx.addIssue({ code: "custom", message: unsafe });
+      return;
+    }
+    if (!/^[+\d][\d\s().-]{5,29}$/.test(value)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Enter a valid phone number",
+      });
+    }
+  });
+
+const genderFieldSchema = z
+  .string()
+  .trim()
+  .superRefine((value, ctx) => {
+    if (!value) return;
+    const unsafe = findUnsafeInputReason(value);
+    if (unsafe) {
+      ctx.addIssue({ code: "custom", message: unsafe });
+      return;
+    }
+    if (value !== "male" && value !== "female" && value !== "other") {
+      ctx.addIssue({ code: "custom", message: "Select a valid gender" });
+    }
+  });
+
+const dateOfBirthFieldSchema = z
+  .string()
+  .trim()
+  .superRefine((value, ctx) => {
+    if (!value) return;
+    const unsafe = findUnsafeInputReason(value);
+    if (unsafe) {
+      ctx.addIssue({ code: "custom", message: unsafe });
+      return;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      ctx.addIssue({ code: "custom", message: "Enter a valid date" });
+      return;
+    }
+    const date = new Date(`${value}T00:00:00Z`);
+    if (Number.isNaN(date.getTime())) {
+      ctx.addIssue({ code: "custom", message: "Enter a valid date" });
+      return;
+    }
+    const today = new Date();
+    if (date > today) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Date of birth cannot be in the future",
+      });
+    }
+  });
+
+export const updateProfileSchema = z.object({
+  first_name: nameFieldSchema,
+  last_name: nameFieldSchema,
+  phone: phoneFieldSchema,
+  gender: genderFieldSchema,
+  date_of_birth: dateOfBirthFieldSchema,
+});
+
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export type UpdateProfileField = keyof UpdateProfileInput;
+
+const updateProfileFieldSchemas = {
+  first_name: nameFieldSchema,
+  last_name: nameFieldSchema,
+  phone: phoneFieldSchema,
+  gender: genderFieldSchema,
+  date_of_birth: dateOfBirthFieldSchema,
+} as const;
+
+export function validateUpdateProfileField(
+  field: UpdateProfileField,
+  value: string,
+): string | undefined {
+  const result = updateProfileFieldSchemas[field].safeParse(value);
+  if (result.success) return undefined;
+  return result.error.issues[0]?.message;
+}
+
+export function validateUpdateProfileForm(data: {
+  first_name: string;
+  last_name: string;
+  phone: string;
+  gender: string;
+  date_of_birth: string;
+}):
+  | {
+      success: true;
+      data: {
+        first_name: string;
+        last_name: string;
+        phone: string | null;
+        gender: "male" | "female" | "other" | null;
+        date_of_birth: string | null;
+      };
+    }
+  | { success: false; errors: Partial<Record<UpdateProfileField, string>> } {
+  const errors: Partial<Record<UpdateProfileField, string>> = {};
+
+  for (const field of Object.keys(
+    updateProfileFieldSchemas,
+  ) as UpdateProfileField[]) {
+    const message = validateUpdateProfileField(field, data[field]);
+    if (message) errors[field] = message;
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return { success: false, errors };
+  }
+
+  const gender =
+    data.gender === "male" ||
+    data.gender === "female" ||
+    data.gender === "other"
+      ? data.gender
+      : null;
+
+  return {
+    success: true,
+    data: {
+      first_name: data.first_name.trim(),
+      last_name: data.last_name.trim(),
+      phone: data.phone.trim() || null,
+      gender,
+      date_of_birth: data.date_of_birth.trim() || null,
+    },
+  };
+}

@@ -31,4 +31,9 @@ export const env = {
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean),
+  /** Public base URL for uploaded media (e.g. http://localhost:8001). */
+  publicBaseUrl: (
+    process.env.PUBLIC_API_URL ??
+    `http://localhost:${Number(process.env.PORT) || 8001}`
+  ).replace(/\/$/, ""),
 };

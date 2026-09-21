@@ -1,4 +1,5 @@
 import type { Media, User } from "@prisma/client";
+import { env } from "./env.js";
 
 export type UserWithAvatar = User & { avatar?: Media | null };
 
@@ -8,10 +9,8 @@ export const userWithAvatarInclude = {
 } as const;
 
 export function mediaPublicUrl(media: Media): string {
-  const base = media.file_path.endsWith("/")
-    ? media.file_path
-    : `${media.file_path}/`;
-  return `${base}${media.file_name}`;
+  const relative = `/uploads/${media.file_path.replace(/^\/+|\/+$/g, "")}/${media.file_name}`;
+  return `${env.publicBaseUrl}${relative}`;
 }
 
 export function toPublicMedia(media: Media | null | undefined) {

@@ -1,9 +1,12 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { Request } from "express";
-import type { DeviceType, LoginMethod, UserRole } from "@prisma/client";
+import type { DeviceType, UserRole } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { env } from "./env.js";
 import { issueAuthTokens } from "./token.js";
+
+/** Mirrors Prisma `LoginMethod` enum. */
+type LoginMethod = "password" | "google" | "refresh";
 
 export function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -82,38 +85,72 @@ function clientIp(req: Request): string | null {
   return (req.ip ?? req.socket.remoteAddress ?? null)?.slice(0, 45) || null;
 }
 
+/**
+ * On login / register / Google: create a `user_sessions` row, or refresh the
+ * active session for the same user + user-agent (same browser/device).
+ */
 export async function createUserSession(input: {
   userId: bigint;
   role: UserRole;
   req: Request;
   loginMethod: LoginMethod;
 }) {
-  const sessionId = randomUUID();
+  const ua = reqUserAgent(input.req);
+  const uaStored = ua?.slice(0, 2000) || null;
+  const parsed = parseUserAgent(ua);
+  const now = new Date();
+  const expiresAt = expiresAtFromDuration(env.jwtRefreshExpiresIn, now);
+  const ip = clientIp(input.req);
+
+  // Reuse the active session for this device so login updates the row
+  // instead of inserting a duplicate every time.
+  const existing = uaStored
+    ? await prisma.userSession.findFirst({
+        where: {
+          user_id: input.userId,
+          user_agent: uaStored,
+          is_revoked: false,
+          expires_at: { gt: now },
+        },
+        orderBy: { last_activity_at: "desc" },
+      })
+    : null;
+
+  const sessionId = existing?.id ?? randomUUID();
   const tokens = issueAuthTokens({
     sub: input.userId.toString(),
     role: input.role,
     sid: sessionId,
   });
 
-  const ua = reqUserAgent(input.req);
-  const parsed = parseUserAgent(ua);
+  const sessionFields = {
+    token_hash: hashToken(tokens.refreshToken),
+    ip_address: ip,
+    user_agent: uaStored,
+    device_type: parsed.device_type,
+    browser: parsed.browser,
+    os: parsed.os,
+    login_method: input.loginMethod,
+    is_revoked: false,
+    revoked_at: null as Date | null,
+    last_activity_at: now,
+    expires_at: expiresAt,
+  };
 
-  await prisma.userSession.create({
-    data: {
-      id: sessionId,
-      user_id: input.userId,
-      token_hash: hashToken(tokens.refreshToken),
-      ip_address: clientIp(input.req),
-      user_agent: ua?.slice(0, 2000) || null,
-      device_type: parsed.device_type,
-      browser: parsed.browser,
-      os: parsed.os,
-      login_method: input.loginMethod,
-      is_revoked: false,
-      last_activity_at: new Date(),
-      expires_at: expiresAtFromDuration(env.jwtRefreshExpiresIn),
-    },
-  });
+  if (existing) {
+    await prisma.userSession.update({
+      where: { id: existing.id },
+      data: sessionFields,
+    });
+  } else {
+    await prisma.userSession.create({
+      data: {
+        id: sessionId,
+        user_id: input.userId,
+        ...sessionFields,
+      },
+    });
+  }
 
   return { sessionId, tokens };
 }

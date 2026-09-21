@@ -1,27 +1,33 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { ApiUser } from "@/lib/api";
 
+/**
+ * Client auth state — UI only.
+ *
+ * Tokens are NOT kept in localStorage or readable cookies.
+ * After login, JWTs live in the encrypted httpOnly `rm_session` cookie
+ * (set by Server Actions). That is the standard, safer approach:
+ * JS cannot read/steal the token (XSS-resistant).
+ *
+ * Redux only mirrors the public user profile for Header / account UI.
+ */
 type AuthState = {
-  /** Access token is never stored in the client — httpOnly cookie only. */
-  token: string | null;
-  refreshToken: string | null;
   user: ApiUser | null;
+  /** True after we have read the httpOnly session (or confirmed none). */
   hydrated: boolean;
 };
 
 const initialState: AuthState = {
-  token: null,
-  refreshToken: null,
   user: null,
   hydrated: false,
 };
 
+/** One-time cleanup of older localStorage / plain cookie auth (no longer used). */
 function clearLegacyClientStorage() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem("rm_customer_token");
   window.localStorage.removeItem("rm_customer_refresh_token");
   window.localStorage.removeItem("rm_customer_user");
-  // Clear old readable cookies if any remain.
   for (const name of [
     "rm_access_token",
     "rm_refresh_token",
@@ -35,32 +41,19 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    /** Mark hydration complete without trusting client-readable token storage. */
     hydrateAuth(state) {
       clearLegacyClientStorage();
-      state.token = null;
-      state.refreshToken = null;
       state.hydrated = true;
     },
     setSessionUser(state, action: PayloadAction<ApiUser | null>) {
+      clearLegacyClientStorage();
       state.user = action.payload;
-      state.token = action.payload ? "cookie" : null;
       state.hydrated = true;
     },
-    setCredentials(
-      state,
-      action: PayloadAction<{
-        user: ApiUser;
-        accessToken?: string;
-        refreshToken?: string;
-        token?: string;
-      }>,
-    ) {
+    /** After login/register — user only; tokens already in httpOnly cookie. */
+    setCredentials(state, action: PayloadAction<{ user: ApiUser }>) {
       clearLegacyClientStorage();
       state.user = action.payload.user;
-      // Sentinel only — real JWT stays in encrypted httpOnly `rm_session`.
-      state.token = "cookie";
-      state.refreshToken = null;
       state.hydrated = true;
     },
     setUser(state, action: PayloadAction<ApiUser>) {
@@ -68,8 +61,6 @@ const authSlice = createSlice({
     },
     logout(state) {
       clearLegacyClientStorage();
-      state.token = null;
-      state.refreshToken = null;
       state.user = null;
     },
   },

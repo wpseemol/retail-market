@@ -46,10 +46,6 @@ const safeTrimmed = (min: number, max: number) =>
 
 const safeOptionalPhone = withSafeInput(z.string().trim().max(30)).optional();
 
-const safeNullablePhone = withSafeInput(z.string().trim().max(30))
-  .nullable()
-  .optional();
-
 export const registerSchema = z.object({
   first_name: safeTrimmed(1, 100),
   last_name: safeTrimmed(1, 100),
@@ -89,23 +85,69 @@ export const updateProfileSchema = z
   .object({
     first_name: safeTrimmed(1, 100).optional(),
     last_name: safeTrimmed(1, 100).optional(),
-    phone: safeNullablePhone,
-    gender: z.enum(["male", "female", "other"]).nullable().optional(),
-    date_of_birth: z
-      .string()
-      .date()
-      .superRefine((value, ctx) => {
-        const reason = findUnsafeInputReason(value);
+    phone: z
+      .union([z.string(), z.null()])
+      .optional()
+      .transform((value, ctx) => {
+        if (value === undefined) return undefined;
+        if (value === null) return null;
+        const trimmed = value.trim();
+        if (!trimmed) return null;
+        const reason = findUnsafeInputReason(trimmed);
         if (reason) {
           ctx.addIssue({ code: "custom", message: reason });
+          return z.NEVER;
         }
-      })
-      .nullable()
-      .optional(),
+        if (trimmed.length > 30) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Phone must be at most 30 characters",
+          });
+          return z.NEVER;
+        }
+        return trimmed;
+      }),
+    gender: z
+      .union([z.enum(["male", "female", "other"]), z.null(), z.literal("")])
+      .optional()
+      .transform((value) => {
+        if (value === undefined) return undefined;
+        if (value === null || value === "") return null;
+        return value;
+      }),
+    date_of_birth: z
+      .union([z.string(), z.null(), z.literal("")])
+      .optional()
+      .transform((value, ctx) => {
+        if (value === undefined) return undefined;
+        if (value === null || value === "") return null;
+        const trimmed = value.trim();
+        const reason = findUnsafeInputReason(trimmed);
+        if (reason) {
+          ctx.addIssue({ code: "custom", message: reason });
+          return z.NEVER;
+        }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+          ctx.addIssue({ code: "custom", message: "Invalid date format" });
+          return z.NEVER;
+        }
+        const parsed = new Date(`${trimmed}T00:00:00.000Z`);
+        if (Number.isNaN(parsed.getTime())) {
+          ctx.addIssue({ code: "custom", message: "Invalid date" });
+          return z.NEVER;
+        }
+        return trimmed;
+      }),
   })
-  .refine((data) => Object.keys(data).length > 0, {
-    message: "At least one field is required",
-  });
+  .refine(
+    (data) =>
+      data.first_name !== undefined ||
+      data.last_name !== undefined ||
+      data.phone !== undefined ||
+      data.gender !== undefined ||
+      data.date_of_birth !== undefined,
+    { message: "At least one field is required" },
+  );
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
