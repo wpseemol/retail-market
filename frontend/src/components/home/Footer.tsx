@@ -78,20 +78,20 @@ export default function Footer() {
                     {/* Column 1: Brand, Description, Contact, Apps (Col span 4) */}
                     <div className="lg:col-span-4 flex flex-col items-start">
                         {/* Dark / Light Mode Logo Toggle */}
-                        <Link href="/" className="inline-block mb-4">
+                        <Link href="/" className="relative mb-4 inline-block h-[50px] w-[180px]">
                             <Image
                                 src="/logo/niyenin-white.png"
                                 alt="Niyenin Logo"
-                                width={180}
-                                height={50}
-                                className="object-contain dark:hidden"
+                                fill
+                                sizes="180px"
+                                className="object-contain object-left dark:hidden"
                             />
                             <Image
                                 src="/logo/niyenin-dark.png"
                                 alt="Niyenin Logo"
-                                width={180}
-                                height={50}
-                                className="object-contain hidden dark:block"
+                                fill
+                                sizes="180px"
+                                className="hidden object-contain object-left dark:block"
                             />
                         </Link>
 

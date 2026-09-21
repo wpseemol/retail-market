@@ -54,7 +54,7 @@ export default function PromoAdSlider() {
             onMouseLeave={() => setIsPaused(false)}
             className="hidden xl:flex items-center rounded overflow-hidden h-12.5 w-135 relative mx-2 bg-bg-subtle border border-border-default/40"
         >
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence mode="popLayout" initial={false}>
                 <motion.div
                     key={promoAds[currentIndex].id}
                     initial={{ y: 50, opacity: 0 }}

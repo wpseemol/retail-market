@@ -35,9 +35,7 @@ export default function Header() {
     const cartTotal = useAppSelector(selectCartTotal);
 
     useEffect(() => {
-        setTimeout(() => {
-            setMounted(true);
-        }, 100);
+        setMounted(true);
         const handleScroll = () => {
             setIsSticky(window.scrollY > 48);
         };
@@ -114,23 +112,23 @@ export default function Header() {
                     <Link
                         href="/"
                         aria-label="Niyenin Home"
-                        className="flex items-center shrink-0"
+                        className="relative flex h-8 w-[120px] shrink-0 items-center sm:h-10 sm:w-[150px]"
                     >
                         <Image
                             src="/logo/niyenin-white.png"
                             alt="Niyenin"
-                            width={150}
-                            height={40}
+                            fill
+                            sizes="150px"
                             priority
-                            className="h-8 sm:h-10 w-auto block dark:hidden object-contain"
+                            className="object-contain object-left dark:hidden"
                         />
                         <Image
                             src="/logo/niyenin-dark.png"
                             alt="Niyenin"
-                            width={150}
-                            height={40}
+                            fill
+                            sizes="150px"
                             priority
-                            className="h-8 sm:h-10 w-auto hidden dark:block object-contain"
+                            className="hidden object-contain object-left dark:block"
                         />
                     </Link>
 
@@ -150,6 +148,8 @@ export default function Header() {
                                 alt=""
                                 width={28}
                                 height={28}
+                                unoptimized
+                                style={{ width: 28, height: 28 }}
                                 aria-hidden="true"
                             />
                             <span
@@ -177,7 +177,8 @@ export default function Header() {
                                     alt=""
                                     width={28}
                                     height={28}
-                                    className="sm:w-8 sm:h-8"
+                                    unoptimized
+                                    style={{ width: 28, height: 28 }}
                                     aria-hidden="true"
                                 />
                                 {cartCount > 0 && (

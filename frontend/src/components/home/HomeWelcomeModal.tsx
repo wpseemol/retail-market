@@ -40,23 +40,22 @@ export default function HomeWelcomeModal() {
         return () => window.clearTimeout(showTimer);
     }, []);
 
-    // 30s countdown + auto dismiss (pauses while mouse is over the modal)
+    // 30s countdown (pauses while mouse is over the modal)
     useEffect(() => {
         if (!isOpen || isPaused) return;
 
         const interval = window.setInterval(() => {
-            setSecondsLeft((prev) => {
-                if (prev <= 1) {
-                    window.clearInterval(interval);
-                    closeModal();
-                    return 0;
-                }
-                return prev - 1;
-            });
+            setSecondsLeft((prev) => Math.max(prev - 1, 0));
         }, 1000);
 
         return () => window.clearInterval(interval);
-    }, [isOpen, isPaused, closeModal]);
+    }, [isOpen, isPaused]);
+
+    // Auto dismiss when countdown reaches zero
+    useEffect(() => {
+        if (!isOpen || secondsLeft > 0) return;
+        closeModal();
+    }, [isOpen, secondsLeft, closeModal]);
 
     // Esc to close + lock body scroll
     useEffect(() => {
@@ -132,6 +131,7 @@ export default function HomeWelcomeModal() {
                             src="/images/hero_bg_06 1.png"
                             alt=""
                             fill
+                            sizes="(max-width: 768px) 100vw, 50vw"
                             className="object-cover opacity-40 dark:opacity-15"
                             aria-hidden="true"
                         />

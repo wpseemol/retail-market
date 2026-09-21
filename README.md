@@ -28,7 +28,37 @@ From the project root:
 
 ```text
 retail-market/
-├── frontend/   # Next.js application
-├── backend/    # Express.js API
-└── ...
+├── backend/                  # Server API (Node.js/Express or Laravel)
+│   ├── src/ (or app/)
+│   └── package.json
+│
+├── frontend/                 # Customer Storefront (Next.js App Router)
+│   ├── public/
+│   │   ├── icons/            # SVG icons
+│   │   ├── images/           # All product & promotional images
+│   │   └── logo/             # niyenin-dark.png & niyenin-white.png
+│   ├── src/
+│   │   ├── app/              # Next.js routes
+│   │   └── components/       # Storefront sections (Hero, Slider, Footer, etc.)
+│   ├── tailwind.config.ts
+│   └── package.json
+│
+├── dashboard/                # Management Dashboard (Vanilla React + ReactDOM SPA)
+│   ├── public/
+│   │   └── index.html        # HTML root mounting point (#root)
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── components/       # Shared UI (Sidebar, Navbar, Tables, Badges)
+│   │   ├── layouts/          # Super Admin, Admin, Moderator, Vendor layouts
+│   │   ├── pages/            # Role-specific dashboard views
+│   │   ├── routes/           # React Router route guards (RBAC)
+│   │   ├── App.jsx (or .tsx)
+│   │   ├── main.jsx (or .tsx)# React 18 createRoot & ReactDOM mount
+│   │   └── index.css         # Tailwind directives
+│   ├── index.html            # Entry HTML (if using Vite)
+│   ├── package.json
+│   └── tailwind.config.js
+│
+├── .cursorrules              # Cursor IDE workspace rules
+└── TARGET_REQUIREMENTS.md    # Master architecture reference
 ```

@@ -17,6 +17,7 @@ export default function HeroBanner() {
                             src="/images/hero_bg_06 1.png"
                             alt=""
                             fill
+                            sizes="(max-width: 1024px) 100vw, 66vw"
                             priority
                             className="object-cover"
                             aria-hidden="true"
@@ -91,6 +92,7 @@ export default function HeroBanner() {
                                 src="/images/camera.png"
                                 alt="Canon EOS 77D DSLR Camera"
                                 fill
+                                sizes="(max-width: 640px) 300px, (max-width: 1024px) 380px, 440px"
                                 priority
                                 className="object-contain"
                             />
@@ -106,6 +108,7 @@ export default function HeroBanner() {
                             src="/images/hero_bg_06 1.png"
                             alt=""
                             fill
+                            sizes="(max-width: 1024px) 100vw, 33vw"
                             className="object-cover"
                             aria-hidden="true"
                         />
@@ -168,6 +171,7 @@ export default function HeroBanner() {
                                 src="/images/img_57 1.png"
                                 alt="Smartphone Device Offer"
                                 fill
+                                sizes="(max-width: 640px) 190px, 220px"
                                 className="object-contain"
                             />
                         </div>
