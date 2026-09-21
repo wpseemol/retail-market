@@ -22,7 +22,7 @@ pnpm install
 
 ## Run
 
-From the **repo root**:
+From the **repo root** (uses `concurrently` so Windows does not nest a broken `pnpm.CMD`):
 
 ```bash
 # all three apps in parallel (separate ports)
@@ -33,6 +33,12 @@ pnpm dev:frontend
 pnpm dev:dashboard
 pnpm dev:backend
 ```
+
+| App | URL |
+| --- | --- |
+| Storefront | http://localhost:3000 |
+| Dashboard | http://localhost:5173 |
+| API | http://localhost:8001 |
 
 Build:
 

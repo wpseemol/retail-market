@@ -3,18 +3,19 @@
   "private": true,
   "packageManager": "pnpm@10.28.0",
   "scripts": {
-    "dev": "pnpm -r --parallel --filter frontend --filter dashboard --filter backend dev",
-    "dev:frontend": "pnpm --filter frontend dev",
-    "dev:dashboard": "pnpm --filter dashboard dev",
-    "dev:backend": "pnpm --filter backend dev",
-    "build": "pnpm -r --filter frontend --filter dashboard --filter backend build",
-    "build:frontend": "pnpm --filter frontend build",
-    "build:dashboard": "pnpm --filter dashboard build",
-    "build:backend": "pnpm --filter backend build",
-    "lint": "pnpm -r --filter frontend --filter dashboard lint",
-    "type-check": "pnpm -r --filter frontend --filter dashboard --filter backend exec tsc --noEmit"
+    "dev": "concurrently -n frontend,dashboard,backend -c cyan,magenta,yellow \"npm run dev --prefix frontend\" \"npm run dev --prefix dashboard\" \"npm run dev --prefix backend\"",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:dashboard": "npm run dev --prefix dashboard",
+    "dev:backend": "npm run dev --prefix backend",
+    "build": "concurrently -n frontend,dashboard,backend -c cyan,magenta,yellow \"npm run build --prefix frontend\" \"npm run build --prefix dashboard\" \"npm run build --prefix backend\"",
+    "build:frontend": "npm run build --prefix frontend",
+    "build:dashboard": "npm run build --prefix dashboard",
+    "build:backend": "npm run build --prefix backend",
+    "lint": "concurrently -n frontend,dashboard -c cyan,magenta \"npm run lint --prefix frontend\" \"npm run lint --prefix dashboard\"",
+    "type-check": "concurrently -n frontend,dashboard,backend -c cyan,magenta,yellow \"npm run type-check --prefix frontend\" \"npm run type-check --prefix dashboard\" \"npm run type-check --prefix backend\""
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "typescript": "^5.0.0"
   }
 }
