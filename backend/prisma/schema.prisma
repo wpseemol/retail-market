@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  super_admin
+  admin
+  moderator
+  vendor
+  customer
+}
+
+enum UserStatus {
+  active
+  inactive
+  pending
+  suspended
+  banned
+}
+
+enum Gender {
+  male
+  female
+  other
+}
+
+model User {
+  id                        BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
+  first_name                String     @db.VarChar(100)
+  last_name                 String     @db.VarChar(100)
+  email                     String     @unique @db.VarChar(255)
+  phone                     String?    @unique @db.VarChar(30)
+  password                  String?    @db.VarChar(255)
+  role                      UserRole   @default(customer)
+  status                    UserStatus @default(active)
+  gender                    Gender?
+  date_of_birth             DateTime?  @db.Date
+  email_verified_at         DateTime?
+  phone_verified_at         DateTime?
+  two_factor_secret         String?    @db.Text
+  two_factor_recovery_codes String?    @db.Text
+  two_factor_confirmed_at   DateTime?
+  remember_token            String?    @db.VarChar(100)
+  provider_name             String?    @db.VarChar(50)
+  provider_id               String?    @db.VarChar(255)
+  last_login_at             DateTime?
+  last_login_ip             String?    @db.VarChar(45)
+  created_at                DateTime   @default(now())
+  updated_at                DateTime   @updatedAt
+  deleted_at                DateTime?
+
+  avatar UserAvatar?
+
+  @@map("users")
+}
+
+/// Optional profile image — users are created without an avatar most of the time.
+model UserAvatar {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    BigInt   @unique @db.UnsignedBigInt
+  path       String   @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("user_avatars")
+}
