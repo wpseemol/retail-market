@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import type { User, UserAvatar } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
-import { verifyGoogleIdToken } from "../lib/googleAuth.js";
+import { verifyGoogleCredential } from "../lib/googleAuth.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
 import { issueAuthTokens, verifyRefreshToken } from "../lib/token.js";
 import { toPublicUser } from "../lib/user.js";
@@ -198,7 +198,7 @@ export async function googleLogin(req: Request, res: Response) {
 
   let identity;
   try {
-    identity = await verifyGoogleIdToken(parsed.data.idToken);
+    identity = await verifyGoogleCredential(parsed.data);
   } catch {
     return res.status(401).json({
       message: "Invalid or expired Google sign-in token",

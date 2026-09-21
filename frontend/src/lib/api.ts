@@ -1,6 +1,3 @@
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8001";
-
 export type ApiUser = {
   id: string;
   first_name: string;
@@ -11,9 +8,18 @@ export type ApiUser = {
   status: string;
   gender: "male" | "female" | "other" | null;
   date_of_birth: string | null;
+  provider_name?: string | null;
   avatar: { id: string; path: string } | null;
 };
 
+/** Returned by Next.js session routes (tokens stay in httpOnly cookie). */
+export type SessionResponse = {
+  authenticated: boolean;
+  user?: ApiUser;
+  message?: string;
+};
+
+/** Shape returned by the Express auth API (used only on the server). */
 export type AuthTokenResponse = {
   accessToken: string;
   refreshToken: string;
@@ -28,8 +34,8 @@ export type AuthTokenResponse = {
 type ApiOptions = {
   method?: string;
   body?: unknown;
+  /** @deprecated Tokens are httpOnly — proxy attaches Bearer server-side. */
   token?: string | null;
-  /** Skip one-shot refresh retry (used by the refresh call itself). */
   skipRefresh?: boolean;
 };
 
@@ -52,38 +58,12 @@ export class ApiError extends Error {
   }
 }
 
-function readRefreshToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem("rm_customer_refresh_token");
-}
-
-function persistTokens(accessToken: string, refreshToken: string) {
-  window.localStorage.setItem("rm_customer_token", accessToken);
-  window.localStorage.setItem("rm_customer_refresh_token", refreshToken);
-}
-
-async function refreshAccessToken(): Promise<string | null> {
-  const refreshToken = readRefreshToken();
-  if (!refreshToken) return null;
-
-  try {
-    const data = await apiFetch<AuthTokenResponse>("/api/auth/refresh", {
-      body: { refreshToken },
-      skipRefresh: true,
-    });
-    persistTokens(data.accessToken, data.refreshToken);
-    if (data.user) {
-      window.localStorage.setItem(
-        "rm_customer_user",
-        JSON.stringify(data.user),
-      );
-    }
-    return data.accessToken;
-  } catch {
-    return null;
-  }
-}
-
+/**
+ * Browser API helper.
+ * - Session auth → `/api/auth/session/*` (sets encrypted httpOnly cookie)
+ * - Backend data → `/api/backend/*` (server reads cookie, adds Bearer)
+ * Tokens never touch localStorage or document.cookie.
+ */
 export async function apiFetch<T>(
   path: string,
   options: ApiOptions = {},
@@ -96,14 +76,19 @@ export async function apiFetch<T>(
     headers["Content-Type"] = "application/json";
   }
 
-  if (options.token) {
-    headers.Authorization = `Bearer ${options.token}`;
-  }
+  const url = path.startsWith("/api/auth/session")
+    ? path
+    : path.startsWith("/api/backend/")
+      ? path
+      : path.startsWith("/api/")
+        ? `/api/backend/${path.slice("/api/".length)}`
+        : path;
 
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetch(url, {
     method: options.method ?? (options.body !== undefined ? "POST" : "GET"),
     headers,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    credentials: "same-origin",
   });
 
   const data = (await response.json().catch(() => ({}))) as {
@@ -111,22 +96,6 @@ export async function apiFetch<T>(
     code?: string;
     errors?: Record<string, string[] | undefined>;
   };
-
-  if (
-    response.status === 401 &&
-    options.token &&
-    !options.skipRefresh &&
-    typeof window !== "undefined"
-  ) {
-    const nextAccess = await refreshAccessToken();
-    if (nextAccess) {
-      return apiFetch<T>(path, {
-        ...options,
-        token: nextAccess,
-        skipRefresh: true,
-      });
-    }
-  }
 
   if (!response.ok) {
     throw new ApiError(
@@ -149,4 +118,5 @@ export async function fetchHealth() {
   }>("/api/health");
 }
 
-export { API_URL };
+export const API_URL =
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8001";

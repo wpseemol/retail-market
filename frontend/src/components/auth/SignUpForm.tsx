@@ -7,7 +7,7 @@ import AuthInput from "./AuthInput";
 import OrDivider from "./OrDivider";
 import SocialAuthButtons from "./SocialAuthButtons";
 import { EnvelopeIcon, LockIcon, UserIcon } from "./icons";
-import { apiFetch, ApiError, type AuthTokenResponse } from "@/lib/api";
+import { apiFetch, ApiError, type SessionResponse } from "@/lib/api";
 import { useGoogleIdToken } from "@/hooks/useGoogleIdToken";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/authSlice";
@@ -21,25 +21,30 @@ export default function SignUpForm() {
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const finishAuth = useCallback(
-    (data: AuthTokenResponse) => {
+    (data: SessionResponse) => {
+      if (!data.user) {
+        setError("Sign up succeeded but no user was returned");
+        return;
+      }
       if (data.user.role !== "customer") {
         setError("Storefront registration creates customer accounts only.");
         return;
       }
-      dispatch(setCredentials(data));
+      dispatch(setCredentials({ user: data.user }));
       router.push("/account");
     },
     [dispatch, router],
   );
 
   const handleGoogleCredential = useCallback(
-    async (idToken: string) => {
+    async (payload: { accessToken: string }) => {
       setError(null);
       setGoogleLoading(true);
       try {
-        const data = await apiFetch<AuthTokenResponse>("/api/auth/google", {
-          body: { idToken },
-        });
+        const data = await apiFetch<SessionResponse>(
+          "/api/auth/session/google",
+          { body: { accessToken: payload.accessToken } },
+        );
         finishAuth(data);
       } catch (err) {
         setError(
@@ -77,9 +82,10 @@ export default function SignUpForm() {
 
     setLoading(true);
     try {
-      const data = await apiFetch<AuthTokenResponse>("/api/auth/register", {
-        body: { first_name, last_name, email, password },
-      });
+      const data = await apiFetch<SessionResponse>(
+        "/api/auth/session/register",
+        { body: { first_name, last_name, email, password } },
+      );
       finishAuth(data);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Sign up failed");

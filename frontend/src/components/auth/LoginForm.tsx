@@ -1,12 +1,12 @@
 "use client";
 
 import { type FormEvent, useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import AuthInput from "./AuthInput";
 import OrDivider from "./OrDivider";
 import SocialAuthButtons from "./SocialAuthButtons";
 import { EnvelopeIcon, LockIcon } from "./icons";
-import { apiFetch, ApiError, type AuthTokenResponse } from "@/lib/api";
+import { apiFetch, ApiError, type SessionResponse } from "@/lib/api";
 import {
   type LoginField,
   validateLoginField,
@@ -30,6 +30,8 @@ type FieldErrors = Partial<Record<LoginField, string>>;
 
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = searchParams.get("next") || "/account";
   const dispatch = useAppDispatch();
   const [rememberMe, setRememberMe] = useState(false);
   const [email, setEmail] = useState("");
@@ -43,7 +45,12 @@ export default function LoginForm() {
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const finishAuth = useCallback(
-    (data: AuthTokenResponse) => {
+    (data: SessionResponse) => {
+      if (!data.user) {
+        setError("Login succeeded but no user was returned");
+        return;
+      }
+
       if (STAFF_ROLES.has(data.user.role)) {
         setError(
           `Staff accounts cannot sign in here. Use the dashboard: ${DASHBOARD_LOGIN_URL}`,
@@ -56,21 +63,22 @@ export default function LoginForm() {
         return;
       }
 
-      dispatch(setCredentials(data));
+      dispatch(setCredentials({ user: data.user }));
       void rememberMe;
-      router.push("/account");
+      router.push(nextPath.startsWith("/") ? nextPath : "/account");
     },
-    [dispatch, rememberMe, router],
+    [dispatch, rememberMe, router, nextPath],
   );
 
   const handleGoogleCredential = useCallback(
-    async (idToken: string) => {
+    async (payload: { accessToken: string }) => {
       setError(null);
       setGoogleLoading(true);
       try {
-        const data = await apiFetch<AuthTokenResponse>("/api/auth/google", {
-          body: { idToken },
-        });
+        const data = await apiFetch<SessionResponse>(
+          "/api/auth/session/google",
+          { body: { accessToken: payload.accessToken } },
+        );
         finishAuth(data);
       } catch (err) {
         setError(
@@ -133,7 +141,7 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      const data = await apiFetch<AuthTokenResponse>("/api/auth/login", {
+      const data = await apiFetch<SessionResponse>("/api/auth/session/login", {
         body: result.data,
       });
       finishAuth(data);

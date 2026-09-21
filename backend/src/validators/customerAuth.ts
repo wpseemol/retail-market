@@ -75,10 +75,15 @@ export const refreshSchema = z.object({
   refreshToken: withSafeInput(jwtShape("Invalid refresh token format")),
 });
 
-/** Google Sign-In ID token from Google Identity Services (`credential`). */
-export const googleAuthSchema = z.object({
-  idToken: withSafeInput(jwtShape("Invalid Google ID token format")),
-});
+/** Google Sign-In — GIS ID token and/or OAuth access token from the popup. */
+export const googleAuthSchema = z
+  .object({
+    idToken: z.string().trim().min(20).max(8192).optional(),
+    accessToken: z.string().trim().min(20).max(8192).optional(),
+  })
+  .refine((data) => Boolean(data.idToken || data.accessToken), {
+    message: "idToken or accessToken is required",
+  });
 
 export const updateProfileSchema = z
   .object({

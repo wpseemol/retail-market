@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import PromoAdSlider from "./PromoAdSlider";
+import AccountMenu from "./AccountMenu";
 import { useAppSelector } from "@/store/hooks";
 import {
     selectCartItemCount,
@@ -429,13 +430,8 @@ export default function Header() {
                         </button>
                     </form>
 
-                    {/* Login / Sign Up Button */}
-                    <Link
-                        href="/auth/login"
-                        className="bg-brand-primary hover:bg-brand-hover text-white text-[13px] font-semibold px-4 py-2 rounded transition-colors whitespace-nowrap"
-                    >
-                        Login / Sign Up
-                    </Link>
+                    {/* Account menu — login CTA or avatar when signed in */}
+                    <AccountMenu />
                 </div>
             </nav>
 
@@ -657,13 +653,10 @@ export default function Header() {
 
                     {/* Drawer Bottom Action */}
                     <div className="pt-4 border-t border-border-default flex flex-col gap-3">
-                        <Link
-                            href="/auth/login"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="w-full text-center bg-brand-primary text-white text-sm font-semibold py-2.5 rounded hover:bg-brand-hover transition-colors"
-                        >
-                            Login / Sign Up
-                        </Link>
+                        <AccountMenu
+                            variant="mobile"
+                            onNavigate={() => setIsMobileMenuOpen(false)}
+                        />
                     </div>
                 </div>
             </div>

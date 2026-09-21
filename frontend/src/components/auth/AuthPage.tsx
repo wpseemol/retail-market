@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import LoginForm from "./LoginForm";
 import SignUpForm from "./SignUpForm";
 import ApiHealthBadge from "@/components/ApiHealthBadge";
@@ -35,7 +36,9 @@ export default function AuthPage() {
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 xl:gap-24 max-w-5xl mx-auto">
                     <SignUpForm />
-                    <LoginForm />
+                    <Suspense fallback={<div className="min-h-80" aria-hidden />}>
+                        <LoginForm />
+                    </Suspense>
                 </div>
             </div>
         </main>

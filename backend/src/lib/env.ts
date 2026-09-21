@@ -21,7 +21,9 @@ export const env = {
   /** Long-lived refresh JWT — keep customer login ~1 year. */
   jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? "365d",
   /** Google OAuth Web Client ID (same as NEXT_PUBLIC_GOOGLE_CLIENT_ID). */
-  googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
+  googleClientId: (process.env.GOOGLE_CLIENT_ID ?? "")
+    .trim()
+    .replace(/^["']|["']$/g, ""),
   corsOrigins: (
     process.env.CORS_ORIGINS ??
     "http://localhost:3000,http://localhost:5173"

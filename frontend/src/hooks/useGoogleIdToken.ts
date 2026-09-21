@@ -4,26 +4,24 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const GIS_SRC = "https://accounts.google.com/gsi/client";
 
+type GoogleTokenClient = {
+  requestAccessToken: (overrideConfig?: { prompt?: string }) => void;
+};
+
 declare global {
   interface Window {
     google?: {
       accounts: {
-        id: {
-          initialize: (config: {
+        oauth2: {
+          initTokenClient: (config: {
             client_id: string;
-            callback: (response: { credential: string }) => void;
-            auto_select?: boolean;
-            cancel_on_tap_outside?: boolean;
-          }) => void;
-          prompt: (
-            momentListener?: (notification: {
-              isNotDisplayed: () => boolean;
-              isSkippedMoment: () => boolean;
-              isDismissedMoment: () => boolean;
-              getNotDisplayedReason?: () => string;
-            }) => void,
-          ) => void;
-          cancel: () => void;
+            scope: string;
+            callback: (response: {
+              access_token?: string;
+              error?: string;
+              error_description?: string;
+            }) => void;
+          }) => GoogleTokenClient;
         };
       };
     };
@@ -32,13 +30,17 @@ declare global {
 
 function loadGisScript(): Promise<void> {
   if (typeof window === "undefined") return Promise.reject(new Error("SSR"));
-  if (window.google?.accounts?.id) return Promise.resolve();
+  if (window.google?.accounts?.oauth2) return Promise.resolve();
 
   const existing = document.querySelector<HTMLScriptElement>(
     `script[src="${GIS_SRC}"]`,
   );
   if (existing) {
     return new Promise((resolve, reject) => {
+      if (window.google?.accounts?.oauth2) {
+        resolve();
+        return;
+      }
       existing.addEventListener("load", () => resolve());
       existing.addEventListener("error", () =>
         reject(new Error("Failed to load Google Sign-In")),
@@ -58,14 +60,18 @@ function loadGisScript(): Promise<void> {
 }
 
 /**
- * Google Identity Services — returns an ID token (`credential`) for the backend.
+ * Google Identity Services token popup — returns an OAuth access token
+ * for `POST /api/auth/google` (more reliable than One Tap `prompt()`).
  */
-export function useGoogleIdToken(onCredential: (idToken: string) => void) {
-  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
+export function useGoogleIdToken(
+  onCredential: (payload: { accessToken: string }) => void,
+) {
+  const clientId = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "").trim();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const callbackRef = useRef(onCredential);
   callbackRef.current = onCredential;
+  const tokenClientRef = useRef<GoogleTokenClient | null>(null);
 
   useEffect(() => {
     if (!clientId) {
@@ -77,17 +83,35 @@ export function useGoogleIdToken(onCredential: (idToken: string) => void) {
 
     void loadGisScript()
       .then(() => {
-        if (cancelled || !window.google?.accounts?.id) return;
-        window.google.accounts.id.initialize({
+        if (cancelled || !window.google?.accounts?.oauth2) return;
+
+        tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
           client_id: clientId,
+          scope: "openid email profile",
           callback: (response) => {
-            if (response.credential) {
-              callbackRef.current(response.credential);
+            if (response.error) {
+              if (response.error === "access_denied") {
+                // User closed the popup — not a hard failure.
+                setError(null);
+                return;
+              }
+              setError(
+                response.error_description ||
+                  "Google Sign-In failed. Try again.",
+              );
+              return;
             }
+
+            if (!response.access_token) {
+              setError("Google did not return an access token");
+              return;
+            }
+
+            setError(null);
+            callbackRef.current({ accessToken: response.access_token });
           },
-          auto_select: false,
-          cancel_on_tap_outside: true,
         });
+
         setReady(true);
         setError(null);
       })
@@ -109,22 +133,14 @@ export function useGoogleIdToken(onCredential: (idToken: string) => void) {
       setError("Set NEXT_PUBLIC_GOOGLE_CLIENT_ID to enable Google Sign-In");
       return;
     }
-    if (!ready || !window.google?.accounts?.id) {
+    if (!ready || !tokenClientRef.current) {
       setError("Google Sign-In is still loading. Try again in a moment.");
       return;
     }
 
-    window.google.accounts.id.prompt((notification) => {
-      if (
-        notification.isNotDisplayed() ||
-        notification.isSkippedMoment() ||
-        notification.isDismissedMoment()
-      ) {
-        setError(
-          "Google Sign-In was blocked or dismissed. Allow pop-ups and try again.",
-        );
-      }
-    });
+    setError(null);
+    // Popup account picker — avoid One Tap (often blocked by browsers).
+    tokenClientRef.current.requestAccessToken({ prompt: "select_account" });
   }, [clientId, ready]);
 
   return {
