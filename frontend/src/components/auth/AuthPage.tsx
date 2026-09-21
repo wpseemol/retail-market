@@ -1,6 +1,7 @@
 import Link from "next/link";
 import LoginForm from "./LoginForm";
 import SignUpForm from "./SignUpForm";
+import ApiHealthBadge from "@/components/ApiHealthBadge";
 
 export default function AuthPage() {
     return (
@@ -29,6 +30,9 @@ export default function AuthPage() {
             </div>
 
             <div className="container mx-auto px-4 sm:px-6 py-10 sm:py-14 lg:py-16">
+                <div className="mb-6 flex justify-end">
+                    <ApiHealthBadge />
+                </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 xl:gap-24 max-w-5xl mx-auto">
                     <SignUpForm />
                     <LoginForm />

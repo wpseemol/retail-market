@@ -1,22 +1,38 @@
 import "./lib/env.js";
 import express from "express";
 import cors from "cors";
-import { prisma } from "./lib/prisma.js";
+import { env } from "./lib/env.js";
+import { healthRouter } from "./routes/health.js";
+import { customerAuthRouter } from "./routes/customerAuth.js";
+import { dashboardAuthRouter } from "./routes/dashboardAuth.js";
 
 const app = express();
-app.use(cors());
+
+app.set("trust proxy", 1);
+app.use(
+  cors({
+    origin: env.corsOrigins,
+    credentials: true,
+  }),
+);
 app.use(express.json());
 
-app.get("/api/health", async (_req, res) => {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    res.json({ status: "ok", database: "connected" });
-  } catch {
-    res.status(503).json({ status: "degraded", database: "disconnected" });
-  }
-});
+app.use("/api/health", healthRouter);
+app.use("/api/auth", customerAuthRouter);
+app.use("/api/dashboard/auth", dashboardAuthRouter);
 
-const PORT = process.env.PORT || 8001;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.use(
+  (
+    err: unknown,
+    _req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction,
+  ) => {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
+  },
+);
+
+app.listen(env.port, () => {
+  console.log(`Server running on port ${env.port}`);
 });
