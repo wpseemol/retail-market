@@ -29,6 +29,34 @@ enum Gender {
   other
 }
 
+enum MediaDisk {
+  local
+  s3
+  r2
+  public
+}
+
+enum MediaCollection {
+  product_images
+  vendor_banners
+  trade_licenses
+  avatars
+  site_banners
+}
+
+enum DeviceType {
+  desktop
+  mobile
+  tablet
+  unknown
+}
+
+enum LoginMethod {
+  password
+  google
+  refresh
+}
+
 model User {
   id                        BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
   first_name                String     @db.VarChar(100)
@@ -48,26 +76,73 @@ model User {
   remember_token            String?    @db.VarChar(100)
   provider_name             String?    @db.VarChar(50)
   provider_id               String?    @db.VarChar(255)
+  /// Primary profile image from `medias` (collection: avatars).
+  avatar_id                 BigInt?    @unique @db.UnsignedBigInt
   last_login_at             DateTime?
   last_login_ip             String?    @db.VarChar(45)
   created_at                DateTime   @default(now())
   updated_at                DateTime   @updatedAt
   deleted_at                DateTime?
 
-  avatar UserAvatar?
+  avatar         Media?         @relation("UserAvatar", fields: [avatar_id], references: [id], onDelete: SetNull)
+  uploadedMedia  Media[]        @relation("MediaUploader")
+  sessions       UserSession[]
 
   @@map("users")
 }
 
-/// Optional profile image — users are created without an avatar most of the time.
-model UserAvatar {
-  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  user_id    BigInt   @unique @db.UnsignedBigInt
-  path       String   @db.VarChar(255)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+/// Polymorphic media library for products, vendors, avatars, banners, KYC docs, etc.
+model Media {
+  id              BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id         BigInt?         @db.UnsignedBigInt
+  disk            MediaDisk       @default(public)
+  file_name       String          @db.VarChar(255)
+  original_name   String?         @db.VarChar(255)
+  file_path       String          @db.VarChar(500)
+  file_size       BigInt?         @db.UnsignedBigInt
+  mime_type       String?         @db.VarChar(100)
+  dimensions      Json?
+  alt_text        String?         @db.VarChar(255)
+  collection_name MediaCollection
+  is_public       Boolean         @default(true)
+  mediable_type   String?         @db.VarChar(100)
+  mediable_id     BigInt?         @db.UnsignedBigInt
+  sort_order      Int             @default(0)
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+
+  uploader       User?  @relation("MediaUploader", fields: [user_id], references: [id], onDelete: SetNull)
+  avatarForUsers User[] @relation("UserAvatar")
+
+  @@index([user_id])
+  @@index([collection_name])
+  @@index([mediable_type, mediable_id])
+  @@map("medias")
+}
+
+/// Active login / refresh sessions for device tracking and revocation.
+model UserSession {
+  id               String      @id @default(uuid()) @db.Char(36)
+  user_id          BigInt      @db.UnsignedBigInt
+  token_hash       String      @unique @db.VarChar(64)
+  ip_address       String?     @db.VarChar(45)
+  user_agent       String?     @db.Text
+  device_type      DeviceType  @default(unknown)
+  browser          String?     @db.VarChar(100)
+  os               String?     @db.VarChar(100)
+  login_method     LoginMethod @default(password)
+  is_revoked       Boolean     @default(false)
+  last_activity_at DateTime    @default(now())
+  created_at       DateTime    @default(now())
+  expires_at       DateTime
+  revoked_at       DateTime?
+  updated_at       DateTime    @updatedAt
 
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@map("user_avatars")
+  @@index([user_id])
+  @@index([last_activity_at])
+  @@index([expires_at])
+  @@index([is_revoked])
+  @@map("user_sessions")
 }

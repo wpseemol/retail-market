@@ -1,15 +1,13 @@
-import { logout as logoutAction } from "@/store/authSlice";
+import { logoutAction } from "@/app/actions/auth";
+import { logout as clearClientAuth } from "@/store/authSlice";
 import type { AppDispatch } from "@/store/store";
 
-/** Clear encrypted httpOnly session cookie, then wipe client auth state. */
+/** Server Action clears httpOnly cookies; then wipe Redux auth state. */
 export async function logoutSession(dispatch: AppDispatch) {
   try {
-    await fetch("/api/auth/session", {
-      method: "DELETE",
-      credentials: "same-origin",
-    });
+    await logoutAction();
   } catch {
-    // Still clear client state if the network call fails.
+    // Still clear client state if the action fails.
   }
-  dispatch(logoutAction());
+  dispatch(clearClientAuth());
 }

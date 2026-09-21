@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import type { UserRole } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { verifyAccessToken } from "../lib/token.js";
-import { toPublicUser } from "../lib/user.js";
+import { toPublicUser, userWithAvatarInclude } from "../lib/user.js";
 
 export type AuthUser = ReturnType<typeof toPublicUser>;
 
@@ -35,7 +35,7 @@ export async function requireAuth(
 
     const user = await prisma.user.findFirst({
       where: { id: userId, deleted_at: null },
-      include: { avatar: true },
+      include: userWithAvatarInclude,
     });
 
     if (!user) {

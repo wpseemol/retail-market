@@ -8,6 +8,8 @@ export type AuthTokenPayload = {
   sub: string;
   role: UserRole;
   typ: TokenType;
+  /** Links refresh/access JWTs to `user_sessions.id`. */
+  sid?: string;
 };
 
 type SignableClaims = Omit<AuthTokenPayload, "typ">;
@@ -40,6 +42,7 @@ function verifyToken(token: string, expectedTyp: TokenType): AuthTokenPayload {
     sub: decoded.sub,
     role: decoded.role as UserRole,
     typ: expectedTyp,
+    sid: typeof decoded.sid === "string" ? decoded.sid : undefined,
   };
 }
 
@@ -73,6 +76,7 @@ export function issueAuthTokens(claims: SignableClaims) {
     tokenType: "Bearer" as const,
     expiresIn: env.jwtAccessExpiresIn,
     refreshExpiresIn: env.jwtRefreshExpiresIn,
+    sessionId: claims.sid,
   };
 }
 

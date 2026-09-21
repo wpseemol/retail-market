@@ -1,10 +1,14 @@
 import type { Request, Response } from "express";
-import type { User, UserAvatar } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { verifyGoogleCredential } from "../lib/googleAuth.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
-import { issueAuthTokens, verifyRefreshToken } from "../lib/token.js";
-import { toPublicUser } from "../lib/user.js";
+import { verifyRefreshToken } from "../lib/token.js";
+import { createUserSession, rotateUserSession } from "../lib/userSession.js";
+import {
+  toPublicUser,
+  userWithAvatarInclude,
+  type UserWithAvatar,
+} from "../lib/user.js";
 import {
   googleAuthSchema,
   loginSchema,
@@ -12,8 +16,7 @@ import {
   registerSchema,
   updateProfileSchema,
 } from "../validators/customerAuth.js";
-
-type UserWithAvatar = User & { avatar: UserAvatar | null };
+import type { LoginMethod } from "@prisma/client";
 
 /**
  * Customer auth tokens (see `lib/token.ts`):
@@ -27,7 +30,7 @@ type UserWithAvatar = User & { avatar: UserAvatar | null };
  *                  Sent only to `POST /api/auth/refresh` to get a new token pair
  *                  when the access token expires (keeps the user logged in).
  *
- * `issueAuthTokens()` returns both, plus legacy `token` (= accessToken).
+ * Sessions are tracked in `user_sessions` (hashed refresh token + device info).
  */
 
 async function markLoginAndIssueTokens(
@@ -35,6 +38,7 @@ async function markLoginAndIssueTokens(
   req: Request,
   message: string,
   status = 200,
+  loginMethod: LoginMethod = "password",
 ) {
   const updated = await prisma.user.update({
     where: { id: user.id },
@@ -42,12 +46,14 @@ async function markLoginAndIssueTokens(
       last_login_at: new Date(),
       last_login_ip: req.ip ?? null,
     },
-    include: { avatar: true },
+    include: userWithAvatarInclude,
   });
 
-  const tokens = issueAuthTokens({
-    sub: updated.id.toString(),
+  const { sessionId, tokens } = await createUserSession({
+    userId: updated.id,
     role: updated.role,
+    req,
+    loginMethod,
   });
 
   return {
@@ -55,6 +61,7 @@ async function markLoginAndIssueTokens(
     body: {
       message,
       ...tokens,
+      sessionId,
       user: toPublicUser(updated),
     },
   };
@@ -101,20 +108,17 @@ export async function register(req: Request, res: Response) {
       role: "customer",
       status: "active",
     },
-    include: { avatar: true },
+    include: userWithAvatarInclude,
   });
 
-  // Issue accessToken (API calls) + refreshToken (stay logged in ~1 year).
-  const tokens = issueAuthTokens({
-    sub: user.id.toString(),
-    role: user.role,
-  });
-
-  return res.status(201).json({
-    message: "Registered successfully",
-    ...tokens,
-    user: toPublicUser(user),
-  });
+  const result = await markLoginAndIssueTokens(
+    user,
+    req,
+    "Registered successfully",
+    201,
+    "password",
+  );
+  return res.status(result.status).json(result.body);
 }
 
 /** Storefront only — customers may log in here. */
@@ -130,7 +134,7 @@ export async function login(req: Request, res: Response) {
   const email = parsed.data.email.toLowerCase();
   const user = await prisma.user.findFirst({
     where: { email, deleted_at: null },
-    include: { avatar: true },
+    include: userWithAvatarInclude,
   });
 
   if (!user) {
@@ -169,6 +173,8 @@ export async function login(req: Request, res: Response) {
     user,
     req,
     "Logged in successfully",
+    200,
+    "password",
   );
   return res.status(result.status).json(result.body);
 }
@@ -221,7 +227,7 @@ export async function googleLogin(req: Request, res: Response) {
       provider_name: "google",
       provider_id: identity.sub,
     },
-    include: { avatar: true },
+    include: userWithAvatarInclude,
   });
 
   if (user) {
@@ -240,6 +246,8 @@ export async function googleLogin(req: Request, res: Response) {
       user,
       req,
       "Logged in with Google",
+      200,
+      "google",
     );
     return res.status(result.status).json(result.body);
   }
@@ -247,7 +255,7 @@ export async function googleLogin(req: Request, res: Response) {
   // 2) Existing account with same email (email/password or other)
   const byEmail = await prisma.user.findFirst({
     where: { email: identity.email, deleted_at: null },
-    include: { avatar: true },
+    include: userWithAvatarInclude,
   });
 
   if (byEmail) {
@@ -282,13 +290,15 @@ export async function googleLogin(req: Request, res: Response) {
         first_name: byEmail.first_name || identity.givenName,
         last_name: byEmail.last_name || identity.familyName,
       },
-      include: { avatar: true },
+      include: userWithAvatarInclude,
     });
 
     const result = await markLoginAndIssueTokens(
       user,
       req,
       "Google linked to your existing account. You can sign in with Google or your password.",
+      200,
+      "google",
     );
     return res.status(result.status).json({
       ...result.body,
@@ -309,7 +319,7 @@ export async function googleLogin(req: Request, res: Response) {
       provider_id: identity.sub,
       email_verified_at: new Date(),
     },
-    include: { avatar: true },
+    include: userWithAvatarInclude,
   });
 
   const result = await markLoginAndIssueTokens(
@@ -317,6 +327,7 @@ export async function googleLogin(req: Request, res: Response) {
     req,
     "Registered and logged in with Google",
     201,
+    "google",
   );
   return res.status(result.status).json(result.body);
 }
@@ -349,6 +360,13 @@ export async function refresh(req: Request, res: Response) {
     return res.status(401).json({ message: "Invalid or expired refresh token" });
   }
 
+  if (!payload.sid) {
+    return res.status(401).json({
+      message: "Refresh token is missing session id — please log in again",
+      code: "SESSION_REQUIRED",
+    });
+  }
+
   if (payload.role !== "customer") {
     return res.status(403).json({
       message: "Refresh is only available for customer storefront sessions",
@@ -357,7 +375,7 @@ export async function refresh(req: Request, res: Response) {
 
   const user = await prisma.user.findFirst({
     where: { id: BigInt(payload.sub), deleted_at: null },
-    include: { avatar: true },
+    include: userWithAvatarInclude,
   });
 
   if (!user) {
@@ -374,15 +392,25 @@ export async function refresh(req: Request, res: Response) {
     });
   }
 
-  // Rotate both tokens (new access for APIs + new refresh for the next year window).
-  const tokens = issueAuthTokens({
-    sub: user.id.toString(),
+  const rotated = await rotateUserSession({
+    sessionId: payload.sid,
+    userId: user.id,
     role: user.role,
+    oldRefreshToken: parsed.data.refreshToken,
+    req,
   });
+
+  if (!rotated) {
+    return res.status(401).json({
+      message: "Session revoked or expired — please log in again",
+      code: "SESSION_REVOKED",
+    });
+  }
 
   return res.json({
     message: "Token refreshed",
-    ...tokens,
+    ...rotated.tokens,
+    sessionId: rotated.sessionId,
     user: toPublicUser(user),
   });
 }
@@ -438,7 +466,7 @@ export async function updateMe(req: Request, res: Response) {
             ? new Date(data.date_of_birth)
             : null,
     },
-    include: { avatar: true },
+    include: userWithAvatarInclude,
   });
 
   return res.json({

@@ -9,7 +9,16 @@ export type ApiUser = {
   gender: "male" | "female" | "other" | null;
   date_of_birth: string | null;
   provider_name?: string | null;
-  avatar: { id: string; path: string } | null;
+  avatar_id?: string | null;
+  avatar: {
+    id: string;
+    path: string;
+    file_name?: string;
+    file_path?: string;
+    mime_type?: string | null;
+    alt_text?: string | null;
+    collection_name?: string;
+  } | null;
 };
 
 /** Returned by Next.js session routes (tokens stay in httpOnly cookie). */

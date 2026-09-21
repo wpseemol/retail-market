@@ -4,7 +4,7 @@ import type { UserRole } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { verifyPassword } from "../lib/password.js";
 import { signAuthToken } from "../lib/token.js";
-import { toPublicUser } from "../lib/user.js";
+import { toPublicUser, userWithAvatarInclude } from "../lib/user.js";
 import {
   requireAuth,
   requireRoles,
@@ -38,7 +38,7 @@ dashboardAuthRouter.post("/login", async (req, res) => {
   const email = parsed.data.email.toLowerCase();
   const user = await prisma.user.findFirst({
     where: { email, deleted_at: null },
-    include: { avatar: true },
+    include: userWithAvatarInclude,
   });
 
   if (!user?.password || !(await verifyPassword(parsed.data.password, user.password))) {
@@ -63,7 +63,7 @@ dashboardAuthRouter.post("/login", async (req, res) => {
       last_login_at: new Date(),
       last_login_ip: req.ip ?? null,
     },
-    include: { avatar: true },
+    include: userWithAvatarInclude,
   });
 
   const token = signAuthToken({

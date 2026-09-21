@@ -1,12 +1,11 @@
 "use client";
 
-import { type FormEvent, useCallback, useState } from "react";
+import { type FormEvent, useCallback, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuthInput from "./AuthInput";
 import OrDivider from "./OrDivider";
 import SocialAuthButtons from "./SocialAuthButtons";
 import { EnvelopeIcon, LockIcon } from "./icons";
-import { apiFetch, ApiError, type SessionResponse } from "@/lib/api";
 import {
   type LoginField,
   validateLoginField,
@@ -16,6 +15,11 @@ import { useGoogleIdToken } from "@/hooks/useGoogleIdToken";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/authSlice";
 import { dashboardLoginUrl } from "@/config/site";
+import {
+  googleLoginAction,
+  loginAction,
+} from "@/app/actions/auth";
+import type { ApiUser } from "@/lib/api";
 
 const DASHBOARD_LOGIN_URL = dashboardLoginUrl();
 
@@ -41,52 +45,52 @@ export default function LoginForm() {
     {},
   );
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const finishAuth = useCallback(
-    (data: SessionResponse) => {
-      if (!data.user) {
-        setError("Login succeeded but no user was returned");
-        return;
-      }
-
-      if (STAFF_ROLES.has(data.user.role)) {
+    (user: ApiUser) => {
+      if (STAFF_ROLES.has(user.role)) {
         setError(
           `Staff accounts cannot sign in here. Use the dashboard: ${DASHBOARD_LOGIN_URL}`,
         );
         return;
       }
 
-      if (data.user.role !== "customer") {
+      if (user.role !== "customer") {
         setError("Only customer accounts can sign in on the storefront.");
         return;
       }
 
-      dispatch(setCredentials({ user: data.user }));
+      // Tokens + authUser already stored in encrypted httpOnly cookies by the Server Action.
+      dispatch(setCredentials({ user }));
       void rememberMe;
       router.push(nextPath.startsWith("/") ? nextPath : "/account");
+      router.refresh();
     },
     [dispatch, rememberMe, router, nextPath],
   );
 
   const handleGoogleCredential = useCallback(
-    async (payload: { accessToken: string }) => {
+    (payload: { accessToken: string }) => {
       setError(null);
       setGoogleLoading(true);
-      try {
-        const data = await apiFetch<SessionResponse>(
-          "/api/auth/session/google",
-          { body: { accessToken: payload.accessToken } },
-        );
-        finishAuth(data);
-      } catch (err) {
-        setError(
-          err instanceof ApiError ? err.message : "Google sign-in failed",
-        );
-      } finally {
-        setGoogleLoading(false);
-      }
+      startTransition(async () => {
+        try {
+          const result = await googleLoginAction({
+            accessToken: payload.accessToken,
+          });
+          if (!result.ok) {
+            setError(result.message);
+            return;
+          }
+          finishAuth(result.user);
+        } catch {
+          setError("Google sign-in failed");
+        } finally {
+          setGoogleLoading(false);
+        }
+      });
     },
     [finishAuth],
   );
@@ -126,7 +130,7 @@ export default function LoginForm() {
     });
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
     setTouched({ email: true, password: true });
@@ -138,29 +142,23 @@ export default function LoginForm() {
     }
 
     setFieldErrors({});
-    setLoading(true);
-
-    try {
-      const data = await apiFetch<SessionResponse>("/api/auth/session/login", {
-        body: result.data,
-      });
-      finishAuth(data);
-    } catch (err) {
-      if (err instanceof ApiError && err.code === "USE_GOOGLE") {
-        setError(err.message);
-      } else if (err instanceof ApiError && err.status === 403) {
-        setError(
-          `${err.message} Open ${DASHBOARD_LOGIN_URL} for staff access.`,
-        );
-      } else {
-        setError(err instanceof ApiError ? err.message : "Login failed");
+    startTransition(async () => {
+      try {
+        // Server Action → backend login → sets httpOnly encrypted cookies
+        const auth = await loginAction(result.data);
+        if (!auth.ok) {
+          setError(auth.message);
+          return;
+        }
+        finishAuth(auth.user);
+      } catch {
+        setError("Login failed");
       }
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   const displayError = error ?? google.error;
+  const loading = isPending || googleLoading;
 
   return (
     <section className="w-full" aria-labelledby="login-heading">
@@ -239,7 +237,7 @@ export default function LoginForm() {
 
         <button
           type="submit"
-          disabled={loading || googleLoading}
+          disabled={loading}
           className="mt-1 w-full h-11 rounded bg-brand-primary hover:bg-brand-hover text-white text-sm font-semibold transition-colors cursor-pointer disabled:opacity-60"
         >
           {loading ? "Logging in…" : "Login"}

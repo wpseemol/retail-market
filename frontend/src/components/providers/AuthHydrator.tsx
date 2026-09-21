@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useAppDispatch } from "@/store/hooks";
 import { hydrateAuth, setSessionUser } from "@/store/authSlice";
-import type { SessionResponse } from "@/lib/api";
+import { getSessionAction } from "@/app/actions/auth";
 
 export default function AuthHydrator() {
   const dispatch = useAppDispatch();
@@ -14,16 +14,9 @@ export default function AuthHydrator() {
     async function loadSession() {
       dispatch(hydrateAuth());
       try {
-        const res = await fetch("/api/auth/session", {
-          credentials: "same-origin",
-        });
+        const data = await getSessionAction();
         if (cancelled) return;
-        if (!res.ok) {
-          dispatch(setSessionUser(null));
-          return;
-        }
-        const data = (await res.json()) as SessionResponse;
-        dispatch(setSessionUser(data.user ?? null));
+        dispatch(setSessionUser(data.user));
       } catch {
         if (!cancelled) dispatch(setSessionUser(null));
       }

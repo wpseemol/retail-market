@@ -1,65 +1,69 @@
 "use client";
 
-import { type FormEvent, useCallback, useState } from "react";
+import { type FormEvent, useCallback, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthInput from "./AuthInput";
 import OrDivider from "./OrDivider";
 import SocialAuthButtons from "./SocialAuthButtons";
 import { EnvelopeIcon, LockIcon, UserIcon } from "./icons";
-import { apiFetch, ApiError, type SessionResponse } from "@/lib/api";
 import { useGoogleIdToken } from "@/hooks/useGoogleIdToken";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/authSlice";
+import {
+  googleLoginAction,
+  registerAction,
+} from "@/app/actions/auth";
+import type { ApiUser } from "@/lib/api";
 
 export default function SignUpForm() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const finishAuth = useCallback(
-    (data: SessionResponse) => {
-      if (!data.user) {
-        setError("Sign up succeeded but no user was returned");
-        return;
-      }
-      if (data.user.role !== "customer") {
+    (user: ApiUser) => {
+      if (user.role !== "customer") {
         setError("Storefront registration creates customer accounts only.");
         return;
       }
-      dispatch(setCredentials({ user: data.user }));
+      dispatch(setCredentials({ user }));
       router.push("/account");
+      router.refresh();
     },
     [dispatch, router],
   );
 
   const handleGoogleCredential = useCallback(
-    async (payload: { accessToken: string }) => {
+    (payload: { accessToken: string }) => {
       setError(null);
       setGoogleLoading(true);
-      try {
-        const data = await apiFetch<SessionResponse>(
-          "/api/auth/session/google",
-          { body: { accessToken: payload.accessToken } },
-        );
-        finishAuth(data);
-      } catch (err) {
-        setError(
-          err instanceof ApiError ? err.message : "Google sign-in failed",
-        );
-      } finally {
-        setGoogleLoading(false);
-      }
+      startTransition(async () => {
+        try {
+          const result = await googleLoginAction({
+            accessToken: payload.accessToken,
+          });
+          if (!result.ok) {
+            setError(result.message);
+            return;
+          }
+          finishAuth(result.user);
+        } catch {
+          setError("Google sign-in failed");
+        } finally {
+          setGoogleLoading(false);
+        }
+      });
     },
     [finishAuth],
   );
 
   const google = useGoogleIdToken(handleGoogleCredential);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
 
@@ -80,21 +84,27 @@ export default function SignUpForm() {
       return;
     }
 
-    setLoading(true);
-    try {
-      const data = await apiFetch<SessionResponse>(
-        "/api/auth/session/register",
-        { body: { first_name, last_name, email, password } },
-      );
-      finishAuth(data);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Sign up failed");
-    } finally {
-      setLoading(false);
-    }
+    startTransition(async () => {
+      try {
+        const result = await registerAction({
+          first_name,
+          last_name,
+          email,
+          password,
+        });
+        if (!result.ok) {
+          setError(result.message);
+          return;
+        }
+        finishAuth(result.user);
+      } catch {
+        setError("Sign up failed");
+      }
+    });
   };
 
   const displayError = error ?? google.error;
+  const loading = isPending || googleLoading;
 
   return (
     <section className="w-full" aria-labelledby="signup-heading">
@@ -196,7 +206,7 @@ export default function SignUpForm() {
 
         <button
           type="submit"
-          disabled={loading || googleLoading}
+          disabled={loading}
           className="mt-1 w-full h-11 rounded bg-brand-primary hover:bg-brand-hover text-white text-sm font-semibold transition-colors cursor-pointer disabled:opacity-60"
         >
           {loading ? "Creating account…" : "Sign Up"}
