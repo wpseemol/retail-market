@@ -35,17 +35,20 @@ type ApiOptions = {
 
 export class ApiError extends Error {
   status: number;
+  code?: string;
   errors?: Record<string, string[] | undefined>;
 
   constructor(
     message: string,
     status: number,
     errors?: Record<string, string[] | undefined>,
+    code?: string,
   ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.errors = errors;
+    this.code = code;
   }
 }
 
@@ -105,6 +108,7 @@ export async function apiFetch<T>(
 
   const data = (await response.json().catch(() => ({}))) as {
     message?: string;
+    code?: string;
     errors?: Record<string, string[] | undefined>;
   };
 
@@ -129,6 +133,7 @@ export async function apiFetch<T>(
       data.message ?? "Request failed",
       response.status,
       data.errors,
+      data.code,
     );
   }
 

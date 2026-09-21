@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getMe,
+  googleLogin,
   login,
   refresh,
   register,
@@ -13,6 +14,7 @@ export const customerAuthRouter = Router();
 
 customerAuthRouter.post("/register", asyncHandler(register));
 customerAuthRouter.post("/login", asyncHandler(login));
+customerAuthRouter.post("/google", asyncHandler(googleLogin));
 customerAuthRouter.post("/refresh", asyncHandler(refresh));
 
 customerAuthRouter.get("/me", requireAuth, requireRoles("customer"), getMe);

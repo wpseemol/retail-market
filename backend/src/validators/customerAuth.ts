@@ -63,18 +63,21 @@ export const loginSchema = z.object({
   password: withSafeInput(z.string().min(1).max(128)),
 });
 
-const jwtShape = z
-  .string()
-  .trim()
-  .min(20)
-  .max(4096)
-  .regex(
-    /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/,
-    "Invalid refresh token format",
-  );
+const jwtShape = (invalidMessage: string) =>
+  z
+    .string()
+    .trim()
+    .min(20)
+    .max(4096)
+    .regex(/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/, invalidMessage);
 
 export const refreshSchema = z.object({
-  refreshToken: withSafeInput(jwtShape),
+  refreshToken: withSafeInput(jwtShape("Invalid refresh token format")),
+});
+
+/** Google Sign-In ID token from Google Identity Services (`credential`). */
+export const googleAuthSchema = z.object({
+  idToken: withSafeInput(jwtShape("Invalid Google ID token format")),
 });
 
 export const updateProfileSchema = z
@@ -102,4 +105,5 @@ export const updateProfileSchema = z
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RefreshInput = z.infer<typeof refreshSchema>;
+export type GoogleAuthInput = z.infer<typeof googleAuthSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

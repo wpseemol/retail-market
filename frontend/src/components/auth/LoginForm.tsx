@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthInput from "./AuthInput";
 import OrDivider from "./OrDivider";
@@ -12,6 +12,7 @@ import {
   validateLoginField,
   validateLoginForm,
 } from "@/lib/validators/customerAuth";
+import { useGoogleIdToken } from "@/hooks/useGoogleIdToken";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/authSlice";
 import { dashboardLoginUrl } from "@/config/site";
@@ -39,12 +40,55 @@ export default function LoginForm() {
   );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const finishAuth = useCallback(
+    (data: AuthTokenResponse) => {
+      if (STAFF_ROLES.has(data.user.role)) {
+        setError(
+          `Staff accounts cannot sign in here. Use the dashboard: ${DASHBOARD_LOGIN_URL}`,
+        );
+        return;
+      }
+
+      if (data.user.role !== "customer") {
+        setError("Only customer accounts can sign in on the storefront.");
+        return;
+      }
+
+      dispatch(setCredentials(data));
+      void rememberMe;
+      router.push("/account");
+    },
+    [dispatch, rememberMe, router],
+  );
+
+  const handleGoogleCredential = useCallback(
+    async (idToken: string) => {
+      setError(null);
+      setGoogleLoading(true);
+      try {
+        const data = await apiFetch<AuthTokenResponse>("/api/auth/google", {
+          body: { idToken },
+        });
+        finishAuth(data);
+      } catch (err) {
+        setError(
+          err instanceof ApiError ? err.message : "Google sign-in failed",
+        );
+      } finally {
+        setGoogleLoading(false);
+      }
+    },
+    [finishAuth],
+  );
+
+  const google = useGoogleIdToken(handleGoogleCredential);
 
   const setFieldValue = (field: LoginField, value: string) => {
     if (field === "email") setEmail(value);
     else setPassword(value);
 
-    // Fast Zod check while typing once the field has been touched or already has an error.
     if (touched[field] || fieldErrors[field]) {
       const message = validateLoginField(field, value);
       setFieldErrors((prev) => {
@@ -92,25 +136,11 @@ export default function LoginForm() {
       const data = await apiFetch<AuthTokenResponse>("/api/auth/login", {
         body: result.data,
       });
-
-      // Extra guard: never keep a staff session in the storefront.
-      if (STAFF_ROLES.has(data.user.role)) {
-        setError(
-          `Staff accounts cannot sign in here. Use the dashboard: ${DASHBOARD_LOGIN_URL}`,
-        );
-        return;
-      }
-
-      if (data.user.role !== "customer") {
-        setError("Only customer accounts can sign in on the storefront.");
-        return;
-      }
-
-      dispatch(setCredentials(data));
-      void rememberMe;
-      router.push("/account");
+      finishAuth(data);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 403) {
+      if (err instanceof ApiError && err.code === "USE_GOOGLE") {
+        setError(err.message);
+      } else if (err instanceof ApiError && err.status === 403) {
         setError(
           `${err.message} Open ${DASHBOARD_LOGIN_URL} for staff access.`,
         );
@@ -121,6 +151,8 @@ export default function LoginForm() {
       setLoading(false);
     }
   };
+
+  const displayError = error ?? google.error;
 
   return (
     <section className="w-full" aria-labelledby="login-heading">
@@ -144,7 +176,15 @@ export default function LoginForm() {
         .
       </p>
 
-      <SocialAuthButtons />
+      <SocialAuthButtons
+        onGoogleClick={() => {
+          setError(null);
+          google.clearError();
+          google.promptGoogleSignIn();
+        }}
+        googleLoading={googleLoading}
+        disabled={loading}
+      />
       <OrDivider />
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
@@ -183,15 +223,15 @@ export default function LoginForm() {
           <span className="text-sm text-text-secondary">Remember Me?</span>
         </label>
 
-        {error ? (
+        {displayError ? (
           <p className="text-sm text-rose-600" role="alert">
-            {error}
+            {displayError}
           </p>
         ) : null}
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || googleLoading}
           className="mt-1 w-full h-11 rounded bg-brand-primary hover:bg-brand-hover text-white text-sm font-semibold transition-colors cursor-pointer disabled:opacity-60"
         >
           {loading ? "Logging in…" : "Login"}

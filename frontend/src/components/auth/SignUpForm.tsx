@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthInput from "./AuthInput";
@@ -8,6 +8,7 @@ import OrDivider from "./OrDivider";
 import SocialAuthButtons from "./SocialAuthButtons";
 import { EnvelopeIcon, LockIcon, UserIcon } from "./icons";
 import { apiFetch, ApiError, type AuthTokenResponse } from "@/lib/api";
+import { useGoogleIdToken } from "@/hooks/useGoogleIdToken";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/authSlice";
 
@@ -17,6 +18,41 @@ export default function SignUpForm() {
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const finishAuth = useCallback(
+    (data: AuthTokenResponse) => {
+      if (data.user.role !== "customer") {
+        setError("Storefront registration creates customer accounts only.");
+        return;
+      }
+      dispatch(setCredentials(data));
+      router.push("/account");
+    },
+    [dispatch, router],
+  );
+
+  const handleGoogleCredential = useCallback(
+    async (idToken: string) => {
+      setError(null);
+      setGoogleLoading(true);
+      try {
+        const data = await apiFetch<AuthTokenResponse>("/api/auth/google", {
+          body: { idToken },
+        });
+        finishAuth(data);
+      } catch (err) {
+        setError(
+          err instanceof ApiError ? err.message : "Google sign-in failed",
+        );
+      } finally {
+        setGoogleLoading(false);
+      }
+    },
+    [finishAuth],
+  );
+
+  const google = useGoogleIdToken(handleGoogleCredential);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -44,20 +80,15 @@ export default function SignUpForm() {
       const data = await apiFetch<AuthTokenResponse>("/api/auth/register", {
         body: { first_name, last_name, email, password },
       });
-
-      if (data.user.role !== "customer") {
-        setError("Storefront registration creates customer accounts only.");
-        return;
-      }
-
-      dispatch(setCredentials(data));
-      router.push("/account");
+      finishAuth(data);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Sign up failed");
     } finally {
       setLoading(false);
     }
   };
+
+  const displayError = error ?? google.error;
 
   return (
     <section className="w-full" aria-labelledby="signup-heading">
@@ -71,7 +102,15 @@ export default function SignUpForm() {
         Create a shopper account to buy products and manage your profile.
       </p>
 
-      <SocialAuthButtons />
+      <SocialAuthButtons
+        onGoogleClick={() => {
+          setError(null);
+          google.clearError();
+          google.promptGoogleSignIn();
+        }}
+        googleLoading={googleLoading}
+        disabled={loading}
+      />
       <OrDivider />
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -143,15 +182,15 @@ export default function SignUpForm() {
           </span>
         </label>
 
-        {error ? (
+        {displayError ? (
           <p className="text-sm text-rose-600" role="alert">
-            {error}
+            {displayError}
           </p>
         ) : null}
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || googleLoading}
           className="mt-1 w-full h-11 rounded bg-brand-primary hover:bg-brand-hover text-white text-sm font-semibold transition-colors cursor-pointer disabled:opacity-60"
         >
           {loading ? "Creating account…" : "Sign Up"}
