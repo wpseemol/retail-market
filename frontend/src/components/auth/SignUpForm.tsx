@@ -47,6 +47,12 @@ export default function SignUpForm() {
           body: { first_name, last_name, email, password },
         },
       );
+
+      if (data.user.role !== "customer") {
+        setError("Storefront registration creates customer accounts only.");
+        return;
+      }
+
       dispatch(setCredentials(data));
       router.push("/account");
     } catch (err) {
@@ -60,10 +66,13 @@ export default function SignUpForm() {
     <section className="w-full" aria-labelledby="signup-heading">
       <h1
         id="signup-heading"
-        className="text-[28px] sm:text-[32px] font-semibold text-text-primary leading-tight mb-5"
+        className="text-[28px] sm:text-[32px] font-semibold text-text-primary leading-tight mb-2"
       >
-        Sign Up
+        Customer sign up
       </h1>
+      <p className="mb-5 text-sm text-text-secondary">
+        Create a shopper account to buy products and manage your profile.
+      </p>
 
       <SocialAuthButtons />
       <OrDivider />

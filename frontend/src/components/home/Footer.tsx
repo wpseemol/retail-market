@@ -1,10 +1,12 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { dashboardLoginUrl } from "@/config/site";
 
 interface FooterLink {
     label: string;
     href: string;
+    external?: boolean;
 }
 
 const findItFastLinks: FooterLink[] = [
@@ -27,6 +29,48 @@ const customerCareLinks: FooterLink[] = [
     { label: "FAQ", href: "/faq" },
     { label: "Product Support", href: "/support" },
 ];
+
+const sellAndManageLinks: FooterLink[] = [
+    {
+        label: "Become a Seller",
+        href: dashboardLoginUrl("vendor"),
+        external: true,
+    },
+    {
+        label: "Super Admin Login",
+        href: dashboardLoginUrl("super_admin"),
+        external: true,
+    },
+    {
+        label: "Admin Login",
+        href: dashboardLoginUrl("admin"),
+        external: true,
+    },
+    {
+        label: "Moderator Login",
+        href: dashboardLoginUrl("moderator"),
+        external: true,
+    },
+];
+
+function FooterNavLink({ link }: { link: FooterLink }) {
+    const className =
+        "text-text-secondary hover:text-brand-primary text-[14px] transition-colors";
+
+    if (link.external) {
+        return (
+            <a href={link.href} className={className}>
+                {link.label}
+            </a>
+        );
+    }
+
+    return (
+        <Link href={link.href} className={className}>
+            {link.label}
+        </Link>
+    );
+}
 
 const weeklySelectedProducts = [
     {
@@ -75,8 +119,8 @@ export default function Footer() {
             <div className="container mx-auto px-4 sm:px-6">
                 {/* ================= Top Section: 4 Columns ================= */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10 pb-12">
-                    {/* Column 1: Brand, Description, Contact, Apps (Col span 4) */}
-                    <div className="lg:col-span-4 flex flex-col items-start">
+                    {/* Column 1: Brand, Description, Contact, Apps (Col span 3) */}
+                    <div className="lg:col-span-3 flex flex-col items-start">
                         {/* Dark / Light Mode Logo Toggle */}
                         <Link href="/" className="relative mb-4 inline-block h-[50px] w-[180px]">
                             <Image
@@ -184,12 +228,7 @@ export default function Footer() {
                         <ul className="flex flex-col gap-3 list-none p-0 m-0">
                             {findItFastLinks.map((link) => (
                                 <li key={link.label}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-text-secondary hover:text-brand-primary text-[14px] transition-colors"
-                                    >
-                                        {link.label}
-                                    </Link>
+                                    <FooterNavLink link={link} />
                                 </li>
                             ))}
                         </ul>
@@ -203,19 +242,28 @@ export default function Footer() {
                         <ul className="flex flex-col gap-3 list-none p-0 m-0">
                             {customerCareLinks.map((link) => (
                                 <li key={link.label}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-text-secondary hover:text-brand-primary text-[14px] transition-colors"
-                                    >
-                                        {link.label}
-                                    </Link>
+                                    <FooterNavLink link={link} />
                                 </li>
                             ))}
                         </ul>
                     </div>
 
-                    {/* Column 4: Weekly Selected (Col span 4) */}
-                    <div className="lg:col-span-4 flex flex-col">
+                    {/* Column 4: Sell & Manage (Col span 2) */}
+                    <div className="lg:col-span-2 flex flex-col">
+                        <h3 className="text-[#00B207] text-[15px] font-bold uppercase tracking-wider mb-5">
+                            Sell & Manage
+                        </h3>
+                        <ul className="flex flex-col gap-3 list-none p-0 m-0">
+                            {sellAndManageLinks.map((link) => (
+                                <li key={link.label}>
+                                    <FooterNavLink link={link} />
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* Column 5: Weekly Selected (Col span 3) */}
+                    <div className="lg:col-span-3 flex flex-col">
                         <h3 className="text-[#00B207] text-[15px] font-bold uppercase tracking-wider mb-5">
                             Weekly Selected
                         </h3>

@@ -7,7 +7,7 @@ export type ApiUser = {
   last_name: string;
   email: string;
   phone: string | null;
-  role: "customer";
+  role: "customer" | "super_admin" | "admin" | "moderator" | "vendor";
   status: string;
   gender: "male" | "female" | "other" | null;
   date_of_birth: string | null;

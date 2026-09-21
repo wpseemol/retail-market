@@ -12,6 +12,10 @@ export const siteConfig = {
     description:
         "Shop electronics, gadgets, laptops, smartphones, and more at Niyenin Retail Market. Discover daily deals, top brands, and fast delivery.",
     url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://niyenin.com",
+    /** Staff / seller dashboard origin (Vite app). */
+    dashboardUrl:
+        process.env.NEXT_PUBLIC_DASHBOARD_URL?.replace(/\/$/, "") ??
+        "http://localhost:5173",
     locale: "en_US",
     language: "en",
     keywords: [
@@ -59,6 +63,18 @@ export function absoluteUrl(path = "/"): string {
     const base = siteConfig.url.replace(/\/$/, "");
     const normalized = path.startsWith("/") ? path : `/${path}`;
     return `${base}${normalized}`;
+}
+
+export type DashboardLoginRole =
+    | "super_admin"
+    | "admin"
+    | "moderator"
+    | "vendor";
+
+/** Dashboard login URL, optionally pre-selecting a workspace. */
+export function dashboardLoginUrl(role?: DashboardLoginRole): string {
+    const base = `${siteConfig.dashboardUrl}/login`;
+    return role ? `${base}?role=${role}` : base;
 }
 
 type PageMetaInput = {

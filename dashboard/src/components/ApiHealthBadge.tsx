@@ -38,14 +38,14 @@ export function ApiHealthBadge() {
 
   const color =
     state === "ok"
-      ? "bg-emerald-500"
+      ? "bg-brand-primary"
       : state === "checking"
-        ? "bg-amber-400"
-        : "bg-rose-500";
+        ? "bg-warning"
+        : "bg-error";
 
   return (
     <div
-      className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs text-[var(--text-muted)]"
+      className="inline-flex items-center gap-2 rounded border border-border-default bg-bg-surface px-2.5 py-1 text-xs text-text-secondary"
       title={detail}
     >
       <span className={`size-2 rounded-full ${color}`} aria-hidden />

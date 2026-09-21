@@ -47,7 +47,9 @@ dashboardAuthRouter.post("/login", async (req, res) => {
 
   if (!STAFF_ROLES.includes(user.role)) {
     return res.status(403).json({
-      message: "Customer accounts must sign in through the storefront",
+      message:
+        "Customer accounts cannot sign in on the dashboard. Use the storefront login instead.",
+      code: "CUSTOMER_USE_STOREFRONT",
     });
   }
 

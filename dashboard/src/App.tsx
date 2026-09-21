@@ -5,13 +5,14 @@ import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
 import { RolePage } from "./pages/RolePage";
 import { useAuthStore } from "./store/auth";
+import type { StaffRole } from "./lib/api";
 
-const ROLE_HOME = {
+const ROLE_HOME: Record<StaffRole, string> = {
   super_admin: "/super-admin",
   admin: "/admin",
   moderator: "/moderator",
   vendor: "/vendor",
-} as const;
+};
 
 function RoleHomeRedirect() {
   const user = useAuthStore((state) => state.user);

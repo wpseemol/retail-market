@@ -9,6 +9,16 @@ import { EnvelopeIcon, LockIcon } from "./icons";
 import { apiFetch, ApiError, type ApiUser } from "@/lib/api";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/authSlice";
+import { dashboardLoginUrl } from "@/config/site";
+
+const DASHBOARD_LOGIN_URL = dashboardLoginUrl();
+
+const STAFF_ROLES = new Set([
+  "super_admin",
+  "admin",
+  "moderator",
+  "vendor",
+]);
 
 export default function LoginForm() {
   const router = useRouter();
@@ -31,13 +41,31 @@ export default function LoginForm() {
         "/api/auth/login",
         { body: { email, password } },
       );
-      dispatch(setCredentials(data));
-      if (!rememberMe) {
-        // token still in localStorage for this session; remember flag reserved for cookie later
+
+      // Extra guard: never keep a staff session in the storefront.
+      if (STAFF_ROLES.has(data.user.role)) {
+        setError(
+          `Staff accounts cannot sign in here. Use the dashboard: ${DASHBOARD_LOGIN_URL}`,
+        );
+        return;
       }
+
+      if (data.user.role !== "customer") {
+        setError("Only customer accounts can sign in on the storefront.");
+        return;
+      }
+
+      dispatch(setCredentials(data));
+      void rememberMe;
       router.push("/account");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Login failed");
+      if (err instanceof ApiError && err.status === 403) {
+        setError(
+          `${err.message} Open ${DASHBOARD_LOGIN_URL} for staff access.`,
+        );
+      } else {
+        setError(err instanceof ApiError ? err.message : "Login failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -47,10 +75,23 @@ export default function LoginForm() {
     <section className="w-full" aria-labelledby="login-heading">
       <h2
         id="login-heading"
-        className="text-[28px] sm:text-[32px] font-semibold text-text-primary leading-tight mb-5"
+        className="text-[28px] sm:text-[32px] font-semibold text-text-primary leading-tight mb-2"
       >
-        Login here
+        Customer login
       </h2>
+      <p className="mb-5 text-sm text-text-secondary">
+        For shoppers only. Super Admin, Admin, Moderator, and Vendor must use
+        the{" "}
+        <a
+          href={DASHBOARD_LOGIN_URL}
+          className="font-medium text-brand-primary hover:underline"
+          target="_blank"
+          rel="noreferrer"
+        >
+          dashboard login
+        </a>
+        .
+      </p>
 
       <SocialAuthButtons />
       <OrDivider />

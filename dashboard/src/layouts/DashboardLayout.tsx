@@ -10,26 +10,10 @@ const allLinks: Array<{
   end?: boolean;
 }> = [
   { to: "/", label: "Overview", roles: ["super_admin", "admin"], end: true },
-  {
-    to: "/super-admin",
-    label: "Super Admin",
-    roles: ["super_admin"],
-  },
-  {
-    to: "/admin",
-    label: "Admin",
-    roles: ["admin", "super_admin"],
-  },
-  {
-    to: "/moderator",
-    label: "Moderator",
-    roles: ["moderator", "super_admin"],
-  },
-  {
-    to: "/vendor",
-    label: "Vendor",
-    roles: ["vendor", "super_admin"],
-  },
+  { to: "/super-admin", label: "Super Admin", roles: ["super_admin"] },
+  { to: "/admin", label: "Admin", roles: ["admin", "super_admin"] },
+  { to: "/moderator", label: "Moderator", roles: ["moderator", "super_admin"] },
+  { to: "/vendor", label: "Vendor", roles: ["vendor", "super_admin"] },
 ];
 
 export function DashboardLayout() {
@@ -37,20 +21,36 @@ export function DashboardLayout() {
   const { user, logout } = useAuthStore();
 
   const links = allLinks.filter(
-    (link) => user && (user.role === "super_admin" || link.roles.includes(user.role)),
+    (link) =>
+      user && (user.role === "super_admin" || link.roles.includes(user.role)),
   );
 
   return (
-    <div className="min-h-screen md:grid md:grid-cols-[240px_1fr]">
-      <aside className="border-b border-[var(--border)] bg-[var(--bg-surface)] p-5 md:border-b-0 md:border-r">
-        <p className="mb-2 text-lg font-semibold tracking-tight text-[var(--brand-primary)]">
-          Niyenin Dashboard
-        </p>
+    <div className="min-h-screen bg-bg-subtle md:grid md:grid-cols-[248px_1fr]">
+      <aside className="border-b border-border-default bg-bg-surface p-5 md:border-b-0 md:border-r">
+        <div className="mb-6 flex items-center gap-3">
+          <img
+            src="/logo/niyenin-dark.png"
+            alt="Niyenin"
+            className="h-8 w-auto"
+          />
+          <div>
+            <p className="text-sm font-semibold text-text-primary">Niyenin</p>
+            <p className="text-xs text-text-secondary">Staff Dashboard</p>
+          </div>
+        </div>
+
         {user ? (
-          <p className="mb-4 text-xs text-[var(--text-muted)]">
-            {user.first_name} · {user.role}
-          </p>
+          <div className="mb-5 rounded border border-border-default bg-bg-subtle px-3 py-2.5">
+            <p className="text-sm font-medium text-text-primary">
+              {user.first_name} {user.last_name}
+            </p>
+            <p className="text-xs capitalize text-text-secondary">
+              {user.role.replace("_", " ")}
+            </p>
+          </div>
         ) : null}
+
         <nav className="flex flex-wrap gap-2 md:flex-col">
           {links.map((link) => (
             <NavLink
@@ -59,10 +59,10 @@ export function DashboardLayout() {
               end={link.end}
               className={({ isActive }) =>
                 [
-                  "rounded-md px-3 py-2 text-sm transition-colors",
+                  "rounded px-3 py-2 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-[var(--brand-primary)] text-white"
-                    : "text-[var(--text-muted)] hover:bg-[var(--bg-base)] hover:text-[var(--text-primary)]",
+                    ? "bg-brand-primary text-white"
+                    : "text-text-secondary hover:bg-brand-tint hover:text-brand-deep",
                 ].join(" ")
               }
             >
@@ -70,23 +70,30 @@ export function DashboardLayout() {
             </NavLink>
           ))}
         </nav>
+
         <button
           type="button"
           onClick={() => {
             logout();
             navigate("/login");
           }}
-          className="mt-6 rounded-md border border-[var(--border)] px-3 py-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+          className="mt-6 h-10 w-full rounded border border-border-default text-sm font-medium text-text-secondary transition-colors hover:border-brand-primary hover:text-brand-primary"
         >
           Log out
         </button>
       </aside>
-      <main className="p-6 md:p-8">
-        <div className="mb-6 flex justify-end">
+
+      <div className="flex min-h-screen flex-col">
+        <header className="flex h-14 items-center justify-between border-b border-border-default bg-bg-surface px-6">
+          <p className="text-sm font-medium text-text-secondary">
+            Management console
+          </p>
           <ApiHealthBadge />
-        </div>
-        <Outlet />
-      </main>
+        </header>
+        <main className="flex-1 p-6 md:p-8">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }
