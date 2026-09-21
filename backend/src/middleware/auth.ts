@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import type { UserRole } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
-import { verifyAuthToken } from "../lib/token.js";
+import { verifyAccessToken } from "../lib/token.js";
 import { toPublicUser } from "../lib/user.js";
 
 export type AuthUser = ReturnType<typeof toPublicUser>;
@@ -30,7 +30,7 @@ export async function requireAuth(
     }
 
     const token = header.slice("Bearer ".length).trim();
-    const payload = verifyAuthToken(token);
+    const payload = verifyAccessToken(token);
     const userId = BigInt(payload.sub);
 
     const user = await prisma.user.findFirst({

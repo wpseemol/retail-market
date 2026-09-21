@@ -1,10 +1,11 @@
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
-import { signAuthToken } from "../lib/token.js";
+import { issueAuthTokens, verifyRefreshToken } from "../lib/token.js";
 import { toPublicUser } from "../lib/user.js";
 import {
   loginSchema,
+  refreshSchema,
   registerSchema,
   updateProfileSchema,
 } from "../validators/customerAuth.js";
@@ -46,14 +47,14 @@ export async function register(req: Request, res: Response) {
     include: { avatar: true },
   });
 
-  const token = signAuthToken({
+  const tokens = issueAuthTokens({
     sub: user.id.toString(),
     role: user.role,
   });
 
   return res.status(201).json({
     message: "Registered successfully",
-    token,
+    ...tokens,
     user: toPublicUser(user),
   });
 }
@@ -102,15 +103,72 @@ export async function login(req: Request, res: Response) {
     include: { avatar: true },
   });
 
-  const token = signAuthToken({
+  const tokens = issueAuthTokens({
     sub: updated.id.toString(),
     role: updated.role,
   });
 
   return res.json({
     message: "Logged in successfully",
-    token,
+    ...tokens,
     user: toPublicUser(updated),
+  });
+}
+
+/**
+ * Exchange a valid refresh token for a new access + refresh pair.
+ * Refresh tokens are custom-typed (`typ: "refresh"`) and last ~1 year.
+ */
+export async function refresh(req: Request, res: Response) {
+  const parsed = refreshSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: "Validation failed",
+      errors: parsed.error.flatten().fieldErrors,
+    });
+  }
+
+  let payload;
+  try {
+    payload = verifyRefreshToken(parsed.data.refreshToken);
+  } catch {
+    return res.status(401).json({ message: "Invalid or expired refresh token" });
+  }
+
+  if (payload.role !== "customer") {
+    return res.status(403).json({
+      message: "Refresh is only available for customer storefront sessions",
+    });
+  }
+
+  const user = await prisma.user.findFirst({
+    where: { id: BigInt(payload.sub), deleted_at: null },
+    include: { avatar: true },
+  });
+
+  if (!user) {
+    return res.status(401).json({ message: "User not found" });
+  }
+
+  if (user.status !== "active") {
+    return res.status(403).json({ message: `Account is ${user.status}` });
+  }
+
+  if (user.role !== "customer") {
+    return res.status(403).json({
+      message: "Refresh is only available for customer storefront sessions",
+    });
+  }
+
+  const tokens = issueAuthTokens({
+    sub: user.id.toString(),
+    role: user.role,
+  });
+
+  return res.json({
+    message: "Token refreshed",
+    ...tokens,
+    user: toPublicUser(user),
   });
 }
 

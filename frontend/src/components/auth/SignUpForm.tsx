@@ -7,7 +7,7 @@ import AuthInput from "./AuthInput";
 import OrDivider from "./OrDivider";
 import SocialAuthButtons from "./SocialAuthButtons";
 import { EnvelopeIcon, LockIcon, UserIcon } from "./icons";
-import { apiFetch, ApiError, type ApiUser } from "@/lib/api";
+import { apiFetch, ApiError, type AuthTokenResponse } from "@/lib/api";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/authSlice";
 
@@ -41,12 +41,9 @@ export default function SignUpForm() {
 
     setLoading(true);
     try {
-      const data = await apiFetch<{ token: string; user: ApiUser }>(
-        "/api/auth/register",
-        {
-          body: { first_name, last_name, email, password },
-        },
-      );
+      const data = await apiFetch<AuthTokenResponse>("/api/auth/register", {
+        body: { first_name, last_name, email, password },
+      });
 
       if (data.user.role !== "customer") {
         setError("Storefront registration creates customer accounts only.");

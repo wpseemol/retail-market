@@ -16,7 +16,10 @@ export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   databaseUrl: process.env.DATABASE_URL ?? "",
   jwtSecret: process.env.JWT_SECRET ?? "dev-only-change-me",
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "7d",
+  /** Short-lived access JWT (API Authorization header). */
+  jwtAccessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? "1h",
+  /** Long-lived refresh JWT — keep customer login ~1 year. */
+  jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? "365d",
   corsOrigins: (
     process.env.CORS_ORIGINS ??
     "http://localhost:3000,http://localhost:5173"

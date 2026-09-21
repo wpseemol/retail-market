@@ -6,7 +6,7 @@ import AuthInput from "./AuthInput";
 import OrDivider from "./OrDivider";
 import SocialAuthButtons from "./SocialAuthButtons";
 import { EnvelopeIcon, LockIcon } from "./icons";
-import { apiFetch, ApiError, type ApiUser } from "@/lib/api";
+import { apiFetch, ApiError, type AuthTokenResponse } from "@/lib/api";
 import {
   type LoginField,
   validateLoginField,
@@ -89,10 +89,9 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      const data = await apiFetch<{ token: string; user: ApiUser }>(
-        "/api/auth/login",
-        { body: result.data },
-      );
+      const data = await apiFetch<AuthTokenResponse>("/api/auth/login", {
+        body: result.data,
+      });
 
       // Extra guard: never keep a staff session in the storefront.
       if (STAFF_ROLES.has(data.user.role)) {

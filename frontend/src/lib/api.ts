@@ -14,10 +14,23 @@ export type ApiUser = {
   avatar: { id: string; path: string } | null;
 };
 
+export type AuthTokenResponse = {
+  accessToken: string;
+  refreshToken: string;
+  token: string;
+  tokenType: "Bearer";
+  expiresIn: string;
+  refreshExpiresIn: string;
+  user: ApiUser;
+  message?: string;
+};
+
 type ApiOptions = {
   method?: string;
   body?: unknown;
   token?: string | null;
+  /** Skip one-shot refresh retry (used by the refresh call itself). */
+  skipRefresh?: boolean;
 };
 
 export class ApiError extends Error {
@@ -36,7 +49,42 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T> {
+function readRefreshToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem("rm_customer_refresh_token");
+}
+
+function persistTokens(accessToken: string, refreshToken: string) {
+  window.localStorage.setItem("rm_customer_token", accessToken);
+  window.localStorage.setItem("rm_customer_refresh_token", refreshToken);
+}
+
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = readRefreshToken();
+  if (!refreshToken) return null;
+
+  try {
+    const data = await apiFetch<AuthTokenResponse>("/api/auth/refresh", {
+      body: { refreshToken },
+      skipRefresh: true,
+    });
+    persistTokens(data.accessToken, data.refreshToken);
+    if (data.user) {
+      window.localStorage.setItem(
+        "rm_customer_user",
+        JSON.stringify(data.user),
+      );
+    }
+    return data.accessToken;
+  } catch {
+    return null;
+  }
+}
+
+export async function apiFetch<T>(
+  path: string,
+  options: ApiOptions = {},
+): Promise<T> {
   const headers: Record<string, string> = {
     Accept: "application/json",
   };
@@ -59,6 +107,22 @@ export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promi
     message?: string;
     errors?: Record<string, string[] | undefined>;
   };
+
+  if (
+    response.status === 401 &&
+    options.token &&
+    !options.skipRefresh &&
+    typeof window !== "undefined"
+  ) {
+    const nextAccess = await refreshAccessToken();
+    if (nextAccess) {
+      return apiFetch<T>(path, {
+        ...options,
+        token: nextAccess,
+        skipRefresh: true,
+      });
+    }
+  }
 
   if (!response.ok) {
     throw new ApiError(
