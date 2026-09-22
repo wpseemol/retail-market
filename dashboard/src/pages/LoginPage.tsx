@@ -1,8 +1,12 @@
 import { type FormEvent, useState } from "react";
-import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { ApiError, apiFetch, type StaffRole, type StaffUser } from "../lib/api";
-import { useAuthStore } from "../store/auth";
-import { ApiHealthBadge } from "../components/ApiHealthBadge";
+import { Navigate, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
+import { ApiError, apiFetch, type StaffRole, type StaffUser } from "@/lib/api";
+import { useAuthStore } from "@/store/auth";
+import { ApiHealthBadge } from "@/components/ApiHealthBadge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const ROLE_HOME: Record<StaffRole, string> = {
   super_admin: "/super-admin",
@@ -17,76 +21,12 @@ const STOREFRONT_URL =
     "",
   ) ?? "http://localhost:3000";
 
-const ROLE_OPTIONS: Array<{ value: StaffRole | "any"; label: string }> = [
-  { value: "any", label: "Auto-detect from account" },
-  { value: "super_admin", label: "Super Admin" },
-  { value: "admin", label: "Admin" },
-  { value: "moderator", label: "Moderator" },
-  { value: "vendor", label: "Seller" },
-];
-
-const ROLE_COPY: Record<
-  StaffRole | "any",
-  { title: string; description: string }
-> = {
-  any: {
-    title: "Staff login",
-    description:
-      "Super Admin, Admin, Moderator, and Seller only. Customers use the storefront.",
-  },
-  super_admin: {
-    title: "Super Admin login",
-    description: "Sign in to the Super Admin dashboard.",
-  },
-  admin: {
-    title: "Admin login",
-    description: "Sign in to the Admin dashboard.",
-  },
-  moderator: {
-    title: "Moderator login",
-    description: "Sign in to the Moderator dashboard.",
-  },
-  vendor: {
-    title: "Seller login",
-    description: "Sign in to your seller dashboard to manage listings and orders.",
-  },
-};
-
-function parseRoleParam(value: string | null): StaffRole | "any" {
-  if (value === "seller") return "vendor";
-  if (
-    value === "super_admin" ||
-    value === "admin" ||
-    value === "moderator" ||
-    value === "vendor"
-  ) {
-    return value;
-  }
-  return "any";
-}
-
 export function LoginPage() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { token, user, setSession } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [expectedRole, setExpectedRole] = useState<StaffRole | "any">(() =>
-    parseRoleParam(searchParams.get("role")),
-  );
   const [showPassword, setShowPassword] = useState(false);
-  const copy = ROLE_COPY[expectedRole];
-
-  function onRoleChange(role: StaffRole | "any") {
-    setExpectedRole(role);
-    const next = new URLSearchParams(searchParams);
-    if (role === "any") {
-      next.delete("role");
-    } else {
-      next.set("role", role);
-    }
-    setSearchParams(next, { replace: true });
-  }
 
   if (token && user) {
     return <Navigate to={ROLE_HOME[user.role]} replace />;
@@ -112,17 +52,6 @@ export function LoginPage() {
         body: { identifier, password },
       });
 
-      if (
-        expectedRole !== "any" &&
-        data.user.role !== expectedRole &&
-        data.user.role !== "super_admin"
-      ) {
-        setError(
-          `This account is ${data.user.role.replace("_", " ")}, not ${expectedRole.replace("_", " ")}.`,
-        );
-        return;
-      }
-
       const accessToken = data.accessToken ?? data.token;
       setSession(accessToken, data.user, data.refreshToken ?? null);
       navigate(data.home);
@@ -140,8 +69,8 @@ export function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-bg-base">
-      <div className="border-b border-border-default bg-bg-subtle/60">
+    <main className="flex min-h-screen flex-col bg-background">
+      <div className="border-b border-border bg-muted/40">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <img
@@ -149,7 +78,7 @@ export function LoginPage() {
               alt="Niyenin"
               className="h-8 w-auto"
             />
-            <span className="text-sm font-medium text-text-secondary">
+            <span className="text-sm font-medium text-muted-foreground">
               Staff Dashboard
             </span>
           </div>
@@ -157,89 +86,70 @@ export function LoginPage() {
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-10 sm:px-6 sm:py-14">
-        <h1 className="mb-2 text-[28px] font-semibold leading-tight text-text-primary sm:text-[32px]">
-          {copy.title}
-        </h1>
-        <p className="mb-6 text-sm text-text-secondary">{copy.description}</p>
+      <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-10 sm:px-6 sm:py-14">
+        <div className="mb-8 space-y-2 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-[28px]">
+            Sign in
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Use your username, email, or phone with your password.
+          </p>
+        </div>
 
-        <form onSubmit={onSubmit} className="flex flex-col gap-4">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-text-primary">
-              Workspace
-            </span>
-            <select
-              value={expectedRole}
-              onChange={(e) =>
-                onRoleChange(e.target.value as StaffRole | "any")
-              }
-              className="h-11 rounded border border-border-default bg-bg-surface px-3.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-primary"
-            >
-              {ROLE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-text-primary">
-              Email or phone
-            </span>
-            <input
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="identifier">Username, email, or phone</Label>
+            <Input
+              id="identifier"
               name="identifier"
               type="text"
               required
               autoComplete="username"
-              placeholder="admin@niyenin.local or +8801…"
-              className="h-11 rounded border border-border-default bg-bg-surface px-3.5 text-sm text-text-primary placeholder:text-text-secondary/70 outline-none transition-colors focus:border-brand-primary"
+              placeholder="superadmin, email, or +8801…"
             />
-          </label>
+          </div>
 
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-text-primary">
-              Password
-            </span>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
             <div className="relative">
-              <input
+              <Input
+                id="password"
                 name="password"
                 type={showPassword ? "text" : "password"}
                 required
                 autoComplete="current-password"
                 placeholder="Enter your password"
-                className="h-11 w-full rounded border border-border-default bg-bg-surface px-3.5 pr-11 text-sm text-text-primary placeholder:text-text-secondary/70 outline-none transition-colors focus:border-brand-primary"
+                className="pr-11"
               />
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 h-9 w-9 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-text-secondary hover:text-text-primary"
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? "Hide" : "Show"}
-              </button>
+                {showPassword ? <EyeOff /> : <Eye />}
+              </Button>
             </div>
-          </label>
+          </div>
 
           {error ? (
-            <p className="text-sm text-error" role="alert">
+            <p className="text-sm text-destructive" role="alert">
               {error}
             </p>
           ) : null}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-1 h-11 w-full rounded bg-brand-primary text-sm font-semibold text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
-          >
+          <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Signing in…" : "Sign in"}
-          </button>
+          </Button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-text-secondary">
+        <p className="mt-8 text-center text-sm text-muted-foreground">
           Looking to shop?{" "}
           <a
             href={`${STOREFRONT_URL}/login`}
-            className="font-medium text-brand-primary hover:underline"
+            className="font-medium text-primary hover:underline"
           >
             Customer login
           </a>

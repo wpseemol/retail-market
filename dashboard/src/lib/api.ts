@@ -9,6 +9,7 @@ export type StaffUser = {
   id: string;
   first_name: string;
   last_name: string;
+  username?: string | null;
   email: string;
   role: StaffRole;
   status: string;

@@ -21,7 +21,7 @@ function withSafeInput(schema: z.ZodString) {
   });
 }
 
-/** Email or phone + password (staff only). */
+/** Username, email, or phone + password (staff only). */
 const staffLoginSchema = z.object({
   identifier: withSafeInput(z.string().trim().min(3).max(255)),
   password: withSafeInput(z.string().min(1).max(128)),
@@ -34,13 +34,9 @@ const ROLE_HOME: Record<Exclude<UserRole, "customer">, string> = {
   vendor: "/vendor",
 };
 
-function looksLikeEmail(value: string) {
-  return value.includes("@");
-}
-
 /** Dashboard only — staff roles; customers are rejected. */
 dashboardAuthRouter.post("/login", async (req, res) => {
-  // Accept `identifier`, or legacy `email` / `phone`.
+  // Accept `identifier`, or legacy `email` / `phone` / `username`.
   const body = {
     identifier:
       typeof req.body?.identifier === "string"
@@ -49,7 +45,9 @@ dashboardAuthRouter.post("/login", async (req, res) => {
           ? req.body.email
           : typeof req.body?.phone === "string"
             ? req.body.phone
-            : "",
+            : typeof req.body?.username === "string"
+              ? req.body.username
+              : "",
     password: req.body?.password,
   };
 
@@ -63,19 +61,24 @@ dashboardAuthRouter.post("/login", async (req, res) => {
 
   const raw = parsed.data.identifier.trim();
   const password = parsed.data.password;
+  const normalized = raw.toLowerCase();
 
   const user = await prisma.user.findFirst({
     where: {
       deleted_at: null,
-      OR: looksLikeEmail(raw)
-        ? [{ email: raw.toLowerCase() }]
-        : [{ phone: raw }, { email: raw.toLowerCase() }],
+      OR: [
+        { email: normalized },
+        { username: normalized },
+        { phone: raw },
+      ],
     },
     include: userWithAvatarInclude,
   });
 
   if (!user?.password || !(await verifyPassword(password, user.password))) {
-    return res.status(401).json({ message: "Invalid email/phone or password" });
+    return res.status(401).json({
+      message: "Invalid username, email, phone, or password",
+    });
   }
 
   if (!STAFF_ROLES.includes(user.role)) {

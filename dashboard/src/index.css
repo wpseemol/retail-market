@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    /* Niyenin brand */
     --bg-base: #ffffff;
     --bg-surface: #ffffff;
     --bg-subtle: #f5f7f5;
@@ -22,6 +23,27 @@
     --error: #e31d1c;
     --info: #1b82c5;
     --overlay-scrim: rgba(0, 0, 0, 0.56);
+
+    /* shadcn tokens (mapped to Niyenin) */
+    --background: #ffffff;
+    --foreground: #19191d;
+    --card: #ffffff;
+    --card-foreground: #19191d;
+    --popover: #ffffff;
+    --popover-foreground: #19191d;
+    --primary: #00b207;
+    --primary-foreground: #ffffff;
+    --secondary: #f5f7f5;
+    --secondary-foreground: #19191d;
+    --muted: #f5f7f5;
+    --muted-foreground: #666666;
+    --accent: #e7ffe4;
+    --accent-foreground: #002603;
+    --destructive: #e31d1c;
+    --border: #e6e6e6;
+    --input: #e6e6e6;
+    --ring: #00b207;
+    --radius: 0.375rem;
   }
 
   .dark {
@@ -43,10 +65,30 @@
     --error: #ff5b5a;
     --info: #63b3ed;
     --overlay-scrim: rgba(0, 0, 0, 0.66);
+
+    --background: #19191d;
+    --foreground: #ffffff;
+    --card: #232329;
+    --card-foreground: #ffffff;
+    --popover: #232329;
+    --popover-foreground: #ffffff;
+    --primary: #00b207;
+    --primary-foreground: #ffffff;
+    --secondary: #2b2b31;
+    --secondary-foreground: #ffffff;
+    --muted: #2b2b31;
+    --muted-foreground: #c7c7c7;
+    --accent: #103214;
+    --accent-foreground: #c8e6ca;
+    --destructive: #ff5b5a;
+    --border: #373737;
+    --input: #373737;
+    --ring: #00b207;
   }
 
   * {
     box-sizing: border-box;
+    @apply border-border;
   }
 
   html,
@@ -58,12 +100,11 @@
   body {
     margin: 0;
     font-family: "Poppins", ui-sans-serif, system-ui, sans-serif;
-    background-color: var(--bg-base);
-    color: var(--text-primary);
+    @apply bg-background text-foreground;
   }
 }
 
-@theme {
+@theme inline {
   --color-bg-base: var(--bg-base);
   --color-bg-surface: var(--bg-surface);
   --color-bg-subtle: var(--bg-subtle);
@@ -81,6 +122,30 @@
   --color-warning: var(--warning);
   --color-error: var(--error);
   --color-info: var(--info);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
 
   --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
 }
