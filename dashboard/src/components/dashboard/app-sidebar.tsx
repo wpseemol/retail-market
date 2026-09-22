@@ -1,4 +1,5 @@
 import type { ComponentProps } from "react";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Shield,
@@ -6,6 +7,7 @@ import {
   Store,
   UserCog,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import { NavLink, useLocation } from "react-router-dom";
 import { NavUser } from "@/components/dashboard/nav-user";
 import {
@@ -67,6 +69,17 @@ const allLinks: Array<{
 export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   const user = useAuthStore((state) => state.user);
   const { pathname } = useLocation();
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDark = mounted ? resolvedTheme === "dark" : true;
+  const logoSrc = isDark
+    ? "/logo/niyenin-white.png"
+    : "/logo/niyenin-dark.png";
 
   const links = allLinks.filter(
     (link) =>
@@ -78,20 +91,17 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              className="pointer-events-none bg-brand-primary text-white hover:bg-brand-primary hover:text-white active:bg-brand-primary active:text-white"
-            >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-white/15">
-                <img
-                  src="/logo/niyenin-white.png"
-                  alt=""
-                  className="h-5 w-auto"
-                />
-              </div>
+            <SidebarMenuButton size="lg" className="pointer-events-none">
+              <img
+                src={logoSrc}
+                alt="Niyenin"
+                className="h-8 w-auto shrink-0"
+              />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">Niyenin</span>
-                <span className="truncate text-xs text-white/80">Dashboard</span>
+                <span className="truncate text-xs text-muted-foreground">
+                  Dashboard
+                </span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
