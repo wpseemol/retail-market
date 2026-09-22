@@ -2,7 +2,13 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ImagePlus, Store } from "lucide-react";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
-import { slugifyClient, type Shop, SHOP_STATUSES } from "@/lib/shops";
+import {
+  slugifyClient,
+  shopCreateStatusToApi,
+  type Shop,
+  type ShopCreateStatus,
+  SHOP_CREATE_STATUSES,
+} from "@/lib/shops";
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,7 +47,7 @@ export function ShopCreatePage() {
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
   const [description, setDescription] = useState("");
-  const [status, setStatus] = useState("active");
+  const [status, setStatus] = useState<ShopCreateStatus>("draft");
   const [ownerId, setOwnerId] = useState("");
   const [vendors, setVendors] = useState<VendorOption[]>([]);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -121,10 +127,10 @@ export function ShopCreatePage() {
             shop_name: shopName.trim(),
             slug: slug.trim() || undefined,
             description: description.trim() || null,
+            status: shopCreateStatusToApi(status),
             ...(isSuper
               ? {
                   user_id: ownerId || undefined,
-                  status,
                 }
               : {}),
           },
@@ -160,7 +166,8 @@ export function ShopCreatePage() {
         </Button>
         <h1 className="text-2xl font-semibold tracking-tight">Create shop</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Shop name, unique slug, and optional store image. Changes are tracked
+          Shop name, unique slug, and optional store image (saved under{" "}
+          <code className="text-xs">uploads/shops</code>). Changes are tracked
           in history.
         </p>
       </div>
@@ -260,45 +267,52 @@ export function ShopCreatePage() {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select
+                value={status}
+                onValueChange={(value) =>
+                  setStatus(value as ShopCreateStatus)
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SHOP_CREATE_STATUSES.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Draft keeps the shop private; publish makes it live.
+              </p>
+            </div>
+
             {isSuper ? (
-              <>
-                <div className="space-y-2">
-                  <Label>Owner (vendor user)</Label>
-                  <Select
-                    value={ownerId || "self"}
-                    onValueChange={(value) =>
-                      setOwnerId(value === "self" ? "" : value)
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Assign owner" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="self">Myself (super admin)</SelectItem>
-                      {vendors.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.first_name} {v.last_name} · {v.email}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Status</Label>
-                  <Select value={status} onValueChange={setStatus}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SHOP_STATUSES.map((item) => (
-                        <SelectItem key={item} value={item}>
-                          {item}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>
+              <div className="space-y-2">
+                <Label>Owner (vendor user)</Label>
+                <Select
+                  value={ownerId || "self"}
+                  onValueChange={(value) =>
+                    setOwnerId(value === "self" ? "" : value)
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Assign owner" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="self">Myself (super admin)</SelectItem>
+                    {vendors.map((v) => (
+                      <SelectItem key={v.id} value={v.id}>
+                        {v.first_name} {v.last_name} · {v.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             ) : null}
 
             {error ? (

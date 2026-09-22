@@ -57,6 +57,23 @@ export const SHOP_STATUSES: ShopStatus[] = [
   "banned",
 ];
 
+/** Create-shop UI: only draft + publish (maps to pending / active in API). */
+export type ShopCreateStatus = "draft" | "publish";
+
+export const SHOP_CREATE_STATUSES: ShopCreateStatus[] = ["draft", "publish"];
+
+export function shopCreateStatusToApi(
+  status: ShopCreateStatus,
+): Extract<ShopStatus, "pending" | "active"> {
+  return status === "publish" ? "active" : "pending";
+}
+
+export function shopStatusLabel(status: ShopStatus): string {
+  if (status === "active") return "publish";
+  if (status === "pending") return "draft";
+  return status;
+}
+
 export function slugifyClient(input: string): string {
   return input
     .toLowerCase()

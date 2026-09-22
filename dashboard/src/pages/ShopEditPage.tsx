@@ -4,6 +4,7 @@ import { ArrowLeft, History, ImagePlus, Store, Trash2 } from "lucide-react";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import {
   slugifyClient,
+  shopStatusLabel,
   type Shop,
   type ShopHistoryItem,
   type ShopStatus,
@@ -237,7 +238,7 @@ export function ShopEditPage() {
           <p className="mt-1 text-sm text-muted-foreground">/{shop.slug}</p>
         </div>
         <Badge variant="outline" className="capitalize">
-          {shop.status}
+          {shopStatusLabel(shop.status)}
         </Badge>
       </div>
 
@@ -334,7 +335,7 @@ export function ShopEditPage() {
                     <SelectContent>
                       {SHOP_STATUSES.map((item) => (
                         <SelectItem key={item} value={item}>
-                          {item}
+                          {shopStatusLabel(item)}
                         </SelectItem>
                       ))}
                     </SelectContent>

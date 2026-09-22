@@ -42,6 +42,9 @@ const SHOP_STATUSES: UserStatus[] = [
   "banned",
 ];
 
+/** Create flow: draft → pending, publish → active. */
+const CREATE_SHOP_STATUSES = ["pending", "active"] as const;
+
 const createShopSchema = z.object({
   shop_name: withSafeInput(z.string().trim().min(2).max(200)),
   slug: withSafeInput(
@@ -57,7 +60,7 @@ const createShopSchema = z.object({
   ).optional(),
   description: withSafeInput(z.string().trim().max(5000)).optional().nullable(),
   user_id: z.string().regex(/^\d+$/).optional(),
-  status: z.enum(SHOP_STATUSES as [UserStatus, ...UserStatus[]]).optional(),
+  status: z.enum(CREATE_SHOP_STATUSES).optional(),
 });
 
 const updateShopSchema = z.object({
@@ -340,8 +343,8 @@ dashboardVendorsRouter.post("/", async (req, res) => {
         : data.slug)
     : await uniqueVendorSlug(data.shop_name, (s) => slugTaken(s));
 
-  const status =
-    isSuper && data.status ? data.status : isSuper ? "active" : "pending";
+  // Create UI: draft → pending, publish → active (default draft).
+  const status: UserStatus = data.status ?? "pending";
 
   const vendor = await prisma.vendor.create({
     data: {

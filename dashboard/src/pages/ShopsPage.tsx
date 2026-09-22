@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Pencil, Plus, Search, Store } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
 import type { Shop } from "@/lib/shops";
+import { shopStatusLabel } from "@/lib/shops";
 import { useAuthStore } from "@/store/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -199,7 +200,7 @@ export function ShopsPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">
-                          {shop.status}
+                          {shopStatusLabel(shop.status)}
                         </Badge>
                       </TableCell>
                       {isSuper ? (
