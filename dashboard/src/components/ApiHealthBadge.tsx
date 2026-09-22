@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { fetchHealth } from "../lib/api";
+import { Badge } from "@/components/ui/badge";
+import { fetchHealth } from "@/lib/api";
 
 type HealthState = "checking" | "ok" | "down";
 
@@ -44,12 +45,13 @@ export function ApiHealthBadge() {
         : "bg-error";
 
   return (
-    <div
-      className="inline-flex items-center gap-2 rounded border border-border-default bg-bg-surface px-2.5 py-1 text-xs text-text-secondary"
+    <Badge
+      variant="outline"
+      className="gap-2 font-normal text-muted-foreground"
       title={detail}
     >
       <span className={`size-2 rounded-full ${color}`} aria-hidden />
-      <span>{detail}</span>
-    </div>
+      <span className="hidden sm:inline">{detail}</span>
+    </Badge>
   );
 }

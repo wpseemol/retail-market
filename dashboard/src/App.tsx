@@ -3,6 +3,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { DashboardLayout } from "./layouts/DashboardLayout";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
+import { ProfilePage } from "./pages/ProfilePage";
 import { RolePage } from "./pages/RolePage";
 import { useAuthStore } from "./store/auth";
 import type { StaffRole } from "./lib/api";
@@ -37,6 +38,7 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route index element={<OverviewGate />} />
+          <Route path="profile" element={<ProfilePage />} />
 
           <Route element={<ProtectedRoute roles={["super_admin"]} />}>
             <Route

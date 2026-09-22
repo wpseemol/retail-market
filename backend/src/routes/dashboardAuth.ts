@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import type { UserRole } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
-import { verifyPassword } from "../lib/password.js";
+import { hashPassword, verifyPassword } from "../lib/password.js";
 import { createUserSession } from "../lib/userSession.js";
 import { toPublicUser, userWithAvatarInclude } from "../lib/user.js";
 import {
@@ -118,6 +118,74 @@ dashboardAuthRouter.post("/login", async (req, res) => {
   });
 });
 
+function withSafeTrimmed(min: number, max: number) {
+  return withSafeInput(z.string().trim().min(min).max(max));
+}
+
+const updateStaffProfileSchema = z
+  .object({
+    first_name: withSafeTrimmed(1, 100).optional(),
+    last_name: withSafeTrimmed(1, 100).optional(),
+    username: withSafeInput(
+      z
+        .string()
+        .trim()
+        .min(3)
+        .max(50)
+        .regex(
+          /^[a-zA-Z0-9._-]+$/,
+          "Username may only contain letters, numbers, dots, underscores, and hyphens",
+        ),
+    )
+      .optional()
+      .transform((value) => value?.toLowerCase()),
+    phone: z
+      .union([z.string(), z.null()])
+      .optional()
+      .transform((value, ctx) => {
+        if (value === undefined) return undefined;
+        if (value === null) return null;
+        const trimmed = value.trim();
+        if (!trimmed) return null;
+        const reason = findUnsafeInputReason(trimmed);
+        if (reason) {
+          ctx.addIssue({ code: "custom", message: reason });
+          return z.NEVER;
+        }
+        if (trimmed.length > 30) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Phone must be at most 30 characters",
+          });
+          return z.NEVER;
+        }
+        return trimmed;
+      }),
+  })
+  .refine(
+    (data) =>
+      data.first_name !== undefined ||
+      data.last_name !== undefined ||
+      data.username !== undefined ||
+      data.phone !== undefined,
+    { message: "At least one field is required" },
+  );
+
+const changePasswordSchema = z
+  .object({
+    current_password: withSafeInput(z.string().min(1).max(128)),
+    new_password: withSafeInput(z.string().min(8).max(128)),
+    confirm_password: withSafeInput(z.string().min(8).max(128)),
+  })
+  .refine((data) => data.new_password === data.confirm_password, {
+    message: "Passwords do not match",
+    path: ["confirm_password"],
+  })
+  .refine((data) => data.current_password !== data.new_password, {
+    message: "New password must be different from the current password",
+    path: ["new_password"],
+  });
+
 dashboardAuthRouter.get(
   "/me",
   requireAuth,
@@ -127,6 +195,105 @@ dashboardAuthRouter.get(
       user: req.auth!.user,
       home: ROLE_HOME[req.auth!.role as Exclude<UserRole, "customer">],
     });
+  },
+);
+
+dashboardAuthRouter.patch(
+  "/me",
+  requireAuth,
+  requireRoles(...STAFF_ROLES),
+  async (req, res) => {
+    const parsed = updateStaffProfileSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        message:
+          parsed.error.issues[0]?.message ?? "Validation failed",
+        errors: parsed.error.flatten().fieldErrors,
+      });
+    }
+
+    const data = parsed.data;
+    const userId = req.auth!.userId;
+
+    if (data.username) {
+      const usernameTaken = await prisma.user.findFirst({
+        where: {
+          username: data.username,
+          deleted_at: null,
+          NOT: { id: userId },
+        },
+      });
+      if (usernameTaken) {
+        return res.status(409).json({ message: "Username already in use" });
+      }
+    }
+
+    if (data.phone) {
+      const phoneTaken = await prisma.user.findFirst({
+        where: {
+          phone: data.phone,
+          deleted_at: null,
+          NOT: { id: userId },
+        },
+      });
+      if (phoneTaken) {
+        return res.status(409).json({ message: "Phone already in use" });
+      }
+    }
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        username: data.username,
+        phone: data.phone === undefined ? undefined : data.phone,
+      },
+      include: userWithAvatarInclude,
+    });
+
+    return res.json({
+      message: "Profile updated",
+      user: toPublicUser(user),
+    });
+  },
+);
+
+dashboardAuthRouter.post(
+  "/change-password",
+  requireAuth,
+  requireRoles(...STAFF_ROLES),
+  async (req, res) => {
+    const parsed = changePasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        message:
+          parsed.error.issues[0]?.message ?? "Validation failed",
+        errors: parsed.error.flatten().fieldErrors,
+      });
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { id: req.auth!.userId, deleted_at: null },
+    });
+
+    if (!user?.password) {
+      return res.status(400).json({
+        message: "Password change is not available for this account",
+      });
+    }
+
+    const { current_password, new_password } = parsed.data;
+    if (!(await verifyPassword(current_password, user.password))) {
+      return res.status(401).json({ message: "Current password is incorrect" });
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: await hashPassword(new_password) },
+    });
+
+    return res.json({ message: "Password updated successfully" });
   },
 );
 

@@ -3,7 +3,6 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { ApiError, apiFetch, type StaffRole, type StaffUser } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,11 +68,7 @@ export function LoginPage() {
   }
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center bg-bg-base px-4 py-10">
-      <div className="absolute right-4 top-4 sm:right-6 sm:top-5">
-        <ThemeToggle />
-      </div>
-
+    <main className="flex min-h-screen flex-col items-center justify-center bg-bg-base px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <div className="flex h-14 w-full items-center justify-center rounded-md bg-brand-primary px-4">

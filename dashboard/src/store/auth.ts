@@ -19,6 +19,7 @@ type AuthState = {
     user: StaffUser,
     refreshToken?: string | null,
   ) => void;
+  setUser: (user: StaffUser) => void;
   logout: () => void;
 };
 
@@ -56,6 +57,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
     sessionStorage.setItem(USER_KEY, JSON.stringify(user));
     set({ token, refreshToken, user });
+  },
+  setUser: (user) => {
+    sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+    set({ user });
   },
   logout: () => {
     clearLegacyLocalStorage();

@@ -11,6 +11,7 @@ export type StaffUser = {
   last_name: string;
   username?: string | null;
   email: string;
+  phone?: string | null;
   role: StaffRole;
   status: string;
 };
