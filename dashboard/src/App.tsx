@@ -5,6 +5,11 @@ import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { RolePage } from "./pages/RolePage";
+import { ShopCreatePage } from "./pages/ShopCreatePage";
+import { ShopEditPage } from "./pages/ShopEditPage";
+import { ShopsPage } from "./pages/ShopsPage";
+import { UserEditPage } from "./pages/UserEditPage";
+import { UsersPage } from "./pages/UsersPage";
 import { useAuthStore } from "./store/auth";
 import type { StaffRole } from "./lib/api";
 
@@ -41,10 +46,18 @@ export default function App() {
           <Route path="profile" element={<ProfilePage />} />
 
           <Route element={<ProtectedRoute roles={["super_admin"]} />}>
+            <Route path="users" element={<UsersPage />} />
+            <Route path="users/:id" element={<UserEditPage />} />
             <Route
               path="super-admin"
               element={<RolePage role="Super Admin" />}
             />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={["super_admin", "vendor"]} />}>
+            <Route path="shops" element={<ShopsPage />} />
+            <Route path="shops/new" element={<ShopCreatePage />} />
+            <Route path="shops/:id" element={<ShopEditPage />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={["admin"]} />}>

@@ -1,13 +1,12 @@
 import type { ComponentProps } from "react";
-import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Shield,
   ShieldCheck,
   Store,
   UserCog,
+  Users,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { NavLink, useLocation } from "react-router-dom";
 import { NavUser } from "@/components/dashboard/nav-user";
 import {
@@ -26,6 +25,13 @@ import {
 import type { StaffRole } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 
+const ROLE_HOME: Record<StaffRole, string> = {
+  super_admin: "/",
+  admin: "/",
+  moderator: "/moderator",
+  vendor: "/vendor",
+};
+
 const allLinks: Array<{
   to: string;
   label: string;
@@ -39,6 +45,18 @@ const allLinks: Array<{
     icon: LayoutDashboard,
     roles: ["super_admin", "admin"],
     end: true,
+  },
+  {
+    to: "/users",
+    label: "Users",
+    icon: Users,
+    roles: ["super_admin"],
+  },
+  {
+    to: "/shops",
+    label: "Shops",
+    icon: Store,
+    roles: ["super_admin", "vendor"],
   },
   {
     to: "/super-admin",
@@ -69,17 +87,7 @@ const allLinks: Array<{
 export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   const user = useAuthStore((state) => state.user);
   const { pathname } = useLocation();
-  const { resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const isDark = mounted ? resolvedTheme === "dark" : true;
-  const logoSrc = isDark
-    ? "/logo/niyenin-white.png"
-    : "/logo/niyenin-dark.png";
+  const logoHref = user ? ROLE_HOME[user.role] : "/";
 
   const links = allLinks.filter(
     (link) =>
@@ -91,18 +99,29 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" className="pointer-events-none">
-              <img
-                src={logoSrc}
-                alt="Niyenin"
-                className="h-8 w-auto shrink-0"
-              />
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">Niyenin</span>
-                <span className="truncate text-xs text-muted-foreground">
-                  Dashboard
+            <SidebarMenuButton
+              size="lg"
+              asChild
+              tooltip="Home"
+              className="bg-brand-primary text-white hover:bg-brand-hover hover:text-white active:bg-brand-hover active:text-white data-[active=true]:bg-brand-primary data-[active=true]:text-white"
+            >
+              <NavLink to={logoHref} end={logoHref === "/"}>
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white/15">
+                  <img
+                    src="/logo/niyenin-white.png"
+                    alt=""
+                    className="h-5 w-auto"
+                  />
                 </span>
-              </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold text-white">
+                    Niyenin
+                  </span>
+                  <span className="truncate text-xs text-white/80">
+                    Dashboard
+                  </span>
+                </div>
+              </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

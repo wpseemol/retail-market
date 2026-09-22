@@ -1,14 +1,17 @@
 import { create } from "zustand";
 import type { StaffUser } from "../lib/api";
+import {
+  STAFF_REFRESH_KEY,
+  STAFF_TOKEN_KEY,
+  STAFF_USER_KEY,
+  clearStaffSessionStorage,
+} from "../lib/authKeys";
 
 /**
  * Dashboard is Vite (not Next.js) — NextAuth cannot run here.
  * Tokens are kept in sessionStorage (tab-scoped), not localStorage.
- * Prefer migrating dashboard to Next.js later for Auth.js httpOnly cookies.
+ * When refresh token expires/fails → logout (secure staff sessions).
  */
-const TOKEN_KEY = "rm_staff_access_token";
-const REFRESH_KEY = "rm_staff_refresh_token";
-const USER_KEY = "rm_staff_user";
 
 type AuthState = {
   token: string | null;
@@ -25,48 +28,34 @@ type AuthState = {
 
 function readUser(): StaffUser | null {
   try {
-    const raw = sessionStorage.getItem(USER_KEY);
+    const raw = sessionStorage.getItem(STAFF_USER_KEY);
     return raw ? (JSON.parse(raw) as StaffUser) : null;
   } catch {
     return null;
   }
 }
 
-function clearLegacyLocalStorage() {
-  try {
-    localStorage.removeItem("rm_staff_token");
-    localStorage.removeItem("rm_staff_user");
-  } catch {
-    /* ignore */
-  }
-}
-
-clearLegacyLocalStorage();
-
 export const useAuthStore = create<AuthState>((set) => ({
-  token: sessionStorage.getItem(TOKEN_KEY),
-  refreshToken: sessionStorage.getItem(REFRESH_KEY),
+  token: sessionStorage.getItem(STAFF_TOKEN_KEY),
+  refreshToken: sessionStorage.getItem(STAFF_REFRESH_KEY),
   user: readUser(),
   setSession: (token, user, refreshToken = null) => {
-    clearLegacyLocalStorage();
-    sessionStorage.setItem(TOKEN_KEY, token);
+    clearStaffSessionStorage();
+    sessionStorage.setItem(STAFF_TOKEN_KEY, token);
     if (refreshToken) {
-      sessionStorage.setItem(REFRESH_KEY, refreshToken);
+      sessionStorage.setItem(STAFF_REFRESH_KEY, refreshToken);
     } else {
-      sessionStorage.removeItem(REFRESH_KEY);
+      sessionStorage.removeItem(STAFF_REFRESH_KEY);
     }
-    sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+    sessionStorage.setItem(STAFF_USER_KEY, JSON.stringify(user));
     set({ token, refreshToken, user });
   },
   setUser: (user) => {
-    sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+    sessionStorage.setItem(STAFF_USER_KEY, JSON.stringify(user));
     set({ user });
   },
   logout: () => {
-    clearLegacyLocalStorage();
-    sessionStorage.removeItem(TOKEN_KEY);
-    sessionStorage.removeItem(REFRESH_KEY);
-    sessionStorage.removeItem(USER_KEY);
+    clearStaffSessionStorage();
     set({ token: null, refreshToken: null, user: null });
   },
 }));

@@ -1,5 +1,5 @@
-import { type FormEvent, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { type FormEvent, useMemo, useState } from "react";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { ApiError, apiFetch, type StaffRole, type StaffUser } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
@@ -22,12 +22,22 @@ const STOREFRONT_URL =
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { token, user, setSession } = useAuthStore();
+  const [searchParams] = useSearchParams();
+  const { token, refreshToken, user, setSession } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  if (token && user) {
+  const sessionNotice = useMemo(() => {
+    const reason = searchParams.get("reason");
+    if (reason === "session_expired") {
+      return "Your session expired. Please sign in again.";
+    }
+    return null;
+  }, [searchParams]);
+
+  // Require both access + refresh for a valid staff session.
+  if (token && refreshToken && user) {
     return <Navigate to={ROLE_HOME[user.role]} replace />;
   }
 
@@ -49,10 +59,18 @@ export function LoginPage() {
         user: StaffUser;
       }>("/api/dashboard/auth/login", {
         body: { identifier, password },
+        skipRefresh: true,
       });
 
       const accessToken = data.accessToken ?? data.token;
-      setSession(accessToken, data.user, data.refreshToken ?? null);
+      if (!accessToken || !data.refreshToken) {
+        throw new ApiError(
+          "Login did not return a secure session. Please try again.",
+          500,
+        );
+      }
+
+      setSession(accessToken, data.user, data.refreshToken);
       navigate(data.home);
     } catch (err) {
       if (err instanceof ApiError && err.status === 403) {
@@ -88,6 +106,15 @@ export function LoginPage() {
             </p>
           </div>
         </div>
+
+        {sessionNotice ? (
+          <p
+            className="mb-4 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-foreground"
+            role="status"
+          >
+            {sessionNotice}
+          </p>
+        ) : null}
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">

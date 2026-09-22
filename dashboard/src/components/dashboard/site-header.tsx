@@ -13,6 +13,9 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 const PAGE_TITLES: Record<string, string> = {
   "/": "Overview",
   "/profile": "Profile",
+  "/users": "Users",
+  "/shops": "Shops",
+  "/shops/new": "Create shop",
   "/super-admin": "Super Admin",
   "/admin": "Admin",
   "/moderator": "Moderator",
@@ -21,7 +24,13 @@ const PAGE_TITLES: Record<string, string> = {
 
 export function SiteHeader() {
   const { pathname } = useLocation();
-  const pageTitle = PAGE_TITLES[pathname] ?? "Dashboard";
+  const pageTitle =
+    PAGE_TITLES[pathname] ??
+    (pathname.startsWith("/users/")
+      ? "Edit user"
+      : pathname.startsWith("/shops/")
+        ? "Edit shop"
+        : "Dashboard");
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">

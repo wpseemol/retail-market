@@ -3,14 +3,18 @@ import { z } from "zod";
 import type { UserRole } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
-import { createUserSession } from "../lib/userSession.js";
+import {
+  createUserSession,
+  rotateUserSession,
+} from "../lib/userSession.js";
 import { toPublicUser, userWithAvatarInclude } from "../lib/user.js";
+import { verifyRefreshToken } from "../lib/token.js";
 import {
   requireAuth,
   requireRoles,
   STAFF_ROLES,
 } from "../middleware/auth.js";
-import { findUnsafeInputReason } from "../validators/customerAuth.js";
+import { findUnsafeInputReason, refreshSchema } from "../validators/customerAuth.js";
 
 export const dashboardAuthRouter = Router();
 
@@ -115,6 +119,82 @@ dashboardAuthRouter.post("/login", async (req, res) => {
     sessionId,
     home: ROLE_HOME[updated.role as Exclude<UserRole, "customer">],
     user: toPublicUser(updated),
+  });
+});
+
+/**
+ * Exchange a staff refreshToken for a new access + refresh pair.
+ * Called by the dashboard when the access token expires (401).
+ */
+dashboardAuthRouter.post("/refresh", async (req, res) => {
+  const parsed = refreshSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: parsed.error.issues[0]?.message ?? "Validation failed",
+      errors: parsed.error.flatten().fieldErrors,
+    });
+  }
+
+  let payload;
+  try {
+    payload = verifyRefreshToken(parsed.data.refreshToken);
+  } catch {
+    return res.status(401).json({ message: "Invalid or expired refresh token" });
+  }
+
+  if (!payload.sid) {
+    return res.status(401).json({
+      message: "Refresh token is missing session id — please log in again",
+      code: "SESSION_REQUIRED",
+    });
+  }
+
+  if (!STAFF_ROLES.includes(payload.role)) {
+    return res.status(403).json({
+      message: "Refresh is only available for dashboard staff sessions",
+    });
+  }
+
+  const user = await prisma.user.findFirst({
+    where: { id: BigInt(payload.sub), deleted_at: null },
+    include: userWithAvatarInclude,
+  });
+
+  if (!user) {
+    return res.status(401).json({ message: "User not found" });
+  }
+
+  if (user.status !== "active") {
+    return res.status(403).json({ message: `Account is ${user.status}` });
+  }
+
+  if (!STAFF_ROLES.includes(user.role)) {
+    return res.status(403).json({
+      message: "Refresh is only available for dashboard staff sessions",
+    });
+  }
+
+  const rotated = await rotateUserSession({
+    sessionId: payload.sid,
+    userId: user.id,
+    role: user.role,
+    oldRefreshToken: parsed.data.refreshToken,
+    req,
+  });
+
+  if (!rotated) {
+    return res.status(401).json({
+      message: "Session revoked or expired — please log in again",
+      code: "SESSION_REVOKED",
+    });
+  }
+
+  return res.json({
+    message: "Token refreshed",
+    ...rotated.tokens,
+    sessionId: rotated.sessionId,
+    home: ROLE_HOME[user.role as Exclude<UserRole, "customer">],
+    user: toPublicUser(user),
   });
 });
 

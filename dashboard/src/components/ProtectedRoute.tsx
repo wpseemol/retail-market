@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import type { StaffRole } from "../lib/api";
 import { useAuthStore } from "../store/auth";
+import { AuthSessionGuard } from "./AuthSessionGuard";
 
 const ROLE_HOME: Record<StaffRole, string> = {
   super_admin: "/super-admin",
@@ -15,19 +16,26 @@ type ProtectedRouteProps = {
 
 export function ProtectedRoute({ roles }: ProtectedRouteProps) {
   const location = useLocation();
-  const { token, user } = useAuthStore();
+  const { token, refreshToken, user } = useAuthStore();
 
-  if (!token || !user) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+  // No access or refresh token → must log in again (secure).
+  if (!token || !refreshToken || !user) {
+    return (
+      <Navigate
+        to="/login?reason=session_expired"
+        replace
+        state={{ from: location }}
+      />
+    );
   }
 
-  if (
-    roles &&
-    !roles.includes(user.role) &&
-    user.role !== "super_admin"
-  ) {
+  if (roles && !roles.includes(user.role) && user.role !== "super_admin") {
     return <Navigate to={ROLE_HOME[user.role]} replace />;
   }
 
-  return <Outlet />;
+  return (
+    <AuthSessionGuard>
+      <Outlet />
+    </AuthSessionGuard>
+  );
 }

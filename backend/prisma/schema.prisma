@@ -143,6 +143,7 @@ model User {
   reviews        Review[]
   notifications  Notification[]
   vendorProfile  Vendor?
+  vendorHistory  VendorHistory[]     @relation("VendorHistoryActor")
 
   @@map("users")
 }
@@ -171,6 +172,7 @@ model Media {
   categoryImages      Category[]       @relation("CategoryImage")
   productThumbnails   Product[]        @relation("ProductThumbnail")
   variantImages       ProductVariant[] @relation("VariantImage")
+  vendorLogos         Vendor[]         @relation("VendorLogo")
 
   @@index([user_id])
   @@index([collection_name])
@@ -248,6 +250,8 @@ model Category {
 model Vendor {
   id           BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
   user_id      BigInt     @unique @db.UnsignedBigInt
+  /// Shop logo from `medias` (collection: vendor_banners, uploads/shops/).
+  logo_id      BigInt?    @unique @db.UnsignedBigInt
   shop_name    String     @db.VarChar(200)
   slug         String     @unique @db.VarChar(220)
   description  String?    @db.Text
@@ -256,10 +260,31 @@ model Vendor {
   updated_at   DateTime   @updatedAt
   deleted_at   DateTime?
 
-  user     User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user     User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  logo     Media?          @relation("VendorLogo", fields: [logo_id], references: [id], onDelete: SetNull)
   products Product[]
+  history  VendorHistory[]
 
   @@map("vendors")
+}
+
+/// Audit trail for shop create / edit / logo / delete.
+model VendorHistory {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  vendor_id  BigInt   @db.UnsignedBigInt
+  actor_id   BigInt?  @db.UnsignedBigInt
+  action     String   @db.VarChar(40)
+  /// Field-level diffs, e.g. { shop_name: { from, to }, logo_id: { from, to } }
+  changes    Json?
+  note       String?  @db.VarChar(500)
+  created_at DateTime @default(now())
+
+  vendor Vendor @relation(fields: [vendor_id], references: [id], onDelete: Cascade)
+  actor  User?  @relation("VendorHistoryActor", fields: [actor_id], references: [id], onDelete: SetNull)
+
+  @@index([vendor_id, created_at])
+  @@index([actor_id])
+  @@map("vendor_histories")
 }
 
 /// Parent sellable item. Price/stock on the product are used for `simple`

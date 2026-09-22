@@ -9,6 +9,7 @@ import {
   type AvatarMime,
 } from "../lib/avatarImage.js";
 import { PRODUCT_IMAGES_DIR } from "../lib/productImage.js";
+import { SHOP_IMAGES_DIR } from "../lib/shopImage.js";
 
 /** Disk folder for all customer profile photos. */
 export const USER_PHOTOS_DIR = path.resolve(
@@ -23,6 +24,7 @@ export const USER_PHOTOS_RELATIVE = "users/photos";
 
 fs.mkdirSync(USER_PHOTOS_DIR, { recursive: true });
 fs.mkdirSync(PRODUCT_IMAGES_DIR, { recursive: true });
+fs.mkdirSync(SHOP_IMAGES_DIR, { recursive: true });
 
 function imageFileFilter(
   _req: Request,
@@ -86,6 +88,27 @@ export const productImageUpload = multer({
     files: 12,
     fields: 20,
     parts: 32,
+  },
+  fileFilter: imageFileFilter,
+});
+
+const shopImageStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, SHOP_IMAGES_DIR);
+  },
+  filename: (_req, _file, cb) => {
+    cb(null, `${randomUUID()}.upload`);
+  },
+});
+
+/** Shop logo / store image → `uploads/shops/` + `medias`. */
+export const shopImageUpload = multer({
+  storage: shopImageStorage,
+  limits: {
+    fileSize: AVATAR_MAX_BYTES,
+    files: 1,
+    fields: 8,
+    parts: 10,
   },
   fileFilter: imageFileFilter,
 });

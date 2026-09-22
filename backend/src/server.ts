@@ -7,6 +7,8 @@ import { healthRouter } from "./routes/health.js";
 import { customerAuthRouter } from "./routes/customerAuth.js";
 import { customerAddressRouter } from "./routes/customerAddresses.js";
 import { dashboardAuthRouter } from "./routes/dashboardAuth.js";
+import { dashboardUsersRouter } from "./routes/dashboardUsers.js";
+import { dashboardVendorsRouter } from "./routes/dashboardVendors.js";
 
 const app = express();
 
@@ -31,6 +33,8 @@ app.use("/api/health", healthRouter);
 app.use("/api/auth", customerAuthRouter);
 app.use("/api/customer/addresses", customerAddressRouter);
 app.use("/api/dashboard/auth", dashboardAuthRouter);
+app.use("/api/dashboard/users", dashboardUsersRouter);
+app.use("/api/dashboard/shops", dashboardVendorsRouter);
 
 app.use(
   (
