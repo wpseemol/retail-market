@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { apiFetch } from "@/lib/api";
+import { ApiError, apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 
 type AuthSessionGuardProps = {
@@ -8,54 +8,60 @@ type AuthSessionGuardProps = {
 };
 
 /**
- * Secure dashboard session guard:
+ * Soft session check for dashboard staff.
  * - Requires access + refresh tokens
- * - Re-validates `/me` on mount, tab focus, and every 60s
- * - If refresh is expired/revoked, apiFetch force-logs the user out
+ * - Quietly re-validates `/me` on mount (and debounced tab focus)
+ * - Does NOT logout on network blips or tab switches
+ * - True expiry is handled by apiFetch → forceLogout("session_expired")
  */
 export function AuthSessionGuard({ children }: AuthSessionGuardProps) {
   const location = useLocation();
-  const { token, refreshToken, user, setSession, logout } = useAuthStore();
+  const { token, refreshToken, user, setUser } = useAuthStore();
   const [ready, setReady] = useState(false);
-  const [valid, setValid] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    let inFlight = false;
 
     async function validate() {
+      if (inFlight) return;
       const state = useAuthStore.getState();
       if (!state.token || !state.refreshToken || !state.user) {
-        if (!cancelled) {
-          setValid(false);
-          setReady(true);
-        }
+        if (!cancelled) setReady(true);
         return;
       }
 
+      inFlight = true;
       try {
         const data = await apiFetch<{ user: NonNullable<typeof state.user> }>(
           "/api/dashboard/auth/me",
         );
         if (cancelled) return;
-
-        const latest = useAuthStore.getState();
-        if (data.user && latest.token) {
-          setSession(latest.token, data.user, latest.refreshToken);
+        if (data.user) setUser(data.user);
+      } catch (err) {
+        // apiFetch already force-logs out on real session expiry (401 after refresh fail).
+        // Network / 5xx must not clear a still-valid tab session.
+        if (
+          err instanceof ApiError &&
+          err.status === 401 &&
+          (err.code === "SESSION_EXPIRED" || err.code === "SESSION_REVOKED")
+        ) {
+          return;
         }
-        setValid(true);
-      } catch {
-        if (cancelled) return;
-        logout();
-        setValid(false);
       } finally {
+        inFlight = false;
         if (!cancelled) setReady(true);
       }
     }
 
     void validate();
 
+    let focusTimer: number | undefined;
     function onFocus() {
-      void validate();
+      window.clearTimeout(focusTimer);
+      focusTimer = window.setTimeout(() => {
+        void validate();
+      }, 800);
     }
 
     function onVisibility() {
@@ -64,23 +70,18 @@ export function AuthSessionGuard({ children }: AuthSessionGuardProps) {
 
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisibility);
-    const interval = window.setInterval(onFocus, 60_000);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(focusTimer);
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibility);
-      window.clearInterval(interval);
     };
-  }, [token, refreshToken, user?.id, setSession, logout]);
+  }, [user?.id, setUser]);
 
   if (!token || !refreshToken || !user) {
     return (
-      <Navigate
-        to="/login?reason=session_expired"
-        replace
-        state={{ from: location }}
-      />
+      <Navigate to="/login" replace state={{ from: location }} />
     );
   }
 
@@ -90,10 +91,6 @@ export function AuthSessionGuard({ children }: AuthSessionGuardProps) {
         Checking secure session…
       </div>
     );
-  }
-
-  if (!valid) {
-    return <Navigate to="/login?reason=session_expired" replace />;
   }
 
   return <>{children}</>;

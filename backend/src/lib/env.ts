@@ -16,10 +16,19 @@ export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   databaseUrl: process.env.DATABASE_URL ?? "",
   jwtSecret: process.env.JWT_SECRET ?? "dev-only-change-me",
-  /** Short-lived access JWT (API Authorization header). */
+  /** Short-lived access JWT (API Authorization header). Default / customers. */
   jwtAccessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? "1h",
-  /** Long-lived refresh JWT — keep customer login ~1 year. */
+  /** Long-lived refresh JWT — customers keep login ~1 year. */
   jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? "365d",
+  /**
+   * Elevated dashboard staff (super_admin / admin / moderator):
+   * short sessions — must re-auth often.
+   */
+  jwtStaffAccessExpiresIn: process.env.JWT_STAFF_ACCESS_EXPIRES_IN ?? "15m",
+  jwtStaffRefreshExpiresIn: process.env.JWT_STAFF_REFRESH_EXPIRES_IN ?? "2h",
+  /** Vendor dashboard sessions (longer than elevated staff). */
+  jwtVendorAccessExpiresIn: process.env.JWT_VENDOR_ACCESS_EXPIRES_IN ?? "1h",
+  jwtVendorRefreshExpiresIn: process.env.JWT_VENDOR_REFRESH_EXPIRES_IN ?? "7d",
   /** Google OAuth Web Client ID (same as NEXT_PUBLIC_GOOGLE_CLIENT_ID). */
   googleClientId: (process.env.GOOGLE_CLIENT_ID ?? "")
     .trim()

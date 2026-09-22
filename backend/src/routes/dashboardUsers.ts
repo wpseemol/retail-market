@@ -36,6 +36,8 @@ const ALL_STATUSES: UserStatus[] = [
 const listQuerySchema = z.object({
   q: z.string().trim().max(120).optional(),
   role: z.enum(ALL_ROLES as [UserRole, ...UserRole[]]).optional(),
+  /** Comma-separated roles, e.g. `super_admin,admin,moderator,vendor`. */
+  roles: z.string().trim().max(120).optional(),
   status: z.enum(ALL_STATUSES as [UserStatus, ...UserStatus[]]).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -119,12 +121,24 @@ dashboardUsersRouter.get("/", async (req, res) => {
     });
   }
 
-  const { q, role, status, page, limit } = parsed.data;
+  const { q, role, roles, status, page, limit } = parsed.data;
   const where: Prisma.UserWhereInput = {
     deleted_at: null,
   };
 
-  if (role) where.role = role;
+  if (roles) {
+    const list = roles
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item): item is UserRole =>
+        (ALL_ROLES as string[]).includes(item),
+      );
+    if (list.length > 0) {
+      where.role = { in: list };
+    }
+  } else if (role) {
+    where.role = role;
+  }
   if (status) where.status = status;
   if (q) {
     where.OR = [

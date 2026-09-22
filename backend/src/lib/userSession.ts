@@ -2,8 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import type { Request } from "express";
 import type { DeviceType, UserRole } from "@prisma/client";
 import { prisma } from "./prisma.js";
-import { env } from "./env.js";
-import { issueAuthTokens } from "./token.js";
+import { issueAuthTokens, tokenTtlsForRole } from "./token.js";
 
 /** Mirrors Prisma `LoginMethod` enum. */
 type LoginMethod = "password" | "google" | "refresh";
@@ -99,11 +98,10 @@ export async function createUserSession(input: {
   const uaStored = ua?.slice(0, 2000) || null;
   const parsed = parseUserAgent(ua);
   const now = new Date();
-  const expiresAt = expiresAtFromDuration(env.jwtRefreshExpiresIn, now);
+  const refreshTtl = tokenTtlsForRole(input.role).refreshExpiresIn;
+  const expiresAt = expiresAtFromDuration(refreshTtl, now);
   const ip = clientIp(input.req);
 
-  // Reuse the active session for this device so login updates the row
-  // instead of inserting a duplicate every time.
   const existing = uaStored
     ? await prisma.userSession.findFirst({
         where: {
@@ -176,7 +174,6 @@ export async function rotateUserSession(input: {
   }
 
   if (existing.token_hash !== hashToken(input.oldRefreshToken)) {
-    // Possible token reuse / theft — revoke the session.
     await prisma.userSession.update({
       where: { id: existing.id },
       data: { is_revoked: true, revoked_at: new Date() },
@@ -192,6 +189,7 @@ export async function rotateUserSession(input: {
 
   const ua = reqUserAgent(input.req);
   const parsed = parseUserAgent(ua);
+  const refreshTtl = tokenTtlsForRole(input.role).refreshExpiresIn;
 
   await prisma.userSession.update({
     where: { id: existing.id },
@@ -204,7 +202,7 @@ export async function rotateUserSession(input: {
       os: parsed.os ?? existing.os,
       login_method: "refresh",
       last_activity_at: new Date(),
-      expires_at: expiresAtFromDuration(env.jwtRefreshExpiresIn),
+      expires_at: expiresAtFromDuration(refreshTtl),
     },
   });
 

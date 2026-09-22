@@ -8,6 +8,12 @@ import { RolePage } from "./pages/RolePage";
 import { ShopCreatePage } from "./pages/ShopCreatePage";
 import { ShopEditPage } from "./pages/ShopEditPage";
 import { ShopsPage } from "./pages/ShopsPage";
+import { CategoriesPage } from "./pages/CategoriesPage";
+import { CategoryCreatePage } from "./pages/CategoryCreatePage";
+import { CategoryEditPage } from "./pages/CategoryEditPage";
+import { ProductsPage } from "./pages/ProductsPage";
+import { ProductCreatePage } from "./pages/ProductCreatePage";
+import { ProductEditPage } from "./pages/ProductEditPage";
 import { UserEditPage } from "./pages/UserEditPage";
 import { UsersPage } from "./pages/UsersPage";
 import { useAuthStore } from "./store/auth";
@@ -58,6 +64,37 @@ export default function App() {
             <Route path="shops" element={<ShopsPage />} />
             <Route path="shops/new" element={<ShopCreatePage />} />
             <Route path="shops/:id" element={<ShopEditPage />} />
+          </Route>
+
+          <Route
+            element={
+              <ProtectedRoute
+                roles={["super_admin", "admin", "moderator", "vendor"]}
+              />
+            }
+          >
+            <Route path="categories" element={<CategoriesPage />} />
+          </Route>
+
+          <Route
+            element={
+              <ProtectedRoute roles={["super_admin", "admin", "moderator"]} />
+            }
+          >
+            <Route path="categories/new" element={<CategoryCreatePage />} />
+            <Route path="categories/:id" element={<CategoryEditPage />} />
+          </Route>
+
+          <Route
+            element={
+              <ProtectedRoute
+                roles={["super_admin", "admin", "moderator", "vendor"]}
+              />
+            }
+          >
+            <Route path="products" element={<ProductsPage />} />
+            <Route path="products/new" element={<ProductCreatePage />} />
+            <Route path="products/:id" element={<ProductEditPage />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={["admin"]} />}>

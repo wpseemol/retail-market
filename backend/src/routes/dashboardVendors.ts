@@ -308,10 +308,18 @@ dashboardVendorsRouter.post("/", async (req, res) => {
   const data = parsed.data;
   let ownerId = req.auth!.userId;
 
+  /** Staff who may own a shop (super admin may assign any of these, including self). */
+  const SHOP_OWNER_ROLES = [
+    "super_admin",
+    "admin",
+    "moderator",
+    "vendor",
+  ] as const;
+
   if (isSuper) {
     if (!data.user_id) {
       return res.status(400).json({
-        message: "Select a vendor owner for this shop",
+        message: "Select an owner email for this shop",
       });
     }
     ownerId = BigInt(data.user_id);
@@ -321,20 +329,17 @@ dashboardVendorsRouter.post("/", async (req, res) => {
     if (!owner) {
       return res.status(404).json({ message: "Owner user not found" });
     }
-    if (owner.role !== "vendor") {
+    if (
+      !(SHOP_OWNER_ROLES as readonly string[]).includes(owner.role)
+    ) {
       return res.status(400).json({
-        message: "Shop owner must be a vendor user",
+        message:
+          "Shop owner must be a staff member (super admin, admin, moderator, or vendor)",
       });
     }
   } else if (data.user_id) {
     return res.status(403).json({
       message: "Vendors can only create a shop for themselves",
-    });
-  }
-
-  if (req.auth!.role === "super_admin" && ownerId === req.auth!.userId) {
-    return res.status(400).json({
-      message: "Super admin cannot own a shop — assign a vendor user",
     });
   }
 
@@ -438,9 +443,12 @@ dashboardVendorsRouter.patch("/:id", async (req, res) => {
       if (!owner) {
         return res.status(404).json({ message: "Owner user not found" });
       }
-      if (owner.role !== "vendor") {
+      if (
+        !["super_admin", "admin", "moderator", "vendor"].includes(owner.role)
+      ) {
         return res.status(400).json({
-          message: "Shop owner must be a vendor user",
+          message:
+            "Shop owner must be a staff member (super admin, admin, moderator, or vendor)",
         });
       }
       const conflict = await prisma.vendor.findFirst({

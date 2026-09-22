@@ -1,4 +1,4 @@
-import type { Media, Prisma } from "@prisma/client";
+import type { Media, Prisma, ProductStatus, ProductType } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { toPublicMedia } from "./user.js";
 import {
@@ -57,6 +57,7 @@ export type ProductMediaPublic = ReturnType<typeof toPublicMedia>;
 
 export const productWithCatalogInclude = {
   category: true,
+  brandRef: true,
   vendor: true,
   thumbnail: true,
   options: {
@@ -80,3 +81,80 @@ export const productWithCatalogInclude = {
     },
   },
 } satisfies Prisma.ProductInclude;
+
+type ProductRow = Prisma.ProductGetPayload<{
+  include: typeof productWithCatalogInclude;
+}>;
+
+function decimalToNumber(value: Prisma.Decimal | number | null | undefined) {
+  if (value === null || value === undefined) return null;
+  return Number(value);
+}
+
+export function toPublicProduct(row: ProductRow) {
+  return {
+    id: row.id.toString(),
+    vendor_id: row.vendor_id?.toString() ?? null,
+    category_id: row.category_id?.toString() ?? null,
+    thumbnail_id: row.thumbnail_id?.toString() ?? null,
+    name: row.name,
+    slug: row.slug,
+    sku: row.sku,
+    barcode: row.barcode,
+    brand: row.brandRef
+      ? {
+          id: row.brandRef.id.toString(),
+          name: row.brandRef.name,
+          slug: row.brandRef.slug,
+        }
+      : row.brand
+        ? { id: null, name: row.brand, slug: null }
+        : null,
+    brand_id: row.brand_id?.toString() ?? null,
+    brand_name: row.brandRef?.name ?? row.brand,
+    category: row.category
+      ? {
+          id: row.category.id.toString(),
+          name: row.category.name,
+          slug: row.category.slug,
+        }
+      : null,
+    vendor: row.vendor
+      ? {
+          id: row.vendor.id.toString(),
+          shop_name: row.vendor.shop_name,
+          slug: row.vendor.slug,
+        }
+      : null,
+    options: row.options.map((opt) => ({
+      id: opt.id.toString(),
+      name: opt.name,
+      position: opt.position,
+      values: opt.values.map((v) => ({
+        id: v.id.toString(),
+        value: v.value,
+        color_hex: v.color_hex,
+        position: v.position,
+      })),
+    })),
+    variants: row.variants.map((variant) => ({
+      id: variant.id.toString(),
+      sku: variant.sku,
+      title: variant.title,
+      price: decimalToNumber(variant.price),
+      compare_at_price: decimalToNumber(variant.compare_at_price),
+      stock_qty: variant.stock_qty,
+      is_default: variant.is_default,
+      is_active: variant.is_active,
+      position: variant.position,
+      image: toPublicMedia(variant.image),
+      option_values: variant.optionValues.map((link) => ({
+        option: link.optionValue.option.name,
+        value: link.optionValue.value,
+        option_value_id: link.optionValue.id.toString(),
+      })),
+    })),
+  };
+}
+
+export type PublicProduct = ReturnType<typeof toPublicProduct>;

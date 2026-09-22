@@ -1,6 +1,8 @@
 import type { ComponentProps } from "react";
 import {
+  FolderTree,
   LayoutDashboard,
+  Package,
   Shield,
   ShieldCheck,
   Store,
@@ -57,6 +59,18 @@ const allLinks: Array<{
     label: "Shops",
     icon: Store,
     roles: ["super_admin", "vendor"],
+  },
+  {
+    to: "/categories",
+    label: "Categories",
+    icon: FolderTree,
+    roles: ["super_admin", "admin", "moderator", "vendor"],
+  },
+  {
+    to: "/products",
+    label: "Products",
+    icon: Package,
+    roles: ["super_admin", "admin", "moderator", "vendor"],
   },
   {
     to: "/super-admin",

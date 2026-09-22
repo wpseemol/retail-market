@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ImagePlus, Store } from "lucide-react";
+import { ArrowLeft, ImagePlus, Search, Store, X } from "lucide-react";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import {
   slugifyClient,
@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type VendorOption = {
+type OwnerOption = {
   id: string;
   first_name: string;
   last_name: string;
@@ -37,11 +37,16 @@ type VendorOption = {
   role: string;
 };
 
+const OWNER_SEARCH_LIMIT = 6;
+const OWNER_ROLES =
+  "super_admin,admin,moderator,vendor";
+
 export function ShopCreatePage() {
   const navigate = useNavigate();
   const { token, user } = useAuthStore();
   const isSuper = user?.role === "super_admin";
   const fileRef = useRef<HTMLInputElement>(null);
+  const ownerWrapRef = useRef<HTMLDivElement>(null);
 
   const [shopName, setShopName] = useState("");
   const [slug, setSlug] = useState("");
@@ -49,34 +54,80 @@ export function ShopCreatePage() {
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<ShopCreateStatus>("draft");
   const [ownerId, setOwnerId] = useState("");
-  const [vendors, setVendors] = useState<VendorOption[]>([]);
+  const [ownerEmail, setOwnerEmail] = useState("");
+  const [ownerQuery, setOwnerQuery] = useState("");
+  const [ownerOpen, setOwnerOpen] = useState(false);
+  const [ownerResults, setOwnerResults] = useState<OwnerOption[]>([]);
+  const [ownerSearching, setOwnerSearching] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [previewing, setPreviewing] = useState(false);
 
+  // Search staff emails (super admin / admin / moderator / vendor), up to 6.
   useEffect(() => {
     if (!token || !isSuper) return;
-    let cancelled = false;
 
-    async function loadVendors() {
-      try {
-        const data = await apiFetch<{ users: VendorOption[] }>(
-          "/api/dashboard/users?role=vendor&limit=100",
-          { token },
-        );
-        if (!cancelled) setVendors(data.users);
-      } catch {
-        /* ignore */
+    const q = ownerQuery.trim();
+    if (q.length < 1) {
+      setOwnerResults([]);
+      setOwnerSearching(false);
+      return;
+    }
+
+    if (
+      ownerId &&
+      q.toLowerCase() === ownerEmail.trim().toLowerCase()
+    ) {
+      setOwnerResults([]);
+      return;
+    }
+
+    let cancelled = false;
+    const handle = window.setTimeout(() => {
+      void (async () => {
+        setOwnerSearching(true);
+        try {
+          const params = new URLSearchParams({
+            roles: OWNER_ROLES,
+            limit: String(OWNER_SEARCH_LIMIT),
+            q,
+          });
+          const data = await apiFetch<{ users: OwnerOption[] }>(
+            `/api/dashboard/users?${params.toString()}`,
+            { token },
+          );
+          if (!cancelled) setOwnerResults(data.users);
+        } catch {
+          if (!cancelled) setOwnerResults([]);
+        } finally {
+          if (!cancelled) setOwnerSearching(false);
+        }
+      })();
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(handle);
+    };
+  }, [token, isSuper, ownerQuery, ownerId, ownerEmail]);
+
+  useEffect(() => {
+    if (!ownerOpen) return;
+
+    function onPointerDown(event: MouseEvent) {
+      if (
+        ownerWrapRef.current &&
+        !ownerWrapRef.current.contains(event.target as Node)
+      ) {
+        setOwnerOpen(false);
       }
     }
 
-    void loadVendors();
-    return () => {
-      cancelled = true;
-    };
-  }, [token, isSuper]);
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [ownerOpen]);
 
   useEffect(() => {
     if (!token || slugTouched || shopName.trim().length < 2) return;
@@ -111,12 +162,34 @@ export function ShopCreatePage() {
     setLogoPreview(file ? URL.createObjectURL(file) : null);
   }
 
+  function selectOwner(member: OwnerOption) {
+    setOwnerId(member.id);
+    setOwnerEmail(member.email);
+    setOwnerQuery(member.email);
+    setOwnerOpen(false);
+  }
+
+  function selectMyself() {
+    if (!user) return;
+    setOwnerId(user.id);
+    setOwnerEmail(user.email);
+    setOwnerQuery(user.email);
+    setOwnerOpen(false);
+  }
+
+  function clearOwner() {
+    setOwnerId("");
+    setOwnerEmail("");
+    setOwnerQuery("");
+    setOwnerOpen(false);
+  }
+
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token) return;
 
     if (isSuper && !ownerId) {
-      setError("Select a vendor owner for this shop");
+      setError("Search and select an owner email for this shop");
       return;
     }
 
@@ -294,32 +367,102 @@ export function ShopCreatePage() {
             </div>
 
             {isSuper ? (
-              <div className="space-y-2">
-                <Label>Owner (vendor user)</Label>
-                <Select
-                  value={ownerId || undefined}
-                  onValueChange={setOwnerId}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a vendor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vendors.length === 0 ? (
-                      <SelectItem value="__none" disabled>
-                        No vendor users found
-                      </SelectItem>
-                    ) : (
-                      vendors.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.first_name} {v.last_name} · {v.email}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Shops must belong to a vendor account — not super admin.
-                </p>
+              <div className="space-y-2" ref={ownerWrapRef}>
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="owner_email">Owner (member email)</Label>
+                  {user?.email ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={selectMyself}
+                    >
+                      Use my email
+                    </Button>
+                  ) : null}
+                </div>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="owner_email"
+                    type="search"
+                    autoComplete="off"
+                    value={ownerQuery}
+                    placeholder="Search email (super admin, admin, moderator, vendor)…"
+                    className="pr-9 pl-9"
+                    onFocus={() => setOwnerOpen(true)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setOwnerQuery(value);
+                      setOwnerOpen(true);
+                      if (
+                        ownerId &&
+                        value.trim().toLowerCase() !==
+                          ownerEmail.trim().toLowerCase()
+                      ) {
+                        setOwnerId("");
+                        setOwnerEmail("");
+                      }
+                    }}
+                  />
+                  {ownerQuery ? (
+                    <button
+                      type="button"
+                      className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+                      onClick={clearOwner}
+                      aria-label="Clear owner"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  ) : null}
+
+                  {ownerOpen ? (
+                    <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-md">
+                      {ownerSearching ? (
+                        <p className="px-3 py-2 text-sm text-muted-foreground">
+                          Searching…
+                        </p>
+                      ) : ownerResults.length === 0 ? (
+                        <p className="px-3 py-2 text-sm text-muted-foreground">
+                          {ownerQuery.trim()
+                            ? "No member email matched"
+                            : "Type to search member emails"}
+                        </p>
+                      ) : (
+                        <ul className="max-h-56 overflow-auto py-1">
+                          {ownerResults.map((member) => (
+                            <li key={member.id}>
+                              <button
+                                type="button"
+                                className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => selectOwner(member)}
+                              >
+                                <span className="font-medium">
+                                  {member.email}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {member.first_name} {member.last_name} ·{" "}
+                                  {member.role.replace("_", " ")}
+                                </span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+                {ownerId ? (
+                  <p className="text-xs text-brand-primary">
+                    Selected owner: {ownerEmail}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Assign to your email or any staff member (admin, moderator,
+                    vendor). Shows up to {OWNER_SEARCH_LIMIT} matches.
+                  </p>
+                )}
               </div>
             ) : null}
 

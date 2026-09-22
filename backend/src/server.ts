@@ -9,6 +9,8 @@ import { customerAddressRouter } from "./routes/customerAddresses.js";
 import { dashboardAuthRouter } from "./routes/dashboardAuth.js";
 import { dashboardUsersRouter } from "./routes/dashboardUsers.js";
 import { dashboardVendorsRouter } from "./routes/dashboardVendors.js";
+import { dashboardCategoriesRouter } from "./routes/dashboardCategories.js";
+import { dashboardProductsRouter } from "./routes/dashboardProducts.js";
 
 const app = express();
 
@@ -35,6 +37,8 @@ app.use("/api/customer/addresses", customerAddressRouter);
 app.use("/api/dashboard/auth", dashboardAuthRouter);
 app.use("/api/dashboard/users", dashboardUsersRouter);
 app.use("/api/dashboard/shops", dashboardVendorsRouter);
+app.use("/api/dashboard/categories", dashboardCategoriesRouter);
+app.use("/api/dashboard/products", dashboardProductsRouter);
 
 app.use(
   (

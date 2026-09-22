@@ -18,15 +18,9 @@ export function ProtectedRoute({ roles }: ProtectedRouteProps) {
   const location = useLocation();
   const { token, refreshToken, user } = useAuthStore();
 
-  // No access or refresh token → must log in again (secure).
+  // No access or refresh token → sign in (not "session expired").
   if (!token || !refreshToken || !user) {
-    return (
-      <Navigate
-        to="/login?reason=session_expired"
-        replace
-        state={{ from: location }}
-      />
-    );
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   if (roles && !roles.includes(user.role) && user.role !== "super_admin") {

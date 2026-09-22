@@ -20,6 +20,7 @@ type AuthState = {
   setSession: (
     token: string,
     user: StaffUser,
+    /** Pass explicitly on login/refresh. Omit to keep the current refresh token. */
     refreshToken?: string | null,
   ) => void;
   setUser: (user: StaffUser) => void;
@@ -35,20 +36,22 @@ function readUser(): StaffUser | null {
   }
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   token: sessionStorage.getItem(STAFF_TOKEN_KEY),
   refreshToken: sessionStorage.getItem(STAFF_REFRESH_KEY),
   user: readUser(),
-  setSession: (token, user, refreshToken = null) => {
-    clearStaffSessionStorage();
+  setSession: (token, user, refreshToken) => {
+    const nextRefresh =
+      refreshToken === undefined ? get().refreshToken : refreshToken;
+
     sessionStorage.setItem(STAFF_TOKEN_KEY, token);
-    if (refreshToken) {
-      sessionStorage.setItem(STAFF_REFRESH_KEY, refreshToken);
+    if (nextRefresh) {
+      sessionStorage.setItem(STAFF_REFRESH_KEY, nextRefresh);
     } else {
       sessionStorage.removeItem(STAFF_REFRESH_KEY);
     }
     sessionStorage.setItem(STAFF_USER_KEY, JSON.stringify(user));
-    set({ token, refreshToken, user });
+    set({ token, refreshToken: nextRefresh, user });
   },
   setUser: (user) => {
     sessionStorage.setItem(STAFF_USER_KEY, JSON.stringify(user));
