@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { ApiHealthBadge } from "../components/ApiHealthBadge";
+import { ThemeToggle } from "../components/ThemeToggle";
 import { useAuthStore } from "../store/auth";
 import type { StaffRole } from "../lib/api";
 
@@ -28,16 +29,13 @@ export function DashboardLayout() {
   return (
     <div className="min-h-screen bg-bg-subtle md:grid md:grid-cols-[248px_1fr]">
       <aside className="border-b border-border-default bg-bg-surface p-5 md:border-b-0 md:border-r">
-        <div className="mb-6 flex items-center gap-3">
+        <div className="mb-6 flex items-center gap-3 rounded-md bg-brand-primary px-3 py-2.5">
           <img
-            src="/logo/niyenin-dark.png"
+            src="/logo/niyenin-white.png"
             alt="Niyenin"
-            className="h-8 w-auto"
+            className="h-7 w-auto"
           />
-          <div>
-            <p className="text-sm font-semibold text-text-primary">Niyenin</p>
-            <p className="text-xs text-text-secondary">Staff Dashboard</p>
-          </div>
+          <p className="text-sm font-semibold text-white">Dashboard</p>
         </div>
 
         {user ? (
@@ -88,7 +86,10 @@ export function DashboardLayout() {
           <p className="text-sm font-medium text-text-secondary">
             Management console
           </p>
-          <ApiHealthBadge />
+          <div className="flex items-center gap-4">
+            <ApiHealthBadge />
+            <ThemeToggle />
+          </div>
         </header>
         <main className="flex-1 p-6 md:p-8">
           <Outlet />

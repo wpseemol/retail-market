@@ -3,7 +3,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { ApiError, apiFetch, type StaffRole, type StaffUser } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
-import { ApiHealthBadge } from "@/components/ApiHealthBadge";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,31 +69,29 @@ export function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-background">
-      <div className="border-b border-border bg-muted/40">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-3">
+    <main className="relative flex min-h-screen flex-col items-center justify-center bg-bg-base px-4 py-10">
+      <div className="absolute right-4 top-4 sm:right-6 sm:top-5">
+        <ThemeToggle />
+      </div>
+
+      <div className="w-full max-w-sm">
+        <div className="mb-8 flex flex-col items-center gap-3 text-center">
+          <div className="flex h-14 w-full items-center justify-center rounded-md bg-brand-primary px-4">
             <img
-              src="/logo/niyenin-dark.png"
+              src="/logo/niyenin-white.png"
               alt="Niyenin"
               className="h-8 w-auto"
             />
-            <span className="text-sm font-medium text-muted-foreground">
-              Staff Dashboard
-            </span>
           </div>
-          <ApiHealthBadge />
-        </div>
-      </div>
-
-      <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-10 sm:px-6 sm:py-14">
-        <div className="mb-8 space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-[28px]">
-            Sign in
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Use your username, email, or phone with your password.
-          </p>
+          <p className="text-sm font-medium text-text-secondary">Dashboard</p>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight text-text-primary sm:text-[28px]">
+              Sign in
+            </h1>
+            <p className="text-sm text-text-secondary">
+              Use your username, email, or phone with your password.
+            </p>
+          </div>
         </div>
 
         <form onSubmit={onSubmit} className="space-y-4">
@@ -135,7 +133,7 @@ export function LoginPage() {
           </div>
 
           {error ? (
-            <p className="text-sm text-destructive" role="alert">
+            <p className="text-sm text-error" role="alert">
               {error}
             </p>
           ) : null}
@@ -145,11 +143,11 @@ export function LoginPage() {
           </Button>
         </form>
 
-        <p className="mt-8 text-center text-sm text-muted-foreground">
+        <p className="mt-8 text-center text-sm text-text-secondary">
           Looking to shop?{" "}
           <a
             href={`${STOREFRONT_URL}/login`}
-            className="font-medium text-primary hover:underline"
+            className="font-medium text-brand-primary hover:underline"
           >
             Customer login
           </a>
