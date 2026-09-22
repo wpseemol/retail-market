@@ -10,11 +10,28 @@ import { EnvelopeIcon, LockIcon, UserIcon } from "./icons";
 import { useGoogleIdToken } from "@/hooks/useGoogleIdToken";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/authSlice";
+import { messageForAuthCode } from "@/lib/authErrors";
+import {
+  type RegisterField,
+  validateRegisterField,
+  validateRegisterForm,
+} from "@/lib/validators/customerAuth";
 import type { ApiUser } from "@/lib/api";
+
+type FieldErrors = Partial<Record<RegisterField, string>>;
 
 export default function SignUpForm() {
   const dispatch = useAppDispatch();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [agreed, setAgreed] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [touched, setTouched] = useState<Partial<Record<RegisterField, boolean>>>(
+    {},
+  );
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -42,7 +59,9 @@ export default function SignUpForm() {
             redirect: false,
           });
           if (result?.error) {
-            setError("Google sign-in failed");
+            setError(
+              messageForAuthCode(result.code, "Google sign-in failed"),
+            );
             return;
           }
           const session = await getSession();
@@ -63,19 +82,76 @@ export default function SignUpForm() {
 
   const google = useGoogleIdToken(handleGoogleCredential);
 
+  const setFieldValue = (field: RegisterField, value: string) => {
+    if (field === "first_name") setFirstName(value);
+    else if (field === "last_name") setLastName(value);
+    else if (field === "email") setEmail(value);
+    else if (field === "password") setPassword(value);
+    else setConfirmPassword(value);
+
+    if (touched[field] || fieldErrors[field]) {
+      let message: string | undefined;
+      if (field === "confirmPassword") {
+        if (!value) message = "Confirm your password";
+        else if (value !== password) message = "Passwords do not match";
+      } else {
+        message = validateRegisterField(field, value);
+      }
+
+      setFieldErrors((prev) => {
+        if (!message) {
+          if (!(field in prev)) return prev;
+          const next = { ...prev };
+          delete next[field];
+          return next;
+        }
+        if (prev[field] === message) return prev;
+        return { ...prev, [field]: message };
+      });
+    }
+  };
+
+  const handleBlur = (field: RegisterField, value: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    let message: string | undefined;
+    if (field === "confirmPassword") {
+      if (!value) message = "Confirm your password";
+      else if (value !== password) message = "Passwords do not match";
+    } else {
+      message = validateRegisterField(field, value);
+    }
+    setFieldErrors((prev) => {
+      if (!message) {
+        if (!(field in prev)) return prev;
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      }
+      return { ...prev, [field]: message };
+    });
+  };
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+    setTouched({
+      first_name: true,
+      last_name: true,
+      email: true,
+      password: true,
+      confirmPassword: true,
+    });
 
-    const form = new FormData(event.currentTarget);
-    const first_name = String(form.get("firstName") ?? "");
-    const last_name = String(form.get("lastName") ?? "");
-    const email = String(form.get("email") ?? "");
-    const password = String(form.get("password") ?? "");
-    const confirmPassword = String(form.get("confirmPassword") ?? "");
+    const validated = validateRegisterForm({
+      first_name: firstName,
+      last_name: lastName,
+      email,
+      password,
+      confirmPassword,
+    });
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
+    if (!validated.success) {
+      setFieldErrors(validated.errors);
       return;
     }
 
@@ -84,17 +160,20 @@ export default function SignUpForm() {
       return;
     }
 
+    setFieldErrors({});
     startTransition(async () => {
       try {
         const result = await signIn("register", {
-          first_name,
-          last_name,
-          email,
-          password,
+          first_name: validated.data.first_name,
+          last_name: validated.data.last_name,
+          email: validated.data.email,
+          password: validated.data.password,
           redirect: false,
         });
         if (result?.error) {
-          setError("Registration failed");
+          setError(
+            messageForAuthCode(result.code, "Registration failed"),
+          );
           return;
         }
         const session = await getSession();
@@ -135,21 +214,27 @@ export default function SignUpForm() {
       />
       <OrDivider />
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <AuthInput
             name="firstName"
             autoComplete="given-name"
             placeholder="Ex. Max"
             leadingIcon={<UserIcon />}
-            required
+            value={firstName}
+            onChange={(e) => setFieldValue("first_name", e.target.value)}
+            onBlur={(e) => handleBlur("first_name", e.target.value)}
+            error={fieldErrors.first_name}
           />
           <AuthInput
             name="lastName"
             autoComplete="family-name"
             placeholder="Ex. Maguire"
             leadingIcon={<UserIcon />}
-            required
+            value={lastName}
+            onChange={(e) => setFieldValue("last_name", e.target.value)}
+            onBlur={(e) => handleBlur("last_name", e.target.value)}
+            error={fieldErrors.last_name}
           />
         </div>
 
@@ -159,7 +244,10 @@ export default function SignUpForm() {
           autoComplete="email"
           placeholder="Ex. Maguire@FlexUI.com"
           leadingIcon={<EnvelopeIcon />}
-          required
+          value={email}
+          onChange={(e) => setFieldValue("email", e.target.value)}
+          onBlur={(e) => handleBlur("email", e.target.value)}
+          error={fieldErrors.email}
         />
 
         <AuthInput
@@ -169,8 +257,10 @@ export default function SignUpForm() {
           placeholder="Create a password"
           leadingIcon={<LockIcon />}
           showPasswordToggle
-          required
-          minLength={8}
+          value={password}
+          onChange={(e) => setFieldValue("password", e.target.value)}
+          onBlur={(e) => handleBlur("password", e.target.value)}
+          error={fieldErrors.password}
         />
 
         <AuthInput
@@ -180,8 +270,10 @@ export default function SignUpForm() {
           placeholder="Confirm password"
           leadingIcon={<LockIcon />}
           showPasswordToggle
-          required
-          minLength={8}
+          value={confirmPassword}
+          onChange={(e) => setFieldValue("confirmPassword", e.target.value)}
+          onBlur={(e) => handleBlur("confirmPassword", e.target.value)}
+          error={fieldErrors.confirmPassword}
         />
 
         <label className="flex items-start gap-2.5 cursor-pointer select-none mt-1">
@@ -190,7 +282,6 @@ export default function SignUpForm() {
             checked={agreed}
             onChange={(e) => setAgreed(e.target.checked)}
             className="mt-0.5 size-4 shrink-0 rounded border-border-default accent-brand-primary cursor-pointer"
-            required
           />
           <span className="text-sm text-text-secondary leading-snug">
             I agree to all{" "}

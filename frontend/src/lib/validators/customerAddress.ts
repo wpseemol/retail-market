@@ -44,13 +44,15 @@ export const addressFormSchema = z.object({
   city: requiredText(2, 100, "City"),
   state: optionalText(100),
   postal_code: requiredText(2, 20, "Postal code"),
-  country: withSafeInput(
-    z
-      .string()
-      .trim()
-      .length(2, "Use a 2-letter country code")
-      .transform((v) => v.toUpperCase()),
-  ),
+  country: z
+    .string()
+    .trim()
+    .length(2, "Use a 2-letter country code")
+    .superRefine((value, ctx) => {
+      const reason = findUnsafeInputReason(value);
+      if (reason) ctx.addIssue({ code: "custom", message: reason });
+    })
+    .transform((v) => v.toUpperCase()),
   type: z.enum(["shipping", "billing", "both"]),
   is_default_shipping: z.boolean(),
   is_default_billing: z.boolean(),
@@ -75,9 +77,14 @@ const fieldSchemas = {
   city: requiredText(2, 100, "City"),
   state: optionalText(100),
   postal_code: requiredText(2, 20, "Postal code"),
-  country: withSafeInput(
-    z.string().trim().length(2, "Use a 2-letter country code"),
-  ),
+  country: z
+    .string()
+    .trim()
+    .length(2, "Use a 2-letter country code")
+    .superRefine((value, ctx) => {
+      const reason = findUnsafeInputReason(value);
+      if (reason) ctx.addIssue({ code: "custom", message: reason });
+    }),
   type: z.enum(["shipping", "billing", "both"]),
   is_default_shipping: z.boolean(),
   is_default_billing: z.boolean(),

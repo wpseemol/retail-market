@@ -12,6 +12,7 @@ import {
   validateLoginField,
   validateLoginForm,
 } from "@/lib/validators/customerAuth";
+import { messageForAuthCode } from "@/lib/authErrors";
 import { useGoogleIdToken } from "@/hooks/useGoogleIdToken";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/authSlice";
@@ -85,7 +86,9 @@ export default function LoginForm() {
             redirect: false,
           });
           if (result?.error) {
-            setError("Google sign-in failed");
+            setError(
+              messageForAuthCode(result.code, "Google sign-in failed"),
+            );
             return;
           }
           const session = await getSession();
@@ -161,7 +164,9 @@ export default function LoginForm() {
         });
 
         if (result?.error) {
-          setError("Invalid email or password");
+          setError(
+            messageForAuthCode(result.code, "Invalid email or password"),
+          );
           return;
         }
 

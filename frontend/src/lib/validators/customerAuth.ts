@@ -127,6 +127,126 @@ export function validateLoginForm(data: {
   return { success: true, data: parsed.data };
 }
 
+const registerNameSchema = z
+  .string()
+  .trim()
+  .superRefine((value, ctx) => {
+    const unsafe = findUnsafeInputReason(value);
+    if (unsafe) {
+      ctx.addIssue({ code: "custom", message: unsafe });
+      return;
+    }
+    if (!value) {
+      ctx.addIssue({ code: "custom", message: "This field is required" });
+      return;
+    }
+    if (value.length > 100) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Must be at most 100 characters",
+      });
+    }
+  });
+
+const registerPasswordSchema = z.string().superRefine((value, ctx) => {
+  const unsafe = findUnsafeInputReason(value);
+  if (unsafe) {
+    ctx.addIssue({ code: "custom", message: unsafe });
+    return;
+  }
+  if (!value) {
+    ctx.addIssue({ code: "custom", message: "Password is required" });
+    return;
+  }
+  if (value.length < 8) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Password must be at least 8 characters",
+    });
+    return;
+  }
+  if (value.length > 128) {
+    ctx.addIssue({ code: "custom", message: "Password is too long" });
+  }
+});
+
+export const registerSchema = z.object({
+  first_name: registerNameSchema,
+  last_name: registerNameSchema,
+  email: emailFieldSchema,
+  password: registerPasswordSchema,
+});
+
+export type RegisterInput = z.infer<typeof registerSchema>;
+export type RegisterField = keyof RegisterInput | "confirmPassword";
+
+const registerFieldSchemas = {
+  first_name: registerNameSchema,
+  last_name: registerNameSchema,
+  email: emailFieldSchema,
+  password: registerPasswordSchema,
+} as const;
+
+export function validateRegisterField(
+  field: keyof typeof registerFieldSchemas,
+  value: string,
+): string | undefined {
+  const result = registerFieldSchemas[field].safeParse(value);
+  if (result.success) return undefined;
+  return result.error.issues[0]?.message;
+}
+
+export function validateRegisterForm(data: {
+  first_name: string;
+  last_name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}):
+  | { success: true; data: RegisterInput }
+  | { success: false; errors: Partial<Record<RegisterField, string>> } {
+  const errors: Partial<Record<RegisterField, string>> = {};
+
+  for (const field of Object.keys(
+    registerFieldSchemas,
+  ) as (keyof typeof registerFieldSchemas)[]) {
+    const message = validateRegisterField(field, data[field]);
+    if (message) errors[field] = message;
+  }
+
+  const unsafeConfirm = findUnsafeInputReason(data.confirmPassword);
+  if (unsafeConfirm) {
+    errors.confirmPassword = unsafeConfirm;
+  } else if (!data.confirmPassword) {
+    errors.confirmPassword = "Confirm your password";
+  } else if (data.password !== data.confirmPassword) {
+    errors.confirmPassword = "Passwords do not match";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return { success: false, errors };
+  }
+
+  const parsed = registerSchema.safeParse(data);
+  if (!parsed.success) {
+    for (const issue of parsed.error.issues) {
+      const key = issue.path[0];
+      if (
+        (key === "first_name" ||
+          key === "last_name" ||
+          key === "email" ||
+          key === "password") &&
+        errors[key] === undefined
+      ) {
+        errors[key] = issue.message;
+      }
+    }
+    return { success: false, errors };
+  }
+
+  return { success: true, data: parsed.data };
+}
+
 function withSafeInput(schema: z.ZodString) {
   return schema.superRefine((value, ctx) => {
     const reason = findUnsafeInputReason(value);

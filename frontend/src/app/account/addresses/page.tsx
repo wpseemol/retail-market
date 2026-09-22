@@ -18,7 +18,20 @@ import {
 
 type FieldErrors = Partial<Record<AddressFormField, string>>;
 
-const emptyForm = {
+const emptyForm: {
+  label: string;
+  full_name: string;
+  phone: string;
+  line1: string;
+  line2: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  type: "shipping" | "billing" | "both";
+  is_default_shipping: boolean;
+  is_default_billing: boolean;
+} = {
   label: "",
   full_name: "",
   phone: "",
@@ -28,7 +41,7 @@ const emptyForm = {
   state: "",
   postal_code: "",
   country: "BD",
-  type: "both" as const,
+  type: "both",
   is_default_shipping: false,
   is_default_billing: false,
 };

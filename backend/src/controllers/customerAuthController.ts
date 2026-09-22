@@ -113,7 +113,10 @@ export async function register(req: Request, res: Response) {
         code: "USE_GOOGLE",
       });
     }
-    return res.status(409).json({ message: "Email or phone already in use" });
+    return res.status(409).json({
+      message: "An account with this email or phone already exists. Try logging in instead.",
+      code: "EMAIL_IN_USE",
+    });
   }
 
   const user = await prisma.user.create({

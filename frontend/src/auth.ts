@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import type { ApiUser, AuthTokenResponse } from "@/lib/api";
 
@@ -17,6 +17,24 @@ export type BackendAuthUser = {
   backendUser: ApiUser;
 };
 
+class BackendAuthError extends Error {
+  code: string;
+
+  constructor(message: string, code = "credentials") {
+    super(message);
+    this.name = "BackendAuthError";
+    this.code = code;
+  }
+}
+
+/** Surface a short Auth.js `code` to the client (`signIn` → `result.code`). */
+function throwCredentialsError(err: unknown, fallbackCode = "credentials"): never {
+  const error = new CredentialsSignin();
+  error.code =
+    err instanceof BackendAuthError ? err.code : fallbackCode;
+  throw error;
+}
+
 async function callBackendAuth(
   path: string,
   body: unknown,
@@ -32,14 +50,21 @@ async function callBackendAuth(
 
   const data = (await res.json().catch(() => ({}))) as AuthTokenResponse & {
     message?: string;
+    code?: string;
   };
 
   if (!res.ok) {
-    throw new Error(data.message ?? "Authentication failed");
+    throw new BackendAuthError(
+      data.message ?? "Authentication failed",
+      data.code ?? (res.status === 400 ? "VALIDATION_FAILED" : "credentials"),
+    );
   }
 
   if (!data.user || data.user.role !== "customer") {
-    throw new Error("Only customer accounts can sign in on the storefront");
+    throw new BackendAuthError(
+      "Only customer accounts can sign in on the storefront",
+      "STAFF_USE_DASHBOARD",
+    );
   }
 
   return data;
@@ -110,8 +135,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             password,
           });
           return toAuthUser(data);
-        } catch {
-          return null;
+        } catch (err) {
+          throwCredentialsError(err, "INVALID_CREDENTIALS");
         }
       },
     }),
@@ -137,8 +162,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               : undefined,
           });
           return toAuthUser(data);
-        } catch {
-          return null;
+        } catch (err) {
+          throwCredentialsError(err, "REGISTER_FAILED");
         }
       },
     }),
@@ -160,8 +185,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               : undefined,
           });
           return toAuthUser(data);
-        } catch {
-          return null;
+        } catch (err) {
+          throwCredentialsError(err, "GOOGLE_FAILED");
         }
       },
     }),
