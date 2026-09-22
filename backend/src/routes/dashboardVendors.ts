@@ -308,7 +308,12 @@ dashboardVendorsRouter.post("/", async (req, res) => {
   const data = parsed.data;
   let ownerId = req.auth!.userId;
 
-  if (isSuper && data.user_id) {
+  if (isSuper) {
+    if (!data.user_id) {
+      return res.status(400).json({
+        message: "Select a vendor owner for this shop",
+      });
+    }
     ownerId = BigInt(data.user_id);
     const owner = await prisma.user.findFirst({
       where: { id: ownerId, deleted_at: null },
@@ -316,14 +321,20 @@ dashboardVendorsRouter.post("/", async (req, res) => {
     if (!owner) {
       return res.status(404).json({ message: "Owner user not found" });
     }
-    if (owner.role !== "vendor" && owner.role !== "super_admin") {
+    if (owner.role !== "vendor") {
       return res.status(400).json({
-        message: "Shop owner must be a vendor (or assign to yourself)",
+        message: "Shop owner must be a vendor user",
       });
     }
-  } else if (!isSuper && data.user_id) {
+  } else if (data.user_id) {
     return res.status(403).json({
       message: "Vendors can only create a shop for themselves",
+    });
+  }
+
+  if (req.auth!.role === "super_admin" && ownerId === req.auth!.userId) {
+    return res.status(400).json({
+      message: "Super admin cannot own a shop — assign a vendor user",
     });
   }
 
@@ -426,6 +437,11 @@ dashboardVendorsRouter.patch("/:id", async (req, res) => {
       });
       if (!owner) {
         return res.status(404).json({ message: "Owner user not found" });
+      }
+      if (owner.role !== "vendor") {
+        return res.status(400).json({
+          message: "Shop owner must be a vendor user",
+        });
       }
       const conflict = await prisma.vendor.findFirst({
         where: {

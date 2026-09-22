@@ -114,6 +114,12 @@ export function ShopCreatePage() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token) return;
+
+    if (isSuper && !ownerId) {
+      setError("Select a vendor owner for this shop");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -128,11 +134,7 @@ export function ShopCreatePage() {
             slug: slug.trim() || undefined,
             description: description.trim() || null,
             status: shopCreateStatusToApi(status),
-            ...(isSuper
-              ? {
-                  user_id: ownerId || undefined,
-                }
-              : {}),
+            ...(isSuper ? { user_id: ownerId } : {}),
           },
         },
       );
@@ -295,23 +297,29 @@ export function ShopCreatePage() {
               <div className="space-y-2">
                 <Label>Owner (vendor user)</Label>
                 <Select
-                  value={ownerId || "self"}
-                  onValueChange={(value) =>
-                    setOwnerId(value === "self" ? "" : value)
-                  }
+                  value={ownerId || undefined}
+                  onValueChange={setOwnerId}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Assign owner" />
+                    <SelectValue placeholder="Select a vendor" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="self">Myself (super admin)</SelectItem>
-                    {vendors.map((v) => (
-                      <SelectItem key={v.id} value={v.id}>
-                        {v.first_name} {v.last_name} · {v.email}
+                    {vendors.length === 0 ? (
+                      <SelectItem value="__none" disabled>
+                        No vendor users found
                       </SelectItem>
-                    ))}
+                    ) : (
+                      vendors.map((v) => (
+                        <SelectItem key={v.id} value={v.id}>
+                          {v.first_name} {v.last_name} · {v.email}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  Shops must belong to a vendor account — not super admin.
+                </p>
               </div>
             ) : null}
 
@@ -322,7 +330,14 @@ export function ShopCreatePage() {
             ) : null}
           </CardContent>
           <CardFooter>
-            <Button type="submit" disabled={loading || shopName.trim().length < 2}>
+            <Button
+              type="submit"
+              disabled={
+                loading ||
+                shopName.trim().length < 2 ||
+                (isSuper && !ownerId)
+              }
+            >
               {loading ? "Creating…" : "Create shop"}
             </Button>
           </CardFooter>

@@ -41,7 +41,7 @@ const staff: Array<{
     password: "Moderator123!",
   },
   {
-    first_name: "Demo",
+    first_name: "Store",
     last_name: "Vendor",
     username: "vendor",
     email: "vendor@niyenin.local",
@@ -76,29 +76,24 @@ async function seedCatalog() {
     },
   });
 
-  const vendorUser = await prisma.user.findUnique({
-    where: { email: "vendor@niyenin.local" },
-  });
+  // Catalog products stay unattached until a real vendor shop is created.
+  // Do not seed a demo shop — shops are created from the dashboard.
+  const vendorId: bigint | null = null;
 
-  let vendorId: bigint | null = null;
-  if (vendorUser) {
-    const vendor = await prisma.vendor.upsert({
-      where: { user_id: vendorUser.id },
-      update: {
-        shop_name: "Demo Vendor Shop",
-        status: "active",
-        deleted_at: null,
-      },
-      create: {
-        user_id: vendorUser.id,
-        shop_name: "Demo Vendor Shop",
-        slug: "demo-vendor-shop",
-        description: "Seeded vendor storefront",
-        status: "active",
-      },
-    });
-    vendorId = vendor.id;
-  }
+  // Soft-delete any leftover demo shop from older seeds.
+  await prisma.vendor.updateMany({
+    where: {
+      OR: [
+        { slug: "demo-vendor-shop" },
+        { shop_name: "Demo Vendor Shop" },
+      ],
+      deleted_at: null,
+    },
+    data: {
+      status: "inactive",
+      deleted_at: new Date(),
+    },
+  });
 
   const simple = await prisma.product.upsert({
     where: { slug: "wireless-earbuds-pro" },
