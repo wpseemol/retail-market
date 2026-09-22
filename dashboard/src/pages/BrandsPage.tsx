@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ImageIcon, Package, Pencil, Plus, Search } from "lucide-react";
+import { Pencil, Plus, Search, Tag } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
-import {
-  productStatusLabel,
-  type Product,
-} from "@/lib/products";
+import type { Brand } from "@/lib/brands";
 import { useAuthStore } from "@/store/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,11 +23,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export function ProductsPage() {
-  const { token, user } = useAuthStore();
-  const isVendor = user?.role === "vendor";
+const MANAGE_ROLES = ["super_admin", "admin", "moderator"] as const;
 
-  const [products, setProducts] = useState<Product[]>([]);
+export function BrandsPage() {
+  const { token, user } = useAuthStore();
+  const canManage =
+    !!user && (MANAGE_ROLES as readonly string[]).includes(user.role);
+
+  const [brands, setBrands] = useState<Brand[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,19 +45,19 @@ export function ProductsPage() {
       setLoading(true);
       setError(null);
       try {
-        const params = new URLSearchParams({ limit: "50" });
+        const params = new URLSearchParams({ limit: "100" });
         if (q.trim()) params.set("q", q.trim());
         const data = await apiFetch<{
-          products: Product[];
+          brands: Brand[];
           pagination: { total: number };
-        }>(`/api/dashboard/products?${params.toString()}`, { token });
+        }>(`/api/dashboard/brands?${params.toString()}`, { token });
         if (cancelled) return;
-        setProducts(data.products);
+        setBrands(data.brands);
         setTotal(data.pagination.total);
       } catch (err) {
         if (cancelled) return;
         setError(
-          err instanceof ApiError ? err.message : "Failed to load products",
+          err instanceof ApiError ? err.message : "Failed to load brands",
         );
       } finally {
         if (!cancelled) setLoading(false);
@@ -70,33 +70,36 @@ export function ProductsPage() {
     };
   }, [token, q]);
 
+  const colSpan = canManage ? 5 : 4;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Products</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Brands</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {isVendor
-              ? "Add products under your shop — pick a category, brand, and variants if needed."
-              : "Manage catalog products across shops. Each product sits under a shop and category."}
+            Create brands first (Unknown, Handmade, or custom), then assign them
+            when adding products.
           </p>
         </div>
-        <Button asChild>
-          <Link to="/products/new">
-            <Plus />
-            Add product
-          </Link>
-        </Button>
+        {canManage ? (
+          <Button asChild>
+            <Link to="/brands/new">
+              <Plus />
+              Add brand
+            </Link>
+          </Button>
+        ) : null}
       </div>
 
       <Card>
         <CardHeader>
           <div className="mb-1 flex size-9 items-center justify-center rounded-md bg-brand-tint text-brand-deep">
-            <Package className="size-4" />
+            <Tag className="size-4" />
           </div>
-          <CardTitle>All products</CardTitle>
+          <CardTitle>All brands</CardTitle>
           <CardDescription>
-            {total} product{total === 1 ? "" : "s"}
+            {total} brand{total === 1 ? "" : "s"} · shared catalog
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -112,7 +115,7 @@ export function ProductsPage() {
               <Input
                 value={searchDraft}
                 onChange={(e) => setSearchDraft(e.target.value)}
-                placeholder="Search name, brand, SKU…"
+                placeholder="Search brands…"
                 className="pl-9"
               />
             </div>
@@ -131,78 +134,59 @@ export function ProductsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[56px]">Image</TableHead>
                   <TableHead>Name</TableHead>
-                  <TableHead>Shop</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Brand</TableHead>
-                  <TableHead>Type</TableHead>
+                  <TableHead>Slug</TableHead>
+                  <TableHead>Products</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-[80px]" />
+                  {canManage ? <TableHead className="w-[80px]" /> : null}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-muted-foreground">
+                    <TableCell colSpan={colSpan} className="text-muted-foreground">
                       Loading…
                     </TableCell>
                   </TableRow>
-                ) : products.length === 0 ? (
+                ) : brands.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-muted-foreground">
-                      No products yet.{" "}
-                      <Link
-                        to="/products/new"
-                        className="text-brand-primary underline"
-                      >
-                        Add one
-                      </Link>
+                    <TableCell colSpan={colSpan} className="text-muted-foreground">
+                      No brands yet.
+                      {canManage ? (
+                        <>
+                          {" "}
+                          <Link
+                            to="/brands/new"
+                            className="text-brand-primary underline"
+                          >
+                            Add one
+                          </Link>
+                        </>
+                      ) : null}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  products.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell>
-                        {product.thumbnail?.path ? (
-                          <img
-                            src={product.thumbnail.path}
-                            alt=""
-                            className="size-9 rounded-md object-cover"
-                          />
-                        ) : (
-                          <div className="flex size-9 items-center justify-center rounded-md border bg-muted text-muted-foreground">
-                            <ImageIcon className="size-4" />
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {product.name}
-                      </TableCell>
+                  brands.map((brand) => (
+                    <TableRow key={brand.id}>
+                      <TableCell className="font-medium">{brand.name}</TableCell>
                       <TableCell className="text-muted-foreground">
-                        {product.vendor?.shop_name ?? "—"}
+                        /{brand.slug}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {product.category?.name ?? "—"}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                          {product.brand_name ?? product.brand?.name ?? "—"}
-                      </TableCell>
-                      <TableCell className="capitalize">
-                        {product.type}
-                      </TableCell>
+                      <TableCell>{brand.products_count ?? 0}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">
-                          {productStatusLabel(product.status)}
+                          {brand.is_active ? "active" : "inactive"}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <Button asChild variant="ghost" size="icon">
-                          <Link to={`/products/${product.id}`}>
-                            <Pencil />
-                          </Link>
-                        </Button>
-                      </TableCell>
+                      {canManage ? (
+                        <TableCell>
+                          <Button asChild variant="ghost" size="icon">
+                            <Link to={`/brands/${brand.id}`}>
+                              <Pencil />
+                            </Link>
+                          </Button>
+                        </TableCell>
+                      ) : null}
                     </TableRow>
                   ))
                 )}

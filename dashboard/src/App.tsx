@@ -14,6 +14,9 @@ import { CategoryEditPage } from "./pages/CategoryEditPage";
 import { ProductsPage } from "./pages/ProductsPage";
 import { ProductCreatePage } from "./pages/ProductCreatePage";
 import { ProductEditPage } from "./pages/ProductEditPage";
+import { BrandsPage } from "./pages/BrandsPage";
+import { BrandCreatePage } from "./pages/BrandCreatePage";
+import { BrandEditPage } from "./pages/BrandEditPage";
 import { UserEditPage } from "./pages/UserEditPage";
 import { UsersPage } from "./pages/UsersPage";
 import { useAuthStore } from "./store/auth";
@@ -95,6 +98,16 @@ export default function App() {
             <Route path="products" element={<ProductsPage />} />
             <Route path="products/new" element={<ProductCreatePage />} />
             <Route path="products/:id" element={<ProductEditPage />} />
+            <Route path="brands" element={<BrandsPage />} />
+          </Route>
+
+          <Route
+            element={
+              <ProtectedRoute roles={["super_admin", "admin", "moderator"]} />
+            }
+          >
+            <Route path="brands/new" element={<BrandCreatePage />} />
+            <Route path="brands/:id" element={<BrandEditPage />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={["admin"]} />}>

@@ -70,6 +70,7 @@ const variantInputSchema = z.object({
 const productBodySchema = z.object({
   vendor_id: z.string().regex(/^\d+$/).optional(),
   category_id: z.string().regex(/^\d+$/),
+  brand_id: z.string().regex(/^\d+$/).optional().nullable(),
   name: withSafeInput(z.string().trim().min(2).max(255)),
   slug: withSafeInput(
     z
@@ -408,6 +409,20 @@ dashboardProductsRouter.post("/", async (req, res) => {
     return res.status(400).json({ message: "Category not found or inactive" });
   }
 
+  let brandId: bigint | null = null;
+  let brandName: string | null = data.brand?.trim() || null;
+  if (data.brand_id) {
+    const brandRow = await prisma.brand.findFirst({
+      where: { id: BigInt(data.brand_id), deleted_at: null, is_active: true },
+      select: { id: true, name: true },
+    });
+    if (!brandRow) {
+      return res.status(400).json({ message: "Brand not found or inactive" });
+    }
+    brandId = brandRow.id;
+    brandName = brandRow.name;
+  }
+
   if (data.type === "variable" && (!data.options || data.options.length === 0)) {
     return res.status(400).json({
       message: "Add at least one option (e.g. Size, Color) for variant products",
@@ -431,10 +446,11 @@ dashboardProductsRouter.post("/", async (req, res) => {
         data: {
           vendor_id: vendorResolved.vendorId,
           category_id: categoryId,
+          brand_id: brandId,
           name: data.name,
           slug,
           sku: data.sku ?? null,
-          brand: data.brand?.trim() || null,
+          brand: brandName,
           description: data.description ?? null,
           short_description: data.short_description ?? null,
           type,
@@ -529,6 +545,23 @@ dashboardProductsRouter.patch("/:id", async (req, res) => {
     }
   }
 
+  let nextBrandId: bigint | null | undefined;
+  let nextBrandName: string | null | undefined;
+  if (data.brand_id === null) {
+    nextBrandId = null;
+    nextBrandName = null;
+  } else if (data.brand_id) {
+    const brandRow = await prisma.brand.findFirst({
+      where: { id: BigInt(data.brand_id), deleted_at: null, is_active: true },
+      select: { id: true, name: true },
+    });
+    if (!brandRow) {
+      return res.status(400).json({ message: "Brand not found or inactive" });
+    }
+    nextBrandId = brandRow.id;
+    nextBrandName = brandRow.name;
+  }
+
   if (data.slug && (await slugTaken(data.slug, id))) {
     return res.status(409).json({ message: "Slug already in use" });
   }
@@ -557,10 +590,16 @@ dashboardProductsRouter.patch("/:id", async (req, res) => {
       data: {
         vendor_id: vendorId,
         category_id: data.category_id ? BigInt(data.category_id) : undefined,
+        brand_id: nextBrandId,
         name: data.name,
         slug: data.slug,
         sku: data.sku === undefined ? undefined : data.sku,
-        brand: data.brand === undefined ? undefined : data.brand,
+        brand:
+          nextBrandName !== undefined
+            ? nextBrandName
+            : data.brand === undefined
+              ? undefined
+              : data.brand,
         description:
           data.description === undefined ? undefined : data.description,
         short_description:

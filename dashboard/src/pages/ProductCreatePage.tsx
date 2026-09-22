@@ -3,13 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ImagePlus, Package, Plus, Trash2 } from "lucide-react";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import type { Category } from "@/lib/categories";
+import type { Brand } from "@/lib/brands";
 import type { Shop } from "@/lib/shops";
 import {
-  brandValueFromMode,
   cartesianVariants,
   PRODUCT_CREATE_STATUSES,
   slugifyClient,
-  type BrandMode,
   type Product,
   type ProductType,
 } from "@/lib/products";
@@ -52,13 +51,13 @@ export function ProductCreatePage() {
 
   const [shops, setShops] = useState<Shop[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
   const [shopId, setShopId] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [brandId, setBrandId] = useState("");
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
-  const [brandMode, setBrandMode] = useState<BrandMode>("unknown");
-  const [customBrand, setCustomBrand] = useState("");
   const [shortDescription, setShortDescription] = useState("");
   const [type, setType] = useState<ProductType>("simple");
   const [status, setStatus] = useState<"draft" | "active">("draft");
@@ -79,9 +78,13 @@ export function ProductCreatePage() {
     let cancelled = false;
     void (async () => {
       try {
-        const [catRes, shopRes] = await Promise.all([
+        const [catRes, brandRes, shopRes] = await Promise.all([
           apiFetch<{ categories: Category[] }>(
             "/api/dashboard/categories?limit=100&active=true",
+            { token },
+          ),
+          apiFetch<{ brands: Brand[] }>(
+            "/api/dashboard/brands?limit=100&active=true",
             { token },
           ),
           isElevated
@@ -92,8 +95,13 @@ export function ProductCreatePage() {
         ]);
         if (cancelled) return;
         setCategories(catRes.categories);
+        setBrands(brandRes.brands);
         setShops(shopRes.shops);
         if (shopRes.shops[0] && !shopId) setShopId(shopRes.shops[0].id);
+        const unknown = brandRes.brands.find(
+          (b) => b.slug === "unknown" || b.name === "Unknown",
+        );
+        if (unknown) setBrandId(unknown.id);
       } catch {
         /* ignore */
       }
@@ -170,6 +178,10 @@ export function ProductCreatePage() {
       setError("Select a category");
       return;
     }
+    if (!brandId) {
+      setError("Select a brand (create one under Catalog → Brands first)");
+      return;
+    }
     if (isElevated && !shopId) {
       setError("Select a shop");
       return;
@@ -185,9 +197,9 @@ export function ProductCreatePage() {
     try {
       const body: Record<string, unknown> = {
         category_id: categoryId,
+        brand_id: brandId,
         name: name.trim(),
         slug: slug.trim() || undefined,
-        brand: brandValueFromMode(brandMode, customBrand),
         short_description: shortDescription.trim() || null,
         type,
         status,
@@ -250,8 +262,8 @@ export function ProductCreatePage() {
         </Button>
         <h1 className="text-2xl font-semibold tracking-tight">Add product</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Shop → category → brand (Unknown / Handmade / custom) → simple or
-          variant product.
+          Shop → category → brand (create brands first) → simple or variant
+          product.
         </p>
       </div>
 
@@ -341,25 +353,26 @@ export function ProductCreatePage() {
             <div className="space-y-2">
               <Label>Brand</Label>
               <Select
-                value={brandMode}
-                onValueChange={(v) => setBrandMode(v as BrandMode)}
+                value={brandId || undefined}
+                onValueChange={setBrandId}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue />
+                  <SelectValue placeholder="Select brand" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="unknown">Unknown</SelectItem>
-                  <SelectItem value="handmade">Handmade</SelectItem>
-                  <SelectItem value="custom">Custom brand</SelectItem>
+                  {brands.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              {brandMode === "custom" ? (
-                <Input
-                  value={customBrand}
-                  onChange={(e) => setCustomBrand(e.target.value)}
-                  placeholder="Brand name"
-                />
-              ) : null}
+              <p className="text-xs text-muted-foreground">
+                Need a new brand?{" "}
+                <Link to="/brands/new" className="text-brand-primary underline">
+                  Create brand
+                </Link>
+              </p>
             </div>
 
             <div className="space-y-2">

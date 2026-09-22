@@ -34,10 +34,12 @@ export type Product = {
   id: string;
   vendor_id: string | null;
   category_id: string | null;
+  brand_id?: string | null;
   name: string;
   slug: string;
   sku?: string | null;
-  brand?: string | null;
+  brand_name?: string | null;
+  brand?: { id: string | null; name: string; slug: string | null } | null;
   description?: string | null;
   short_description?: string | null;
   type: ProductType;
@@ -51,24 +53,6 @@ export type Product = {
   options?: ProductOption[];
   variants?: ProductVariant[];
 };
-
-/** Brand presets — shops can also type a custom brand. */
-export const BRAND_PRESETS = ["Unknown", "Handmade"] as const;
-
-export type BrandMode = "unknown" | "handmade" | "custom";
-
-export function brandModeFromValue(brand: string | null | undefined): BrandMode {
-  if (!brand || brand === "Unknown") return "unknown";
-  if (brand === "Handmade") return "handmade";
-  return "custom";
-}
-
-export function brandValueFromMode(mode: BrandMode, custom: string): string | null {
-  if (mode === "unknown") return "Unknown";
-  if (mode === "handmade") return "Handmade";
-  const trimmed = custom.trim();
-  return trimmed || null;
-}
 
 export const PRODUCT_CREATE_STATUSES = ["draft", "active"] as const;
 

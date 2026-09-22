@@ -96,11 +96,13 @@ export function toPublicProduct(row: ProductRow) {
     id: row.id.toString(),
     vendor_id: row.vendor_id?.toString() ?? null,
     category_id: row.category_id?.toString() ?? null,
+    brand_id: row.brand_id?.toString() ?? null,
     thumbnail_id: row.thumbnail_id?.toString() ?? null,
     name: row.name,
     slug: row.slug,
     sku: row.sku,
     barcode: row.barcode,
+    brand_name: row.brandRef?.name ?? row.brand,
     brand: row.brandRef
       ? {
           id: row.brandRef.id.toString(),
@@ -108,10 +110,21 @@ export function toPublicProduct(row: ProductRow) {
           slug: row.brandRef.slug,
         }
       : row.brand
-        ? { id: null, name: row.brand, slug: null }
+        ? { id: null as string | null, name: row.brand, slug: null as string | null }
         : null,
-    brand_id: row.brand_id?.toString() ?? null,
-    brand_name: row.brandRef?.name ?? row.brand,
+    description: row.description,
+    short_description: row.short_description,
+    type: row.type as ProductType,
+    price: decimalToNumber(row.price) ?? 0,
+    compare_at_price: decimalToNumber(row.compare_at_price),
+    cost_price: decimalToNumber(row.cost_price),
+    stock_qty: row.stock_qty,
+    status: row.status as ProductStatus,
+    is_featured: row.is_featured,
+    published_at: row.published_at,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    thumbnail: toPublicMedia(row.thumbnail),
     category: row.category
       ? {
           id: row.category.id.toString(),

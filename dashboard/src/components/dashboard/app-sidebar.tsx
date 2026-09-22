@@ -6,6 +6,7 @@ import {
   Shield,
   ShieldCheck,
   Store,
+  Tag,
   UserCog,
   Users,
 } from "lucide-react";
@@ -22,6 +23,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
 import type { StaffRole } from "@/lib/api";
@@ -34,7 +38,7 @@ const ROLE_HOME: Record<StaffRole, string> = {
   vendor: "/vendor",
 };
 
-const allLinks: Array<{
+const topLinks: Array<{
   to: string;
   label: string;
   icon: typeof LayoutDashboard;
@@ -60,6 +64,22 @@ const allLinks: Array<{
     icon: Store,
     roles: ["super_admin", "vendor"],
   },
+];
+
+const productSubLinks: Array<{
+  to: string;
+  label: string;
+  icon: typeof Package;
+  roles: StaffRole[];
+  end?: boolean;
+}> = [
+  {
+    to: "/products",
+    label: "Products",
+    icon: Package,
+    roles: ["super_admin", "admin", "moderator", "vendor"],
+    end: true,
+  },
   {
     to: "/categories",
     label: "Categories",
@@ -67,11 +87,19 @@ const allLinks: Array<{
     roles: ["super_admin", "admin", "moderator", "vendor"],
   },
   {
-    to: "/products",
-    label: "Products",
-    icon: Package,
+    to: "/brands",
+    label: "Brands",
+    icon: Tag,
     roles: ["super_admin", "admin", "moderator", "vendor"],
   },
+];
+
+const roleLinks: Array<{
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  roles: StaffRole[];
+}> = [
   {
     to: "/super-admin",
     label: "Super Admin",
@@ -98,15 +126,29 @@ const allLinks: Array<{
   },
 ];
 
+function canSee(roles: StaffRole[], userRole: StaffRole) {
+  return userRole === "super_admin" || roles.includes(userRole);
+}
+
 export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   const user = useAuthStore((state) => state.user);
   const { pathname } = useLocation();
   const logoHref = user ? ROLE_HOME[user.role] : "/";
 
-  const links = allLinks.filter(
-    (link) =>
-      user && (user.role === "super_admin" || link.roles.includes(user.role)),
+  const links = topLinks.filter(
+    (link) => user && canSee(link.roles, user.role),
   );
+  const catalogLinks = productSubLinks.filter(
+    (link) => user && canSee(link.roles, user.role),
+  );
+  const workspaceRoleLinks = roleLinks.filter(
+    (link) => user && canSee(link.roles, user.role),
+  );
+
+  const catalogOpen =
+    pathname.startsWith("/products") ||
+    pathname.startsWith("/categories") ||
+    pathname.startsWith("/brands");
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -159,6 +201,61 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
                       tooltip={link.label}
                     >
                       <NavLink to={link.to} end={link.end}>
+                        <link.icon />
+                        <span>{link.label}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+
+              {catalogLinks.length > 0 ? (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={catalogOpen}
+                    tooltip="Catalog"
+                  >
+                    <NavLink to="/products">
+                      <Package />
+                      <span>Catalog</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                  <SidebarMenuSub>
+                    {catalogLinks.map((link) => {
+                      const isActive =
+                        link.to === "/products"
+                          ? pathname === "/products" ||
+                            pathname.startsWith("/products/")
+                          : pathname === link.to ||
+                            pathname.startsWith(`${link.to}/`);
+
+                      return (
+                        <SidebarMenuSubItem key={link.to}>
+                          <SidebarMenuSubButton asChild isActive={isActive}>
+                            <NavLink to={link.to} end={link.end}>
+                              <link.icon />
+                              <span>{link.label}</span>
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      );
+                    })}
+                  </SidebarMenuSub>
+                </SidebarMenuItem>
+              ) : null}
+
+              {workspaceRoleLinks.map((link) => {
+                const active =
+                  pathname === link.to || pathname.startsWith(`${link.to}/`);
+                return (
+                  <SidebarMenuItem key={link.to}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={active}
+                      tooltip={link.label}
+                    >
+                      <NavLink to={link.to}>
                         <link.icon />
                         <span>{link.label}</span>
                       </NavLink>

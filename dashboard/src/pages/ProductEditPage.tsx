@@ -3,15 +3,13 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ImagePlus, Package, Plus, Trash2 } from "lucide-react";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import type { Category } from "@/lib/categories";
+import type { Brand } from "@/lib/brands";
 import type { Shop } from "@/lib/shops";
 import {
-  brandModeFromValue,
-  brandValueFromMode,
   cartesianVariants,
   PRODUCT_CREATE_STATUSES,
   productStatusLabel,
   slugifyClient,
-  type BrandMode,
   type Product,
   type ProductType,
 } from "@/lib/products";
@@ -57,12 +55,12 @@ export function ProductEditPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [shops, setShops] = useState<Shop[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
   const [shopId, setShopId] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [brandId, setBrandId] = useState("");
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
-  const [brandMode, setBrandMode] = useState<BrandMode>("unknown");
-  const [customBrand, setCustomBrand] = useState("");
   const [shortDescription, setShortDescription] = useState("");
   const [type, setType] = useState<ProductType>("simple");
   const [status, setStatus] = useState<"draft" | "active">("draft");
@@ -86,12 +84,16 @@ export function ProductEditPage() {
       setLoading(true);
       setError(null);
       try {
-        const [prodRes, catRes, shopRes] = await Promise.all([
+        const [prodRes, catRes, brandRes, shopRes] = await Promise.all([
           apiFetch<{ product: Product }>(`/api/dashboard/products/${id}`, {
             token,
           }),
           apiFetch<{ categories: Category[] }>(
             "/api/dashboard/categories?limit=100&active=true",
+            { token },
+          ),
+          apiFetch<{ brands: Brand[] }>(
+            "/api/dashboard/brands?limit=100&active=true",
             { token },
           ),
           isElevated
@@ -105,14 +107,13 @@ export function ProductEditPage() {
         const next = prodRes.product;
         setProduct(next);
         setCategories(catRes.categories);
+        setBrands(brandRes.brands);
         setShops(shopRes.shops);
         setShopId(next.vendor_id ?? "");
         setCategoryId(next.category_id ?? "");
+        setBrandId(next.brand_id ?? next.brand?.id ?? "");
         setName(next.name);
         setSlug(next.slug);
-        const mode = brandModeFromValue(next.brand);
-        setBrandMode(mode);
-        setCustomBrand(mode === "custom" ? next.brand ?? "" : "");
         setShortDescription(next.short_description ?? "");
         setType(next.type);
         setStatus(next.status === "active" ? "active" : "draft");
@@ -186,9 +187,9 @@ export function ProductEditPage() {
     try {
       const body: Record<string, unknown> = {
         category_id: categoryId,
+        brand_id: brandId || null,
         name: name.trim(),
         slug: slug.trim(),
-        brand: brandValueFromMode(brandMode, customBrand),
         short_description: shortDescription.trim() || null,
         type,
         status,
@@ -387,25 +388,25 @@ export function ProductEditPage() {
             <div className="space-y-2">
               <Label>Brand</Label>
               <Select
-                value={brandMode}
-                onValueChange={(v) => setBrandMode(v as BrandMode)}
+                value={brandId || undefined}
+                onValueChange={setBrandId}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue />
+                  <SelectValue placeholder="Select brand" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="unknown">Unknown</SelectItem>
-                  <SelectItem value="handmade">Handmade</SelectItem>
-                  <SelectItem value="custom">Custom brand</SelectItem>
+                  {brands.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              {brandMode === "custom" ? (
-                <Input
-                  value={customBrand}
-                  onChange={(e) => setCustomBrand(e.target.value)}
-                  placeholder="Brand name"
-                />
-              ) : null}
+              <p className="text-xs text-muted-foreground">
+                <Link to="/brands/new" className="text-brand-primary underline">
+                  Create brand
+                </Link>
+              </p>
             </div>
 
             <div className="space-y-2">
