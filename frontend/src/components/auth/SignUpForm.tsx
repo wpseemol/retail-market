@@ -2,7 +2,7 @@
 
 import { type FormEvent, useCallback, useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { getSession, signIn } from "next-auth/react";
 import AuthInput from "./AuthInput";
 import OrDivider from "./OrDivider";
 import SocialAuthButtons from "./SocialAuthButtons";
@@ -10,14 +10,9 @@ import { EnvelopeIcon, LockIcon, UserIcon } from "./icons";
 import { useGoogleIdToken } from "@/hooks/useGoogleIdToken";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/authSlice";
-import {
-  googleLoginAction,
-  registerAction,
-} from "@/app/actions/auth";
 import type { ApiUser } from "@/lib/api";
 
 export default function SignUpForm() {
-  const router = useRouter();
   const dispatch = useAppDispatch();
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,10 +26,9 @@ export default function SignUpForm() {
         return;
       }
       dispatch(setCredentials({ user }));
-      router.push("/account");
-      router.refresh();
+      window.location.assign("/account");
     },
-    [dispatch, router],
+    [dispatch],
   );
 
   const handleGoogleCredential = useCallback(
@@ -43,14 +37,20 @@ export default function SignUpForm() {
       setGoogleLoading(true);
       startTransition(async () => {
         try {
-          const result = await googleLoginAction({
+          const result = await signIn("google-backend", {
             accessToken: payload.accessToken,
+            redirect: false,
           });
-          if (!result.ok) {
-            setError(result.message);
+          if (result?.error) {
+            setError("Google sign-in failed");
             return;
           }
-          finishAuth(result.user);
+          const session = await getSession();
+          if (!session?.backendUser) {
+            setError("Google sign-in failed");
+            return;
+          }
+          finishAuth(session.backendUser);
         } catch {
           setError("Google sign-in failed");
         } finally {
@@ -86,17 +86,23 @@ export default function SignUpForm() {
 
     startTransition(async () => {
       try {
-        const result = await registerAction({
+        const result = await signIn("register", {
           first_name,
           last_name,
           email,
           password,
+          redirect: false,
         });
-        if (!result.ok) {
-          setError(result.message);
+        if (result?.error) {
+          setError("Registration failed");
           return;
         }
-        finishAuth(result.user);
+        const session = await getSession();
+        if (!session?.backendUser) {
+          setError("Registration failed");
+          return;
+        }
+        finishAuth(session.backendUser);
       } catch {
         setError("Sign up failed");
       }

@@ -1,21 +1,25 @@
 import { NextResponse } from "next/server";
-import {
-  applySessionCookie,
-  backendFetch,
-  clearSessionCookie,
-  readSessionFromCookies,
-  sealSession,
-} from "@/lib/session";
+import { getToken } from "next-auth/jwt";
+import type { NextRequest } from "next/server";
+import { backendFetch } from "@/lib/session";
 import type { AuthTokenResponse } from "@/lib/api";
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 
-async function proxy(request: Request, context: RouteContext) {
+/**
+ * BFF: attach backend accessToken from Auth.js JWT cookie.
+ * On 401, rotate via backend refresh once for this request.
+ * Auth.js jwt callback also refreshes on the next session read.
+ */
+async function proxy(request: NextRequest, context: RouteContext) {
   const { path } = await context.params;
   const targetPath = `/api/${path.join("/")}`;
   const search = new URL(request.url).search;
 
-  let session = await readSessionFromCookies();
+  const token = await getToken({
+    req: request,
+    secret: process.env.AUTH_SECRET,
+  });
 
   const method = request.method;
   const body =
@@ -25,53 +29,35 @@ async function proxy(request: Request, context: RouteContext) {
 
   const contentType = request.headers.get("content-type") ?? undefined;
 
+  let accessToken = token?.accessToken as string | undefined;
+
   let upstream = await backendFetch(`${targetPath}${search}`, {
     method,
     body,
-    accessToken: session?.accessToken,
+    accessToken,
     headers: contentType ? { "Content-Type": contentType } : undefined,
   });
 
-  if (upstream.status === 401 && session?.refreshToken) {
+  if (upstream.status === 401 && token?.refreshToken) {
     const refreshed = await backendFetch("/api/auth/refresh", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken: session.refreshToken }),
+      body: JSON.stringify({ refreshToken: token.refreshToken }),
     });
 
     if (!refreshed.ok) {
-      const res = NextResponse.json(
-        { message: "Session expired" },
-        { status: 401 },
-      );
-      clearSessionCookie(res);
-      return res;
+      return NextResponse.json({ message: "Session expired" }, { status: 401 });
     }
 
     const data = (await refreshed.json()) as AuthTokenResponse;
-    session = {
-      accessToken: data.accessToken ?? data.token,
-      refreshToken: data.refreshToken,
-      user: data.user ?? session.user,
-    };
+    accessToken = data.accessToken ?? data.token;
 
     upstream = await backendFetch(`${targetPath}${search}`, {
       method,
       body,
-      accessToken: session.accessToken,
+      accessToken,
       headers: contentType ? { "Content-Type": contentType } : undefined,
     });
-
-    const payload = await upstream.arrayBuffer();
-    const res = new NextResponse(payload, {
-      status: upstream.status,
-      headers: {
-        "Content-Type":
-          upstream.headers.get("Content-Type") ?? "application/json",
-      },
-    });
-    applySessionCookie(res, await sealSession(session));
-    return res;
   }
 
   const payload = await upstream.arrayBuffer();

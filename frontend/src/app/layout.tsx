@@ -7,6 +7,7 @@ import StoreProvider from "@/components/providers/StoreProvider";
 import Header from "@/components/home/Header";
 import Footer from "@/components/home/Footer";
 import AuthHydrator from "@/components/providers/AuthHydrator";
+import AuthSessionProvider from "@/components/providers/AuthSessionProvider";
 import { createPageMetadata, siteConfig } from "@/config/site";
 
 const poppins = Poppins({
@@ -54,11 +55,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <body className={`${poppins.className} min-h-full flex flex-col font-sans`}>
                 <ThemeProvider>
                     <StoreProvider>
-                        <AuthHydrator />
-                        <TopBar />
-                        <Header />
-                        {children}
-                        <Footer />
+                        <AuthSessionProvider>
+                            <AuthHydrator />
+                            <TopBar />
+                            <Header />
+                            {children}
+                            <Footer />
+                        </AuthSessionProvider>
                     </StoreProvider>
                 </ThemeProvider>
             </body>

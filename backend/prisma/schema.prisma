@@ -7,6 +7,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Shared enums ───────────────────────────────────────────────
+
 enum UserRole {
   super_admin
   admin
@@ -57,6 +59,52 @@ enum LoginMethod {
   refresh
 }
 
+enum AddressType {
+  shipping
+  billing
+  both
+}
+
+enum ProductStatus {
+  draft
+  active
+  archived
+  out_of_stock
+}
+
+enum OrderStatus {
+  pending
+  confirmed
+  processing
+  shipped
+  delivered
+  cancelled
+  refunded
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  failed
+  refunded
+  partially_refunded
+}
+
+enum PaymentMethod {
+  cash_on_delivery
+  card
+  mobile_banking
+  bank_transfer
+  wallet
+}
+
+enum OrderAddressType {
+  shipping
+  billing
+}
+
+// ─── Users & auth ───────────────────────────────────────────────
+
 model User {
   id                        BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
   first_name                String     @db.VarChar(100)
@@ -84,14 +132,20 @@ model User {
   updated_at                DateTime   @updatedAt
   deleted_at                DateTime?
 
-  avatar         Media?         @relation("UserAvatar", fields: [avatar_id], references: [id], onDelete: SetNull)
-  uploadedMedia  Media[]        @relation("MediaUploader")
+  avatar         Media?              @relation("UserAvatar", fields: [avatar_id], references: [id], onDelete: SetNull)
+  uploadedMedia  Media[]             @relation("MediaUploader")
   sessions       UserSession[]
+  addresses      CustomerAddress[]
+  cart           Cart?
+  wishlist       Wishlist?
+  orders         Order[]
+  reviews        Review[]
+  notifications  Notification[]
+  vendorProfile  Vendor?
 
   @@map("users")
 }
 
-/// Polymorphic media library for products, vendors, avatars, banners, KYC docs, etc.
 model Media {
   id              BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
   user_id         BigInt?         @db.UnsignedBigInt
@@ -120,7 +174,6 @@ model Media {
   @@map("medias")
 }
 
-/// Active login / refresh sessions for device tracking and revocation.
 model UserSession {
   id               String      @id @default(uuid()) @db.Char(36)
   user_id          BigInt      @db.UnsignedBigInt
@@ -145,4 +198,296 @@ model UserSession {
   @@index([expires_at])
   @@index([is_revoked])
   @@map("user_sessions")
+}
+
+// ─── Catalog (needed for cart / order FKs) ──────────────────────
+
+model Category {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  parent_id   BigInt?   @db.UnsignedBigInt
+  name        String    @db.VarChar(150)
+  slug        String    @unique @db.VarChar(160)
+  description String?   @db.Text
+  is_active   Boolean   @default(true)
+  sort_order  Int       @default(0)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  deleted_at  DateTime?
+
+  parent   Category?  @relation("CategoryTree", fields: [parent_id], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryTree")
+  products Product[]
+
+  @@index([parent_id])
+  @@index([is_active])
+  @@map("categories")
+}
+
+model Vendor {
+  id           BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id      BigInt     @unique @db.UnsignedBigInt
+  shop_name    String     @db.VarChar(200)
+  slug         String     @unique @db.VarChar(220)
+  description  String?    @db.Text
+  status       UserStatus @default(pending)
+  created_at   DateTime   @default(now())
+  updated_at   DateTime   @updatedAt
+  deleted_at   DateTime?
+
+  user     User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@map("vendors")
+}
+
+model Product {
+  id              BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  vendor_id       BigInt?       @db.UnsignedBigInt
+  category_id     BigInt?       @db.UnsignedBigInt
+  name            String        @db.VarChar(255)
+  slug            String        @unique @db.VarChar(270)
+  sku             String?       @unique @db.VarChar(100)
+  description     String?       @db.Text
+  short_description String?     @db.VarChar(500)
+  price           Decimal       @db.Decimal(12, 2)
+  compare_at_price Decimal?     @db.Decimal(12, 2)
+  stock_qty       Int           @default(0)
+  status          ProductStatus @default(draft)
+  is_featured     Boolean       @default(false)
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+  deleted_at      DateTime?
+
+  vendor         Vendor?         @relation(fields: [vendor_id], references: [id], onDelete: SetNull)
+  category       Category?       @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  cartItems      CartItem[]
+  wishlistItems  WishlistItem[]
+  orderItems     OrderItem[]
+  reviews        Review[]
+
+  @@index([vendor_id])
+  @@index([category_id])
+  @@index([status])
+  @@map("products")
+}
+
+// ─── Customer addresses ─────────────────────────────────────────
+
+model CustomerAddress {
+  id                 BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id            BigInt      @db.UnsignedBigInt
+  label              String?     @db.VarChar(50)
+  full_name          String      @db.VarChar(150)
+  phone              String      @db.VarChar(30)
+  line1              String      @db.VarChar(255)
+  line2              String?     @db.VarChar(255)
+  city               String      @db.VarChar(100)
+  state              String?     @db.VarChar(100)
+  postal_code        String      @db.VarChar(20)
+  country            String      @default("BD") @db.VarChar(2)
+  type               AddressType @default(both)
+  is_default_shipping Boolean    @default(false)
+  is_default_billing  Boolean    @default(false)
+  created_at         DateTime    @default(now())
+  updated_at         DateTime    @updatedAt
+  deleted_at         DateTime?
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([user_id, is_default_shipping])
+  @@index([user_id, is_default_billing])
+  @@map("customer_addresses")
+}
+
+// ─── Cart ───────────────────────────────────────────────────────
+
+model Cart {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    BigInt   @unique @db.UnsignedBigInt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user  User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  items CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  cart_id    BigInt   @db.UnsignedBigInt
+  product_id BigInt   @db.UnsignedBigInt
+  quantity   Int      @default(1)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  cart    Cart    @relation(fields: [cart_id], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@unique([cart_id, product_id])
+  @@index([product_id])
+  @@map("cart_items")
+}
+
+// ─── Wishlist ───────────────────────────────────────────────────
+
+model Wishlist {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    BigInt   @unique @db.UnsignedBigInt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user  User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  items WishlistItem[]
+
+  @@map("wishlists")
+}
+
+model WishlistItem {
+  id          BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  wishlist_id BigInt   @db.UnsignedBigInt
+  product_id  BigInt   @db.UnsignedBigInt
+  created_at  DateTime @default(now())
+
+  wishlist Wishlist @relation(fields: [wishlist_id], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@unique([wishlist_id, product_id])
+  @@index([product_id])
+  @@map("wishlist_items")
+}
+
+// ─── Orders ─────────────────────────────────────────────────────
+
+model Order {
+  id               BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id          BigInt        @db.UnsignedBigInt
+  order_number     String        @unique @db.VarChar(40)
+  status           OrderStatus   @default(pending)
+  payment_status   PaymentStatus @default(pending)
+  payment_method   PaymentMethod @default(cash_on_delivery)
+  currency         String        @default("BDT") @db.VarChar(3)
+  subtotal         Decimal       @db.Decimal(12, 2)
+  shipping_fee     Decimal       @default(0) @db.Decimal(12, 2)
+  discount_amount  Decimal       @default(0) @db.Decimal(12, 2)
+  tax_amount       Decimal       @default(0) @db.Decimal(12, 2)
+  total            Decimal       @db.Decimal(12, 2)
+  notes            String?       @db.Text
+  placed_at        DateTime      @default(now())
+  cancelled_at     DateTime?
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+
+  user      User           @relation(fields: [user_id], references: [id], onDelete: Restrict)
+  items     OrderItem[]
+  addresses OrderAddress[]
+  payments  Payment[]
+
+  @@index([user_id])
+  @@index([status])
+  @@index([payment_status])
+  @@index([placed_at])
+  @@map("orders")
+}
+
+model OrderItem {
+  id           BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  order_id     BigInt   @db.UnsignedBigInt
+  product_id   BigInt?  @db.UnsignedBigInt
+  product_name String   @db.VarChar(255)
+  product_sku  String?  @db.VarChar(100)
+  unit_price   Decimal  @db.Decimal(12, 2)
+  quantity     Int
+  line_total   Decimal  @db.Decimal(12, 2)
+  created_at   DateTime @default(now())
+
+  order   Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [product_id], references: [id], onDelete: SetNull)
+
+  @@index([order_id])
+  @@index([product_id])
+  @@map("order_items")
+}
+
+/// Snapshot of shipping/billing at checkout (edits to customer_addresses won't rewrite history).
+model OrderAddress {
+  id          BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  order_id    BigInt           @db.UnsignedBigInt
+  type        OrderAddressType
+  full_name   String           @db.VarChar(150)
+  phone       String           @db.VarChar(30)
+  line1       String           @db.VarChar(255)
+  line2       String?          @db.VarChar(255)
+  city        String           @db.VarChar(100)
+  state       String?          @db.VarChar(100)
+  postal_code String           @db.VarChar(20)
+  country     String           @default("BD") @db.VarChar(2)
+  created_at  DateTime         @default(now())
+
+  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@unique([order_id, type])
+  @@map("order_addresses")
+}
+
+model Payment {
+  id               BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  order_id         BigInt        @db.UnsignedBigInt
+  method           PaymentMethod
+  status           PaymentStatus @default(pending)
+  amount           Decimal       @db.Decimal(12, 2)
+  currency         String        @default("BDT") @db.VarChar(3)
+  transaction_id   String?       @db.VarChar(150)
+  provider         String?       @db.VarChar(50)
+  provider_payload Json?
+  paid_at          DateTime?
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+
+  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@index([order_id])
+  @@index([status])
+  @@index([transaction_id])
+  @@map("payments")
+}
+
+// ─── Reviews & notifications ────────────────────────────────────
+
+model Review {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    BigInt   @db.UnsignedBigInt
+  product_id BigInt   @db.UnsignedBigInt
+  rating     Int
+  title      String?  @db.VarChar(150)
+  body       String?  @db.Text
+  is_approved Boolean @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, product_id])
+  @@index([product_id])
+  @@index([is_approved])
+  @@map("reviews")
+}
+
+model Notification {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    BigInt   @db.UnsignedBigInt
+  type       String   @db.VarChar(80)
+  title      String   @db.VarChar(200)
+  body       String?  @db.Text
+  data       Json?
+  read_at    DateTime?
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, read_at])
+  @@index([created_at])
+  @@map("notifications")
 }

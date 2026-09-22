@@ -5,6 +5,7 @@ import cors from "cors";
 import { env } from "./lib/env.js";
 import { healthRouter } from "./routes/health.js";
 import { customerAuthRouter } from "./routes/customerAuth.js";
+import { customerAddressRouter } from "./routes/customerAddresses.js";
 import { dashboardAuthRouter } from "./routes/dashboardAuth.js";
 
 const app = express();
@@ -28,6 +29,7 @@ app.use(
 
 app.use("/api/health", healthRouter);
 app.use("/api/auth", customerAuthRouter);
+app.use("/api/customer/addresses", customerAddressRouter);
 app.use("/api/dashboard/auth", dashboardAuthRouter);
 
 app.use(

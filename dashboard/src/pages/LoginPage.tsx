@@ -98,16 +98,18 @@ export function LoginPage() {
     setLoading(true);
 
     const form = new FormData(event.currentTarget);
-    const email = String(form.get("email") ?? "");
+    const identifier = String(form.get("identifier") ?? "").trim();
     const password = String(form.get("password") ?? "");
 
     try {
       const data = await apiFetch<{
+        accessToken?: string;
+        refreshToken?: string;
         token: string;
         home: string;
         user: StaffUser;
       }>("/api/dashboard/auth/login", {
-        body: { email, password },
+        body: { identifier, password },
       });
 
       if (
@@ -121,12 +123,13 @@ export function LoginPage() {
         return;
       }
 
-      setSession(data.token, data.user);
+      const accessToken = data.accessToken ?? data.token;
+      setSession(accessToken, data.user, data.refreshToken ?? null);
       navigate(data.home);
     } catch (err) {
       if (err instanceof ApiError && err.status === 403) {
         setError(
-          `${err.message} Customers should use ${STOREFRONT_URL}/auth/login`,
+          `${err.message} Customers should use ${STOREFRONT_URL}/login`,
         );
       } else {
         setError(err instanceof ApiError ? err.message : "Login failed");
@@ -181,13 +184,15 @@ export function LoginPage() {
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-text-primary">Email</span>
+            <span className="text-sm font-medium text-text-primary">
+              Email or phone
+            </span>
             <input
-              name="email"
-              type="email"
+              name="identifier"
+              type="text"
               required
               autoComplete="username"
-              placeholder="admin@niyenin.local"
+              placeholder="admin@niyenin.local or +8801…"
               className="h-11 rounded border border-border-default bg-bg-surface px-3.5 text-sm text-text-primary placeholder:text-text-secondary/70 outline-none transition-colors focus:border-brand-primary"
             />
           </label>
@@ -233,7 +238,7 @@ export function LoginPage() {
         <p className="mt-6 text-center text-sm text-text-secondary">
           Looking to shop?{" "}
           <a
-            href={`${STOREFRONT_URL}/auth/login`}
+            href={`${STOREFRONT_URL}/login`}
             className="font-medium text-brand-primary hover:underline"
           >
             Customer login

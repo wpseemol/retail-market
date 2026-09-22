@@ -1,32 +1,25 @@
 "use client";
 
 import { useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { useAppDispatch } from "@/store/hooks";
 import { hydrateAuth, setSessionUser } from "@/store/authSlice";
-import { getSessionAction } from "@/app/actions/auth";
 
+/** Sync Auth.js session → Redux (UI only; tokens stay in httpOnly cookie). */
 export default function AuthHydrator() {
   const dispatch = useAppDispatch();
+  const { data, status } = useSession();
 
   useEffect(() => {
-    let cancelled = false;
+    if (status === "loading") return;
 
-    async function loadSession() {
-      dispatch(hydrateAuth());
-      try {
-        const data = await getSessionAction();
-        if (cancelled) return;
-        dispatch(setSessionUser(data.user));
-      } catch {
-        if (!cancelled) dispatch(setSessionUser(null));
-      }
+    dispatch(hydrateAuth());
+    if (status === "authenticated" && data?.backendUser) {
+      dispatch(setSessionUser(data.backendUser));
+    } else {
+      dispatch(setSessionUser(null));
     }
-
-    void loadSession();
-    return () => {
-      cancelled = true;
-    };
-  }, [dispatch]);
+  }, [dispatch, data, status]);
 
   return null;
 }

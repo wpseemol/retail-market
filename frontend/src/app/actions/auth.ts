@@ -1,46 +1,25 @@
 "use server";
 
-import {
-  backendFetch,
-  callBackendAuth,
-  destroySessionCookies,
-  readSessionFromCookies,
-  writeSessionCookies,
-  type AuthActionResult,
-} from "@/lib/session";
+import { signOut } from "@/auth";
+import { auth } from "@/auth";
 import type { ApiUser } from "@/lib/api";
 
-/**
- * Server Actions set httpOnly encrypted cookies (tokens + auth user/role).
- * Client components cannot set these cookies — only the server can.
- */
-
-export async function loginAction(input: {
-  email: string;
-  password: string;
-}): Promise<AuthActionResult> {
-  return callBackendAuth("/api/auth/login", input);
-}
-
-export async function registerAction(input: {
-  first_name: string;
-  last_name: string;
-  email: string;
-  password: string;
-  phone?: string;
-}): Promise<AuthActionResult> {
-  return callBackendAuth("/api/auth/register", input);
-}
-
-export async function googleLoginAction(input: {
-  accessToken?: string;
-  idToken?: string;
-}): Promise<AuthActionResult> {
-  return callBackendAuth("/api/auth/google", input);
-}
+export type AuthActionResult =
+  | {
+      ok: true;
+      user: ApiUser;
+      message?: string;
+    }
+  | {
+      ok: false;
+      message: string;
+      code?: string;
+      errors?: Record<string, string[] | undefined>;
+      status: number;
+    };
 
 export async function logoutAction(): Promise<{ ok: true }> {
-  await destroySessionCookies();
+  await signOut({ redirect: false });
   return { ok: true };
 }
 
@@ -48,27 +27,29 @@ export async function getSessionAction(): Promise<{
   authenticated: boolean;
   user: ApiUser | null;
 }> {
-  const session = await readSessionFromCookies();
-  if (!session) {
+  const session = await auth();
+  if (!session?.backendUser || session.error === "RefreshTokenError") {
     return { authenticated: false, user: null };
   }
-  return { authenticated: true, user: session.user };
+  return { authenticated: true, user: session.backendUser };
 }
 
-/** Re-read `/api/auth/me` and refresh the sealed cookie user (avatar / profile). */
+/** Re-fetch `/api/auth/me` for profile/avatar updates (Redux + UI). */
 export async function syncSessionUserAction(): Promise<AuthActionResult> {
-  const session = await readSessionFromCookies();
+  const session = await auth();
   if (!session?.accessToken) {
-    return {
-      ok: false,
-      message: "Not authenticated",
-      status: 401,
-    };
+    return { ok: false, message: "Not authenticated", status: 401 };
   }
 
-  const upstream = await backendFetch("/api/auth/me", {
-    method: "GET",
-    accessToken: session.accessToken,
+  const backendUrl =
+    process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
+    "http://localhost:8001";
+
+  const upstream = await fetch(`${backendUrl}/api/auth/me`, {
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${session.accessToken}`,
+    },
   });
 
   const data = (await upstream.json().catch(() => ({}))) as {
@@ -83,12 +64,6 @@ export async function syncSessionUserAction(): Promise<AuthActionResult> {
       status: upstream.status,
     };
   }
-
-  await writeSessionCookies({
-    accessToken: session.accessToken,
-    refreshToken: session.refreshToken,
-    user: data.user,
-  });
 
   return { ok: true, user: data.user };
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { type FormEvent, useCallback, useState, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { getSession, signIn } from "next-auth/react";
 import AuthInput from "./AuthInput";
 import OrDivider from "./OrDivider";
 import SocialAuthButtons from "./SocialAuthButtons";
@@ -15,10 +16,6 @@ import { useGoogleIdToken } from "@/hooks/useGoogleIdToken";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/authSlice";
 import { dashboardLoginUrl } from "@/config/site";
-import {
-  googleLoginAction,
-  loginAction,
-} from "@/app/actions/auth";
 import type { ApiUser } from "@/lib/api";
 
 const DASHBOARD_LOGIN_URL = dashboardLoginUrl();
@@ -32,10 +29,17 @@ const STAFF_ROLES = new Set([
 
 type FieldErrors = Partial<Record<LoginField, string>>;
 
+function safeNextPath(raw: string | null) {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/account";
+  if (raw === "/login" || raw === "/register" || raw.startsWith("/auth/")) {
+    return "/account";
+  }
+  return raw;
+}
+
 export default function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get("next") || "/account";
+  const nextPath = safeNextPath(searchParams.get("next"));
   const dispatch = useAppDispatch();
   const [rememberMe, setRememberMe] = useState(false);
   const [email, setEmail] = useState("");
@@ -62,13 +66,12 @@ export default function LoginForm() {
         return;
       }
 
-      // Tokens + authUser already stored in encrypted httpOnly cookies by the Server Action.
       dispatch(setCredentials({ user }));
       void rememberMe;
-      router.push(nextPath.startsWith("/") ? nextPath : "/account");
-      router.refresh();
+      // Full navigation so middleware + Auth.js cookie are in sync
+      window.location.assign(nextPath);
     },
-    [dispatch, rememberMe, router, nextPath],
+    [dispatch, rememberMe, nextPath],
   );
 
   const handleGoogleCredential = useCallback(
@@ -77,14 +80,20 @@ export default function LoginForm() {
       setGoogleLoading(true);
       startTransition(async () => {
         try {
-          const result = await googleLoginAction({
+          const result = await signIn("google-backend", {
             accessToken: payload.accessToken,
+            redirect: false,
           });
-          if (!result.ok) {
-            setError(result.message);
+          if (result?.error) {
+            setError("Google sign-in failed");
             return;
           }
-          finishAuth(result.user);
+          const session = await getSession();
+          if (!session?.backendUser) {
+            setError("Google sign-in failed");
+            return;
+          }
+          finishAuth(session.backendUser);
         } catch {
           setError("Google sign-in failed");
         } finally {
@@ -135,22 +144,34 @@ export default function LoginForm() {
     setError(null);
     setTouched({ email: true, password: true });
 
-    const result = validateLoginForm({ email, password });
-    if (!result.success) {
-      setFieldErrors(result.errors);
+    const validated = validateLoginForm({ email, password });
+    if (!validated.success) {
+      setFieldErrors(validated.errors);
       return;
     }
 
     setFieldErrors({});
     startTransition(async () => {
       try {
-        // Server Action → backend login → sets httpOnly encrypted cookies
-        const auth = await loginAction(result.data);
-        if (!auth.ok) {
-          setError(auth.message);
+        // Client signIn sets the httpOnly cookie; avoid Server Action auth() race.
+        const result = await signIn("credentials", {
+          email: validated.data.email,
+          password: validated.data.password,
+          redirect: false,
+        });
+
+        if (result?.error) {
+          setError("Invalid email or password");
           return;
         }
-        finishAuth(auth.user);
+
+        const session = await getSession();
+        if (!session?.backendUser) {
+          setError("Login failed");
+          return;
+        }
+
+        finishAuth(session.backendUser);
       } catch {
         setError("Login failed");
       }

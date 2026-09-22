@@ -542,7 +542,7 @@ export default function CheckoutPageContent() {
                                     Login
                                 </button>
                                 <Link
-                                    href="/auth/login"
+                                    href="/login"
                                     className="text-[13px] text-brand-primary hover:underline"
                                 >
                                     Go to login page
