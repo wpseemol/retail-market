@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { Request } from "express";
 import multer from "multer";
 import { randomUUID } from "node:crypto";
 import {
@@ -7,6 +8,7 @@ import {
   AVATAR_MAX_BYTES,
   type AvatarMime,
 } from "../lib/avatarImage.js";
+import { PRODUCT_IMAGES_DIR } from "../lib/productImage.js";
 
 /** Disk folder for all customer profile photos. */
 export const USER_PHOTOS_DIR = path.resolve(
@@ -20,46 +22,70 @@ export const USER_PHOTOS_DIR = path.resolve(
 export const USER_PHOTOS_RELATIVE = "users/photos";
 
 fs.mkdirSync(USER_PHOTOS_DIR, { recursive: true });
+fs.mkdirSync(PRODUCT_IMAGES_DIR, { recursive: true });
 
-const storage = multer.diskStorage({
+function imageFileFilter(
+  _req: Request,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback,
+) {
+  if (!AVATAR_ALLOWED_MIMES.includes(file.mimetype as AvatarMime)) {
+    cb(new Error("Only JPEG, PNG, WebP, or GIF images are allowed"));
+    return;
+  }
+
+  const name = file.originalname ?? "";
+  if (name.length > 255 || /[<>]|<\?|javascript:|\.svg$/i.test(name)) {
+    cb(new Error("Invalid file name"));
+    return;
+  }
+
+  const ext = path.extname(name).toLowerCase();
+  if (ext && ![".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext)) {
+    cb(new Error("Invalid image file extension"));
+    return;
+  }
+
+  cb(null, true);
+}
+
+const avatarStorage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     cb(null, USER_PHOTOS_DIR);
   },
-  // Temp name — controller renames after magic-byte validation.
   filename: (_req, _file, cb) => {
     cb(null, `${randomUUID()}.upload`);
   },
 });
 
 export const avatarUpload = multer({
-  storage,
+  storage: avatarStorage,
   limits: {
     fileSize: AVATAR_MAX_BYTES,
     files: 1,
     fields: 5,
     parts: 6,
   },
-  fileFilter: (_req, file, cb) => {
-    if (!AVATAR_ALLOWED_MIMES.includes(file.mimetype as AvatarMime)) {
-      cb(new Error("Only JPEG, PNG, WebP, or GIF images are allowed"));
-      return;
-    }
+  fileFilter: imageFileFilter,
+});
 
-    const name = file.originalname ?? "";
-    if (name.length > 255 || /[<>]|<\?|javascript:|\.svg$/i.test(name)) {
-      cb(new Error("Invalid file name"));
-      return;
-    }
-
-    const ext = path.extname(name).toLowerCase();
-    if (
-      ext &&
-      ![".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext)
-    ) {
-      cb(new Error("Invalid image file extension"));
-      return;
-    }
-
-    cb(null, true);
+const productImageStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, PRODUCT_IMAGES_DIR);
   },
+  filename: (_req, _file, cb) => {
+    cb(null, `${randomUUID()}.upload`);
+  },
+});
+
+/** Product / variant / category images → `uploads/products/` + `medias`. */
+export const productImageUpload = multer({
+  storage: productImageStorage,
+  limits: {
+    fileSize: AVATAR_MAX_BYTES,
+    files: 12,
+    fields: 20,
+    parts: 32,
+  },
+  fileFilter: imageFileFilter,
 });

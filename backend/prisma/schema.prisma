@@ -166,8 +166,11 @@ model Media {
   created_at      DateTime        @default(now())
   updated_at      DateTime        @updatedAt
 
-  uploader       User?  @relation("MediaUploader", fields: [user_id], references: [id], onDelete: SetNull)
-  avatarForUsers User[] @relation("UserAvatar")
+  uploader            User?            @relation("MediaUploader", fields: [user_id], references: [id], onDelete: SetNull)
+  avatarForUsers      User[]           @relation("UserAvatar")
+  categoryImages      Category[]       @relation("CategoryImage")
+  productThumbnails   Product[]        @relation("ProductThumbnail")
+  variantImages       ProductVariant[] @relation("VariantImage")
 
   @@index([user_id])
   @@index([collection_name])
@@ -201,26 +204,44 @@ model UserSession {
   @@map("user_sessions")
 }
 
-// ─── Catalog (needed for cart / order FKs) ──────────────────────
+// ─── Catalog ────────────────────────────────────────────────────
+
+enum ProductType {
+  simple
+  variable
+}
+
+enum WeightUnit {
+  g
+  kg
+  lb
+  oz
+}
 
 model Category {
-  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  parent_id   BigInt?   @db.UnsignedBigInt
-  name        String    @db.VarChar(150)
-  slug        String    @unique @db.VarChar(160)
-  description String?   @db.Text
-  is_active   Boolean   @default(true)
-  sort_order  Int       @default(0)
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
-  deleted_at  DateTime?
+  id               BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  parent_id        BigInt?   @db.UnsignedBigInt
+  /// Category cover image from `medias` (collection: product_images).
+  image_id         BigInt?   @unique @db.UnsignedBigInt
+  name             String    @db.VarChar(150)
+  slug             String    @unique @db.VarChar(160)
+  description      String?   @db.Text
+  meta_title       String?   @db.VarChar(160)
+  meta_description String?   @db.VarChar(320)
+  is_active        Boolean   @default(true)
+  sort_order       Int       @default(0)
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  deleted_at       DateTime?
 
   parent   Category?  @relation("CategoryTree", fields: [parent_id], references: [id], onDelete: SetNull)
   children Category[] @relation("CategoryTree")
+  image    Media?     @relation("CategoryImage", fields: [image_id], references: [id], onDelete: SetNull)
   products Product[]
 
   @@index([parent_id])
   @@index([is_active])
+  @@index([sort_order])
   @@map("categories")
 }
 
@@ -241,35 +262,140 @@ model Vendor {
   @@map("vendors")
 }
 
+/// Parent sellable item. Price/stock on the product are used for `simple`
+/// products; for `variable` products use `ProductVariant` rows instead.
 model Product {
-  id              BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
-  vendor_id       BigInt?       @db.UnsignedBigInt
-  category_id     BigInt?       @db.UnsignedBigInt
-  name            String        @db.VarChar(255)
-  slug            String        @unique @db.VarChar(270)
-  sku             String?       @unique @db.VarChar(100)
-  description     String?       @db.Text
-  short_description String?     @db.VarChar(500)
-  price           Decimal       @db.Decimal(12, 2)
-  compare_at_price Decimal?     @db.Decimal(12, 2)
-  stock_qty       Int           @default(0)
-  status          ProductStatus @default(draft)
-  is_featured     Boolean       @default(false)
-  created_at      DateTime      @default(now())
-  updated_at      DateTime      @updatedAt
-  deleted_at      DateTime?
+  id                BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  vendor_id         BigInt?       @db.UnsignedBigInt
+  category_id       BigInt?       @db.UnsignedBigInt
+  /// Primary thumbnail from `medias` (files under uploads/products/).
+  thumbnail_id      BigInt?       @unique @db.UnsignedBigInt
+  name              String        @db.VarChar(255)
+  slug              String        @unique @db.VarChar(270)
+  sku               String?       @unique @db.VarChar(100)
+  barcode           String?       @db.VarChar(64)
+  brand             String?       @db.VarChar(120)
+  description       String?       @db.Text
+  short_description String?       @db.VarChar(500)
+  type              ProductType   @default(simple)
+  price             Decimal       @db.Decimal(12, 2)
+  compare_at_price  Decimal?      @db.Decimal(12, 2)
+  cost_price        Decimal?      @db.Decimal(12, 2)
+  stock_qty         Int           @default(0)
+  low_stock_threshold Int?        @db.UnsignedInt
+  weight            Decimal?      @db.Decimal(10, 3)
+  weight_unit       WeightUnit    @default(kg)
+  status            ProductStatus @default(draft)
+  is_featured       Boolean       @default(false)
+  is_taxable        Boolean       @default(true)
+  meta_title        String?       @db.VarChar(160)
+  meta_description  String?       @db.VarChar(320)
+  published_at      DateTime?
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
+  deleted_at        DateTime?
 
-  vendor         Vendor?         @relation(fields: [vendor_id], references: [id], onDelete: SetNull)
-  category       Category?       @relation(fields: [category_id], references: [id], onDelete: SetNull)
-  cartItems      CartItem[]
-  wishlistItems  WishlistItem[]
-  orderItems     OrderItem[]
-  reviews        Review[]
+  vendor        Vendor?               @relation(fields: [vendor_id], references: [id], onDelete: SetNull)
+  category      Category?             @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  thumbnail     Media?                @relation("ProductThumbnail", fields: [thumbnail_id], references: [id], onDelete: SetNull)
+  options       ProductOption[]
+  variants      ProductVariant[]
+  cartItems     CartItem[]
+  wishlistItems WishlistItem[]
+  orderItems    OrderItem[]
+  reviews       Review[]
 
   @@index([vendor_id])
   @@index([category_id])
   @@index([status])
+  @@index([type])
+  @@index([is_featured])
+  @@index([published_at])
   @@map("products")
+}
+
+/// Option group on a product (e.g. Color, Size).
+model ProductOption {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  product_id BigInt   @db.UnsignedBigInt
+  name       String   @db.VarChar(80)
+  position   Int      @default(0)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  product Product             @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  values  ProductOptionValue[]
+
+  @@unique([product_id, name])
+  @@index([product_id, position])
+  @@map("product_options")
+}
+
+/// Allowed value for an option (e.g. Red, XL).
+model ProductOptionValue {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  option_id  BigInt   @db.UnsignedBigInt
+  value      String   @db.VarChar(120)
+  /// Optional swatch for color options.
+  color_hex  String?  @db.VarChar(7)
+  position   Int      @default(0)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  option   ProductOption          @relation(fields: [option_id], references: [id], onDelete: Cascade)
+  variants ProductVariantOption[]
+
+  @@unique([option_id, value])
+  @@index([option_id, position])
+  @@map("product_option_values")
+}
+
+/// Sellable SKU / stock unit (one row even for simple products).
+model ProductVariant {
+  id               BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  product_id       BigInt    @db.UnsignedBigInt
+  /// Variant image from `medias` (collection: product_images, uploads/products/).
+  image_id         BigInt?   @unique @db.UnsignedBigInt
+  sku              String?   @unique @db.VarChar(100)
+  barcode          String?   @db.VarChar(64)
+  title            String?   @db.VarChar(255)
+  price            Decimal?  @db.Decimal(12, 2)
+  compare_at_price Decimal?  @db.Decimal(12, 2)
+  cost_price       Decimal?  @db.Decimal(12, 2)
+  stock_qty        Int       @default(0)
+  weight           Decimal?  @db.Decimal(10, 3)
+  weight_unit      WeightUnit?
+  is_default       Boolean   @default(false)
+  is_active        Boolean   @default(true)
+  position         Int       @default(0)
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  deleted_at       DateTime?
+
+  product     Product               @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  image       Media?                @relation("VariantImage", fields: [image_id], references: [id], onDelete: SetNull)
+  optionValues ProductVariantOption[]
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+
+  @@index([product_id])
+  @@index([product_id, is_default])
+  @@index([is_active])
+  @@map("product_variants")
+}
+
+/// Links a variant to its selected option values (Color=Red + Size=M).
+model ProductVariantOption {
+  id              BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  variant_id      BigInt @db.UnsignedBigInt
+  option_value_id BigInt @db.UnsignedBigInt
+
+  variant     ProductVariant     @relation(fields: [variant_id], references: [id], onDelete: Cascade)
+  optionValue ProductOptionValue @relation(fields: [option_value_id], references: [id], onDelete: Cascade)
+
+  @@unique([variant_id, option_value_id])
+  @@index([option_value_id])
+  @@map("product_variant_options")
 }
 
 // ─── Customer addresses ─────────────────────────────────────────
@@ -316,18 +442,21 @@ model Cart {
 }
 
 model CartItem {
-  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  cart_id    BigInt   @db.UnsignedBigInt
-  product_id BigInt   @db.UnsignedBigInt
-  quantity   Int      @default(1)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id                 BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  cart_id            BigInt   @db.UnsignedBigInt
+  product_id         BigInt   @db.UnsignedBigInt
+  product_variant_id BigInt?  @db.UnsignedBigInt
+  quantity           Int      @default(1)
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
 
-  cart    Cart    @relation(fields: [cart_id], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  cart    Cart            @relation(fields: [cart_id], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  variant ProductVariant? @relation(fields: [product_variant_id], references: [id], onDelete: Cascade)
 
-  @@unique([cart_id, product_id])
+  @@unique([cart_id, product_id, product_variant_id])
   @@index([product_id])
+  @@index([product_variant_id])
   @@map("cart_items")
 }
 
@@ -393,21 +522,25 @@ model Order {
 }
 
 model OrderItem {
-  id           BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  order_id     BigInt   @db.UnsignedBigInt
-  product_id   BigInt?  @db.UnsignedBigInt
-  product_name String   @db.VarChar(255)
-  product_sku  String?  @db.VarChar(100)
-  unit_price   Decimal  @db.Decimal(12, 2)
-  quantity     Int
-  line_total   Decimal  @db.Decimal(12, 2)
-  created_at   DateTime @default(now())
+  id                 BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  order_id           BigInt   @db.UnsignedBigInt
+  product_id         BigInt?  @db.UnsignedBigInt
+  product_variant_id BigInt?  @db.UnsignedBigInt
+  product_name       String   @db.VarChar(255)
+  product_sku        String?  @db.VarChar(100)
+  variant_title      String?  @db.VarChar(255)
+  unit_price         Decimal  @db.Decimal(12, 2)
+  quantity           Int
+  line_total         Decimal  @db.Decimal(12, 2)
+  created_at         DateTime @default(now())
 
-  order   Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  product Product? @relation(fields: [product_id], references: [id], onDelete: SetNull)
+  order   Order           @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product Product?        @relation(fields: [product_id], references: [id], onDelete: SetNull)
+  variant ProductVariant? @relation(fields: [product_variant_id], references: [id], onDelete: SetNull)
 
   @@index([order_id])
   @@index([product_id])
+  @@index([product_variant_id])
   @@map("order_items")
 }
 
