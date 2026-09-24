@@ -4,6 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import type { ProductMedia } from "@/lib/products";
+import {
+  PRODUCT_IMAGE_MAX_BYTES,
+  PRODUCT_IMAGE_MAX_COUNT,
+  validateProductImageFile,
+} from "@/lib/validators/product";
 
 export type LocalProductImage = {
   key: string;
@@ -22,6 +27,7 @@ type ProductImageGalleryFieldProps = {
   onLocalPrimaryChange?: (key: string) => void;
   onRemoveRemote?: (mediaId: string) => void;
   onSetPrimaryRemote?: (mediaId: string) => void;
+  onError?: (message: string) => void;
   disabled?: boolean;
   maxImages?: number;
 };
@@ -37,8 +43,9 @@ export function ProductImageGalleryField({
   onLocalPrimaryChange,
   onRemoveRemote,
   onSetPrimaryRemote,
+  onError,
   disabled = false,
-  maxImages = 12,
+  maxImages = PRODUCT_IMAGE_MAX_COUNT,
 }: ProductImageGalleryFieldProps) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -46,26 +53,34 @@ export function ProductImageGalleryField({
 
   const totalCount = images.length + localImages.length;
   const remaining = Math.max(0, maxImages - totalCount);
+  const maxMb = Math.floor(PRODUCT_IMAGE_MAX_BYTES / (1024 * 1024));
 
   useEffect(() => {
     return () => {
       for (const img of localImages) URL.revokeObjectURL(img.preview);
     };
-    // Only revoke on unmount of current set via parent replace
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function addFiles(fileList: FileList | File[] | null) {
     if (!fileList || disabled || remaining <= 0) return;
-    const incoming = Array.from(fileList)
-      .filter((f) => f.type.startsWith("image/"))
-      .slice(0, remaining);
+    const incoming = Array.from(fileList).slice(0, remaining);
+    const accepted: File[] = [];
 
-    if (incoming.length === 0) return;
+    for (const file of incoming) {
+      const checked = validateProductImageFile(file);
+      if (!checked.ok) {
+        onError?.(checked.message);
+        continue;
+      }
+      accepted.push(file);
+    }
+
+    if (accepted.length === 0) return;
 
     const next = [
       ...localImages,
-      ...incoming.map((file) => ({
+      ...accepted.map((file) => ({
         key: `${file.name}-${file.size}-${file.lastModified}-${crypto.randomUUID()}`,
         file,
         preview: URL.createObjectURL(file),
@@ -99,7 +114,8 @@ export function ProductImageGalleryField({
         <div>
           <Label>Product images</Label>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Upload up to {maxImages} images. Mark one as primary for listings.
+            JPEG, PNG, WebP, or GIF · max {maxMb} MB each · up to {maxImages}{" "}
+            files · always resized on the server
           </p>
         </div>
         <span className="text-xs tabular-nums text-muted-foreground">
@@ -132,7 +148,7 @@ export function ProductImageGalleryField({
               Drag & drop product photos
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              JPEG, PNG, WebP, or GIF · max {maxImages} files
+              Max {maxMb} MB · always resized on the server
             </p>
           </div>
           <input

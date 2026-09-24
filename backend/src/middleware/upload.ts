@@ -9,7 +9,10 @@ import {
   type AvatarMime,
 } from "../lib/avatarImage.js";
 import { CATEGORY_IMAGE_MAX_BYTES } from "../lib/categoryImage.js";
-import { PRODUCT_IMAGES_DIR } from "../lib/productImage.js";
+import {
+  PRODUCT_IMAGE_MAX_BYTES,
+  PRODUCT_IMAGES_DIR,
+} from "../lib/productImage.js";
 import { SHOP_IMAGES_DIR } from "../lib/shopImage.js";
 
 /** Disk folder for all customer profile photos. */
@@ -81,11 +84,11 @@ const productImageStorage = multer.diskStorage({
   },
 });
 
-/** Product / variant images → `uploads/products/` + `medias`. */
+/** Product / variant images → `uploads/products/` + `medias` · max 5 MB · resized. */
 export const productImageUpload = multer({
   storage: productImageStorage,
   limits: {
-    fileSize: AVATAR_MAX_BYTES,
+    fileSize: PRODUCT_IMAGE_MAX_BYTES,
     files: 12,
     fields: 20,
     parts: 32,

@@ -473,8 +473,8 @@ Auth: STAFF. Vendors are scoped to their own shop. Elevated may pass `vendor_id`
 
 | Method | Path | Multipart | Notes |
 |--------|------|-----------|--------|
-| POST | `/:id/thumbnail` | **`image`** | Primary thumbnail · max 5 MB |
-| POST | `/:id/images` | **`images`** | Gallery · up to 12 files · max 5 MB each |
+| POST | `/:id/thumbnail` | **`image`** | Primary thumbnail · max 5 MB · always resized |
+| POST | `/:id/images` | **`images`** | Gallery · up to 12 files · max 5 MB each · always resized |
 | POST | `/:id/images/:mediaId/primary` | — | Set primary from gallery |
 | DELETE | `/:id/images/:mediaId` | — | Remove gallery image |
 
@@ -497,8 +497,8 @@ Includes: `id`, `vendor_id`, `category_id`, `brand_id`, `thumbnail_id`, `name`, 
 | `POST /api/auth/me/avatar` | `avatar` | 5 MB |
 | `POST /api/dashboard/categories/:id/image` | `image` | **1 MB** |
 | `POST /api/dashboard/brands/:id/image` | `image` | **1 MB** |
-| `POST /api/dashboard/products/:id/thumbnail` | `image` | 5 MB |
-| `POST /api/dashboard/products/:id/images` | `images` | 5 MB × 12 |
+| `POST /api/dashboard/products/:id/thumbnail` | `image` | **5 MB** · resized |
+| `POST /api/dashboard/products/:id/images` | `images` | **5 MB** × 12 · resized |
 | `POST /api/dashboard/shops/:id/logo` | `logo` | 5 MB |
 
 Allowed MIME (all uploads): `image/jpeg`, `image/png`, `image/webp`, `image/gif`.  

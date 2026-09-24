@@ -1,6 +1,8 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Package, Plus, Trash2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Plus, Trash2 } from "lucide-react";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import type { Category } from "@/lib/categories";
 import type { Brand } from "@/lib/brands";
@@ -11,10 +13,23 @@ import {
   productStatusLabel,
   slugifyClient,
   type Product,
-  type ProductType,
 } from "@/lib/products";
 import { getCategoryLucideIcon } from "@/lib/categoryIcons";
 import { useAuthStore } from "@/store/auth";
+import {
+  productFormSchema,
+  toProductApiBody,
+  validateProductImages,
+  PRODUCT_IMAGE_MAX_COUNT,
+  type ProductFormValues,
+} from "@/lib/validators/product";
+import {
+  ProductFormHeader,
+  ProductFormSection,
+  ProductLivePreview,
+  ProductStickyActions,
+  productStatusTone,
+} from "@/components/products/ProductFormShell";
 import {
   ProductImageGalleryField,
   type LocalProductImage,
@@ -23,15 +38,15 @@ import { RichTextEditor } from "@/components/products/RichTextEditor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -39,14 +54,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-type OptionDraft = { name: string; valuesText: string };
-type VariantDraft = {
-  title: string;
-  price: string;
-  stock_qty: string;
-  option_values: Record<string, string>;
-};
+import { Textarea } from "@/components/ui/textarea";
 
 export function ProductEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -61,36 +69,41 @@ export function ProductEditPage() {
   const [shops, setShops] = useState<Shop[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
-  const [shopId, setShopId] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [brandId, setBrandId] = useState("");
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [shortDescription, setShortDescription] = useState("");
-  const [description, setDescription] = useState("");
-  const [type, setType] = useState<ProductType>("simple");
-  const [status, setStatus] = useState<"draft" | "active">("draft");
-  const [price, setPrice] = useState("0");
-  const [stock, setStock] = useState("0");
-  const [options, setOptions] = useState<OptionDraft[]>([]);
-  const [variants, setVariants] = useState<VariantDraft[]>([]);
   const [localImages, setLocalImages] = useState<LocalProductImage[]>([]);
   const [localPrimaryKey, setLocalPrimaryKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [mediaUpdating, setMediaUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+
+  const form = useForm<ProductFormValues>({
+    resolver: zodResolver(productFormSchema),
+    defaultValues: {
+      vendor_id: "",
+      category_id: "",
+      brand_id: "",
+      name: "",
+      slug: "",
+      short_description: "",
+      description: "",
+      type: "simple",
+      status: "draft",
+      price: 0,
+      stock_qty: 0,
+      options: [],
+      variants: [],
+    },
+    mode: "onBlur",
+  });
 
   useEffect(() => {
     if (!token || !id) return;
     let cancelled = false;
-
-    async function load() {
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setLoadError(null);
+    void (async () => {
       try {
         const [prodRes, catRes, brandRes, shopRes] = await Promise.all([
           apiFetch<{ product: Product }>(`/api/dashboard/products/${id}`, {
@@ -112,53 +125,63 @@ export function ProductEditPage() {
         ]);
         if (cancelled) return;
 
-        const next = prodRes.product;
-        setProduct(next);
+        const p = prodRes.product;
+        setProduct(p);
         setCategories(catRes.categories);
         setBrands(brandRes.brands);
         setShops(shopRes.shops);
-        setShopId(next.vendor_id ?? "");
-        setCategoryId(next.category_id ?? "");
-        setBrandId(next.brand_id ?? next.brand?.id ?? "");
-        setName(next.name);
-        setSlug(next.slug);
-        setShortDescription(next.short_description ?? "");
-        setDescription(next.description ?? "");
-        setType(next.type);
-        setStatus(next.status === "active" ? "active" : "draft");
-        setPrice(String(next.price ?? 0));
-        setStock(String(next.stock_qty ?? 0));
-        setOptions(
-          (next.options ?? []).map((o) => ({
+
+        form.reset({
+          vendor_id: p.vendor_id ?? "",
+          category_id: p.category_id ?? "",
+          brand_id: p.brand_id ?? p.brand?.id ?? "",
+          name: p.name,
+          slug: p.slug,
+          short_description: p.short_description ?? "",
+          description: p.description ?? "",
+          type: p.type,
+          status: p.status === "active" ? "active" : "draft",
+          price: p.price ?? 0,
+          stock_qty: p.stock_qty ?? 0,
+          options: (p.options ?? []).map((o) => ({
             name: o.name,
             valuesText: o.values.map((v) => v.value).join(", "),
           })),
-        );
-        setVariants(
-          (next.variants ?? []).map((v) => ({
+          variants: (p.variants ?? []).map((v) => ({
             title: v.title ?? "",
-            price: String(v.price ?? next.price ?? 0),
-            stock_qty: String(v.stock_qty ?? 0),
+            price: v.price ?? p.price ?? 0,
+            stock_qty: v.stock_qty ?? 0,
             option_values: Object.fromEntries(
               (v.option_values ?? []).map((ov) => [ov.option, ov.value]),
             ),
           })),
-        );
+        });
       } catch (err) {
         if (cancelled) return;
-        setError(
+        setLoadError(
           err instanceof ApiError ? err.message : "Failed to load product",
         );
       } finally {
         if (!cancelled) setLoading(false);
       }
-    }
-
-    void load();
+    })();
     return () => {
       cancelled = true;
     };
-  }, [token, id, isElevated]);
+  }, [token, id, isElevated, form]);
+
+  const name = form.watch("name");
+  const slug = form.watch("slug");
+  const shortDescription = form.watch("short_description");
+  const status = form.watch("status");
+  const type = form.watch("type");
+  const price = form.watch("price");
+  const stockQty = form.watch("stock_qty");
+  const options = form.watch("options");
+  const variants = form.watch("variants");
+  const categoryId = form.watch("category_id");
+  const brandId = form.watch("brand_id");
+  const vendorId = form.watch("vendor_id");
 
   const optionPayload = useMemo(
     () =>
@@ -176,111 +199,86 @@ export function ProductEditPage() {
 
   function regenerateVariants() {
     const combos = cartesianVariants(optionPayload);
-    setVariants(
+    form.setValue(
+      "variants",
       combos.map((c) => ({
         title: c.title,
-        price: price || "0",
-        stock_qty: "0",
+        price: price || 0,
+        stock_qty: 0,
         option_values: c.option_values,
       })),
     );
   }
 
-  async function onSave(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const categoryName = categories.find((c) => c.id === categoryId)?.name;
+  const brandName = brands.find((b) => b.id === brandId)?.name;
+  const shopName = shops.find((s) => s.id === vendorId)?.shop_name;
+  const localPrimaryImage =
+    localImages.find((i) => i.key === localPrimaryKey)?.preview ??
+    localImages[0]?.preview;
+  const previewImageUrl = localPrimaryImage ?? product?.thumbnail?.path;
+
+  async function onSubmit(values: ProductFormValues) {
     if (!token || !id) return;
-    setSaving(true);
-    setSaveError(null);
+
+    const imageCheck = validateProductImages(localImages.map((i) => i.file));
+    if (!imageCheck.ok) {
+      setSubmitError(imageCheck.message);
+      return;
+    }
+
+    setSubmitError(null);
     setSaveSuccess(null);
 
     try {
       if (localImages.length > 0) {
-        await uploadLocalImages(localImages);
-      }
-
-      const body: Record<string, unknown> = {
-        category_id: categoryId,
-        brand_id: brandId || null,
-        name: name.trim(),
-        slug: slug.trim(),
-        short_description: shortDescription.trim() || null,
-        description: description.trim() || null,
-        type,
-        status,
-        price: Number(price) || 0,
-        stock_qty: Number(stock) || 0,
-        ...(isElevated && shopId ? { vendor_id: shopId } : {}),
-      };
-
-      if (type === "variable") {
-        body.options = optionPayload;
-        body.variants = variants.map((v) => ({
-          title: v.title,
-          price: Number(v.price) || 0,
-          stock_qty: Number(v.stock_qty) || 0,
-          option_values: v.option_values,
-        }));
+        const ordered = [...localImages];
+        if (localPrimaryKey) {
+          const primaryIndex = ordered.findIndex(
+            (img) => img.key === localPrimaryKey,
+          );
+          if (primaryIndex > 0) {
+            const [primary] = ordered.splice(primaryIndex, 1);
+            ordered.unshift(primary);
+          }
+        }
+        const formData = new FormData();
+        for (const img of ordered) {
+          formData.append("images", img.file);
+        }
+        const uploaded = await apiUpload<{ product: Product }>(
+          `/api/dashboard/products/${id}/images`,
+          formData,
+          { token },
+        );
+        setProduct(uploaded.product);
+        for (const img of localImages) URL.revokeObjectURL(img.preview);
+        setLocalImages([]);
+        setLocalPrimaryKey(null);
       }
 
       const data = await apiFetch<{ product: Product }>(
         `/api/dashboard/products/${id}`,
-        { method: "PATCH", token, body },
+        {
+          method: "PATCH",
+          token,
+          body: toProductApiBody(values, { includeVendor: isElevated }),
+        },
       );
       setProduct(data.product);
       setSaveSuccess("Product saved");
     } catch (err) {
-      setSaveError(
+      setSubmitError(
         err instanceof ApiError ? err.message : "Failed to save product",
       );
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function uploadLocalImages(files: LocalProductImage[]) {
-    if (!token || !id || files.length === 0) return;
-    setUploading(true);
-    setSaveError(null);
-    try {
-      const ordered = [...files];
-      if (localPrimaryKey) {
-        const primaryIndex = ordered.findIndex(
-          (img) => img.key === localPrimaryKey,
-        );
-        if (primaryIndex > 0) {
-          const [primary] = ordered.splice(primaryIndex, 1);
-          ordered.unshift(primary);
-        }
-      }
-
-      const form = new FormData();
-      for (const img of ordered) {
-        form.append("images", img.file);
-      }
-      const data = await apiUpload<{ product: Product }>(
-        `/api/dashboard/products/${id}/images`,
-        form,
-        { token },
-      );
-      setProduct(data.product);
-      for (const img of localImages) URL.revokeObjectURL(img.preview);
-      setLocalImages([]);
-      setLocalPrimaryKey(null);
-      setSaveSuccess("Product images uploaded");
-    } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : "Image upload failed";
-      setSaveError(message);
-      throw err instanceof Error ? err : new Error(message);
-    } finally {
-      setUploading(false);
     }
   }
 
   async function onRemoveRemoteImage(mediaId: string) {
     if (!token || !id) return;
-    setUploading(true);
-    setSaveError(null);
+    setMediaUpdating(true);
+    setSubmitError(null);
+    setSaveSuccess(null);
     try {
       const data = await apiFetch<{ product: Product }>(
         `/api/dashboard/products/${id}/images/${mediaId}`,
@@ -289,18 +287,19 @@ export function ProductEditPage() {
       setProduct(data.product);
       setSaveSuccess("Image removed");
     } catch (err) {
-      setSaveError(
+      setSubmitError(
         err instanceof ApiError ? err.message : "Failed to remove image",
       );
     } finally {
-      setUploading(false);
+      setMediaUpdating(false);
     }
   }
 
   async function onSetPrimaryRemote(mediaId: string) {
     if (!token || !id) return;
-    setUploading(true);
-    setSaveError(null);
+    setMediaUpdating(true);
+    setSubmitError(null);
+    setSaveSuccess(null);
     try {
       const data = await apiFetch<{ product: Product }>(
         `/api/dashboard/products/${id}/images/${mediaId}/primary`,
@@ -309,18 +308,19 @@ export function ProductEditPage() {
       setProduct(data.product);
       setSaveSuccess("Primary image updated");
     } catch (err) {
-      setSaveError(
+      setSubmitError(
         err instanceof ApiError ? err.message : "Failed to set primary image",
       );
     } finally {
-      setUploading(false);
+      setMediaUpdating(false);
     }
   }
 
   async function onDelete() {
     if (!token || !id) return;
-    if (!window.confirm("Delete this product?")) return;
+    if (!window.confirm("Delete this product? This cannot be undone.")) return;
     setDeleting(true);
+    setSubmitError(null);
     try {
       await apiFetch(`/api/dashboard/products/${id}`, {
         method: "DELETE",
@@ -328,7 +328,7 @@ export function ProductEditPage() {
       });
       navigate("/products");
     } catch (err) {
-      setSaveError(
+      setSubmitError(
         err instanceof ApiError ? err.message : "Failed to delete product",
       );
     } finally {
@@ -337,13 +337,21 @@ export function ProductEditPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-muted-foreground">Loading product…</p>;
+    return (
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
+        <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="h-96 animate-pulse rounded-2xl bg-muted/60" />
+          <div className="h-72 animate-pulse rounded-2xl bg-muted/60" />
+        </div>
+      </div>
+    );
   }
 
-  if (error || !product) {
+  if (loadError || !product) {
     return (
       <div className="space-y-3">
-        <p className="text-sm text-destructive">{error ?? "Not found"}</p>
+        <p className="text-sm text-destructive">{loadError ?? "Not found"}</p>
         <Button asChild variant="outline">
           <Link to="/products">Back</Link>
         </Button>
@@ -352,384 +360,542 @@ export function ProductEditPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <Button asChild variant="ghost" size="sm" className="-ml-2 mb-2">
-            <Link to="/products">
-              <ArrowLeft />
-              Products
-            </Link>
-          </Button>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {product.name}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">/{product.slug}</p>
-        </div>
-        <Badge variant="outline" className="capitalize">
-          {productStatusLabel(product.status)}
-        </Badge>
-      </div>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-4">
+      <ProductFormHeader
+        title={product.name}
+        subtitle={`Update gallery, details, and variants · /${product.slug}`}
+        badge={
+          <Badge variant="outline" className={productStatusTone(product.status)}>
+            {productStatusLabel(product.status)}
+          </Badge>
+        }
+      />
 
-      <form onSubmit={onSave} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <div className="mb-1 flex size-9 items-center justify-center rounded-md bg-brand-tint text-brand-deep">
-              <Package className="size-4" />
-            </div>
-            <CardTitle>Media</CardTitle>
-            <CardDescription>
-              Manage gallery photos and choose the primary listing image.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <ProductImageGalleryField
-              images={product.gallery ?? []}
-              primaryId={product.thumbnail_id ?? product.thumbnail?.id ?? null}
-              localImages={localImages}
-              localPrimaryKey={localPrimaryKey}
-              onLocalImagesChange={setLocalImages}
-              onLocalPrimaryChange={setLocalPrimaryKey}
-              onRemoveRemote={(mediaId) => void onRemoveRemoteImage(mediaId)}
-              onSetPrimaryRemote={(mediaId) => void onSetPrimaryRemote(mediaId)}
-              disabled={uploading || saving}
-            />
-            {localImages.length > 0 ? (
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                disabled={uploading}
-                onClick={() => void uploadLocalImages(localImages)}
-              >
-                {uploading
-                  ? "Uploading…"
-                  : `Upload ${localImages.length} image${localImages.length === 1 ? "" : "s"}`}
-              </Button>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Edit product</CardTitle>
-            <CardDescription>
-              Update shop, category, brand, description, and variants.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {isElevated ? (
-              <div className="space-y-2">
-                <Label>Shop</Label>
-                <Select value={shopId || undefined} onValueChange={setShopId}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select shop" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {shops.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.shop_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : null}
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Category</Label>
-                <Select
-                  value={categoryId || undefined}
-                  onValueChange={setCategoryId}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((c) => {
-                      const Icon = getCategoryLucideIcon(c.icon);
-                      return (
-                        <SelectItem key={c.id} value={c.id}>
-                          <span className="inline-flex items-center gap-2">
-                            <Icon className="size-3.5 text-brand-deep" />
-                            {c.name}
-                          </span>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Brand</Label>
-                <Select
-                  value={brandId || undefined}
-                  onValueChange={setBrandId}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select brand" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {brands.map((b) => (
-                      <SelectItem key={b.id} value={b.id}>
-                        {b.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  <Link to="/brands/new" className="text-brand-primary underline">
-                    Create brand
-                  </Link>
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"
+          noValidate
+        >
+          <div className="space-y-5">
+            {/* 01 Media */}
+            <ProductFormSection
+              step="01"
+              title="Media"
+              description="Manage gallery photos and choose the primary listing image. JPEG, PNG, WebP, or GIF · max 5 MB · always resized on the server."
+            >
+              <ProductImageGalleryField
+                images={product.gallery ?? []}
+                primaryId={product.thumbnail_id ?? product.thumbnail?.id ?? null}
+                localImages={localImages}
+                localPrimaryKey={localPrimaryKey}
+                onLocalImagesChange={setLocalImages}
+                onLocalPrimaryChange={setLocalPrimaryKey}
+                onRemoveRemote={(mediaId) => void onRemoveRemoteImage(mediaId)}
+                onSetPrimaryRemote={(mediaId) =>
+                  void onSetPrimaryRemote(mediaId)
+                }
+                onError={setSubmitError}
+                disabled={mediaUpdating || form.formState.isSubmitting}
+                maxImages={PRODUCT_IMAGE_MAX_COUNT}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="slug">Slug</Label>
-              <Input
-                id="slug"
-                value={slug}
-                onChange={(e) => setSlug(slugifyClient(e.target.value))}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="short">Short description</Label>
-              <Input
-                id="short"
-                value={shortDescription}
-                onChange={(e) => setShortDescription(e.target.value)}
-                maxLength={500}
-                placeholder="One-line summary for listings"
-              />
-            </div>
+            </ProductFormSection>
 
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <RichTextEditor
-                value={description}
-                onChange={setDescription}
-                disabled={saving}
-                placeholder="Materials, fit, care, and other product details…"
-              />
-            </div>
+            {/* 02 Catalog placement */}
+            <ProductFormSection
+              step="02"
+              title="Catalog placement"
+              description="Shop, category, and brand for this product's listings."
+            >
+              {isElevated && (
+                <FormField
+                  control={form.control}
+                  name="vendor_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Shop</FormLabel>
+                      <Select
+                        value={field.value || undefined}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select shop" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {shops.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.shop_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Product type</Label>
-                <Select
-                  value={type}
-                  onValueChange={(v) => setType(v as ProductType)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="simple">Simple</SelectItem>
-                    <SelectItem value="variable">Variable (variants)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select
-                  value={status}
-                  onValueChange={(v) => setStatus(v as "draft" | "active")}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRODUCT_CREATE_STATUSES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s === "active" ? "publish" : s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {type === "simple" ? (
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Price</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Stock</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={stock}
-                    onChange={(e) => setStock(e.target.value)}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="category_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select
+                        value={field.value || undefined}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categories.map((c) => {
+                            const Icon = getCategoryLucideIcon(c.icon);
+                            return (
+                              <SelectItem key={c.id} value={c.id}>
+                                <span className="inline-flex items-center gap-2">
+                                  <Icon className="size-3.5 text-brand-deep" />
+                                  {c.name}
+                                </span>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="brand_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Brand</FormLabel>
+                      <Select
+                        value={field.value || undefined}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select brand" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {brands.map((b) => (
+                            <SelectItem key={b.id} value={b.id}>
+                              {b.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        <Link
+                          to="/brands/new"
+                          className="text-brand-primary underline"
+                        >
+                          Create brand
+                        </Link>
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            ) : (
-              <div className="space-y-4 rounded-md border p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <Label>Options & variants</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setOptions((prev) => [
-                        ...prev,
-                        { name: "", valuesText: "" },
-                      ])
-                    }
-                  >
-                    <Plus />
-                    Option
-                  </Button>
+            </ProductFormSection>
+
+            {/* 03 Details */}
+            <ProductFormSection
+              step="03"
+              title="Details"
+              description="Name, URL slug, descriptions, product type, status, price, and stock."
+            >
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Slug</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(slugifyClient(e.target.value))
+                        }
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Lowercase letters, numbers, and hyphens only.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="short_description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Short description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        rows={2}
+                        placeholder="One-line summary for catalog cards (max 500 chars)"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <RichTextEditor
+                        value={field.value}
+                        onChange={field.onChange}
+                        disabled={form.formState.isSubmitting}
+                        placeholder="Materials, fit, care, and other product details…"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Product type</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="simple">Simple</SelectItem>
+                          <SelectItem value="variable">
+                            Variable (variants)
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {PRODUCT_CREATE_STATUSES.map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {s === "active" ? "publish" : s}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {type === "simple" && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Price</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            value={field.value}
+                            onChange={(e) =>
+                              field.onChange(Number(e.target.value) || 0)
+                            }
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="stock_qty"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Stock</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={field.value}
+                            onChange={(e) =>
+                              field.onChange(Number(e.target.value) || 0)
+                            }
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-                {options.map((opt, index) => (
-                  <div
-                    key={index}
-                    className="grid gap-2 sm:grid-cols-[1fr_2fr_auto]"
-                  >
-                    <Input
-                      placeholder="Option name"
-                      value={opt.name}
-                      onChange={(e) =>
-                        setOptions((prev) =>
-                          prev.map((row, i) =>
-                            i === index ? { ...row, name: e.target.value } : row,
-                          ),
-                        )
-                      }
-                    />
-                    <Input
-                      placeholder="Values (S, M, L)"
-                      value={opt.valuesText}
-                      onChange={(e) =>
-                        setOptions((prev) =>
-                          prev.map((row, i) =>
-                            i === index
-                              ? { ...row, valuesText: e.target.value }
-                              : row,
-                          ),
-                        )
-                      }
-                    />
+              )}
+            </ProductFormSection>
+
+            {/* 04 Variants */}
+            {type === "variable" && (
+              <ProductFormSection
+                step="04"
+                title="Options & variants"
+                description="Define option axes (Size, Color). Value combinations become variant rows."
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium">Options</span>
                     <Button
                       type="button"
-                      variant="ghost"
-                      size="icon"
+                      variant="outline"
+                      size="sm"
                       onClick={() =>
-                        setOptions((prev) => prev.filter((_, i) => i !== index))
+                        form.setValue("options", [
+                          ...options,
+                          { name: "", valuesText: "" },
+                        ])
                       }
                     >
-                      <Trash2 />
+                      <Plus />
+                      Option
                     </Button>
                   </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={regenerateVariants}
-                >
-                  Regenerate variants
-                </Button>
-                {variants.map((v, index) => (
-                  <div
-                    key={index}
-                    className="grid gap-2 rounded-md border p-2 sm:grid-cols-[1fr_100px_100px]"
+
+                  {options.map((opt, index) => (
+                    <div
+                      key={index}
+                      className="grid gap-2 sm:grid-cols-[1fr_2fr_auto]"
+                    >
+                      <Input
+                        placeholder="Option name"
+                        value={opt.name}
+                        onChange={(e) => {
+                          const next = [...options];
+                          next[index] = { ...next[index], name: e.target.value };
+                          form.setValue("options", next);
+                        }}
+                      />
+                      <Input
+                        placeholder="Values (S, M, L)"
+                        value={opt.valuesText}
+                        onChange={(e) => {
+                          const next = [...options];
+                          next[index] = {
+                            ...next[index],
+                            valuesText: e.target.value,
+                          };
+                          form.setValue("options", next);
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() =>
+                          form.setValue(
+                            "options",
+                            options.filter((_, i) => i !== index),
+                          )
+                        }
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
+                  ))}
+
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={regenerateVariants}
                   >
-                    <Input
-                      value={v.title}
-                      onChange={(e) =>
-                        setVariants((prev) =>
-                          prev.map((row, i) =>
-                            i === index
-                              ? { ...row, title: e.target.value }
-                              : row,
-                          ),
-                        )
-                      }
-                    />
-                    <Input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={v.price}
-                      onChange={(e) =>
-                        setVariants((prev) =>
-                          prev.map((row, i) =>
-                            i === index
-                              ? { ...row, price: e.target.value }
-                              : row,
-                          ),
-                        )
-                      }
-                    />
-                    <Input
-                      type="number"
-                      min={0}
-                      value={v.stock_qty}
-                      onChange={(e) =>
-                        setVariants((prev) =>
-                          prev.map((row, i) =>
-                            i === index
-                              ? { ...row, stock_qty: e.target.value }
-                              : row,
-                          ),
-                        )
-                      }
-                    />
-                  </div>
-                ))}
-              </div>
+                    Regenerate variants
+                  </Button>
+
+                  {form.formState.errors.options?.message && (
+                    <p className="text-sm text-destructive" role="alert">
+                      {form.formState.errors.options.message}
+                    </p>
+                  )}
+
+                  {variants.length > 0 ? (
+                    <div className="space-y-2">
+                      {variants.map((v, index) => (
+                        <div
+                          key={index}
+                          className="grid gap-2 rounded-md border p-2 sm:grid-cols-[1fr_100px_100px]"
+                        >
+                          <Input
+                            value={v.title}
+                            onChange={(e) => {
+                              const next = [...variants];
+                              next[index] = {
+                                ...next[index],
+                                title: e.target.value,
+                              };
+                              form.setValue("variants", next);
+                            }}
+                          />
+                          <Input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            placeholder="Price"
+                            value={v.price}
+                            onChange={(e) => {
+                              const next = [...variants];
+                              next[index] = {
+                                ...next[index],
+                                price: Number(e.target.value) || 0,
+                              };
+                              form.setValue("variants", next);
+                            }}
+                          />
+                          <Input
+                            type="number"
+                            min={0}
+                            placeholder="Stock"
+                            value={v.stock_qty}
+                            onChange={(e) => {
+                              const next = [...variants];
+                              next[index] = {
+                                ...next[index],
+                                stock_qty: Number(e.target.value) || 0,
+                              };
+                              form.setValue("variants", next);
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Click "Regenerate variants" after updating options.
+                    </p>
+                  )}
+                </div>
+              </ProductFormSection>
             )}
 
-            {saveError ? (
-              <p className="text-sm text-destructive" role="alert">
-                {saveError}
-              </p>
-            ) : null}
-            {saveSuccess ? (
-              <p className="text-sm text-brand-primary" role="status">
-                {saveSuccess}
-              </p>
-            ) : null}
-          </CardContent>
-          <CardFooter className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={saving}>
-              {saving ? "Saving…" : "Save changes"}
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={deleting}
-              onClick={() => void onDelete()}
+            <ProductStickyActions
+              message={
+                submitError ? (
+                  <p className="text-destructive" role="alert">
+                    {submitError}
+                  </p>
+                ) : saveSuccess ? (
+                  <p className="text-brand-primary" role="status">
+                    {saveSuccess}
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground">
+                    {product.gallery?.length ?? 0} image
+                    {(product.gallery?.length ?? 0) === 1 ? "" : "s"} in gallery
+                  </p>
+                )
+              }
             >
-              <Trash2 />
-              {deleting ? "Deleting…" : "Delete"}
-            </Button>
-          </CardFooter>
-        </Card>
-      </form>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={deleting || form.formState.isSubmitting}
+                onClick={() => void onDelete()}
+              >
+                <Trash2 />
+                {deleting ? "Deleting…" : "Delete"}
+              </Button>
+              <Button asChild type="button" variant="outline">
+                <Link to="/products">Cancel</Link>
+              </Button>
+              <Button
+                type="submit"
+                disabled={form.formState.isSubmitting || deleting}
+              >
+                {form.formState.isSubmitting ? "Saving…" : "Save changes"}
+              </Button>
+            </ProductStickyActions>
+          </div>
+
+          <ProductLivePreview
+            mode="edit"
+            name={name}
+            slug={slug}
+            shortDescription={shortDescription}
+            status={status}
+            type={type}
+            price={price}
+            stockQty={stockQty}
+            imageUrl={previewImageUrl}
+            categoryName={categoryName}
+            brandName={brandName}
+            shopName={shopName}
+          />
+        </form>
+      </Form>
     </div>
   );
 }

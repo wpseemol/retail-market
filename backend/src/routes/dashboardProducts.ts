@@ -113,7 +113,7 @@ const productBodySchema = z.object({
 });
 
 const listQuerySchema = z.object({
-  q: z.string().trim().max(120).optional(),
+  q: withSafeInput(z.string().trim().max(120)).optional(),
   vendor_id: z.string().regex(/^\d+$/).optional(),
   category_id: z.string().regex(/^\d+$/).optional(),
   status: z.enum(PRODUCT_STATUSES).optional(),
@@ -752,7 +752,7 @@ dashboardProductsRouter.post(
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 
-    const finalized = finalizeProductImageUpload(file.path, file.mimetype);
+    const finalized = await finalizeProductImageUpload(file.path, file.mimetype);
     if (!finalized.ok) {
       return res.status(400).json({
         message: finalized.message,
@@ -847,7 +847,7 @@ dashboardProductsRouter.post(
     let firstCreatedId: bigint | null = null;
 
     for (const file of files) {
-      const finalized = finalizeProductImageUpload(file.path, file.mimetype);
+      const finalized = await finalizeProductImageUpload(file.path, file.mimetype);
       if (!finalized.ok) {
         return res.status(400).json({
           message: finalized.message,
