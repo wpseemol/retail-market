@@ -10,6 +10,7 @@ export type ProductMedia = {
   id: string;
   path: string;
   file_name: string;
+  sort_order?: number;
 };
 
 export type ProductOption = {
@@ -35,6 +36,7 @@ export type Product = {
   vendor_id: string | null;
   category_id: string | null;
   brand_id?: string | null;
+  thumbnail_id?: string | null;
   name: string;
   slug: string;
   sku?: string | null;
@@ -48,6 +50,7 @@ export type Product = {
   stock_qty: number;
   status: ProductStatus;
   thumbnail?: ProductMedia | null;
+  gallery?: ProductMedia[];
   category?: { id: string; name: string; slug: string } | null;
   vendor?: { id: string; shop_name: string; slug: string } | null;
   options?: ProductOption[];

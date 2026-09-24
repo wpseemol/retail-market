@@ -1,6 +1,6 @@
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ImagePlus, Package, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Package, Plus, Trash2 } from "lucide-react";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import type { Category } from "@/lib/categories";
 import type { Brand } from "@/lib/brands";
@@ -13,6 +13,11 @@ import {
   type ProductType,
 } from "@/lib/products";
 import { useAuthStore } from "@/store/auth";
+import {
+  ProductImageGalleryField,
+  type LocalProductImage,
+} from "@/components/products/ProductImageGalleryField";
+import { RichTextEditor } from "@/components/products/RichTextEditor";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -47,7 +52,6 @@ export function ProductCreatePage() {
     user?.role === "super_admin" ||
     user?.role === "admin" ||
     user?.role === "moderator";
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const [shops, setShops] = useState<Shop[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -59,6 +63,7 @@ export function ProductCreatePage() {
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
   const [shortDescription, setShortDescription] = useState("");
+  const [description, setDescription] = useState("");
   const [type, setType] = useState<ProductType>("simple");
   const [status, setStatus] = useState<"draft" | "active">("draft");
   const [price, setPrice] = useState("0");
@@ -67,8 +72,8 @@ export function ProductCreatePage() {
     { name: "Size", valuesText: "S, M, L" },
   ]);
   const [variants, setVariants] = useState<VariantDraft[]>([]);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [localImages, setLocalImages] = useState<LocalProductImage[]>([]);
+  const [localPrimaryKey, setLocalPrimaryKey] = useState<string | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -132,12 +137,6 @@ export function ProductCreatePage() {
     return () => window.clearTimeout(handle);
   }, [name, slugTouched, token]);
 
-  useEffect(() => {
-    return () => {
-      if (imagePreview) URL.revokeObjectURL(imagePreview);
-    };
-  }, [imagePreview]);
-
   const optionPayload = useMemo(
     () =>
       options
@@ -162,12 +161,6 @@ export function ProductCreatePage() {
         option_values: c.option_values,
       })),
     );
-  }
-
-  function onPickImage(file: File | null) {
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImageFile(file);
-    setImagePreview(file ? URL.createObjectURL(file) : null);
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -201,6 +194,7 @@ export function ProductCreatePage() {
         name: name.trim(),
         slug: slug.trim() || undefined,
         short_description: shortDescription.trim() || null,
+        description: description.trim() || null,
         type,
         status,
         price: Number(price) || 0,
@@ -231,14 +225,40 @@ export function ProductCreatePage() {
         { method: "POST", token, body },
       );
 
-      if (imageFile) {
+      if (localImages.length > 0) {
+        const ordered = [...localImages];
+        if (localPrimaryKey) {
+          const primaryIndex = ordered.findIndex(
+            (img) => img.key === localPrimaryKey,
+          );
+          if (primaryIndex > 0) {
+            const [primary] = ordered.splice(primaryIndex, 1);
+            ordered.unshift(primary);
+          }
+        }
+
         const form = new FormData();
-        form.append("image", imageFile);
-        await apiUpload(
-          `/api/dashboard/products/${data.product.id}/thumbnail`,
+        for (const img of ordered) {
+          form.append("images", img.file);
+        }
+        const uploaded = await apiUpload<{ product: Product }>(
+          `/api/dashboard/products/${data.product.id}/images`,
           form,
           { token },
         );
+
+        if (localPrimaryKey && ordered[0]) {
+          const primaryMedia = uploaded.product.gallery?.[0];
+          if (
+            primaryMedia &&
+            uploaded.product.thumbnail_id !== primaryMedia.id
+          ) {
+            await apiFetch(
+              `/api/dashboard/products/${data.product.id}/images/${primaryMedia.id}/primary`,
+              { method: "POST", token },
+            );
+          }
+        }
       }
 
       navigate(`/products/${data.product.id}`);
@@ -252,7 +272,7 @@ export function ProductCreatePage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <div>
         <Button asChild variant="ghost" size="sm" className="-ml-2 mb-2">
           <Link to="/products">
@@ -262,57 +282,40 @@ export function ProductCreatePage() {
         </Button>
         <h1 className="text-2xl font-semibold tracking-tight">Add product</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Shop → category → brand (create brands first) → simple or variant
-          product.
+          Shop → category → brand → photos, details, and rich description.
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="mb-1 flex size-9 items-center justify-center rounded-md bg-brand-tint text-brand-deep">
-            <Package className="size-4" />
-          </div>
-          <CardTitle>Product details</CardTitle>
-          <CardDescription>
-            Products belong to a shop and use shared platform categories.
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={onSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Product image</Label>
-              <div className="flex items-center gap-4">
-                <div className="flex size-16 items-center justify-center overflow-hidden rounded-md border bg-muted">
-                  {imagePreview ? (
-                    <img
-                      src={imagePreview}
-                      alt=""
-                      className="size-full object-cover"
-                    />
-                  ) : (
-                    <ImagePlus className="size-5 text-muted-foreground" />
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    className="hidden"
-                    onChange={(e) => onPickImage(e.target.files?.[0] ?? null)}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileRef.current?.click()}
-                  >
-                    Choose image
-                  </Button>
-                </div>
-              </div>
+      <form onSubmit={onSubmit} className="space-y-6">
+        <Card>
+          <CardHeader>
+            <div className="mb-1 flex size-9 items-center justify-center rounded-md bg-brand-tint text-brand-deep">
+              <Package className="size-4" />
             </div>
+            <CardTitle>Media</CardTitle>
+            <CardDescription>
+              Add multiple product photos. The primary image appears in catalogs.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ProductImageGalleryField
+              localImages={localImages}
+              localPrimaryKey={localPrimaryKey}
+              onLocalImagesChange={setLocalImages}
+              onLocalPrimaryChange={setLocalPrimaryKey}
+              disabled={loading}
+            />
+          </CardContent>
+        </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>Product details</CardTitle>
+            <CardDescription>
+              Products belong to a shop and use shared platform categories.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             {isElevated ? (
               <div className="space-y-2">
                 <Label>Shop</Label>
@@ -331,48 +334,53 @@ export function ProductCreatePage() {
               </div>
             ) : null}
 
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <Select
-                value={categoryId || undefined}
-                onValueChange={setCategoryId}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select
+                  value={categoryId || undefined}
+                  onValueChange={setCategoryId}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-2">
-              <Label>Brand</Label>
-              <Select
-                value={brandId || undefined}
-                onValueChange={setBrandId}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select brand" />
-                </SelectTrigger>
-                <SelectContent>
-                  {brands.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Need a new brand?{" "}
-                <Link to="/brands/new" className="text-brand-primary underline">
-                  Create brand
-                </Link>
-              </p>
+              <div className="space-y-2">
+                <Label>Brand</Label>
+                <Select
+                  value={brandId || undefined}
+                  onValueChange={setBrandId}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select brand" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {brands.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>
+                        {b.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Need a new brand?{" "}
+                  <Link
+                    to="/brands/new"
+                    className="text-brand-primary underline"
+                  >
+                    Create brand
+                  </Link>
+                </p>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -405,6 +413,18 @@ export function ProductCreatePage() {
                 id="short"
                 value={shortDescription}
                 onChange={(e) => setShortDescription(e.target.value)}
+                maxLength={500}
+                placeholder="One-line summary for listings"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <RichTextEditor
+                value={description}
+                onChange={setDescription}
+                disabled={loading}
+                placeholder="Materials, fit, care, and other product details…"
               />
             </div>
 
@@ -489,7 +509,10 @@ export function ProductCreatePage() {
                   </Button>
                 </div>
                 {options.map((opt, index) => (
-                  <div key={index} className="grid gap-2 sm:grid-cols-[1fr_2fr_auto]">
+                  <div
+                    key={index}
+                    className="grid gap-2 sm:grid-cols-[1fr_2fr_auto]"
+                  >
                     <Input
                       placeholder="Option name (Size)"
                       value={opt.name}
@@ -519,7 +542,9 @@ export function ProductCreatePage() {
                       variant="ghost"
                       size="icon"
                       onClick={() =>
-                        setOptions((prev) => prev.filter((_, i) => i !== index))
+                        setOptions((prev) =>
+                          prev.filter((_, i) => i !== index),
+                        )
                       }
                     >
                       <Trash2 />
@@ -620,8 +645,8 @@ export function ProductCreatePage() {
               {loading ? "Creating…" : "Create product"}
             </Button>
           </CardFooter>
-        </form>
-      </Card>
+        </Card>
+      </form>
     </div>
   );
 }

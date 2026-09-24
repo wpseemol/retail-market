@@ -7,12 +7,14 @@ import { prisma } from "../lib/prisma.js";
 import {
   productWithCatalogInclude,
   toPublicProduct,
+  toPublicProductDetail,
   createProductMedia,
 } from "../lib/productCatalog.js";
 import {
   finalizeProductImageUpload,
   PRODUCT_IMAGES_DIR,
 } from "../lib/productImage.js";
+import { sanitizeProductDescriptionHtml } from "../lib/richHtml.js";
 import { uniqueVendorSlug } from "../lib/slug.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
 import { productImageUpload } from "../middleware/upload.js";
@@ -84,7 +86,22 @@ const productBodySchema = z.object({
       ),
   ).optional(),
   brand: withSafeInput(z.string().trim().max(120)).optional().nullable(),
-  description: withSafeInput(z.string().trim().max(20_000)).optional().nullable(),
+  description: z
+    .string()
+    .trim()
+    .max(20_000)
+    .optional()
+    .nullable()
+    .transform((value, ctx) => {
+      if (value === undefined) return undefined;
+      if (value === null || value === "") return null;
+      const sanitized = sanitizeProductDescriptionHtml(value);
+      if (!sanitized.ok) {
+        ctx.addIssue({ code: "custom", message: sanitized.message });
+        return z.NEVER;
+      }
+      return sanitized.html || null;
+    }),
   short_description: withSafeInput(z.string().trim().max(500))
     .optional()
     .nullable(),
@@ -378,7 +395,7 @@ dashboardProductsRouter.get("/:id", async (req, res) => {
     return res.status(403).json({ message: "Insufficient permissions" });
   }
 
-  return res.json({ product: toPublicProduct(row) });
+  return res.json({ product: await toPublicProductDetail(row) });
 });
 
 dashboardProductsRouter.post("/", async (req, res) => {
@@ -494,7 +511,7 @@ dashboardProductsRouter.post("/", async (req, res) => {
 
     return res.status(201).json({
       message: "Product created",
-      product: toPublicProduct(full),
+      product: await toPublicProductDetail(full),
     });
   } catch (err) {
     return res.status(400).json({
@@ -678,7 +695,7 @@ dashboardProductsRouter.patch("/:id", async (req, res) => {
 
     return res.json({
       message: "Product updated",
-      product: toPublicProduct(full),
+      product: await toPublicProductDetail(full),
     });
   } catch (err) {
     return res.status(400).json({
@@ -762,18 +779,6 @@ dashboardProductsRouter.post(
       data: { thumbnail_id: media.id },
     });
 
-    if (existing.thumbnail && existing.thumbnail.id !== media.id) {
-      const oldPath = path.join(PRODUCT_IMAGES_DIR, existing.thumbnail.file_name);
-      try {
-        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-      } catch {
-        /* ignore */
-      }
-      await prisma.media
-        .delete({ where: { id: existing.thumbnail.id } })
-        .catch(() => undefined);
-    }
-
     const full = await prisma.product.findFirstOrThrow({
       where: { id },
       include: productWithCatalogInclude,
@@ -781,10 +786,220 @@ dashboardProductsRouter.post(
 
     return res.json({
       message: "Product image updated",
-      product: toPublicProduct(full),
+      product: await toPublicProductDetail(full),
     });
   },
 );
+
+dashboardProductsRouter.post(
+  "/:id/images",
+  (req, res, next) => {
+    productImageUpload.array("images", 12)(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({
+          message: err instanceof Error ? err.message : "Upload failed",
+        });
+      }
+      return next();
+    });
+  },
+  async (req, res) => {
+    const id = parseId(String(req.params.id));
+    if (!id) return res.status(400).json({ message: "Invalid product id" });
+
+    const files = Array.isArray(req.files) ? req.files : [];
+    if (files.length === 0) {
+      return res.status(400).json({
+        message: "At least one image is required (field: images)",
+      });
+    }
+
+    const existing = await prisma.product.findFirst({
+      where: { id, deleted_at: null },
+      select: { id: true, vendor_id: true, name: true, thumbnail_id: true },
+    });
+    if (!existing) {
+      for (const file of files) {
+        try {
+          fs.unlinkSync(file.path);
+        } catch {
+          /* ignore */
+        }
+      }
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    if (
+      !(await assertCanAccessProduct(
+        existing,
+        req.auth!.userId,
+        req.auth!.role,
+      ))
+    ) {
+      for (const file of files) {
+        try {
+          fs.unlinkSync(file.path);
+        } catch {
+          /* ignore */
+        }
+      }
+      return res.status(403).json({ message: "Insufficient permissions" });
+    }
+
+    const createdIds: bigint[] = [];
+    let firstCreatedId: bigint | null = null;
+
+    for (const file of files) {
+      const finalized = finalizeProductImageUpload(file.path, file.mimetype);
+      if (!finalized.ok) {
+        return res.status(400).json({
+          message: finalized.message,
+          code: finalized.code,
+        });
+      }
+
+      const media = await createProductMedia({
+        userId: req.auth!.userId,
+        fileName: finalized.fileName,
+        originalName: file.originalname,
+        fileSize: finalized.size,
+        mimeType: finalized.detected.mime,
+        mediableType: "Product",
+        mediableId: id,
+        altText: existing.name,
+        sortOrder: createdIds.length,
+      });
+      createdIds.push(media.id);
+      if (!firstCreatedId) firstCreatedId = media.id;
+    }
+
+    if (!existing.thumbnail_id && firstCreatedId) {
+      await prisma.product.update({
+        where: { id },
+        data: { thumbnail_id: firstCreatedId },
+      });
+    }
+
+    const full = await prisma.product.findFirstOrThrow({
+      where: { id },
+      include: productWithCatalogInclude,
+    });
+
+    return res.status(201).json({
+      message: "Product images uploaded",
+      product: await toPublicProductDetail(full),
+    });
+  },
+);
+
+dashboardProductsRouter.post("/:id/images/:mediaId/primary", async (req, res) => {
+  const id = parseId(String(req.params.id));
+  const mediaId = parseId(String(req.params.mediaId));
+  if (!id || !mediaId) {
+    return res.status(400).json({ message: "Invalid id" });
+  }
+
+  const existing = await prisma.product.findFirst({
+    where: { id, deleted_at: null },
+    select: { id: true, vendor_id: true },
+  });
+  if (!existing) return res.status(404).json({ message: "Product not found" });
+
+  if (
+    !(await assertCanAccessProduct(existing, req.auth!.userId, req.auth!.role))
+  ) {
+    return res.status(403).json({ message: "Insufficient permissions" });
+  }
+
+  const media = await prisma.media.findFirst({
+    where: {
+      id: mediaId,
+      collection_name: "product_images",
+      mediable_type: "Product",
+      mediable_id: id,
+    },
+  });
+  if (!media) return res.status(404).json({ message: "Image not found" });
+
+  await prisma.product.update({
+    where: { id },
+    data: { thumbnail_id: media.id },
+  });
+
+  const full = await prisma.product.findFirstOrThrow({
+    where: { id },
+    include: productWithCatalogInclude,
+  });
+
+  return res.json({
+    message: "Primary image updated",
+    product: await toPublicProductDetail(full),
+  });
+});
+
+dashboardProductsRouter.delete("/:id/images/:mediaId", async (req, res) => {
+  const id = parseId(String(req.params.id));
+  const mediaId = parseId(String(req.params.mediaId));
+  if (!id || !mediaId) {
+    return res.status(400).json({ message: "Invalid id" });
+  }
+
+  const existing = await prisma.product.findFirst({
+    where: { id, deleted_at: null },
+    select: { id: true, vendor_id: true, thumbnail_id: true },
+  });
+  if (!existing) return res.status(404).json({ message: "Product not found" });
+
+  if (
+    !(await assertCanAccessProduct(existing, req.auth!.userId, req.auth!.role))
+  ) {
+    return res.status(403).json({ message: "Insufficient permissions" });
+  }
+
+  const media = await prisma.media.findFirst({
+    where: {
+      id: mediaId,
+      collection_name: "product_images",
+      mediable_type: "Product",
+      mediable_id: id,
+    },
+  });
+  if (!media) return res.status(404).json({ message: "Image not found" });
+
+  if (existing.thumbnail_id === media.id) {
+    const next = await prisma.media.findFirst({
+      where: {
+        collection_name: "product_images",
+        mediable_type: "Product",
+        mediable_id: id,
+        NOT: { id: media.id },
+      },
+      orderBy: [{ sort_order: "asc" }, { id: "asc" }],
+    });
+    await prisma.product.update({
+      where: { id },
+      data: { thumbnail_id: next?.id ?? null },
+    });
+  }
+
+  const diskPath = path.join(PRODUCT_IMAGES_DIR, media.file_name);
+  try {
+    if (fs.existsSync(diskPath)) fs.unlinkSync(diskPath);
+  } catch {
+    /* ignore */
+  }
+  await prisma.media.delete({ where: { id: media.id } }).catch(() => undefined);
+
+  const full = await prisma.product.findFirstOrThrow({
+    where: { id },
+    include: productWithCatalogInclude,
+  });
+
+  return res.json({
+    message: "Product image deleted",
+    product: await toPublicProductDetail(full),
+  });
+});
 
 dashboardProductsRouter.delete("/:id", async (req, res) => {
   const id = parseId(String(req.params.id));

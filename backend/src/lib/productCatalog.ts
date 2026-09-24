@@ -170,4 +170,13 @@ export function toPublicProduct(row: ProductRow) {
   };
 }
 
+/** Detail payload with gallery media for create/edit screens. */
+export async function toPublicProductDetail(row: ProductRow) {
+  const gallery = await listProductGallery(row.id);
+  return {
+    ...toPublicProduct(row),
+    gallery,
+  };
+}
+
 export type PublicProduct = ReturnType<typeof toPublicProduct>;
