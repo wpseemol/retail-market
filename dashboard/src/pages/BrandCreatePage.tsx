@@ -1,18 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ApiError, apiFetch } from "@/lib/api";
+import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { slugifyClient, type Brand } from "@/lib/brands";
 import {
   brandFormSchema,
   toBrandApiBody,
+  validateBrandImageFile,
   type BrandFormValues,
 } from "@/lib/validators/brand";
 import { useAuthStore } from "@/store/auth";
 import {
   BrandFormHeader,
   BrandFormSection,
+  BrandImageDropzone,
   BrandLivePreview,
   BrandStickyActions,
 } from "@/components/brands/BrandFormShell";
@@ -42,6 +44,9 @@ export function BrandCreatePage() {
   const [slugTouched, setSlugTouched] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<BrandFormValues>({
     resolver: zodResolver(brandFormSchema),
@@ -82,8 +87,36 @@ export function BrandCreatePage() {
     return () => window.clearTimeout(handle);
   }, [name, slugTouched, token, form]);
 
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
+
+  function onPickImage(file: File | null) {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    if (file) {
+      const checked = validateBrandImageFile(file);
+      if (!checked.ok) {
+        setSubmitError(checked.message);
+        setImageFile(null);
+        setImagePreview(null);
+        if (fileRef.current) fileRef.current.value = "";
+        return;
+      }
+    }
+    setSubmitError(null);
+    setImageFile(file);
+    setImagePreview(file ? URL.createObjectURL(file) : null);
+  }
+
   async function onSubmit(values: BrandFormValues) {
     if (!token) return;
+    const imageCheck = validateBrandImageFile(imageFile);
+    if (!imageCheck.ok) {
+      setSubmitError(imageCheck.message);
+      return;
+    }
     setSubmitError(null);
     try {
       const data = await apiFetch<{ brand: Brand }>("/api/dashboard/brands", {
@@ -91,6 +124,17 @@ export function BrandCreatePage() {
         token,
         body: toBrandApiBody(values),
       });
+
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append("image", imageFile);
+        await apiUpload<{ brand: Brand }>(
+          `/api/dashboard/brands/${data.brand.id}/image`,
+          formData,
+          { token },
+        );
+      }
+
       navigate(`/brands/${data.brand.id}`);
     } catch (err) {
       setSubmitError(
@@ -103,7 +147,7 @@ export function BrandCreatePage() {
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-4">
       <BrandFormHeader
         title="Add brand"
-        subtitle="Create a shared catalog brand with Zod-validated fields. Assign it when adding products."
+        subtitle="Create a shared catalog brand with an optional logo. Assign it when adding products."
       />
 
       <Form {...form}>
@@ -116,8 +160,23 @@ export function BrandCreatePage() {
             <BrandFormSection
               step="01"
               title="Brand identity"
-              description="Name and URL slug used across the product catalog."
+              description="Logo, name, and URL slug used across the product catalog."
             >
+              <BrandImageDropzone
+                previewUrl={imagePreview}
+                disabled={form.formState.isSubmitting}
+                inputRef={fileRef}
+                onPick={() => fileRef.current?.click()}
+                onFile={onPickImage}
+                onClear={
+                  imageFile
+                    ? () => {
+                        onPickImage(null);
+                        if (fileRef.current) fileRef.current.value = "";
+                      }
+                    : undefined
+                }
+              />
               <FormField
                 control={form.control}
                 name="name"
@@ -263,6 +322,7 @@ export function BrandCreatePage() {
             description={description}
             isActive={isActive}
             sortOrder={sortOrder}
+            imageUrl={imagePreview}
           />
         </form>
       </Form>

@@ -1,9 +1,20 @@
+import fs from "node:fs";
+import path from "node:path";
 import { Router } from "express";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
+import {
+  finalizeCategoryImageUpload,
+  CATEGORY_IMAGE_MAX_BYTES,
+  PRODUCT_IMAGES_RELATIVE,
+  sanitizeOriginalName,
+} from "../lib/categoryImage.js";
+import { PRODUCT_IMAGES_DIR } from "../lib/productImage.js";
 import { prisma } from "../lib/prisma.js";
 import { uniqueVendorSlug } from "../lib/slug.js";
+import { toPublicMedia } from "../lib/user.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
+import { brandImageUpload } from "../middleware/upload.js";
 import {
   brandListQuerySchema,
   createBrandSchema,
@@ -42,6 +53,8 @@ function toPublicBrand(row: {
   sort_order: number;
   created_at: Date;
   updated_at: Date;
+  image_id?: bigint | null;
+  image?: Parameters<typeof toPublicMedia>[0];
   _count?: { products: number };
 }) {
   return {
@@ -51,6 +64,8 @@ function toPublicBrand(row: {
     description: row.description,
     is_active: row.is_active,
     sort_order: row.sort_order,
+    image_id: row.image_id?.toString() ?? null,
+    image: toPublicMedia(row.image),
     created_at: row.created_at,
     updated_at: row.updated_at,
     products_count: row._count?.products ?? 0,
@@ -70,6 +85,7 @@ async function slugTaken(slug: string, excludeId?: bigint) {
 }
 
 const brandInclude = {
+  image: true,
   _count: {
     select: { products: { where: { deleted_at: null } } },
   },
@@ -185,6 +201,122 @@ dashboardBrandsRouter.post("/", async (req, res) => {
     brand: toPublicBrand(row),
   });
 });
+
+/** Upload / replace brand logo — elevated only. Max 1 MB; resized server-side. */
+dashboardBrandsRouter.post(
+  "/:id/image",
+  (req, res, next) => {
+    if (!canManage(req.auth!.role)) {
+      return res.status(403).json({
+        message:
+          "Only super admin, admin, or moderator can set brand images",
+      });
+    }
+    brandImageUpload.single("image")(req, res, (err) => {
+      if (err) {
+        const isTooLarge =
+          err instanceof Error &&
+          ("code" in err
+            ? (err as { code?: string }).code === "LIMIT_FILE_SIZE"
+            : /file too large|File too large/i.test(err.message));
+        return res.status(400).json({
+          message: isTooLarge
+            ? `Brand image must be ${Math.floor(CATEGORY_IMAGE_MAX_BYTES / (1024 * 1024))} MB or smaller`
+            : err instanceof Error
+              ? err.message
+              : "Upload failed",
+          code: isTooLarge ? "BRAND_IMAGE_TOO_LARGE" : undefined,
+        });
+      }
+      return next();
+    });
+  },
+  async (req, res) => {
+    const id = parseId(String(req.params.id));
+    if (!id) return res.status(400).json({ message: "Invalid brand id" });
+
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({
+        message: "Brand image is required (field: image)",
+      });
+    }
+
+    const existing = await prisma.brand.findFirst({
+      where: { id, deleted_at: null },
+      include: { image: true },
+    });
+    if (!existing) {
+      try {
+        fs.unlinkSync(file.path);
+      } catch {
+        /* ignore */
+      }
+      return res.status(404).json({ message: "Brand not found" });
+    }
+
+    const finalized = await finalizeCategoryImageUpload(
+      file.path,
+      file.mimetype,
+    );
+    if (!finalized.ok) {
+      return res.status(400).json({
+        message: finalized.message.replace(/^Category/i, "Brand"),
+        code: finalized.code?.replace(/^CATEGORY_/, "BRAND_"),
+      });
+    }
+
+    try {
+      const media = await prisma.media.create({
+        data: {
+          user_id: req.auth!.userId,
+          disk: "public",
+          file_name: finalized.fileName,
+          original_name: sanitizeOriginalName(file.originalname),
+          file_path: PRODUCT_IMAGES_RELATIVE,
+          file_size: BigInt(finalized.size),
+          mime_type: finalized.detected.mime,
+          alt_text: existing.name.slice(0, 255),
+          collection_name: "product_images",
+          is_public: true,
+          mediable_type: "Brand",
+          mediable_id: id,
+          sort_order: 0,
+        },
+      });
+
+      const row = await prisma.brand.update({
+        where: { id },
+        data: { image_id: media.id },
+        include: brandInclude,
+      });
+
+      if (existing.image && existing.image.id !== media.id) {
+        const oldPath = path.join(PRODUCT_IMAGES_DIR, existing.image.file_name);
+        try {
+          if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        } catch {
+          /* ignore */
+        }
+        await prisma.media
+          .delete({ where: { id: existing.image.id } })
+          .catch(() => undefined);
+      }
+
+      return res.json({
+        message: "Brand image updated",
+        brand: toPublicBrand(row),
+      });
+    } catch (err) {
+      try {
+        fs.unlinkSync(path.join(PRODUCT_IMAGES_DIR, finalized.fileName));
+      } catch {
+        /* ignore */
+      }
+      throw err;
+    }
+  },
+);
 
 dashboardBrandsRouter.patch("/:id", async (req, res) => {
   if (!canManage(req.auth!.role)) {

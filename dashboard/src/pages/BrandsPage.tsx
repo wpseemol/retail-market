@@ -217,8 +217,16 @@ export function BrandsPage() {
                   className="group flex flex-col gap-3 rounded-xl border border-border bg-gradient-to-br from-background to-muted/30 p-4 transition-shadow hover:shadow-md"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-brand-primary/15 bg-gradient-to-br from-brand-tint to-background text-lg font-semibold text-brand-deep">
-                      {brand.name.charAt(0).toUpperCase()}
+                    <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-brand-primary/15 bg-gradient-to-br from-brand-tint to-background text-lg font-semibold text-brand-deep">
+                      {brand.image?.path ? (
+                        <img
+                          src={brand.image.path}
+                          alt=""
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        brand.name.charAt(0).toUpperCase()
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">

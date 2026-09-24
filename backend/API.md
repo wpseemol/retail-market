@@ -266,7 +266,7 @@ Auth: Bearer **`super_admin`** or **`vendor`**. Vendors only see/manage their ow
 
 ## Dashboard brands — `/api/dashboard/brands`
 
-Auth: STAFF. Create/update/delete: **elevated** only. Vendors read **active** brands only.
+Auth: STAFF. Create/update/delete/image: **elevated** only. Vendors read **active** brands only.
 
 Validators: `backend/src/validators/brand.ts` (Zod + SQL/PHP/JS injection guards)
 
@@ -276,14 +276,17 @@ Validators: `backend/src/validators/brand.ts` (Zod + SQL/PHP/JS injection guards
 | GET | `/slug-preview?name=` | `{ slug }` · name validated for injection |
 | GET | `/:id` | |
 | POST | `/` | elevated · Zod body |
+| POST | `/:id/image` | elevated · multipart field **`image`** · max **1 MB** · resized |
 | PATCH | `/:id` | elevated · Zod partial |
 | DELETE | `/:id` | elevated soft-delete |
 
 **Body:** `name` (2–120), `slug?` (kebab), `description?` (≤500 or null), `is_active?`, `sort_order?` (0–999999)
 
-**Brand object:** `id`, `name`, `slug`, `description`, `is_active`, `sort_order`, timestamps, `products_count`.
+**Brand object:** `id`, `name`, `slug`, `description`, `is_active`, `sort_order`, `image_id`, `image` (public media), timestamps, `products_count`.
 
-Dashboard UI: react-hook-form + shadcn Form + Zod (`dashboard/src/lib/validators/brand.ts`).
+Create flow: JSON create first, then optional `POST .../image` with field `image`.
+
+Dashboard UI: react-hook-form + shadcn Form + Zod (`dashboard/src/lib/validators/brand.ts`) + client image pre-check.
 
 ---
 
@@ -493,6 +496,7 @@ Includes: `id`, `vendor_id`, `category_id`, `brand_id`, `thumbnail_id`, `name`, 
 |----------|------------|-----|
 | `POST /api/auth/me/avatar` | `avatar` | 5 MB |
 | `POST /api/dashboard/categories/:id/image` | `image` | **1 MB** |
+| `POST /api/dashboard/brands/:id/image` | `image` | **1 MB** |
 | `POST /api/dashboard/products/:id/thumbnail` | `image` | 5 MB |
 | `POST /api/dashboard/products/:id/images` | `images` | 5 MB × 12 |
 | `POST /api/dashboard/shops/:id/logo` | `logo` | 5 MB |

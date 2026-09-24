@@ -1,6 +1,13 @@
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Layers3, Tag } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ImagePlus,
+  Layers3,
+  Tag,
+  Upload,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -58,6 +65,92 @@ export function BrandFormHeader({
   );
 }
 
+type BrandImageDropzoneProps = {
+  previewUrl?: string | null;
+  uploading?: boolean;
+  disabled?: boolean;
+  onPick: () => void;
+  onClear?: () => void;
+  inputRef: RefObject<HTMLInputElement | null>;
+  onFile: (file: File | null) => void;
+};
+
+export function BrandImageDropzone({
+  previewUrl,
+  uploading,
+  disabled,
+  onPick,
+  onClear,
+  inputRef,
+  onFile,
+}: BrandImageDropzoneProps) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-dashed border-border bg-gradient-to-br from-muted/40 via-background to-brand-tint/20">
+      <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
+        <div className="relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+          {previewUrl ? (
+            <img
+              src={previewUrl}
+              alt=""
+              className="size-full object-cover"
+            />
+          ) : (
+            <div className="flex flex-col items-center gap-1 text-muted-foreground">
+              <ImagePlus className="size-6" />
+              <span className="text-[10px] font-medium uppercase tracking-wide">
+                Logo
+              </span>
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1 space-y-2">
+          <div>
+            <p className="text-sm font-medium">Brand image</p>
+            <p className="text-xs text-muted-foreground">
+              Optional. JPEG, PNG, WebP, or GIF · max 1 MB. Server resizes
+              automatically.
+            </p>
+          </div>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            className="hidden"
+            onChange={(e) => onFile(e.target.files?.[0] ?? null)}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={disabled || uploading}
+              onClick={onPick}
+            >
+              <Upload className="size-3.5" />
+              {uploading
+                ? "Uploading…"
+                : previewUrl
+                  ? "Replace image"
+                  : "Upload image"}
+            </Button>
+            {previewUrl && onClear ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={disabled || uploading}
+                onClick={onClear}
+              >
+                Remove
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function BrandLivePreview({
   name,
   slug,
@@ -65,6 +158,7 @@ export function BrandLivePreview({
   isActive,
   sortOrder,
   productsCount = 0,
+  imageUrl,
   mode,
 }: {
   name: string;
@@ -73,6 +167,7 @@ export function BrandLivePreview({
   isActive: boolean;
   sortOrder: number | string;
   productsCount?: number;
+  imageUrl?: string | null;
   mode: "create" | "edit";
 }) {
   const displayName = name.trim() || "Brand name";
@@ -98,8 +193,16 @@ export function BrandLivePreview({
           </Badge>
         </div>
         <div className="relative mt-6 flex items-end gap-4">
-          <div className="flex size-16 items-center justify-center rounded-2xl border border-white/20 bg-white/15 text-2xl font-semibold shadow-lg backdrop-blur-sm">
-            {initial}
+          <div className="flex size-16 items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-white/15 text-2xl font-semibold shadow-lg backdrop-blur-sm">
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt=""
+                className="size-full object-cover"
+              />
+            ) : (
+              initial
+            )}
           </div>
           <div className="min-w-0 pb-0.5">
             <h3 className="truncate text-xl font-semibold tracking-tight">
@@ -115,8 +218,16 @@ export function BrandLivePreview({
       <div className="-mt-5 space-y-4 px-5 pb-5">
         <div className="rounded-xl border border-border bg-background p-4 shadow-sm">
           <div className="flex items-start gap-3">
-            <div className="flex size-12 items-center justify-center rounded-xl border border-brand-primary/15 bg-gradient-to-br from-brand-tint to-background text-brand-deep">
-              <Tag className="size-5" strokeWidth={1.75} />
+            <div className="flex size-12 items-center justify-center overflow-hidden rounded-xl border border-brand-primary/15 bg-gradient-to-br from-brand-tint to-background text-brand-deep">
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt=""
+                  className="size-full object-cover"
+                />
+              ) : (
+                <Tag className="size-5" strokeWidth={1.75} />
+              )}
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">{displayName}</p>

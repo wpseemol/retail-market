@@ -105,6 +105,9 @@ export const categoryImageUpload = multer({
   fileFilter: imageFileFilter,
 });
 
+/** Brand logo images — same limits as category cover (1 MB, resized). */
+export const brandImageUpload = categoryImageUpload;
+
 const shopImageStorage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     cb(null, SHOP_IMAGES_DIR);

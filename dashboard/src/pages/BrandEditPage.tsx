@@ -1,19 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Trash2 } from "lucide-react";
-import { ApiError, apiFetch } from "@/lib/api";
+import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { slugifyClient, type Brand } from "@/lib/brands";
 import {
   brandFormSchema,
   toBrandApiBody,
+  validateBrandImageFile,
   type BrandFormValues,
 } from "@/lib/validators/brand";
 import { useAuthStore } from "@/store/auth";
 import {
   BrandFormHeader,
   BrandFormSection,
+  BrandImageDropzone,
   BrandLivePreview,
   BrandStickyActions,
 } from "@/components/brands/BrandFormShell";
@@ -49,6 +51,8 @@ export function BrandEditPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<BrandFormValues>({
     resolver: zodResolver(brandFormSchema),
@@ -124,6 +128,38 @@ export function BrandEditPage() {
     }
   }
 
+  async function onUploadImage(file: File | null) {
+    if (!token || !id || !file) return;
+    const checked = validateBrandImageFile(file);
+    if (!checked.ok) {
+      setSubmitError(checked.message);
+      setSaveSuccess(null);
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
+    setImageUploading(true);
+    setSubmitError(null);
+    setSaveSuccess(null);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const data = await apiUpload<{ brand: Brand }>(
+        `/api/dashboard/brands/${id}/image`,
+        formData,
+        { token },
+      );
+      setBrand(data.brand);
+      setSaveSuccess("Brand image updated");
+    } catch (err) {
+      setSubmitError(
+        err instanceof ApiError ? err.message : "Image upload failed",
+      );
+    } finally {
+      setImageUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
   async function onDelete() {
     if (!token || !id) return;
     if (!window.confirm("Delete this brand? Products keep their data.")) return;
@@ -171,7 +207,7 @@ export function BrandEditPage() {
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-4">
       <BrandFormHeader
         title={brand.name}
-        subtitle={`Update brand details · /${brand.slug}`}
+        subtitle={`Update logo and brand details · /${brand.slug}`}
         badge={
           <Badge
             variant="outline"
@@ -196,8 +232,16 @@ export function BrandEditPage() {
             <BrandFormSection
               step="01"
               title="Brand identity"
-              description="Name and slug shown when assigning brands to products."
+              description="Logo, name, and slug shown when assigning brands to products."
             >
+              <BrandImageDropzone
+                previewUrl={brand.image?.path}
+                uploading={imageUploading}
+                disabled={form.formState.isSubmitting || deleting}
+                inputRef={fileRef}
+                onPick={() => fileRef.current?.click()}
+                onFile={(file) => void onUploadImage(file)}
+              />
               <FormField
                 control={form.control}
                 name="name"
@@ -347,6 +391,7 @@ export function BrandEditPage() {
             isActive={isActive}
             sortOrder={sortOrder}
             productsCount={brand.products_count ?? 0}
+            imageUrl={brand.image?.path}
           />
         </form>
       </Form>

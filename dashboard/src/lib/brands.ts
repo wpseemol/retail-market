@@ -1,3 +1,10 @@
+export type BrandMedia = {
+  id: string;
+  path: string;
+  file_name: string;
+  mime_type?: string | null;
+};
+
 export type Brand = {
   id: string;
   name: string;
@@ -5,6 +12,8 @@ export type Brand = {
   description?: string | null;
   is_active: boolean;
   sort_order: number;
+  image_id?: string | null;
+  image?: BrandMedia | null;
   products_count?: number;
 };
 

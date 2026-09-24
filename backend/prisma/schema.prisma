@@ -170,6 +170,7 @@ model Media {
   uploader            User?            @relation("MediaUploader", fields: [user_id], references: [id], onDelete: SetNull)
   avatarForUsers      User[]           @relation("UserAvatar")
   categoryImages      Category[]       @relation("CategoryImage")
+  brandImages         Brand[]          @relation("BrandImage")
   productThumbnails   Product[]        @relation("ProductThumbnail")
   variantImages       ProductVariant[] @relation("VariantImage")
   vendorLogos         Vendor[]         @relation("VendorLogo")
@@ -252,6 +253,8 @@ model Category {
 /// Shared product brands (create brands first, then assign on products).
 model Brand {
   id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  /// Brand logo / mark from `medias` (collection: product_images).
+  image_id    BigInt?   @unique @db.UnsignedBigInt
   name        String    @db.VarChar(120)
   slug        String    @unique @db.VarChar(140)
   description String?   @db.VarChar(500)
@@ -261,6 +264,7 @@ model Brand {
   updated_at  DateTime  @updatedAt
   deleted_at  DateTime?
 
+  image    Media?    @relation("BrandImage", fields: [image_id], references: [id], onDelete: SetNull)
   products Product[]
 
   @@index([is_active])
