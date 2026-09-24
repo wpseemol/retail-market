@@ -1,6 +1,6 @@
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ImagePlus, Package, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Package, Plus, Trash2 } from "lucide-react";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import type { Category } from "@/lib/categories";
 import type { Brand } from "@/lib/brands";
@@ -13,7 +13,13 @@ import {
   type Product,
   type ProductType,
 } from "@/lib/products";
+import { getCategoryLucideIcon } from "@/lib/categoryIcons";
 import { useAuthStore } from "@/store/auth";
+import {
+  ProductImageGalleryField,
+  type LocalProductImage,
+} from "@/components/products/ProductImageGalleryField";
+import { RichTextEditor } from "@/components/products/RichTextEditor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,7 +56,6 @@ export function ProductEditPage() {
     user?.role === "super_admin" ||
     user?.role === "admin" ||
     user?.role === "moderator";
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [shops, setShops] = useState<Shop[]>([]);
@@ -62,12 +67,15 @@ export function ProductEditPage() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [shortDescription, setShortDescription] = useState("");
+  const [description, setDescription] = useState("");
   const [type, setType] = useState<ProductType>("simple");
   const [status, setStatus] = useState<"draft" | "active">("draft");
   const [price, setPrice] = useState("0");
   const [stock, setStock] = useState("0");
   const [options, setOptions] = useState<OptionDraft[]>([]);
   const [variants, setVariants] = useState<VariantDraft[]>([]);
+  const [localImages, setLocalImages] = useState<LocalProductImage[]>([]);
+  const [localPrimaryKey, setLocalPrimaryKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -115,6 +123,7 @@ export function ProductEditPage() {
         setName(next.name);
         setSlug(next.slug);
         setShortDescription(next.short_description ?? "");
+        setDescription(next.description ?? "");
         setType(next.type);
         setStatus(next.status === "active" ? "active" : "draft");
         setPrice(String(next.price ?? 0));
@@ -185,12 +194,17 @@ export function ProductEditPage() {
     setSaveSuccess(null);
 
     try {
+      if (localImages.length > 0) {
+        await uploadLocalImages(localImages);
+      }
+
       const body: Record<string, unknown> = {
         category_id: categoryId,
         brand_id: brandId || null,
         name: name.trim(),
         slug: slug.trim(),
         short_description: shortDescription.trim() || null,
+        description: description.trim() || null,
         type,
         status,
         price: Number(price) || 0,
@@ -223,27 +237,83 @@ export function ProductEditPage() {
     }
   }
 
-  async function onUpload(file: File | null) {
-    if (!token || !id || !file) return;
+  async function uploadLocalImages(files: LocalProductImage[]) {
+    if (!token || !id || files.length === 0) return;
     setUploading(true);
     setSaveError(null);
     try {
+      const ordered = [...files];
+      if (localPrimaryKey) {
+        const primaryIndex = ordered.findIndex(
+          (img) => img.key === localPrimaryKey,
+        );
+        if (primaryIndex > 0) {
+          const [primary] = ordered.splice(primaryIndex, 1);
+          ordered.unshift(primary);
+        }
+      }
+
       const form = new FormData();
-      form.append("image", file);
+      for (const img of ordered) {
+        form.append("images", img.file);
+      }
       const data = await apiUpload<{ product: Product }>(
-        `/api/dashboard/products/${id}/thumbnail`,
+        `/api/dashboard/products/${id}/images`,
         form,
         { token },
       );
       setProduct(data.product);
-      setSaveSuccess("Product image updated");
+      for (const img of localImages) URL.revokeObjectURL(img.preview);
+      setLocalImages([]);
+      setLocalPrimaryKey(null);
+      setSaveSuccess("Product images uploaded");
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : "Image upload failed";
+      setSaveError(message);
+      throw err instanceof Error ? err : new Error(message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function onRemoveRemoteImage(mediaId: string) {
+    if (!token || !id) return;
+    setUploading(true);
+    setSaveError(null);
+    try {
+      const data = await apiFetch<{ product: Product }>(
+        `/api/dashboard/products/${id}/images/${mediaId}`,
+        { method: "DELETE", token },
+      );
+      setProduct(data.product);
+      setSaveSuccess("Image removed");
     } catch (err) {
       setSaveError(
-        err instanceof ApiError ? err.message : "Image upload failed",
+        err instanceof ApiError ? err.message : "Failed to remove image",
       );
     } finally {
       setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
+  async function onSetPrimaryRemote(mediaId: string) {
+    if (!token || !id) return;
+    setUploading(true);
+    setSaveError(null);
+    try {
+      const data = await apiFetch<{ product: Product }>(
+        `/api/dashboard/products/${id}/images/${mediaId}/primary`,
+        { method: "POST", token },
+      );
+      setProduct(data.product);
+      setSaveSuccess("Primary image updated");
+    } catch (err) {
+      setSaveError(
+        err instanceof ApiError ? err.message : "Failed to set primary image",
+      );
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -282,7 +352,7 @@ export function ProductEditPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <Button asChild variant="ghost" size="sm" className="-ml-2 mb-2">
@@ -301,53 +371,53 @@ export function ProductEditPage() {
         </Badge>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="mb-1 flex size-9 items-center justify-center rounded-md bg-brand-tint text-brand-deep">
-            <Package className="size-4" />
-          </div>
-          <CardTitle>Edit product</CardTitle>
-          <CardDescription>
-            Update shop, category, brand, and variants.
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={onSave}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Product image</Label>
-              <div className="flex items-center gap-4">
-                <div className="flex size-16 items-center justify-center overflow-hidden rounded-md border bg-muted">
-                  {product.thumbnail?.path ? (
-                    <img
-                      src={product.thumbnail.path}
-                      alt=""
-                      className="size-full object-cover"
-                    />
-                  ) : (
-                    <ImagePlus className="size-5 text-muted-foreground" />
-                  )}
-                </div>
-                <div>
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    className="hidden"
-                    onChange={(e) => void onUpload(e.target.files?.[0] ?? null)}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={uploading}
-                    onClick={() => fileRef.current?.click()}
-                  >
-                    {uploading ? "Uploading…" : "Change image"}
-                  </Button>
-                </div>
-              </div>
+      <form onSubmit={onSave} className="space-y-6">
+        <Card>
+          <CardHeader>
+            <div className="mb-1 flex size-9 items-center justify-center rounded-md bg-brand-tint text-brand-deep">
+              <Package className="size-4" />
             </div>
+            <CardTitle>Media</CardTitle>
+            <CardDescription>
+              Manage gallery photos and choose the primary listing image.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <ProductImageGalleryField
+              images={product.gallery ?? []}
+              primaryId={product.thumbnail_id ?? product.thumbnail?.id ?? null}
+              localImages={localImages}
+              localPrimaryKey={localPrimaryKey}
+              onLocalImagesChange={setLocalImages}
+              onLocalPrimaryChange={setLocalPrimaryKey}
+              onRemoveRemote={(mediaId) => void onRemoveRemoteImage(mediaId)}
+              onSetPrimaryRemote={(mediaId) => void onSetPrimaryRemote(mediaId)}
+              disabled={uploading || saving}
+            />
+            {localImages.length > 0 ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={uploading}
+                onClick={() => void uploadLocalImages(localImages)}
+              >
+                {uploading
+                  ? "Uploading…"
+                  : `Upload ${localImages.length} image${localImages.length === 1 ? "" : "s"}`}
+              </Button>
+            ) : null}
+          </CardContent>
+        </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>Edit product</CardTitle>
+            <CardDescription>
+              Update shop, category, brand, description, and variants.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             {isElevated ? (
               <div className="space-y-2">
                 <Label>Shop</Label>
@@ -366,47 +436,55 @@ export function ProductEditPage() {
               </div>
             ) : null}
 
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <Select
-                value={categoryId || undefined}
-                onValueChange={setCategoryId}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select
+                  value={categoryId || undefined}
+                  onValueChange={setCategoryId}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c) => {
+                      const Icon = getCategoryLucideIcon(c.icon);
+                      return (
+                        <SelectItem key={c.id} value={c.id}>
+                          <span className="inline-flex items-center gap-2">
+                            <Icon className="size-3.5 text-brand-deep" />
+                            {c.name}
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-2">
-              <Label>Brand</Label>
-              <Select
-                value={brandId || undefined}
-                onValueChange={setBrandId}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select brand" />
-                </SelectTrigger>
-                <SelectContent>
-                  {brands.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                <Link to="/brands/new" className="text-brand-primary underline">
-                  Create brand
-                </Link>
-              </p>
+              <div className="space-y-2">
+                <Label>Brand</Label>
+                <Select
+                  value={brandId || undefined}
+                  onValueChange={setBrandId}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select brand" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {brands.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>
+                        {b.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  <Link to="/brands/new" className="text-brand-primary underline">
+                    Create brand
+                  </Link>
+                </p>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -433,6 +511,18 @@ export function ProductEditPage() {
                 id="short"
                 value={shortDescription}
                 onChange={(e) => setShortDescription(e.target.value)}
+                maxLength={500}
+                placeholder="One-line summary for listings"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <RichTextEditor
+                value={description}
+                onChange={setDescription}
+                disabled={saving}
+                placeholder="Materials, fit, care, and other product details…"
               />
             </div>
 
@@ -638,8 +728,8 @@ export function ProductEditPage() {
               {deleting ? "Deleting…" : "Delete"}
             </Button>
           </CardFooter>
-        </form>
-      </Card>
+        </Card>
+      </form>
     </div>
   );
 }

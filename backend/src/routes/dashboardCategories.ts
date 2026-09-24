@@ -62,6 +62,21 @@ const createCategorySchema = z.object({
       ),
   ).optional(),
   description: withSafeInput(z.string().trim().max(5000)).optional().nullable(),
+  icon: z
+    .union([
+      withSafeInput(
+        z
+          .string()
+          .trim()
+          .max(80)
+          .regex(
+            /^[A-Z][A-Za-z0-9]*$/,
+            "Icon must be a valid Lucide icon name (PascalCase)",
+          ),
+      ),
+      z.null(),
+    ])
+    .optional(),
   parent_id: z.string().regex(/^\d+$/).optional().nullable(),
   is_active: z.boolean().optional(),
   sort_order: z.number().int().min(0).max(999_999).optional(),
@@ -85,6 +100,7 @@ function toPublicCategory(
     id: bigint;
     parent_id: bigint | null;
     image_id: bigint | null;
+    icon: string | null;
     name: string;
     slug: string;
     description: string | null;
@@ -101,6 +117,7 @@ function toPublicCategory(
     id: row.id.toString(),
     parent_id: row.parent_id?.toString() ?? null,
     image_id: row.image_id?.toString() ?? null,
+    icon: row.icon,
     name: row.name,
     slug: row.slug,
     description: row.description,
@@ -366,6 +383,7 @@ dashboardCategoriesRouter.post("/", async (req, res) => {
       name: data.name,
       slug,
       description: data.description ?? null,
+      icon: data.icon ?? null,
       parent_id: parentId,
       is_active: data.is_active ?? true,
       sort_order: data.sort_order ?? 0,
@@ -437,6 +455,7 @@ dashboardCategoriesRouter.patch("/:id", async (req, res) => {
       slug: data.slug,
       description:
         data.description === undefined ? undefined : data.description,
+      icon: data.icon === undefined ? undefined : data.icon,
       parent_id: parentId,
       is_active: data.is_active,
       sort_order: data.sort_order,

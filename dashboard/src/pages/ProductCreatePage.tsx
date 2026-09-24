@@ -12,6 +12,7 @@ import {
   type Product,
   type ProductType,
 } from "@/lib/products";
+import { getCategoryLucideIcon } from "@/lib/categoryIcons";
 import { useAuthStore } from "@/store/auth";
 import {
   ProductImageGalleryField,
@@ -345,11 +346,17 @@ export function ProductCreatePage() {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
+                    {categories.map((c) => {
+                      const Icon = getCategoryLucideIcon(c.icon);
+                      return (
+                        <SelectItem key={c.id} value={c.id}>
+                          <span className="inline-flex items-center gap-2">
+                            <Icon className="size-3.5 text-brand-deep" />
+                            {c.name}
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>

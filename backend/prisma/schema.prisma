@@ -225,6 +225,8 @@ model Category {
   parent_id        BigInt?   @db.UnsignedBigInt
   /// Category cover image from `medias` (collection: product_images).
   image_id         BigInt?   @unique @db.UnsignedBigInt
+  /// Lucide SVG icon key for catalog display (e.g. "Smartphone").
+  icon             String?   @db.VarChar(80)
   name             String    @db.VarChar(150)
   slug             String    @unique @db.VarChar(160)
   description      String?   @db.Text

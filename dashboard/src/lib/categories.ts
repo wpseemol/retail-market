@@ -10,6 +10,7 @@ export type Category = {
   id: string;
   parent_id: string | null;
   image_id?: string | null;
+  icon?: string | null;
   name: string;
   slug: string;
   description?: string | null;

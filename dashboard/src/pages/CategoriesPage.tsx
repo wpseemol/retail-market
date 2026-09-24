@@ -1,9 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FolderTree, ImageIcon, Pencil, Plus, Search } from "lucide-react";
+import {
+  FolderTree,
+  Package,
+  Pencil,
+  Plus,
+  Search,
+  Layers,
+} from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
 import type { Category } from "@/lib/categories";
+import { CATEGORY_ICONS } from "@/lib/categoryIcons";
 import { useAuthStore } from "@/store/auth";
+import { CategoryIconBadge } from "@/components/categories/CategoryIconPicker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,33 +23,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 const MANAGE_ROLES = ["super_admin", "admin", "moderator"] as const;
-
-function CategoryIcon({ category }: { category: Category }) {
-  if (category.image?.path) {
-    return (
-      <img
-        src={category.image.path}
-        alt=""
-        className="size-9 rounded-md object-cover"
-      />
-    );
-  }
-  return (
-    <div className="flex size-9 items-center justify-center rounded-md border border-border bg-muted text-muted-foreground">
-      <ImageIcon className="size-4" />
-    </div>
-  );
-}
 
 export function CategoriesPage() {
   const { token, user } = useAuthStore();
@@ -53,6 +37,9 @@ export function CategoriesPage() {
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [searchDraft, setSearchDraft] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">(
+    "all",
+  );
 
   useEffect(() => {
     if (!token) return;
@@ -64,6 +51,9 @@ export function CategoriesPage() {
       try {
         const params = new URLSearchParams({ limit: "100" });
         if (q.trim()) params.set("q", q.trim());
+        if (statusFilter === "active") params.set("active", "true");
+        if (statusFilter === "inactive") params.set("active", "false");
+        if (statusFilter === "all") params.set("active", "all");
         const data = await apiFetch<{
           categories: Category[];
           pagination: { total: number };
@@ -85,9 +75,10 @@ export function CategoriesPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, q]);
+  }, [token, q, statusFilter]);
 
-  const colSpan = canManage ? 7 : 6;
+  const activeCount = categories.filter((c) => c.is_active).length;
+  const withIconCount = categories.filter((c) => c.icon || c.image).length;
 
   return (
     <div className="flex flex-col gap-6">
@@ -97,8 +88,8 @@ export function CategoriesPage() {
             Product categories
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Shared catalog categories for every store. Staff manage the tree;
-            shops pick a category when adding products.
+            Shared catalog tree with SVG icons. Staff manage categories; shops
+            pick one when adding products.
           </p>
         </div>
         {canManage ? (
@@ -111,15 +102,82 @@ export function CategoriesPage() {
         ) : null}
       </div>
 
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Card className="border-border/80">
+          <CardContent className="flex items-center gap-3 pt-5">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-brand-tint text-brand-deep">
+              <Layers className="size-4" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Total</p>
+              <p className="text-xl font-semibold tabular-nums">{total}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/80">
+          <CardContent className="flex items-center gap-3 pt-5">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-brand-tint text-brand-deep">
+              <FolderTree className="size-4" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Active (page)</p>
+              <p className="text-xl font-semibold tabular-nums">{activeCount}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/80">
+          <CardContent className="flex items-center gap-3 pt-5">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-brand-tint text-brand-deep">
+              <Package className="size-4" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Icon library</p>
+              <p className="text-xl font-semibold tabular-nums">
+                {CATEGORY_ICONS.length}+
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                {withIconCount} with icon on this page
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
-        <CardHeader>
-          <div className="mb-1 flex size-9 items-center justify-center rounded-md bg-brand-tint text-brand-deep">
-            <FolderTree className="size-4" />
+        <CardHeader className="pb-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="mb-2 flex size-9 items-center justify-center rounded-md bg-brand-tint text-brand-deep">
+                <FolderTree className="size-4" />
+              </div>
+              <CardTitle>Catalog</CardTitle>
+              <CardDescription>
+                Browse, search, and edit platform categories
+              </CardDescription>
+            </div>
+            <div className="flex rounded-lg border border-border bg-muted/40 p-0.5">
+              {(
+                [
+                  ["all", "All"],
+                  ["active", "Active"],
+                  ["inactive", "Inactive"],
+                ] as const
+              ).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setStatusFilter(key)}
+                  className={
+                    statusFilter === key
+                      ? "rounded-md bg-background px-3 py-1.5 text-xs font-medium shadow-sm"
+                      : "rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                  }
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
-          <CardTitle>All categories</CardTitle>
-          <CardDescription>
-            {total} categor{total === 1 ? "y" : "ies"} · platform-wide
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <form
@@ -149,83 +207,105 @@ export function CategoriesPage() {
             </p>
           ) : null}
 
-          <div className="overflow-x-auto rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[56px]">Icon</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead>Parent</TableHead>
-                  <TableHead>Products</TableHead>
-                  <TableHead>Status</TableHead>
-                  {canManage ? <TableHead className="w-[80px]" /> : null}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={colSpan}
-                      className="text-muted-foreground"
-                    >
-                      Loading…
-                    </TableCell>
-                  </TableRow>
-                ) : categories.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={colSpan}
-                      className="text-muted-foreground"
-                    >
-                      No categories yet.
-                      {canManage ? (
-                        <>
-                          {" "}
-                          <Link
-                            to="/categories/new"
-                            className="text-brand-primary underline"
-                          >
-                            Add one
-                          </Link>
-                        </>
-                      ) : null}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  categories.map((cat) => (
-                    <TableRow key={cat.id}>
-                      <TableCell>
-                        <CategoryIcon category={cat} />
-                      </TableCell>
-                      <TableCell className="font-medium">{cat.name}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        /{cat.slug}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {cat.parent?.name ?? "—"}
-                      </TableCell>
-                      <TableCell>{cat.products_count ?? 0}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
+          {loading ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">
+              Loading categories…
+            </p>
+          ) : categories.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
+              <p className="text-sm text-muted-foreground">No categories yet.</p>
+              {canManage ? (
+                <Button asChild className="mt-4" size="sm">
+                  <Link to="/categories/new">
+                    <Plus />
+                    Create first category
+                  </Link>
+                </Button>
+              ) : null}
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {categories.map((cat) => (
+                <div
+                  key={cat.id}
+                  className="group relative flex flex-col gap-3 rounded-xl border border-border bg-gradient-to-br from-background to-muted/30 p-4 transition-shadow hover:shadow-md"
+                >
+                  <div className="flex items-start gap-3">
+                    <CategoryIconBadge
+                      icon={cat.icon}
+                      imageUrl={cat.image?.path}
+                      name={cat.name}
+                      size="md"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold tracking-tight">
+                            {cat.name}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            /{cat.slug}
+                          </p>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={
+                            cat.is_active
+                              ? "border-brand-primary/30 bg-brand-tint/50 text-brand-deep capitalize"
+                              : "capitalize"
+                          }
+                        >
                           {cat.is_active ? "active" : "inactive"}
                         </Badge>
-                      </TableCell>
-                      {canManage ? (
-                        <TableCell>
-                          <Button asChild variant="ghost" size="icon">
-                            <Link to={`/categories/${cat.id}`}>
-                              <Pencil />
-                            </Link>
-                          </Button>
-                        </TableCell>
+                      </div>
+                      {cat.description ? (
+                        <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">
+                          {cat.description}
+                        </p>
                       ) : null}
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/70 pt-3 text-xs text-muted-foreground">
+                    <span>
+                      Parent:{" "}
+                      <span className="text-foreground">
+                        {cat.parent?.name ?? "Top level"}
+                      </span>
+                    </span>
+                    <span className="text-border">·</span>
+                    <span>
+                      Products:{" "}
+                      <span className="font-medium text-foreground tabular-nums">
+                        {cat.products_count ?? 0}
+                      </span>
+                    </span>
+                    {cat.icon ? (
+                      <>
+                        <span className="text-border">·</span>
+                        <span className="truncate">{cat.icon}</span>
+                      </>
+                    ) : null}
+                    <div className="ml-auto">
+                      {canManage ? (
+                        <Button
+                          asChild
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2"
+                        >
+                          <Link to={`/categories/${cat.id}`}>
+                            <Pencil className="size-3.5" />
+                            Edit
+                          </Link>
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

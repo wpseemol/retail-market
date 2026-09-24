@@ -16,7 +16,7 @@ import {
   Redo2,
   Quote,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +39,7 @@ function ToolbarButton({
   active?: boolean;
   disabled?: boolean;
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <Button
@@ -68,6 +68,7 @@ export function RichTextEditor({
   className,
 }: RichTextEditorProps) {
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         heading: { levels: [2, 3] },
@@ -99,8 +100,9 @@ export function RichTextEditor({
   useEffect(() => {
     if (!editor) return;
     const current = editor.getHTML();
+    const normalizedCurrent = current === "<p></p>" ? "" : current;
     const next = value || "";
-    if (next !== current && next !== (current === "<p></p>" ? "" : current)) {
+    if (next !== normalizedCurrent) {
       editor.commands.setContent(next || "", { emitUpdate: false });
     }
   }, [value, editor]);

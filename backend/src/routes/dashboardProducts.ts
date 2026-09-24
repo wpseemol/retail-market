@@ -87,11 +87,8 @@ const productBodySchema = z.object({
   ).optional(),
   brand: withSafeInput(z.string().trim().max(120)).optional().nullable(),
   description: z
-    .string()
-    .trim()
-    .max(20_000)
+    .union([z.string().trim().max(20_000), z.null()])
     .optional()
-    .nullable()
     .transform((value, ctx) => {
       if (value === undefined) return undefined;
       if (value === null || value === "") return null;

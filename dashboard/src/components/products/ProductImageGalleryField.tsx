@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type DragEvent } from "react";
 import { ImagePlus, Star, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -87,7 +87,7 @@ export function ProductImageGalleryField({
     }
   }
 
-  function onDrop(event: React.DragEvent<HTMLDivElement>) {
+  function onDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     setDragging(false);
     addFiles(event.dataTransfer.files);

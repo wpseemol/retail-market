@@ -1,18 +1,17 @@
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, FolderTree, ImagePlus } from "lucide-react";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { slugifyClient, type Category } from "@/lib/categories";
 import { useAuthStore } from "@/store/auth";
-import { Button } from "@/components/ui/button";
+import { CategoryIconPicker } from "@/components/categories/CategoryIconPicker";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  CategoryCoverDropzone,
+  CategoryFormHeader,
+  CategoryFormSection,
+  CategoryLivePreview,
+  CategoryStickyActions,
+} from "@/components/categories/CategoryFormShell";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,6 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { getCategoryLucideIcon } from "@/lib/categoryIcons";
 
 export function CategoryCreatePage() {
   const navigate = useNavigate();
@@ -32,11 +33,13 @@ export function CategoryCreatePage() {
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
   const [description, setDescription] = useState("");
+  const [icon, setIcon] = useState<string | null>("ShoppingBag");
   const [parentId, setParentId] = useState("");
   const [isActive, setIsActive] = useState("active");
+  const [sortOrder, setSortOrder] = useState("0");
   const [parents, setParents] = useState<Category[]>([]);
-  const [iconFile, setIconFile] = useState<File | null>(null);
-  const [iconPreview, setIconPreview] = useState<string | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -83,14 +86,19 @@ export function CategoryCreatePage() {
 
   useEffect(() => {
     return () => {
-      if (iconPreview) URL.revokeObjectURL(iconPreview);
+      if (coverPreview) URL.revokeObjectURL(coverPreview);
     };
-  }, [iconPreview]);
+  }, [coverPreview]);
 
-  function onPickIcon(file: File | null) {
-    if (iconPreview) URL.revokeObjectURL(iconPreview);
-    setIconFile(file);
-    setIconPreview(file ? URL.createObjectURL(file) : null);
+  const parentName = useMemo(
+    () => parents.find((p) => p.id === parentId)?.name ?? null,
+    [parents, parentId],
+  );
+
+  function onPickCover(file: File | null) {
+    if (coverPreview) URL.revokeObjectURL(coverPreview);
+    setCoverFile(file);
+    setCoverPreview(file ? URL.createObjectURL(file) : null);
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -109,15 +117,17 @@ export function CategoryCreatePage() {
             name: name.trim(),
             slug: slug.trim() || undefined,
             description: description.trim() || null,
+            icon: icon || null,
             parent_id: parentId || null,
             is_active: isActive === "active",
+            sort_order: Number(sortOrder) || 0,
           },
         },
       );
 
-      if (iconFile) {
+      if (coverFile) {
         const form = new FormData();
-        form.append("image", iconFile);
+        form.append("image", coverFile);
         await apiUpload<{ category: Category }>(
           `/api/dashboard/categories/${data.category.id}/image`,
           form,
@@ -136,165 +146,173 @@ export function CategoryCreatePage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
-      <div>
-        <Button asChild variant="ghost" size="sm" className="-ml-2 mb-2">
-          <Link to="/categories">
-            <ArrowLeft />
-            Categories
-          </Link>
-        </Button>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Add category
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Platform category shared by all stores when they add products.
-        </p>
-      </div>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-4">
+      <CategoryFormHeader
+        title="Add category"
+        subtitle="Design the catalog entry with an SVG icon, details, and an optional cover photo."
+      />
 
-      <Card>
-        <CardHeader>
-          <div className="mb-1 flex size-9 items-center justify-center rounded-md bg-brand-tint text-brand-deep">
-            <FolderTree className="size-4" />
-          </div>
-          <CardTitle>Category details</CardTitle>
-          <CardDescription>
-            Only super admin, admin, and moderator can create categories.
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={onSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Category icon</Label>
-              <div className="flex items-center gap-4">
-                <div className="flex size-16 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
-                  {iconPreview ? (
-                    <img
-                      src={iconPreview}
-                      alt="Category icon preview"
-                      className="size-full object-cover"
-                    />
-                  ) : (
-                    <ImagePlus className="size-5 text-muted-foreground" />
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    className="hidden"
-                    onChange={(e) => onPickIcon(e.target.files?.[0] ?? null)}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileRef.current?.click()}
-                  >
-                    Choose icon
-                  </Button>
-                  {iconFile ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        onPickIcon(null);
-                        if (fileRef.current) fileRef.current.value = "";
-                      }}
-                    >
-                      Remove
-                    </Button>
-                  ) : null}
-                </div>
+      <form onSubmit={onSubmit} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-5">
+          <CategoryFormSection
+            step="01"
+            title="Visual identity"
+            description="Pick an SVG icon and optional cover used across admin and storefront."
+          >
+            <CategoryIconPicker
+              value={icon}
+              onChange={setIcon}
+              disabled={loading}
+              compact
+            />
+            <CategoryCoverDropzone
+              previewUrl={coverPreview}
+              disabled={loading}
+              inputRef={fileRef}
+              onPick={() => fileRef.current?.click()}
+              onFile={onPickCover}
+              onClear={
+                coverFile
+                  ? () => {
+                      onPickCover(null);
+                      if (fileRef.current) fileRef.current.value = "";
+                    }
+                  : undefined
+              }
+            />
+          </CategoryFormSection>
+
+          <CategoryFormSection
+            step="02"
+            title="Category details"
+            description="Name, slug, hierarchy, and visibility for the shared catalog."
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  minLength={2}
+                  placeholder="Electronics"
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="slug">
+                  Slug {previewing ? "(updating…)" : ""}
+                </Label>
+                <Input
+                  id="slug"
+                  value={slug}
+                  onChange={(e) => {
+                    setSlugTouched(true);
+                    setSlug(slugifyClient(e.target.value));
+                  }}
+                  placeholder="electronics"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sort">Sort order</Label>
+                <Input
+                  id="sort"
+                  type="number"
+                  min={0}
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Optional short description shown in catalog"
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Parent category</Label>
+                <Select
+                  value={parentId || "none"}
+                  onValueChange={(value) =>
+                    setParentId(value === "none" ? "" : value)
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="None (top level)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None (top level)</SelectItem>
+                    {parents.map((p) => {
+                      const Icon = getCategoryLucideIcon(p.icon);
+                      return (
+                        <SelectItem key={p.id} value={p.id}>
+                          <span className="inline-flex items-center gap-2">
+                            <Icon className="size-3.5 text-brand-deep" />
+                            {p.name}
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={isActive} onValueChange={setIsActive}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+          </CategoryFormSection>
 
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                minLength={2}
-                placeholder="Electronics"
-                autoFocus
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="slug">
-                Slug {previewing ? "(updating…)" : "(unique)"}
-              </Label>
-              <Input
-                id="slug"
-                value={slug}
-                onChange={(e) => {
-                  setSlugTouched(true);
-                  setSlug(slugifyClient(e.target.value));
-                }}
-                placeholder="electronics"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional short description"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Parent category</Label>
-              <Select
-                value={parentId || "none"}
-                onValueChange={(value) =>
-                  setParentId(value === "none" ? "" : value)
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="None (top level)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None (top level)</SelectItem>
-                  {parents.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select value={isActive} onValueChange={setIsActive}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">active</SelectItem>
-                  <SelectItem value="inactive">inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {error ? (
-              <p className="text-sm text-destructive" role="alert">
-                {error}
-              </p>
-            ) : null}
-          </CardContent>
-          <CardFooter>
+          <CategoryStickyActions
+            message={
+              error ? (
+                <p className="text-destructive" role="alert">
+                  {error}
+                </p>
+              ) : (
+                <p className="text-muted-foreground">
+                  Ready when the name looks good.
+                </p>
+              )
+            }
+          >
+            <Button asChild type="button" variant="outline">
+              <Link to="/categories">Cancel</Link>
+            </Button>
             <Button
               type="submit"
               disabled={loading || name.trim().length < 2}
             >
               {loading ? "Creating…" : "Create category"}
             </Button>
-          </CardFooter>
-        </form>
-      </Card>
+          </CategoryStickyActions>
+        </div>
+
+        <CategoryLivePreview
+          mode="create"
+          name={name}
+          slug={slug}
+          description={description}
+          icon={icon}
+          coverUrl={coverPreview}
+          parentName={parentName}
+          isActive={isActive === "active"}
+          sortOrder={sortOrder}
+        />
+      </form>
     </div>
   );
 }

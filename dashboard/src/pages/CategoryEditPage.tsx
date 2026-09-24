@@ -1,19 +1,20 @@
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, FolderTree, ImagePlus, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { slugifyClient, type Category } from "@/lib/categories";
+import { getCategoryLucideIcon } from "@/lib/categoryIcons";
 import { useAuthStore } from "@/store/auth";
+import { CategoryIconPicker } from "@/components/categories/CategoryIconPicker";
+import {
+  CategoryCoverDropzone,
+  CategoryFormHeader,
+  CategoryFormSection,
+  CategoryLivePreview,
+  CategoryStickyActions,
+} from "@/components/categories/CategoryFormShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -23,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 export function CategoryEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -35,8 +37,10 @@ export function CategoryEditPage() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
+  const [icon, setIcon] = useState<string | null>(null);
   const [parentId, setParentId] = useState("");
   const [isActive, setIsActive] = useState("active");
+  const [sortOrder, setSortOrder] = useState("0");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [iconUploading, setIconUploading] = useState(false);
@@ -69,8 +73,10 @@ export function CategoryEditPage() {
         setName(next.name);
         setSlug(next.slug);
         setDescription(next.description ?? "");
+        setIcon(next.icon ?? null);
         setParentId(next.parent_id ?? "");
         setIsActive(next.is_active ? "active" : "inactive");
+        setSortOrder(String(next.sort_order ?? 0));
         setParents(listRes.categories.filter((c) => c.id !== id));
       } catch (err) {
         if (cancelled) return;
@@ -87,6 +93,11 @@ export function CategoryEditPage() {
       cancelled = true;
     };
   }, [token, id]);
+
+  const parentName = useMemo(
+    () => parents.find((p) => p.id === parentId)?.name ?? null,
+    [parents, parentId],
+  );
 
   async function onSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -105,8 +116,10 @@ export function CategoryEditPage() {
             name: name.trim(),
             slug: slug.trim(),
             description: description.trim() || null,
+            icon: icon || null,
             parent_id: parentId || null,
             is_active: isActive === "active",
+            sort_order: Number(sortOrder) || 0,
           },
         },
       );
@@ -121,7 +134,7 @@ export function CategoryEditPage() {
     }
   }
 
-  async function onUploadIcon(file: File | null) {
+  async function onUploadCover(file: File | null) {
     if (!token || !id || !file) return;
     setIconUploading(true);
     setSaveError(null);
@@ -135,10 +148,10 @@ export function CategoryEditPage() {
         { token },
       );
       setCategory(data.category);
-      setSaveSuccess("Category icon updated");
+      setSaveSuccess("Cover image updated");
     } catch (err) {
       setSaveError(
-        err instanceof ApiError ? err.message : "Icon upload failed",
+        err instanceof ApiError ? err.message : "Cover upload failed",
       );
     } finally {
       setIconUploading(false);
@@ -170,7 +183,13 @@ export function CategoryEditPage() {
 
   if (loading) {
     return (
-      <p className="text-sm text-muted-foreground">Loading category…</p>
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
+        <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="h-96 animate-pulse rounded-2xl bg-muted/60" />
+          <div className="h-72 animate-pulse rounded-2xl bg-muted/60" />
+        </div>
+      </div>
     );
   }
 
@@ -186,163 +205,186 @@ export function CategoryEditPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <Button asChild variant="ghost" size="sm" className="-ml-2 mb-2">
-            <Link to="/categories">
-              <ArrowLeft />
-              Categories
-            </Link>
-          </Button>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {category.name}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            /{category.slug}
-          </p>
-        </div>
-        <Badge variant="outline" className="capitalize">
-          {category.is_active ? "active" : "inactive"}
-        </Badge>
-      </div>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-4">
+      <CategoryFormHeader
+        title={category.name}
+        subtitle={`Update icon, cover, hierarchy, and visibility · /${category.slug}`}
+        badge={
+          <Badge
+            variant="outline"
+            className={
+              category.is_active
+                ? "border-brand-primary/30 bg-brand-tint/60 capitalize text-brand-deep"
+                : "capitalize"
+            }
+          >
+            {category.is_active ? "active" : "inactive"}
+          </Badge>
+        }
+      />
 
-      <Card>
-        <CardHeader>
-          <div className="mb-1 flex size-9 items-center justify-center rounded-md bg-brand-tint text-brand-deep">
-            <FolderTree className="size-4" />
-          </div>
-          <CardTitle>Edit category</CardTitle>
-          <CardDescription>
-            Changes apply to the shared catalog for all stores.
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={onSave}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Category icon</Label>
-              <div className="flex items-center gap-4">
-                <div className="flex size-16 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
-                  {category.image?.path ? (
-                    <img
-                      src={category.image.path}
-                      alt={category.name}
-                      className="size-full object-cover"
-                    />
-                  ) : (
-                    <ImagePlus className="size-5 text-muted-foreground" />
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    className="hidden"
-                    onChange={(e) =>
-                      void onUploadIcon(e.target.files?.[0] ?? null)
-                    }
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={iconUploading}
-                    onClick={() => fileRef.current?.click()}
-                  >
-                    {iconUploading ? "Uploading…" : "Change icon"}
-                  </Button>
-                </div>
+      <form
+        onSubmit={onSave}
+        className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"
+      >
+        <div className="space-y-5">
+          <CategoryFormSection
+            step="01"
+            title="Visual identity"
+            description="Change the SVG icon or cover photo shown in catalog views."
+          >
+            <CategoryIconPicker
+              value={icon}
+              onChange={setIcon}
+              disabled={saving}
+              compact
+            />
+            <CategoryCoverDropzone
+              previewUrl={category.image?.path}
+              uploading={iconUploading}
+              disabled={saving}
+              inputRef={fileRef}
+              onPick={() => fileRef.current?.click()}
+              onFile={(file) => void onUploadCover(file)}
+            />
+          </CategoryFormSection>
+
+          <CategoryFormSection
+            step="02"
+            title="Category details"
+            description="Name, slug, parent, sort order, and publish status."
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  minLength={2}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="slug">Slug</Label>
+                <Input
+                  id="slug"
+                  value={slug}
+                  onChange={(e) => setSlug(slugifyClient(e.target.value))}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sort">Sort order</Label>
+                <Input
+                  id="sort"
+                  type="number"
+                  min={0}
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Parent category</Label>
+                <Select
+                  value={parentId || "none"}
+                  onValueChange={(value) =>
+                    setParentId(value === "none" ? "" : value)
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None (top level)</SelectItem>
+                    {parents.map((p) => {
+                      const Icon = getCategoryLucideIcon(p.icon);
+                      return (
+                        <SelectItem key={p.id} value={p.id}>
+                          <span className="inline-flex items-center gap-2">
+                            <Icon className="size-3.5 text-brand-deep" />
+                            {p.name}
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={isActive} onValueChange={setIsActive}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+          </CategoryFormSection>
 
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                minLength={2}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="slug">Slug</Label>
-              <Input
-                id="slug"
-                value={slug}
-                onChange={(e) => setSlug(slugifyClient(e.target.value))}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Parent category</Label>
-              <Select
-                value={parentId || "none"}
-                onValueChange={(value) =>
-                  setParentId(value === "none" ? "" : value)
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None (top level)</SelectItem>
-                  {parents.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select value={isActive} onValueChange={setIsActive}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">active</SelectItem>
-                  <SelectItem value="inactive">inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {saveError ? (
-              <p className="text-sm text-destructive" role="alert">
-                {saveError}
-              </p>
-            ) : null}
-            {saveSuccess ? (
-              <p className="text-sm text-brand-primary" role="status">
-                {saveSuccess}
-              </p>
-            ) : null}
-          </CardContent>
-          <CardFooter className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={saving}>
-              {saving ? "Saving…" : "Save changes"}
-            </Button>
+          <CategoryStickyActions
+            message={
+              saveError ? (
+                <p className="text-destructive" role="alert">
+                  {saveError}
+                </p>
+              ) : saveSuccess ? (
+                <p className="text-brand-primary" role="status">
+                  {saveSuccess}
+                </p>
+              ) : (
+                <p className="text-muted-foreground">
+                  {category.products_count ?? 0} product
+                  {(category.products_count ?? 0) === 1 ? "" : "s"} linked
+                </p>
+              )
+            }
+          >
             <Button
               type="button"
               variant="destructive"
-              disabled={deleting}
+              disabled={deleting || saving}
               onClick={() => void onDelete()}
             >
               <Trash2 />
               {deleting ? "Deleting…" : "Delete"}
             </Button>
-          </CardFooter>
-        </form>
-      </Card>
+            <Button asChild type="button" variant="outline">
+              <Link to="/categories">Cancel</Link>
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Saving…" : "Save changes"}
+            </Button>
+          </CategoryStickyActions>
+        </div>
+
+        <CategoryLivePreview
+          mode="edit"
+          name={name}
+          slug={slug}
+          description={description}
+          icon={icon}
+          coverUrl={category.image?.path}
+          parentName={parentName}
+          isActive={isActive === "active"}
+          sortOrder={sortOrder}
+          productsCount={category.products_count ?? 0}
+          childrenCount={category.children_count ?? 0}
+        />
+      </form>
     </div>
   );
 }
