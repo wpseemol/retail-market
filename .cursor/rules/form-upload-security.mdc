@@ -41,6 +41,16 @@ Apply to names, slugs, descriptions, search `q`, filenames metadata, etc.
 - Mirror size/type checks on the **UI** before upload.
 - Upload fields inside create/edit pages still sit inside the same shadcn `Form` where practical.
 
+## Always resize images (API + UI copy)
+
+Whenever you add or edit an **image upload** (brand, category, product, shop, avatar, etc.):
+
+- **Backend:** Always run a finalize step that **resizes** (max edge / re-encode with sharp or the shared helper). Do not store the raw upload as-is when a resize pipeline exists for that media type.
+- Re-check **byte size after resize**; reject if still over the limit.
+- **UI helper text must always mention resize**, e.g.  
+  `JPEG, PNG, WebP, or GIF · max 1 MB · always resized on the server`  
+  Do not omit the resize note on dropzones, FormDescription, or API.md multipart rows.
+
 ## Auth & roles
 
 - Dashboard catalog mutations: elevated roles only (`super_admin` | `admin` | `moderator`) unless product rules say otherwise.
@@ -52,5 +62,6 @@ Apply to names, slugs, descriptions, search `q`, filenames metadata, etc.
 2. Zod schema on API + UI
 3. Safe-input guards on every string field
 4. Upload limits + type sniff + UI pre-check
-5. Clear error `message` / optional `code` / field `errors` (FormMessage on UI)
-6. Update `backend/API.md` if a public API changed
+5. Server-side **image resize** + size check after resize; UI/API copy mentions resize
+6. Clear error `message` / optional `code` / field `errors` (FormMessage on UI)
+7. Update `backend/API.md` if a public API changed

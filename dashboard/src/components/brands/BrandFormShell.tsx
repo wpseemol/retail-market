@@ -107,8 +107,8 @@ export function BrandImageDropzone({
           <div>
             <p className="text-sm font-medium">Brand image</p>
             <p className="text-xs text-muted-foreground">
-              Optional. JPEG, PNG, WebP, or GIF · max 1 MB. Server resizes
-              automatically.
+              Optional. JPEG, PNG, WebP, or GIF · max 1 MB · always resized on
+              the server.
             </p>
           </div>
           <input
