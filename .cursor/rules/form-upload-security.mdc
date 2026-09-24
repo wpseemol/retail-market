@@ -1,5 +1,5 @@
 ---
-description: Enforce Zod + injection-safe validation on all forms and file uploads (API + UI)
+description: Enforce Zod + shadcn Form + injection-safe validation on all forms and file uploads (API + UI)
 alwaysApply: true
 ---
 
@@ -7,10 +7,17 @@ alwaysApply: true
 
 Whenever you write or edit **forms**, **file uploads**, or related **API endpoints** in this repo, apply these rules. Do not skip for “quick” features.
 
+## Always use shadcn Form on the UI
+
+- **Dashboard/Frontend create & edit forms MUST use shadcn Form** (`Form`, `FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormMessage`, `FormDescription`) with **react-hook-form** + **`zodResolver`**.
+- Do **not** wire raw `<input>` / controlled state for validated create/edit flows when shadcn Form is available — it looks inconsistent and skips the professional field/error pattern.
+- Prefer the brands pattern: Zod schema in `*/lib/validators/*.ts` → `useForm({ resolver: zodResolver(schema) })` → `<Form {...form}>` + `FormField` per field.
+- Search/filter bars may stay simple controlled inputs; **mutating forms** (create/edit) always use shadcn Form.
+
 ## Always validate with Zod
 
 - **Backend:** Every JSON body and query for mutating/list routes must use a Zod schema (prefer `backend/src/validators/*.ts`).
-- **Dashboard/Frontend:** Every create/edit form must validate with Zod before submit (prefer `*/lib/validators/*.ts` + shadcn Form / react-hook-form when available).
+- **Dashboard/Frontend:** Every create/edit form must validate with Zod before submit via `zodResolver` (prefer `*/lib/validators/*.ts`).
 - Never trust HTML `required` alone.
 
 ## Block injection & code payloads on all strings
@@ -32,6 +39,7 @@ Apply to names, slugs, descriptions, search `q`, filenames metadata, etc.
 - Sanitize stored original filenames; never use user filename as disk path.
 - Document multipart **field names** and max bytes in `backend/API.md` when adding endpoints.
 - Mirror size/type checks on the **UI** before upload.
+- Upload fields inside create/edit pages still sit inside the same shadcn `Form` where practical.
 
 ## Auth & roles
 
@@ -40,8 +48,9 @@ Apply to names, slugs, descriptions, search `q`, filenames metadata, etc.
 
 ## Checklist before finishing a form or upload task
 
-1. Zod schema on API + UI
-2. Safe-input guards on every string field
-3. Upload limits + type sniff + UI pre-check
-4. Clear error `message` / optional `code` / field `errors`
-5. Update `backend/API.md` if a public API changed
+1. shadcn Form + react-hook-form + zodResolver on UI create/edit
+2. Zod schema on API + UI
+3. Safe-input guards on every string field
+4. Upload limits + type sniff + UI pre-check
+5. Clear error `message` / optional `code` / field `errors` (FormMessage on UI)
+6. Update `backend/API.md` if a public API changed
