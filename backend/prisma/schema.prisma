@@ -127,6 +127,8 @@ model User {
   provider_id               String?    @db.VarChar(255)
   /// Primary profile image from `medias` (collection: avatars).
   avatar_id                 BigInt?    @unique @db.UnsignedBigInt
+  /// Built-in SVG avatar key when no photo is uploaded (e.g. sprout, fox).
+  avatar_preset             String?    @db.VarChar(40)
   last_login_at             DateTime?
   last_login_ip             String?    @db.VarChar(45)
   created_at                DateTime   @default(now())
@@ -171,6 +173,7 @@ model Media {
   avatarForUsers      User[]           @relation("UserAvatar")
   categoryImages      Category[]       @relation("CategoryImage")
   brandImages         Brand[]          @relation("BrandImage")
+  siteSettingsOg      SiteSettings[]   @relation("SiteSettingsOgImage")
   productThumbnails   Product[]        @relation("ProductThumbnail")
   variantImages       ProductVariant[] @relation("VariantImage")
   vendorLogos         Vendor[]         @relation("VendorLogo")
@@ -678,4 +681,47 @@ model Notification {
   @@index([user_id, read_at])
   @@index([created_at])
   @@map("notifications")
+}
+
+/// Singleton website SEO + analytics / pixel config (id = 1).
+model SiteSettings {
+  id               Int       @id @default(1)
+  site_name        String    @db.VarChar(120)
+  site_title       String    @db.VarChar(160)
+  site_description String    @db.VarChar(500)
+  keywords         String?   @db.VarChar(500)
+
+  og_title       String?  @db.VarChar(160)
+  og_description String?  @db.VarChar(500)
+  og_image_id    BigInt?  @unique @db.UnsignedBigInt
+
+  twitter_title       String? @db.VarChar(160)
+  twitter_description String? @db.VarChar(500)
+  twitter_handle      String? @db.VarChar(80)
+
+  google_analytics_id        String?  @db.VarChar(40)
+  google_analytics_enabled   Boolean  @default(false)
+  google_tag_manager_id      String?  @db.VarChar(40)
+  google_tag_manager_enabled Boolean  @default(false)
+  hotjar_site_id             String?  @db.VarChar(40)
+  hotjar_enabled             Boolean  @default(false)
+  plerdy_site_id             String?  @db.VarChar(80)
+  plerdy_enabled             Boolean  @default(false)
+
+  google_ads_id         String? @db.VarChar(40)
+  google_ads_enabled    Boolean @default(false)
+  tiktok_pixel_id       String? @db.VarChar(80)
+  tiktok_enabled        Boolean @default(false)
+  linkedin_partner_id   String? @db.VarChar(40)
+  linkedin_enabled      Boolean @default(false)
+  twitter_pixel_id      String? @db.VarChar(80)
+  twitter_pixel_enabled Boolean @default(false)
+  meta_pixel_id         String? @db.VarChar(40)
+  meta_pixel_enabled    Boolean @default(false)
+
+  updated_at DateTime @updatedAt
+
+  og_image Media? @relation("SiteSettingsOgImage", fields: [og_image_id], references: [id], onDelete: SetNull)
+
+  @@map("site_settings")
 }

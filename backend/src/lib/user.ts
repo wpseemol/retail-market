@@ -48,6 +48,7 @@ export function toPublicUser(user: UserWithAvatar) {
     phone_verified_at: user.phone_verified_at,
     provider_name: user.provider_name,
     avatar_id: user.avatar_id?.toString() ?? null,
+    avatar_preset: user.avatar_preset ?? null,
     last_login_at: user.last_login_at,
     created_at: user.created_at,
     updated_at: user.updated_at,

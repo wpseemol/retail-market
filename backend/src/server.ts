@@ -12,6 +12,8 @@ import { dashboardVendorsRouter } from "./routes/dashboardVendors.js";
 import { dashboardCategoriesRouter } from "./routes/dashboardCategories.js";
 import { dashboardBrandsRouter } from "./routes/dashboardBrands.js";
 import { dashboardProductsRouter } from "./routes/dashboardProducts.js";
+import { dashboardSiteSettingsRouter } from "./routes/dashboardSiteSettings.js";
+import { publicSiteSettingsRouter } from "./routes/publicSiteSettings.js";
 
 const app = express();
 
@@ -35,12 +37,14 @@ app.use(
 app.use("/api/health", healthRouter);
 app.use("/api/auth", customerAuthRouter);
 app.use("/api/customer/addresses", customerAddressRouter);
+app.use("/api/site-settings", publicSiteSettingsRouter);
 app.use("/api/dashboard/auth", dashboardAuthRouter);
 app.use("/api/dashboard/users", dashboardUsersRouter);
 app.use("/api/dashboard/shops", dashboardVendorsRouter);
 app.use("/api/dashboard/categories", dashboardCategoriesRouter);
 app.use("/api/dashboard/brands", dashboardBrandsRouter);
 app.use("/api/dashboard/products", dashboardProductsRouter);
+app.use("/api/dashboard/site-settings", dashboardSiteSettingsRouter);
 
 app.use(
   (

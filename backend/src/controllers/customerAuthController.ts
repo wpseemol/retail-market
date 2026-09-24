@@ -566,7 +566,7 @@ export async function uploadAvatar(req: Request, res: Response) {
 
     const user = await prisma.user.update({
       where: { id: userId },
-      data: { avatar_id: media.id },
+      data: { avatar_id: media.id, avatar_preset: null },
       include: userWithAvatarInclude,
     });
 

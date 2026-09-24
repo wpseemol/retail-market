@@ -4,6 +4,7 @@ import {
   LogOut,
   Moon,
   Settings,
+  Settings2,
   Sun,
   UserRound,
 } from "lucide-react";
@@ -31,11 +32,41 @@ import {
 } from "@/components/ui/sidebar";
 import type { StaffUser } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
+import { AvatarPresetSvg, isAvatarPresetId } from "@/lib/avatarPresets";
 
 function initials(user: StaffUser) {
   const first = user.first_name?.[0] ?? "";
   const last = user.last_name?.[0] ?? "";
   return (first + last).toUpperCase() || user.role.slice(0, 2).toUpperCase();
+}
+
+function UserAvatar({ user, className }: { user: StaffUser; className?: string }) {
+  if (user.avatar?.path) {
+    return (
+      <img
+        src={user.avatar.path}
+        alt={`${user.first_name} ${user.last_name}`.trim() || "Avatar"}
+        className={`rounded-lg object-cover ${className ?? "size-8"}`}
+      />
+    );
+  }
+
+  if (user.avatar_preset && isAvatarPresetId(user.avatar_preset)) {
+    return (
+      <AvatarPresetSvg
+        id={user.avatar_preset}
+        className={`rounded-lg ${className ?? "size-8"}`}
+      />
+    );
+  }
+
+  return (
+    <Avatar className={`rounded-lg ${className ?? "size-8"}`}>
+      <AvatarFallback className="rounded-lg bg-brand-tint text-brand-deep">
+        {initials(user)}
+      </AvatarFallback>
+    </Avatar>
+  );
 }
 
 export function NavUser({ user }: { user: StaffUser }) {
@@ -62,11 +93,7 @@ export function NavUser({ user }: { user: StaffUser }) {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="size-8 rounded-lg">
-                <AvatarFallback className="rounded-lg bg-brand-tint text-brand-deep">
-                  {initials(user)}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar user={user} />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{name}</span>
                 <span className="truncate text-xs capitalize text-muted-foreground">
@@ -84,11 +111,7 @@ export function NavUser({ user }: { user: StaffUser }) {
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="size-8 rounded-lg">
-                  <AvatarFallback className="rounded-lg bg-brand-tint text-brand-deep">
-                    {initials(user)}
-                  </AvatarFallback>
-                </Avatar>
+                <UserAvatar user={user} />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{name}</span>
                   <span className="truncate text-xs capitalize text-muted-foreground">
@@ -102,10 +125,16 @@ export function NavUser({ user }: { user: StaffUser }) {
               <UserRound />
               Profile
             </DropdownMenuItem>
+            {user.role === "super_admin" && (
+              <DropdownMenuItem onClick={() => navigate("/settings")}>
+                <Settings2 />
+                Site settings
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
                 <Settings />
-                Settings
+                Appearance
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent className="min-w-44">
                 <DropdownMenuLabel className="text-xs text-muted-foreground">

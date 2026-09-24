@@ -8,7 +8,9 @@ import Header from "@/components/home/Header";
 import Footer from "@/components/home/Footer";
 import AuthHydrator from "@/components/providers/AuthHydrator";
 import AuthSessionProvider from "@/components/providers/AuthSessionProvider";
-import { createPageMetadata, siteConfig } from "@/config/site";
+import { AnalyticsPixels } from "@/components/providers/AnalyticsPixels";
+import { absoluteUrl, siteConfig } from "@/config/site";
+import { getSiteSettings } from "@/lib/siteSettings";
 
 const poppins = Poppins({
     variable: "--font-poppins",
@@ -17,19 +19,81 @@ const poppins = Poppins({
     display: "swap",
 });
 
-export const metadata: Metadata = {
-    ...createPageMetadata({ path: "/" }),
-    title: {
-        default: siteConfig.title,
-        template: `%s | ${siteConfig.name}`,
-    },
-    applicationName: siteConfig.name,
-    category: "ecommerce",
-    icons: {
-        icon: siteConfig.logo.dark,
-        apple: siteConfig.logo.dark,
-    },
-};
+export async function generateMetadata(): Promise<Metadata> {
+    const settings = await getSiteSettings();
+    const name = settings.site_name || siteConfig.name;
+    const title = settings.site_title || siteConfig.title;
+    const description =
+        settings.site_description || siteConfig.description;
+    const ogTitle = settings.og_title || title;
+    const ogDescription = settings.og_description || description;
+    const twitterTitle = settings.twitter_title || ogTitle;
+    const twitterDescription =
+        settings.twitter_description || ogDescription;
+    const ogImage =
+        settings.og_image?.path || absoluteUrl(siteConfig.logo.og);
+    const keywords = settings.keywords
+        ? settings.keywords.split(",").map((k) => k.trim()).filter(Boolean)
+        : [...siteConfig.keywords];
+    const twitterHandle =
+        settings.twitter_handle || siteConfig.social.twitter;
+
+    return {
+        title: {
+            default: title,
+            template: `%s | ${name}`,
+        },
+        description,
+        keywords,
+        authors: [{ name }],
+        creator: name,
+        publisher: name,
+        applicationName: name,
+        category: "ecommerce",
+        metadataBase: new URL(siteConfig.url),
+        alternates: {
+            canonical: absoluteUrl("/"),
+        },
+        openGraph: {
+            type: "website",
+            locale: siteConfig.locale,
+            url: absoluteUrl("/"),
+            siteName: name,
+            title: ogTitle,
+            description: ogDescription,
+            images: [
+                {
+                    url: ogImage,
+                    width: siteConfig.logo.width,
+                    height: siteConfig.logo.height,
+                    alt: `${name} — share image`,
+                },
+            ],
+        },
+        twitter: {
+            card: "summary_large_image",
+            title: twitterTitle,
+            description: twitterDescription,
+            images: [ogImage],
+            creator: twitterHandle,
+        },
+        icons: {
+            icon: siteConfig.logo.dark,
+            apple: siteConfig.logo.dark,
+        },
+        robots: {
+            index: true,
+            follow: true,
+            googleBot: {
+                index: true,
+                follow: true,
+                "max-image-preview": "large",
+                "max-snippet": -1,
+                "max-video-preview": -1,
+            },
+        },
+    };
+}
 
 export const viewport: Viewport = {
     themeColor: [
@@ -45,14 +109,21 @@ export const viewport: Viewport = {
     colorScheme: "light dark",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({
+    children,
+}: LayoutProps<"/">) {
+    const settings = await getSiteSettings();
+
     return (
         <html
             lang={siteConfig.language}
             className={`${poppins.variable} h-full antialiased`}
             suppressHydrationWarning
         >
-            <body className={`${poppins.className} min-h-full flex flex-col font-sans`}>
+            <body
+                className={`${poppins.className} min-h-full flex flex-col font-sans`}
+            >
+                <AnalyticsPixels settings={settings} />
                 <ThemeProvider>
                     <StoreProvider>
                         <AuthSessionProvider>

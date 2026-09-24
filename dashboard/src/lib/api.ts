@@ -14,6 +14,9 @@ export type StaffUser = {
   phone?: string | null;
   role: StaffRole;
   status: string;
+  avatar_id?: string | null;
+  avatar_preset?: string | null;
+  avatar?: { id: string; path: string } | null;
 };
 
 export type {

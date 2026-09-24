@@ -67,8 +67,10 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/health` | `routes/health.ts` | Public |
 | `/api/auth` | `routes/customerAuth.ts` | Customers |
 | `/api/customer/addresses` | `routes/customerAddresses.ts` | Customers |
+| `/api/site-settings` | `routes/publicSiteSettings.ts` | Public |
 | `/api/dashboard/auth` | `routes/dashboardAuth.ts` | Staff |
 | `/api/dashboard/users` | `routes/dashboardUsers.ts` | `super_admin` |
+| `/api/dashboard/site-settings` | `routes/dashboardSiteSettings.ts` | `super_admin` |
 | `/api/dashboard/shops` | `routes/dashboardVendors.ts` | `super_admin`, `vendor` |
 | `/api/dashboard/categories` | `routes/dashboardCategories.ts` | Staff |
 | `/api/dashboard/brands` | `routes/dashboardBrands.ts` | Staff |
@@ -205,7 +207,13 @@ Auth: Bearer **`customer`**.
 
 ### `PATCH /api/dashboard/auth/me` — STAFF
 
-`first_name?`, `last_name?`, `username?`, `phone?`
+`first_name?`, `last_name?`, `username?`, `phone?`, `avatar_preset?` (allowlisted SVG key or `null`)
+
+Setting `avatar_preset` clears the uploaded photo (`avatar_id`).
+
+### `POST /api/dashboard/auth/me/avatar` — STAFF
+
+Multipart field **`avatar`** · max **5 MB** · JPEG/PNG/WebP/GIF. Clears `avatar_preset`.
 
 ### `POST /api/dashboard/auth/change-password` — STAFF
 
@@ -225,6 +233,31 @@ Auth: Bearer **`customer`**.
 | `GET /api/dashboard/auth/workspace/admin` | `admin`, `super_admin` |
 | `GET /api/dashboard/auth/workspace/moderator` | `moderator`, `super_admin` |
 | `GET /api/dashboard/auth/workspace/vendor` | `vendor`, `super_admin` |
+
+---
+
+## Public site settings — `/api/site-settings`
+
+No auth. Used by the storefront for SEO / Open Graph and analytics pixels.
+
+`GET /api/site-settings` → `{ settings }` with `site_name`, `site_title`, `site_description`, `keywords`, OG/Twitter fields, `og_image`, nested `analytics` + `pixels` (`enabled` + `id`).
+
+---
+
+## Dashboard site settings — `/api/dashboard/site-settings`
+
+Auth: Bearer **`super_admin`** only. Drives the main website title, SEO, Open Graph, and tracking pixels.
+
+| Method | Path | Notes |
+|--------|------|--------|
+| GET | `/` | Full settings + flat tracker IDs for the form |
+| PATCH | `/` | Zod body · SQL/PHP/JS-safe strings · tracker ID formats |
+| POST | `/og-image` | Multipart field **`image`** · max **1 MB** · always resized |
+
+**Analytics IDs:** Google Analytics (`G-…`), GTM (`GTM-…`), Hotjar, Plerdy  
+**Pixels:** Google Ads (`AW-…`), TikTok, LinkedIn, Twitter/X, Meta (Facebook)
+
+Dashboard UI: `/settings` (shadcn Form + Zod).
 
 ---
 
@@ -495,8 +528,10 @@ Includes: `id`, `vendor_id`, `category_id`, `brand_id`, `thumbnail_id`, `name`, 
 | Endpoint | Field name | Max |
 |----------|------------|-----|
 | `POST /api/auth/me/avatar` | `avatar` | 5 MB |
+| `POST /api/dashboard/auth/me/avatar` | `avatar` | 5 MB |
 | `POST /api/dashboard/categories/:id/image` | `image` | **1 MB** |
 | `POST /api/dashboard/brands/:id/image` | `image` | **1 MB** |
+| `POST /api/dashboard/site-settings/og-image` | `image` | **1 MB** · resized |
 | `POST /api/dashboard/products/:id/thumbnail` | `image` | **5 MB** · resized |
 | `POST /api/dashboard/products/:id/images` | `images` | **5 MB** × 12 · resized |
 | `POST /api/dashboard/shops/:id/logo` | `logo` | 5 MB |

@@ -1,6 +1,10 @@
 import { Router } from "express";
+import multer from "multer";
 import { z } from "zod";
 import type { UserRole } from "@prisma/client";
+import { uploadAvatar } from "../controllers/customerAuthController.js";
+import { AVATAR_MAX_BYTES } from "../lib/avatarImage.js";
+import { isAvatarPresetId } from "../lib/avatarPresets.js";
 import { prisma } from "../lib/prisma.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
 import {
@@ -9,11 +13,13 @@ import {
 } from "../lib/userSession.js";
 import { toPublicUser, userWithAvatarInclude } from "../lib/user.js";
 import { verifyRefreshToken } from "../lib/token.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import {
   requireAuth,
   requireRoles,
   STAFF_ROLES,
 } from "../middleware/auth.js";
+import { avatarUpload } from "../middleware/upload.js";
 import { findUnsafeInputReason, refreshSchema } from "../validators/customerAuth.js";
 
 export const dashboardAuthRouter = Router();
@@ -241,13 +247,27 @@ const updateStaffProfileSchema = z
         }
         return trimmed;
       }),
+    avatar_preset: z
+      .union([z.string(), z.null()])
+      .optional()
+      .transform((value, ctx) => {
+        if (value === undefined) return undefined;
+        if (value === null || value === "") return null;
+        const trimmed = String(value).trim();
+        if (!isAvatarPresetId(trimmed)) {
+          ctx.addIssue({ code: "custom", message: "Invalid avatar preset" });
+          return z.NEVER;
+        }
+        return trimmed;
+      }),
   })
   .refine(
     (data) =>
       data.first_name !== undefined ||
       data.last_name !== undefined ||
       data.username !== undefined ||
-      data.phone !== undefined,
+      data.phone !== undefined ||
+      data.avatar_preset !== undefined,
     { message: "At least one field is required" },
   );
 
@@ -328,6 +348,11 @@ dashboardAuthRouter.patch(
         last_name: data.last_name,
         username: data.username,
         phone: data.phone === undefined ? undefined : data.phone,
+        ...(data.avatar_preset === undefined
+          ? {}
+          : data.avatar_preset === null
+            ? { avatar_preset: null }
+            : { avatar_preset: data.avatar_preset, avatar_id: null }),
       },
       include: userWithAvatarInclude,
     });
@@ -375,6 +400,35 @@ dashboardAuthRouter.post(
 
     return res.json({ message: "Password updated successfully" });
   },
+);
+
+dashboardAuthRouter.post(
+  "/me/avatar",
+  requireAuth,
+  requireRoles(...STAFF_ROLES),
+  (req, res, next) => {
+    avatarUpload.single("avatar")(req, res, (err: unknown) => {
+      if (err) {
+        if (err instanceof multer.MulterError) {
+          if (err.code === "LIMIT_FILE_SIZE") {
+            return res.status(400).json({
+              message: `Image must be ${Math.floor(AVATAR_MAX_BYTES / (1024 * 1024))} MB or smaller`,
+              code: "AVATAR_TOO_LARGE",
+            });
+          }
+          return res.status(400).json({
+            message: "Invalid upload",
+            code: err.code,
+          });
+        }
+        const message =
+          err instanceof Error ? err.message : "Avatar upload failed";
+        return res.status(400).json({ message, code: "AVATAR_UPLOAD_FAILED" });
+      }
+      return next();
+    });
+  },
+  asyncHandler(uploadAvatar),
 );
 
 dashboardAuthRouter.get(

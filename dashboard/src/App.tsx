@@ -19,6 +19,7 @@ import { BrandCreatePage } from "./pages/BrandCreatePage";
 import { BrandEditPage } from "./pages/BrandEditPage";
 import { UserEditPage } from "./pages/UserEditPage";
 import { UsersPage } from "./pages/UsersPage";
+import { SiteSettingsPage } from "./pages/SiteSettingsPage";
 import { useAuthStore } from "./store/auth";
 import type { StaffRole } from "./lib/api";
 
@@ -61,6 +62,7 @@ export default function App() {
               path="super-admin"
               element={<RolePage role="Super Admin" />}
             />
+            <Route path="settings" element={<SiteSettingsPage />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={["super_admin", "vendor"]} />}>
