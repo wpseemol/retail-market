@@ -8,7 +8,7 @@ Monorepo for the Niyenin multi-vendor platform. Architecture source of truth: `T
 | --- | --- | --- | --- |
 | `frontend/` | Next.js (App Router) | http://localhost:3000 | Customer storefront (`www.niyenin.com`) |
 | `dashboard/` | Vite + React + ReactDOM SPA | http://localhost:5173 | Admin / Vendor dashboard |
-| `backend/` | Express (TypeScript) | http://localhost:8001 | API |
+| `backend/` | Express (TypeScript) | http://localhost:8001 | API · see [`backend/API.md`](backend/API.md) |
 
 ## Prerequisites
 
