@@ -5,18 +5,25 @@ const SCRIPT_TAG_RE = /<\s*\/?\s*script\b/i;
 const PHP_TAG_RE = /<\?(?:php|=)?|\?>/i;
 const JS_PROTOCOL_RE = /javascript\s*:/i;
 const EVENT_HANDLER_RE = /\bon[a-z]+\s*=/i;
+const JS_CODE_RE =
+  /(\beval\s*\()|(\bFunction\s*\()|(\bnew\s+Function\b)|(\bimport\s*\()|(\brequire\s*\()|(\bdocument\.(cookie|write|location)\b)|(\bwindow\.(location|eval)\b)|(\batob\s*\()|(\bfromCharCode\b)/i;
+const PHP_CODE_RE =
+  /(\bbase64_decode\s*\()|(\bsystem\s*\()|(\bshell_exec\s*\()|(\bpassthru\s*\()|(\bexec\s*\()|(\bpreg_replace\s*\([^)]*\/e)/i;
 
 /** Compound SQL payloads — avoids blocking normal passwords that contain `'`, `"`, or `;`. */
 const SQL_INJECTION_RE =
   /(\bunion\s+select\b)|(\bselect\b.+\bfrom\b)|(\binsert\s+into\b)|(\bdelete\s+from\b)|(\bdrop\s+(table|database)\b)|(\balter\s+table\b)|(\btruncate\s+table\b)|(\b(exec|execute)\s*\()|(\bxp_\w+\b)|(\b(or|and)\b\s+\d+\s*=\s*\d+)|(;\s*(select|insert|update|delete|drop|alter|truncate)\b)|(\/\*|\*\/)|(--\s+)/i;
 
-/** Reject HTML/script/PHP tags and common SQL-injection / XSS payloads in body fields. */
+/** Reject HTML/script/PHP tags, JS/PHP code payloads, and common SQL-injection / XSS. */
 export function findUnsafeInputReason(value: string): string | null {
   if (SCRIPT_TAG_RE.test(value)) {
     return "Script tags are not allowed";
   }
-  if (PHP_TAG_RE.test(value)) {
-    return "PHP tags are not allowed";
+  if (PHP_TAG_RE.test(value) || PHP_CODE_RE.test(value)) {
+    return "PHP code is not allowed";
+  }
+  if (JS_CODE_RE.test(value)) {
+    return "JavaScript code is not allowed";
   }
   if (
     HTML_TAG_RE.test(value) ||
@@ -32,7 +39,7 @@ export function findUnsafeInputReason(value: string): string | null {
 }
 
 /** Apply injection/XSS guards to any string body field from the frontend. */
-function withSafeInput<T extends z.ZodType<string>>(schema: T) {
+export function withSafeInput<T extends z.ZodType<string>>(schema: T) {
   return schema.superRefine((value, ctx) => {
     const reason = findUnsafeInputReason(value);
     if (reason) {

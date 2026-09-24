@@ -1,0 +1,927 @@
+[
+  {
+    "name": "ShoppingBag",
+    "label": "Shopping bag",
+    "group": "Popular"
+  },
+  {
+    "name": "ShoppingCart",
+    "label": "Cart",
+    "group": "Popular"
+  },
+  {
+    "name": "Store",
+    "label": "Store",
+    "group": "Popular"
+  },
+  {
+    "name": "Package",
+    "label": "Package",
+    "group": "Popular"
+  },
+  {
+    "name": "Tag",
+    "label": "Tag",
+    "group": "Popular"
+  },
+  {
+    "name": "Gift",
+    "label": "Gift",
+    "group": "Popular"
+  },
+  {
+    "name": "Star",
+    "label": "Star",
+    "group": "Popular"
+  },
+  {
+    "name": "Sparkles",
+    "label": "Sparkles",
+    "group": "Popular"
+  },
+  {
+    "name": "Heart",
+    "label": "Heart",
+    "group": "Popular"
+  },
+  {
+    "name": "Percent",
+    "label": "Percent",
+    "group": "Popular"
+  },
+  {
+    "name": "BadgePercent",
+    "label": "Sale badge",
+    "group": "Popular"
+  },
+  {
+    "name": "FolderTree",
+    "label": "Category tree",
+    "group": "Popular"
+  },
+  {
+    "name": "Shirt",
+    "label": "Apparel",
+    "group": "Fashion"
+  },
+  {
+    "name": "Glasses",
+    "label": "Glasses",
+    "group": "Fashion"
+  },
+  {
+    "name": "Crown",
+    "label": "Luxury",
+    "group": "Fashion"
+  },
+  {
+    "name": "Watch",
+    "label": "Watch",
+    "group": "Fashion"
+  },
+  {
+    "name": "Gem",
+    "label": "Jewelry",
+    "group": "Fashion"
+  },
+  {
+    "name": "Diamond",
+    "label": "Diamond",
+    "group": "Fashion"
+  },
+  {
+    "name": "Footprints",
+    "label": "Footwear",
+    "group": "Fashion"
+  },
+  {
+    "name": "Backpack",
+    "label": "Backpack",
+    "group": "Fashion"
+  },
+  {
+    "name": "Ribbon",
+    "label": "Ribbon",
+    "group": "Fashion"
+  },
+  {
+    "name": "SprayCan",
+    "label": "Beauty spray",
+    "group": "Fashion"
+  },
+  {
+    "name": "Brush",
+    "label": "Brush",
+    "group": "Fashion"
+  },
+  {
+    "name": "Palette",
+    "label": "Makeup",
+    "group": "Fashion"
+  },
+  {
+    "name": "WandSparkles",
+    "label": "Beauty",
+    "group": "Fashion"
+  },
+  {
+    "name": "Scissors",
+    "label": "Salon",
+    "group": "Fashion"
+  },
+  {
+    "name": "Smartphone",
+    "label": "Phone",
+    "group": "Electronics"
+  },
+  {
+    "name": "Tablet",
+    "label": "Tablet",
+    "group": "Electronics"
+  },
+  {
+    "name": "Laptop",
+    "label": "Laptop",
+    "group": "Electronics"
+  },
+  {
+    "name": "Monitor",
+    "label": "Monitor",
+    "group": "Electronics"
+  },
+  {
+    "name": "Tv",
+    "label": "TV",
+    "group": "Electronics"
+  },
+  {
+    "name": "Headphones",
+    "label": "Headphones",
+    "group": "Electronics"
+  },
+  {
+    "name": "Speaker",
+    "label": "Speaker",
+    "group": "Electronics"
+  },
+  {
+    "name": "Camera",
+    "label": "Camera",
+    "group": "Electronics"
+  },
+  {
+    "name": "Gamepad2",
+    "label": "Gaming",
+    "group": "Electronics"
+  },
+  {
+    "name": "Cpu",
+    "label": "Computer",
+    "group": "Electronics"
+  },
+  {
+    "name": "CircuitBoard",
+    "label": "Components",
+    "group": "Electronics"
+  },
+  {
+    "name": "BatteryCharging",
+    "label": "Battery",
+    "group": "Electronics"
+  },
+  {
+    "name": "Plug",
+    "label": "Power",
+    "group": "Electronics"
+  },
+  {
+    "name": "Wifi",
+    "label": "Network",
+    "group": "Electronics"
+  },
+  {
+    "name": "Bluetooth",
+    "label": "Bluetooth",
+    "group": "Electronics"
+  },
+  {
+    "name": "Printer",
+    "label": "Printer",
+    "group": "Electronics"
+  },
+  {
+    "name": "Server",
+    "label": "Server",
+    "group": "Electronics"
+  },
+  {
+    "name": "Airplay",
+    "label": "Streaming",
+    "group": "Electronics"
+  },
+  {
+    "name": "Radio",
+    "label": "Radio",
+    "group": "Electronics"
+  },
+  {
+    "name": "Mic2",
+    "label": "Microphone",
+    "group": "Electronics"
+  },
+  {
+    "name": "Zap",
+    "label": "Electric",
+    "group": "Electronics"
+  },
+  {
+    "name": "Home",
+    "label": "Home",
+    "group": "Home"
+  },
+  {
+    "name": "Sofa",
+    "label": "Furniture",
+    "group": "Home"
+  },
+  {
+    "name": "Armchair",
+    "label": "Chair",
+    "group": "Home"
+  },
+  {
+    "name": "BedDouble",
+    "label": "Bedroom",
+    "group": "Home"
+  },
+  {
+    "name": "Lamp",
+    "label": "Lighting",
+    "group": "Home"
+  },
+  {
+    "name": "Lightbulb",
+    "label": "Bulb",
+    "group": "Home"
+  },
+  {
+    "name": "Fan",
+    "label": "Fan",
+    "group": "Home"
+  },
+  {
+    "name": "Heater",
+    "label": "Heater",
+    "group": "Home"
+  },
+  {
+    "name": "Refrigerator",
+    "label": "Appliance",
+    "group": "Home"
+  },
+  {
+    "name": "Bath",
+    "label": "Bathroom",
+    "group": "Home"
+  },
+  {
+    "name": "ShowerHead",
+    "label": "Shower",
+    "group": "Home"
+  },
+  {
+    "name": "Toilet",
+    "label": "Sanitary",
+    "group": "Home"
+  },
+  {
+    "name": "DoorOpen",
+    "label": "Doors",
+    "group": "Home"
+  },
+  {
+    "name": "BrickWall",
+    "label": "Building",
+    "group": "Home"
+  },
+  {
+    "name": "Hammer",
+    "label": "Tools",
+    "group": "Home"
+  },
+  {
+    "name": "Wrench",
+    "label": "Repair",
+    "group": "Home"
+  },
+  {
+    "name": "Drill",
+    "label": "Power tools",
+    "group": "Home"
+  },
+  {
+    "name": "Shovel",
+    "label": "Garden",
+    "group": "Home"
+  },
+  {
+    "name": "Flower2",
+    "label": "Plants",
+    "group": "Home"
+  },
+  {
+    "name": "TreeDeciduous",
+    "label": "Outdoor",
+    "group": "Home"
+  },
+  {
+    "name": "TreePine",
+    "label": "Trees",
+    "group": "Home"
+  },
+  {
+    "name": "Droplets",
+    "label": "Water",
+    "group": "Home"
+  },
+  {
+    "name": "Paintbrush",
+    "label": "Paint",
+    "group": "Home"
+  },
+  {
+    "name": "RockingChair",
+    "label": "Living",
+    "group": "Home"
+  },
+  {
+    "name": "UtensilsCrossed",
+    "label": "Dining",
+    "group": "Food"
+  },
+  {
+    "name": "Coffee",
+    "label": "Coffee",
+    "group": "Food"
+  },
+  {
+    "name": "CupSoda",
+    "label": "Drinks",
+    "group": "Food"
+  },
+  {
+    "name": "Wine",
+    "label": "Wine",
+    "group": "Food"
+  },
+  {
+    "name": "Beer",
+    "label": "Beer",
+    "group": "Food"
+  },
+  {
+    "name": "Pizza",
+    "label": "Pizza",
+    "group": "Food"
+  },
+  {
+    "name": "Sandwich",
+    "label": "Sandwich",
+    "group": "Food"
+  },
+  {
+    "name": "Soup",
+    "label": "Soup",
+    "group": "Food"
+  },
+  {
+    "name": "Salad",
+    "label": "Salad",
+    "group": "Food"
+  },
+  {
+    "name": "CakeSlice",
+    "label": "Bakery",
+    "group": "Food"
+  },
+  {
+    "name": "Croissant",
+    "label": "Pastry",
+    "group": "Food"
+  },
+  {
+    "name": "Cookie",
+    "label": "Snacks",
+    "group": "Food"
+  },
+  {
+    "name": "IceCreamCone",
+    "label": "Dessert",
+    "group": "Food"
+  },
+  {
+    "name": "Apple",
+    "label": "Fruit",
+    "group": "Food"
+  },
+  {
+    "name": "Cherry",
+    "label": "Berries",
+    "group": "Food"
+  },
+  {
+    "name": "Grape",
+    "label": "Grapes",
+    "group": "Food"
+  },
+  {
+    "name": "Wheat",
+    "label": "Grains",
+    "group": "Food"
+  },
+  {
+    "name": "Milk",
+    "label": "Dairy",
+    "group": "Food"
+  },
+  {
+    "name": "Egg",
+    "label": "Eggs",
+    "group": "Food"
+  },
+  {
+    "name": "Fish",
+    "label": "Seafood",
+    "group": "Food"
+  },
+  {
+    "name": "ChefHat",
+    "label": "Kitchen",
+    "group": "Food"
+  },
+  {
+    "name": "HeartPulse",
+    "label": "Health",
+    "group": "Health"
+  },
+  {
+    "name": "Stethoscope",
+    "label": "Medical",
+    "group": "Health"
+  },
+  {
+    "name": "Pill",
+    "label": "Pharmacy",
+    "group": "Health"
+  },
+  {
+    "name": "Syringe",
+    "label": "Clinic",
+    "group": "Health"
+  },
+  {
+    "name": "Cross",
+    "label": "First aid",
+    "group": "Health"
+  },
+  {
+    "name": "Thermometer",
+    "label": "Thermometer",
+    "group": "Health"
+  },
+  {
+    "name": "FlaskConical",
+    "label": "Lab",
+    "group": "Health"
+  },
+  {
+    "name": "Eye",
+    "label": "Vision",
+    "group": "Health"
+  },
+  {
+    "name": "Ear",
+    "label": "Hearing",
+    "group": "Health"
+  },
+  {
+    "name": "Baby",
+    "label": "Baby care",
+    "group": "Health"
+  },
+  {
+    "name": "HandHeart",
+    "label": "Wellness",
+    "group": "Health"
+  },
+  {
+    "name": "Leaf",
+    "label": "Organic",
+    "group": "Health"
+  },
+  {
+    "name": "Flame",
+    "label": "Energy",
+    "group": "Health"
+  },
+  {
+    "name": "Dumbbell",
+    "label": "Fitness",
+    "group": "Sports"
+  },
+  {
+    "name": "Bike",
+    "label": "Cycling",
+    "group": "Sports"
+  },
+  {
+    "name": "Volleyball",
+    "label": "Sports ball",
+    "group": "Sports"
+  },
+  {
+    "name": "Trophy",
+    "label": "Trophy",
+    "group": "Sports"
+  },
+  {
+    "name": "Medal",
+    "label": "Medal",
+    "group": "Sports"
+  },
+  {
+    "name": "Award",
+    "label": "Award",
+    "group": "Sports"
+  },
+  {
+    "name": "Target",
+    "label": "Target",
+    "group": "Sports"
+  },
+  {
+    "name": "Timer",
+    "label": "Timer",
+    "group": "Sports"
+  },
+  {
+    "name": "Gauge",
+    "label": "Performance",
+    "group": "Sports"
+  },
+  {
+    "name": "Sword",
+    "label": "Combat sports",
+    "group": "Sports"
+  },
+  {
+    "name": "Tent",
+    "label": "Camping",
+    "group": "Sports"
+  },
+  {
+    "name": "Mountain",
+    "label": "Hiking",
+    "group": "Sports"
+  },
+  {
+    "name": "Waves",
+    "label": "Water sports",
+    "group": "Sports"
+  },
+  {
+    "name": "FerrisWheel",
+    "label": "Recreation",
+    "group": "Sports"
+  },
+  {
+    "name": "PawPrint",
+    "label": "Pets",
+    "group": "Pets"
+  },
+  {
+    "name": "Dog",
+    "label": "Dogs",
+    "group": "Pets"
+  },
+  {
+    "name": "Cat",
+    "label": "Cats",
+    "group": "Pets"
+  },
+  {
+    "name": "Bone",
+    "label": "Pet food",
+    "group": "Pets"
+  },
+  {
+    "name": "Plane",
+    "label": "Flights",
+    "group": "Travel"
+  },
+  {
+    "name": "Car",
+    "label": "Cars",
+    "group": "Travel"
+  },
+  {
+    "name": "CarFront",
+    "label": "Vehicles",
+    "group": "Travel"
+  },
+  {
+    "name": "Bus",
+    "label": "Bus",
+    "group": "Travel"
+  },
+  {
+    "name": "TrainFront",
+    "label": "Train",
+    "group": "Travel"
+  },
+  {
+    "name": "Truck",
+    "label": "Shipping",
+    "group": "Travel"
+  },
+  {
+    "name": "Fuel",
+    "label": "Fuel",
+    "group": "Travel"
+  },
+  {
+    "name": "Luggage",
+    "label": "Luggage",
+    "group": "Travel"
+  },
+  {
+    "name": "MapPinned",
+    "label": "Location",
+    "group": "Travel"
+  },
+  {
+    "name": "Compass",
+    "label": "Compass",
+    "group": "Travel"
+  },
+  {
+    "name": "Globe2",
+    "label": "World",
+    "group": "Travel"
+  },
+  {
+    "name": "Ticket",
+    "label": "Tickets",
+    "group": "Travel"
+  },
+  {
+    "name": "Umbrella",
+    "label": "Umbrella",
+    "group": "Travel"
+  },
+  {
+    "name": "Sun",
+    "label": "Beach",
+    "group": "Travel"
+  },
+  {
+    "name": "CloudSun",
+    "label": "Weather",
+    "group": "Travel"
+  },
+  {
+    "name": "MoonStar",
+    "label": "Night",
+    "group": "Travel"
+  },
+  {
+    "name": "Briefcase",
+    "label": "Office",
+    "group": "Business"
+  },
+  {
+    "name": "Building2",
+    "label": "Company",
+    "group": "Business"
+  },
+  {
+    "name": "Landmark",
+    "label": "Bank",
+    "group": "Business"
+  },
+  {
+    "name": "Wallet",
+    "label": "Wallet",
+    "group": "Business"
+  },
+  {
+    "name": "CreditCard",
+    "label": "Payments",
+    "group": "Business"
+  },
+  {
+    "name": "Banknote",
+    "label": "Cash",
+    "group": "Business"
+  },
+  {
+    "name": "Calculator",
+    "label": "Accounting",
+    "group": "Business"
+  },
+  {
+    "name": "Scale",
+    "label": "Legal",
+    "group": "Business"
+  },
+  {
+    "name": "Lock",
+    "label": "Security",
+    "group": "Business"
+  },
+  {
+    "name": "Shield",
+    "label": "Protection",
+    "group": "Business"
+  },
+  {
+    "name": "KeyRound",
+    "label": "Access",
+    "group": "Business"
+  },
+  {
+    "name": "Mail",
+    "label": "Mail",
+    "group": "Business"
+  },
+  {
+    "name": "Phone",
+    "label": "Contact",
+    "group": "Business"
+  },
+  {
+    "name": "Megaphone",
+    "label": "Marketing",
+    "group": "Business"
+  },
+  {
+    "name": "Newspaper",
+    "label": "News",
+    "group": "Business"
+  },
+  {
+    "name": "CalendarDays",
+    "label": "Events",
+    "group": "Business"
+  },
+  {
+    "name": "AlarmClock",
+    "label": "Alarms",
+    "group": "Business"
+  },
+  {
+    "name": "Clock3",
+    "label": "Time",
+    "group": "Business"
+  },
+  {
+    "name": "Factory",
+    "label": "Industry",
+    "group": "Business"
+  },
+  {
+    "name": "Warehouse",
+    "label": "Warehouse",
+    "group": "Business"
+  },
+  {
+    "name": "Settings2",
+    "label": "Settings",
+    "group": "Business"
+  },
+  {
+    "name": "Cog",
+    "label": "Config",
+    "group": "Business"
+  },
+  {
+    "name": "BookOpen",
+    "label": "Books",
+    "group": "Other"
+  },
+  {
+    "name": "ScrollText",
+    "label": "Documents",
+    "group": "Other"
+  },
+  {
+    "name": "SquarePen",
+    "label": "Stationery",
+    "group": "Other"
+  },
+  {
+    "name": "PenTool",
+    "label": "Design",
+    "group": "Other"
+  },
+  {
+    "name": "Music2",
+    "label": "Music",
+    "group": "Other"
+  },
+  {
+    "name": "Piano",
+    "label": "Instruments",
+    "group": "Other"
+  },
+  {
+    "name": "Guitar",
+    "label": "Guitar",
+    "group": "Other"
+  },
+  {
+    "name": "Clapperboard",
+    "label": "Movies",
+    "group": "Other"
+  },
+  {
+    "name": "Drama",
+    "label": "Theater",
+    "group": "Other"
+  },
+  {
+    "name": "ToyBrick",
+    "label": "Toys",
+    "group": "Other"
+  },
+  {
+    "name": "Puzzle",
+    "label": "Games",
+    "group": "Other"
+  },
+  {
+    "name": "Shapes",
+    "label": "Shapes",
+    "group": "Other"
+  },
+  {
+    "name": "Layers",
+    "label": "Layers",
+    "group": "Other"
+  },
+  {
+    "name": "Component",
+    "label": "Parts",
+    "group": "Other"
+  },
+  {
+    "name": "Box",
+    "label": "Box",
+    "group": "Other"
+  },
+  {
+    "name": "Archive",
+    "label": "Archive",
+    "group": "Other"
+  },
+  {
+    "name": "Image",
+    "label": "Photos",
+    "group": "Other"
+  },
+  {
+    "name": "Feather",
+    "label": "Craft",
+    "group": "Other"
+  },
+  {
+    "name": "Stamp",
+    "label": "Stamps",
+    "group": "Other"
+  },
+  {
+    "name": "Magnet",
+    "label": "Magnet",
+    "group": "Other"
+  },
+  {
+    "name": "Trash2",
+    "label": "Cleaning",
+    "group": "Other"
+  },
+  {
+    "name": "Cigarette",
+    "label": "Tobacco",
+    "group": "Other"
+  },
+  {
+    "name": "ToolCase",
+    "label": "Toolkit",
+    "group": "Other"
+  },
+  {
+    "name": "MousePointer2",
+    "label": "Digital",
+    "group": "Other"
+  }
+]

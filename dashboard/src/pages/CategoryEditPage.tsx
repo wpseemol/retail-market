@@ -3,7 +3,12 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { slugifyClient, type Category } from "@/lib/categories";
-import { getCategoryLucideIcon } from "@/lib/categoryIcons";
+import { getCategoryLucideIcon } from "@/lib/icons";
+import {
+  firstZodError,
+  validateCategoryForm,
+  validateCategoryImageFile,
+} from "@/lib/validators/category";
 import { useAuthStore } from "@/store/auth";
 import { CategoryIconPicker } from "@/components/categories/CategoryIconPicker";
 import {
@@ -102,6 +107,22 @@ export function CategoryEditPage() {
   async function onSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token || !id) return;
+
+    const parsed = validateCategoryForm({
+      name,
+      slug,
+      description,
+      icon,
+      parent_id: parentId || null,
+      is_active: isActive === "active",
+      sort_order: sortOrder,
+    });
+    if (!parsed.success) {
+      setSaveError(firstZodError(parsed));
+      setSaveSuccess(null);
+      return;
+    }
+
     setSaving(true);
     setSaveError(null);
     setSaveSuccess(null);
@@ -113,13 +134,13 @@ export function CategoryEditPage() {
           method: "PATCH",
           token,
           body: {
-            name: name.trim(),
-            slug: slug.trim(),
-            description: description.trim() || null,
-            icon: icon || null,
-            parent_id: parentId || null,
-            is_active: isActive === "active",
-            sort_order: Number(sortOrder) || 0,
+            name: parsed.data.name,
+            slug: parsed.data.slug,
+            description: parsed.data.description ?? null,
+            icon: parsed.data.icon ?? null,
+            parent_id: parsed.data.parent_id ?? null,
+            is_active: parsed.data.is_active,
+            sort_order: parsed.data.sort_order,
           },
         },
       );
@@ -136,6 +157,13 @@ export function CategoryEditPage() {
 
   async function onUploadCover(file: File | null) {
     if (!token || !id || !file) return;
+    const checked = validateCategoryImageFile(file);
+    if (!checked.ok) {
+      setSaveError(checked.message);
+      setSaveSuccess(null);
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
     setIconUploading(true);
     setSaveError(null);
     setSaveSuccess(null);

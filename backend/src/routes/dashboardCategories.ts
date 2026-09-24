@@ -6,15 +6,22 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { toPublicMedia } from "../lib/user.js";
 import { uniqueVendorSlug } from "../lib/slug.js";
+import { CATEGORY_ICON_CATALOG } from "../lib/categoryIconNames.js";
 import {
-  finalizeProductImageUpload,
-  PRODUCT_IMAGES_DIR,
+  CATEGORY_IMAGE_MAX_BYTES,
+  finalizeCategoryImageUpload,
   PRODUCT_IMAGES_RELATIVE,
   sanitizeOriginalName,
-} from "../lib/productImage.js";
+} from "../lib/categoryImage.js";
+import { PRODUCT_IMAGES_DIR } from "../lib/productImage.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
-import { productImageUpload } from "../middleware/upload.js";
-import { findUnsafeInputReason } from "../validators/customerAuth.js";
+import { categoryImageUpload } from "../middleware/upload.js";
+import {
+  categoryListQuerySchema,
+  createCategorySchema,
+  updateCategorySchema,
+} from "../validators/category.js";
+import { withSafeInput } from "../validators/customerAuth.js";
 
 export const dashboardCategoriesRouter = Router();
 
@@ -26,65 +33,9 @@ dashboardCategoriesRouter.use(
 
 const ELEVATED = ["super_admin", "admin", "moderator"] as const;
 
-function withSafeInput(schema: z.ZodString) {
-  return schema.superRefine((value, ctx) => {
-    const reason = findUnsafeInputReason(value);
-    if (reason) ctx.addIssue({ code: "custom", message: reason });
-  });
-}
-
 function canManageCategories(role: string) {
   return (ELEVATED as readonly string[]).includes(role);
 }
-
-const listQuerySchema = z.object({
-  q: z.string().trim().max(120).optional(),
-  parent_id: z.string().regex(/^\d+$/).optional().nullable(),
-  active: z
-    .enum(["true", "false", "all"])
-    .optional()
-    .default("all"),
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(50),
-});
-
-const createCategorySchema = z.object({
-  name: withSafeInput(z.string().trim().min(2).max(150)),
-  slug: withSafeInput(
-    z
-      .string()
-      .trim()
-      .min(2)
-      .max(160)
-      .regex(
-        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-        "Slug must be lowercase letters, numbers, and hyphens",
-      ),
-  ).optional(),
-  description: withSafeInput(z.string().trim().max(5000)).optional().nullable(),
-  icon: z
-    .union([
-      withSafeInput(
-        z
-          .string()
-          .trim()
-          .max(80)
-          .regex(
-            /^[A-Z][A-Za-z0-9]*$/,
-            "Icon must be a valid Lucide icon name (PascalCase)",
-          ),
-      ),
-      z.null(),
-    ])
-    .optional(),
-  parent_id: z.string().regex(/^\d+$/).optional().nullable(),
-  is_active: z.boolean().optional(),
-  sort_order: z.number().int().min(0).max(999_999).optional(),
-});
-
-const updateCategorySchema = createCategorySchema.partial().extend({
-  name: withSafeInput(z.string().trim().min(2).max(150)).optional(),
-});
 
 function parseId(raw: string) {
   if (!/^\d+$/.test(raw)) return null;
@@ -163,7 +114,7 @@ const categoryInclude = {
 
 /** List platform categories (shared across all stores). */
 dashboardCategoriesRouter.get("/", async (req, res) => {
-  const parsed = listQuerySchema.safeParse(req.query);
+  const parsed = categoryListQuerySchema.safeParse(req.query);
   if (!parsed.success) {
     return res.status(400).json({
       message: parsed.error.issues[0]?.message ?? "Validation failed",
@@ -213,12 +164,25 @@ dashboardCategoriesRouter.get("/", async (req, res) => {
   });
 });
 
+dashboardCategoriesRouter.get("/icons", (_req, res) => {
+  return res.json({
+    icons: CATEGORY_ICON_CATALOG,
+    count: CATEGORY_ICON_CATALOG.length,
+  });
+});
+
 dashboardCategoriesRouter.get("/slug-preview", async (req, res) => {
-  const name = String(req.query.name ?? "").trim();
-  if (name.length < 2) {
-    return res.status(400).json({ message: "Name is required" });
+  const parsed = z
+    .object({
+      name: withSafeInput(z.string().trim().min(2).max(150)),
+    })
+    .safeParse({ name: String(req.query.name ?? "") });
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: parsed.error.issues[0]?.message ?? "Name is required",
+    });
   }
-  const slug = await uniqueVendorSlug(name, (s) => slugTaken(s));
+  const slug = await uniqueVendorSlug(parsed.data.name, (s) => slugTaken(s));
   return res.json({ slug });
 });
 
@@ -239,20 +203,30 @@ dashboardCategoriesRouter.get("/:id", async (req, res) => {
   return res.json({ category: toPublicCategory(row) });
 });
 
-/** Upload / replace category icon — elevated staff only. */
+/** Upload / replace category cover — elevated staff only. Max 1 MB; resized server-side. */
 dashboardCategoriesRouter.post(
   "/:id/image",
   (req, res, next) => {
     if (!canManageCategories(req.auth!.role)) {
       return res.status(403).json({
         message:
-          "Only super admin, admin, or moderator can set category icons",
+          "Only super admin, admin, or moderator can set category images",
       });
     }
-    productImageUpload.single("image")(req, res, (err) => {
+    categoryImageUpload.single("image")(req, res, (err) => {
       if (err) {
+        const isTooLarge =
+          err instanceof Error &&
+          ("code" in err
+            ? (err as { code?: string }).code === "LIMIT_FILE_SIZE"
+            : /file too large|File too large/i.test(err.message));
         return res.status(400).json({
-          message: err instanceof Error ? err.message : "Upload failed",
+          message: isTooLarge
+            ? `Category image must be ${Math.floor(CATEGORY_IMAGE_MAX_BYTES / (1024 * 1024))} MB or smaller`
+            : err instanceof Error
+              ? err.message
+              : "Upload failed",
+          code: isTooLarge ? "CATEGORY_IMAGE_TOO_LARGE" : undefined,
         });
       }
       return next();
@@ -265,7 +239,7 @@ dashboardCategoriesRouter.post(
     const file = req.file;
     if (!file) {
       return res.status(400).json({
-        message: "Category icon is required (field: image)",
+        message: "Category image is required (field: image)",
       });
     }
 
@@ -282,7 +256,10 @@ dashboardCategoriesRouter.post(
       return res.status(404).json({ message: "Category not found" });
     }
 
-    const finalized = finalizeProductImageUpload(file.path, file.mimetype);
+    const finalized = await finalizeCategoryImageUpload(
+      file.path,
+      file.mimetype,
+    );
     if (!finalized.ok) {
       return res.status(400).json({
         message: finalized.message,

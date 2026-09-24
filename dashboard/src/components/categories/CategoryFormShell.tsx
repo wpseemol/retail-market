@@ -10,7 +10,7 @@ import {
 import {
   CategoryIconBadge,
 } from "@/components/categories/CategoryIconPicker";
-import { getCategoryLucideIcon } from "@/lib/categoryIcons";
+import { getCategoryLucideIcon } from "@/lib/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -257,8 +257,8 @@ export function CategoryCoverDropzone({
           <div>
             <p className="text-sm font-medium">Cover photo</p>
             <p className="text-xs text-muted-foreground">
-              Optional. When set, lists can show this photo instead of the SVG
-              icon.
+              Optional. JPEG, PNG, WebP, or GIF · max 1 MB. Server resizes
+              automatically.
             </p>
           </div>
           <input

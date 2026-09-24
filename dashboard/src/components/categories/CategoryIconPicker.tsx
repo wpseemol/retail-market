@@ -4,7 +4,7 @@ import {
   CATEGORY_ICONS,
   type CategoryIconGroup,
   getCategoryLucideIcon,
-} from "@/lib/categoryIcons";
+} from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

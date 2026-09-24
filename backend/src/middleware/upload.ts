@@ -8,6 +8,7 @@ import {
   AVATAR_MAX_BYTES,
   type AvatarMime,
 } from "../lib/avatarImage.js";
+import { CATEGORY_IMAGE_MAX_BYTES } from "../lib/categoryImage.js";
 import { PRODUCT_IMAGES_DIR } from "../lib/productImage.js";
 import { SHOP_IMAGES_DIR } from "../lib/shopImage.js";
 
@@ -80,7 +81,7 @@ const productImageStorage = multer.diskStorage({
   },
 });
 
-/** Product / variant / category images → `uploads/products/` + `medias`. */
+/** Product / variant images → `uploads/products/` + `medias`. */
 export const productImageUpload = multer({
   storage: productImageStorage,
   limits: {
@@ -88,6 +89,18 @@ export const productImageUpload = multer({
     files: 12,
     fields: 20,
     parts: 32,
+  },
+  fileFilter: imageFileFilter,
+});
+
+/** Category cover images — max 1 MB (resized server-side). */
+export const categoryImageUpload = multer({
+  storage: productImageStorage,
+  limits: {
+    fileSize: CATEGORY_IMAGE_MAX_BYTES,
+    files: 1,
+    fields: 8,
+    parts: 10,
   },
   fileFilter: imageFileFilter,
 });

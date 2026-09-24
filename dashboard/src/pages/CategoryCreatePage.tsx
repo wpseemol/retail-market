@@ -2,6 +2,12 @@ import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { slugifyClient, type Category } from "@/lib/categories";
+import { getCategoryLucideIcon } from "@/lib/icons";
+import {
+  firstZodError,
+  validateCategoryForm,
+  validateCategoryImageFile,
+} from "@/lib/validators/category";
 import { useAuthStore } from "@/store/auth";
 import { CategoryIconPicker } from "@/components/categories/CategoryIconPicker";
 import {
@@ -22,7 +28,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { getCategoryLucideIcon } from "@/lib/categoryIcons";
 
 export function CategoryCreatePage() {
   const navigate = useNavigate();
@@ -97,6 +102,17 @@ export function CategoryCreatePage() {
 
   function onPickCover(file: File | null) {
     if (coverPreview) URL.revokeObjectURL(coverPreview);
+    if (file) {
+      const checked = validateCategoryImageFile(file);
+      if (!checked.ok) {
+        setError(checked.message);
+        setCoverFile(null);
+        setCoverPreview(null);
+        if (fileRef.current) fileRef.current.value = "";
+        return;
+      }
+    }
+    setError(null);
     setCoverFile(file);
     setCoverPreview(file ? URL.createObjectURL(file) : null);
   }
@@ -104,6 +120,27 @@ export function CategoryCreatePage() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token) return;
+
+    const parsed = validateCategoryForm({
+      name,
+      slug: slug.trim() || slugifyClient(name),
+      description,
+      icon,
+      parent_id: parentId || null,
+      is_active: isActive === "active",
+      sort_order: sortOrder,
+    });
+    if (!parsed.success) {
+      setError(firstZodError(parsed));
+      return;
+    }
+
+    const imageCheck = validateCategoryImageFile(coverFile);
+    if (!imageCheck.ok) {
+      setError(imageCheck.message);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -114,13 +151,13 @@ export function CategoryCreatePage() {
           method: "POST",
           token,
           body: {
-            name: name.trim(),
-            slug: slug.trim() || undefined,
-            description: description.trim() || null,
-            icon: icon || null,
-            parent_id: parentId || null,
-            is_active: isActive === "active",
-            sort_order: Number(sortOrder) || 0,
+            name: parsed.data.name,
+            slug: parsed.data.slug,
+            description: parsed.data.description ?? null,
+            icon: parsed.data.icon ?? null,
+            parent_id: parsed.data.parent_id ?? null,
+            is_active: parsed.data.is_active,
+            sort_order: parsed.data.sort_order,
           },
         },
       );
