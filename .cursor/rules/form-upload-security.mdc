@@ -1,0 +1,47 @@
+---
+description: Enforce Zod + injection-safe validation on all forms and file uploads (API + UI)
+alwaysApply: true
+---
+
+# Form & upload security (API + UI)
+
+Whenever you write or edit **forms**, **file uploads**, or related **API endpoints** in this repo, apply these rules. Do not skip for “quick” features.
+
+## Always validate with Zod
+
+- **Backend:** Every JSON body and query for mutating/list routes must use a Zod schema (prefer `backend/src/validators/*.ts`).
+- **Dashboard/Frontend:** Every create/edit form must validate with Zod before submit (prefer `*/lib/validators/*.ts` + shadcn Form / react-hook-form when available).
+- Never trust HTML `required` alone.
+
+## Block injection & code payloads on all strings
+
+Wrap user strings with `withSafeInput` / `findUnsafeInputReason` (or the shared dashboard helper). Reject:
+
+- SQL-like patterns (`UNION SELECT`, `DROP TABLE`, `--`, `/*`, etc.)
+- PHP tags/code (`<?php`, `system(`, `shell_exec`, …)
+- JavaScript payloads (`eval(`, `Function(`, `document.cookie`, `javascript:`, …)
+- HTML/script tags and `on*=` event handlers
+
+Apply to names, slugs, descriptions, search `q`, filenames metadata, etc.
+
+## File uploads
+
+- Validate **MIME** via magic bytes (not client `Content-Type` alone).
+- Enforce **size limits** on multer **and** again after finalize/resize.
+- Reject SVG / HTML / PHP polyglots and dangerous extensions in original names.
+- Sanitize stored original filenames; never use user filename as disk path.
+- Document multipart **field names** and max bytes in `backend/API.md` when adding endpoints.
+- Mirror size/type checks on the **UI** before upload.
+
+## Auth & roles
+
+- Dashboard catalog mutations: elevated roles only (`super_admin` | `admin` | `moderator`) unless product rules say otherwise.
+- Always send/require `Authorization: Bearer` on protected routes.
+
+## Checklist before finishing a form or upload task
+
+1. Zod schema on API + UI
+2. Safe-input guards on every string field
+3. Upload limits + type sniff + UI pre-check
+4. Clear error `message` / optional `code` / field `errors`
+5. Update `backend/API.md` if a public API changed

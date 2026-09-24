@@ -4,7 +4,12 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { uniqueVendorSlug } from "../lib/slug.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
-import { findUnsafeInputReason } from "../validators/customerAuth.js";
+import {
+  brandListQuerySchema,
+  createBrandSchema,
+  updateBrandSchema,
+} from "../validators/brand.js";
+import { withSafeInput } from "../validators/customerAuth.js";
 
 export const dashboardBrandsRouter = Router();
 
@@ -19,13 +24,6 @@ function canManage(role: string) {
   return (ELEVATED as readonly string[]).includes(role);
 }
 
-function withSafeInput(schema: z.ZodString) {
-  return schema.superRefine((value, ctx) => {
-    const reason = findUnsafeInputReason(value);
-    if (reason) ctx.addIssue({ code: "custom", message: reason });
-  });
-}
-
 function parseId(raw: string) {
   if (!/^\d+$/.test(raw)) return null;
   try {
@@ -34,31 +32,6 @@ function parseId(raw: string) {
     return null;
   }
 }
-
-const listQuerySchema = z.object({
-  q: z.string().trim().max(120).optional(),
-  active: z.enum(["true", "false", "all"]).optional().default("all"),
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(50),
-});
-
-const brandBodySchema = z.object({
-  name: withSafeInput(z.string().trim().min(2).max(120)),
-  slug: withSafeInput(
-    z
-      .string()
-      .trim()
-      .min(2)
-      .max(140)
-      .regex(
-        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-        "Slug must be lowercase letters, numbers, and hyphens",
-      ),
-  ).optional(),
-  description: withSafeInput(z.string().trim().max(500)).optional().nullable(),
-  is_active: z.boolean().optional(),
-  sort_order: z.number().int().min(0).max(999_999).optional(),
-});
 
 function toPublicBrand(row: {
   id: bigint;
@@ -103,10 +76,11 @@ const brandInclude = {
 } as const;
 
 dashboardBrandsRouter.get("/", async (req, res) => {
-  const parsed = listQuerySchema.safeParse(req.query);
+  const parsed = brandListQuerySchema.safeParse(req.query);
   if (!parsed.success) {
     return res.status(400).json({
       message: parsed.error.issues[0]?.message ?? "Validation failed",
+      errors: parsed.error.flatten().fieldErrors,
     });
   }
 
@@ -143,11 +117,17 @@ dashboardBrandsRouter.get("/", async (req, res) => {
 });
 
 dashboardBrandsRouter.get("/slug-preview", async (req, res) => {
-  const name = String(req.query.name ?? "").trim();
-  if (name.length < 2) {
-    return res.status(400).json({ message: "Name is required" });
+  const parsed = z
+    .object({
+      name: withSafeInput(z.string().trim().min(2).max(120)),
+    })
+    .safeParse({ name: String(req.query.name ?? "") });
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: parsed.error.issues[0]?.message ?? "Name is required",
+    });
   }
-  const slug = await uniqueVendorSlug(name, (s) => slugTaken(s));
+  const slug = await uniqueVendorSlug(parsed.data.name, (s) => slugTaken(s));
   return res.json({ slug });
 });
 
@@ -174,7 +154,7 @@ dashboardBrandsRouter.post("/", async (req, res) => {
     });
   }
 
-  const parsed = brandBodySchema.safeParse(req.body);
+  const parsed = createBrandSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({
       message: parsed.error.issues[0]?.message ?? "Validation failed",
@@ -216,7 +196,7 @@ dashboardBrandsRouter.patch("/:id", async (req, res) => {
   const id = parseId(String(req.params.id));
   if (!id) return res.status(400).json({ message: "Invalid brand id" });
 
-  const parsed = brandBodySchema.partial().safeParse(req.body);
+  const parsed = updateBrandSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({
       message: parsed.error.issues[0]?.message ?? "Validation failed",
@@ -251,7 +231,6 @@ dashboardBrandsRouter.patch("/:id", async (req, res) => {
     include: brandInclude,
   });
 
-  // Keep denormalized product.brand in sync when name changes.
   if (data.name && data.name !== existing.name) {
     await prisma.product.updateMany({
       where: { brand_id: id, deleted_at: null },

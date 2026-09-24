@@ -1,21 +1,34 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Tag, Trash2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Trash2 } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
 import { slugifyClient, type Brand } from "@/lib/brands";
+import {
+  brandFormSchema,
+  toBrandApiBody,
+  type BrandFormValues,
+} from "@/lib/validators/brand";
 import { useAuthStore } from "@/store/auth";
+import {
+  BrandFormHeader,
+  BrandFormSection,
+  BrandLivePreview,
+  BrandStickyActions,
+} from "@/components/brands/BrandFormShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -23,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 export function BrandEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -30,22 +44,30 @@ export function BrandEditPage() {
   const { token } = useAuthStore();
 
   const [brand, setBrand] = useState<Brand | null>(null);
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [description, setDescription] = useState("");
-  const [isActive, setIsActive] = useState("active");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const form = useForm<BrandFormValues>({
+    resolver: zodResolver(brandFormSchema),
+    defaultValues: {
+      name: "",
+      slug: "",
+      description: "",
+      is_active: true,
+      sort_order: 0,
+    },
+    mode: "onBlur",
+  });
 
   useEffect(() => {
     if (!token || !id) return;
     let cancelled = false;
     void (async () => {
       setLoading(true);
+      setLoadError(null);
       try {
         const data = await apiFetch<{ brand: Brand }>(
           `/api/dashboard/brands/${id}`,
@@ -53,16 +75,18 @@ export function BrandEditPage() {
         );
         if (cancelled) return;
         setBrand(data.brand);
-        setName(data.brand.name);
-        setSlug(data.brand.slug);
-        setDescription(data.brand.description ?? "");
-        setIsActive(data.brand.is_active ? "active" : "inactive");
+        form.reset({
+          name: data.brand.name,
+          slug: data.brand.slug,
+          description: data.brand.description ?? "",
+          is_active: data.brand.is_active,
+          sort_order: data.brand.sort_order ?? 0,
+        });
       } catch (err) {
-        if (!cancelled) {
-          setError(
-            err instanceof ApiError ? err.message : "Failed to load brand",
-          );
-        }
+        if (cancelled) return;
+        setLoadError(
+          err instanceof ApiError ? err.message : "Failed to load brand",
+        );
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -70,13 +94,17 @@ export function BrandEditPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, id]);
+  }, [token, id, form]);
 
-  async function onSave(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const name = form.watch("name");
+  const slug = form.watch("slug");
+  const description = form.watch("description");
+  const isActive = form.watch("is_active");
+  const sortOrder = form.watch("sort_order");
+
+  async function onSubmit(values: BrandFormValues) {
     if (!token || !id) return;
-    setSaving(true);
-    setSaveError(null);
+    setSubmitError(null);
     setSaveSuccess(null);
     try {
       const data = await apiFetch<{ brand: Brand }>(
@@ -84,29 +112,23 @@ export function BrandEditPage() {
         {
           method: "PATCH",
           token,
-          body: {
-            name: name.trim(),
-            slug: slug.trim(),
-            description: description.trim() || null,
-            is_active: isActive === "active",
-          },
+          body: toBrandApiBody(values),
         },
       );
       setBrand(data.brand);
       setSaveSuccess("Brand saved");
     } catch (err) {
-      setSaveError(
+      setSubmitError(
         err instanceof ApiError ? err.message : "Failed to save brand",
       );
-    } finally {
-      setSaving(false);
     }
   }
 
   async function onDelete() {
     if (!token || !id) return;
-    if (!window.confirm("Delete this brand?")) return;
+    if (!window.confirm("Delete this brand? Products keep their data.")) return;
     setDeleting(true);
+    setSubmitError(null);
     try {
       await apiFetch(`/api/dashboard/brands/${id}`, {
         method: "DELETE",
@@ -114,7 +136,7 @@ export function BrandEditPage() {
       });
       navigate("/brands");
     } catch (err) {
-      setSaveError(
+      setSubmitError(
         err instanceof ApiError ? err.message : "Failed to delete brand",
       );
     } finally {
@@ -123,13 +145,21 @@ export function BrandEditPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-muted-foreground">Loading brand…</p>;
+    return (
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
+        <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="h-96 animate-pulse rounded-2xl bg-muted/60" />
+          <div className="h-72 animate-pulse rounded-2xl bg-muted/60" />
+        </div>
+      </div>
+    );
   }
 
-  if (error || !brand) {
+  if (loadError || !brand) {
     return (
       <div className="space-y-3">
-        <p className="text-sm text-destructive">{error ?? "Not found"}</p>
+        <p className="text-sm text-destructive">{loadError ?? "Not found"}</p>
         <Button asChild variant="outline">
           <Link to="/brands">Back</Link>
         </Button>
@@ -138,100 +168,188 @@ export function BrandEditPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <Button asChild variant="ghost" size="sm" className="-ml-2 mb-2">
-            <Link to="/brands">
-              <ArrowLeft />
-              Brands
-            </Link>
-          </Button>
-          <h1 className="text-2xl font-semibold tracking-tight">{brand.name}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">/{brand.slug}</p>
-        </div>
-        <Badge variant="outline" className="capitalize">
-          {brand.is_active ? "active" : "inactive"}
-        </Badge>
-      </div>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-4">
+      <BrandFormHeader
+        title={brand.name}
+        subtitle={`Update brand details · /${brand.slug}`}
+        badge={
+          <Badge
+            variant="outline"
+            className={
+              brand.is_active
+                ? "border-brand-primary/30 bg-brand-tint/60 capitalize text-brand-deep"
+                : "capitalize"
+            }
+          >
+            {brand.is_active ? "active" : "inactive"}
+          </Badge>
+        }
+      />
 
-      <Card>
-        <CardHeader>
-          <div className="mb-1 flex size-9 items-center justify-center rounded-md bg-brand-tint text-brand-deep">
-            <Tag className="size-4" />
-          </div>
-          <CardTitle>Edit brand</CardTitle>
-          <CardDescription>
-            Name changes sync to products using this brand.
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={onSave}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="slug">Slug</Label>
-              <Input
-                id="slug"
-                value={slug}
-                onChange={(e) => setSlug(slugifyClient(e.target.value))}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select value={isActive} onValueChange={setIsActive}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">active</SelectItem>
-                  <SelectItem value="inactive">inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {saveError ? (
-              <p className="text-sm text-destructive" role="alert">
-                {saveError}
-              </p>
-            ) : null}
-            {saveSuccess ? (
-              <p className="text-sm text-brand-primary" role="status">
-                {saveSuccess}
-              </p>
-            ) : null}
-          </CardContent>
-          <CardFooter className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={saving}>
-              {saving ? "Saving…" : "Save changes"}
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={deleting}
-              onClick={() => void onDelete()}
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"
+          noValidate
+        >
+          <div className="space-y-5">
+            <BrandFormSection
+              step="01"
+              title="Brand identity"
+              description="Name and slug shown when assigning brands to products."
             >
-              <Trash2 />
-              {deleting ? "Deleting…" : "Delete"}
-            </Button>
-          </CardFooter>
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Slug</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(slugifyClient(e.target.value))
+                        }
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Lowercase letters, numbers, and hyphens only.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </BrandFormSection>
+
+            <BrandFormSection
+              step="02"
+              title="Details & visibility"
+              description="Description, sort order, and active status."
+            >
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea rows={3} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="sort_order"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sort order</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={field.value}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value) || 0)
+                          }
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="is_active"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select
+                        value={field.value ? "active" : "inactive"}
+                        onValueChange={(v) => field.onChange(v === "active")}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </BrandFormSection>
+
+            <BrandStickyActions
+              message={
+                submitError ? (
+                  <p className="text-destructive" role="alert">
+                    {submitError}
+                  </p>
+                ) : saveSuccess ? (
+                  <p className="text-brand-primary" role="status">
+                    {saveSuccess}
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground">
+                    {brand.products_count ?? 0} product
+                    {(brand.products_count ?? 0) === 1 ? "" : "s"} linked
+                  </p>
+                )
+              }
+            >
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={deleting || form.formState.isSubmitting}
+                onClick={() => void onDelete()}
+              >
+                <Trash2 />
+                {deleting ? "Deleting…" : "Delete"}
+              </Button>
+              <Button asChild type="button" variant="outline">
+                <Link to="/brands">Cancel</Link>
+              </Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Saving…" : "Save changes"}
+              </Button>
+            </BrandStickyActions>
+          </div>
+
+          <BrandLivePreview
+            mode="edit"
+            name={name}
+            slug={slug}
+            description={description}
+            isActive={isActive}
+            sortOrder={sortOrder}
+            productsCount={brand.products_count ?? 0}
+          />
         </form>
-      </Card>
+      </Form>
     </div>
   );
 }

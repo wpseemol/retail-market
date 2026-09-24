@@ -268,18 +268,22 @@ Auth: Bearer **`super_admin`** or **`vendor`**. Vendors only see/manage their ow
 
 Auth: STAFF. Create/update/delete: **elevated** only. Vendors read **active** brands only.
 
+Validators: `backend/src/validators/brand.ts` (Zod + SQL/PHP/JS injection guards)
+
 | Method | Path | Notes |
 |--------|------|--------|
-| GET | `/` | `q?`, `active=true\|false\|all`, `page`, `limit` |
-| GET | `/slug-preview?name=` | `{ slug }` |
+| GET | `/` | `q?` (safe text), `active=true\|false\|all`, `page`, `limit` |
+| GET | `/slug-preview?name=` | `{ slug }` · name validated for injection |
 | GET | `/:id` | |
-| POST | `/` | elevated |
-| PATCH | `/:id` | elevated |
+| POST | `/` | elevated · Zod body |
+| PATCH | `/:id` | elevated · Zod partial |
 | DELETE | `/:id` | elevated soft-delete |
 
-**Body:** `name` (required on create), `slug?`, `description?`, `is_active?`, `sort_order?`
+**Body:** `name` (2–120), `slug?` (kebab), `description?` (≤500 or null), `is_active?`, `sort_order?` (0–999999)
 
 **Brand object:** `id`, `name`, `slug`, `description`, `is_active`, `sort_order`, timestamps, `products_count`.
+
+Dashboard UI: react-hook-form + shadcn Form + Zod (`dashboard/src/lib/validators/brand.ts`).
 
 ---
 

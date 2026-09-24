@@ -1,20 +1,32 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Tag } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { ApiError, apiFetch } from "@/lib/api";
 import { slugifyClient, type Brand } from "@/lib/brands";
+import {
+  brandFormSchema,
+  toBrandApiBody,
+  type BrandFormValues,
+} from "@/lib/validators/brand";
 import { useAuthStore } from "@/store/auth";
+import {
+  BrandFormHeader,
+  BrandFormSection,
+  BrandLivePreview,
+  BrandStickyActions,
+} from "@/components/brands/BrandFormShell";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -22,19 +34,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 export function BrandCreatePage() {
   const navigate = useNavigate();
   const { token } = useAuthStore();
-
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
-  const [description, setDescription] = useState("");
-  const [isActive, setIsActive] = useState("active");
   const [previewing, setPreviewing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const form = useForm<BrandFormValues>({
+    resolver: zodResolver(brandFormSchema),
+    defaultValues: {
+      name: "",
+      slug: "",
+      description: "",
+      is_active: true,
+      sort_order: 0,
+    },
+    mode: "onBlur",
+  });
+
+  const name = form.watch("name");
+  const slug = form.watch("slug");
+  const description = form.watch("description");
+  const isActive = form.watch("is_active");
+  const sortOrder = form.watch("sort_order");
 
   useEffect(() => {
     if (!token || slugTouched || name.trim().length < 2) return;
@@ -46,126 +71,201 @@ export function BrandCreatePage() {
             `/api/dashboard/brands/slug-preview?name=${encodeURIComponent(name.trim())}`,
             { token },
           );
-          setSlug(data.slug);
+          form.setValue("slug", data.slug, { shouldValidate: true });
         } catch {
-          setSlug(slugifyClient(name));
+          form.setValue("slug", slugifyClient(name), { shouldValidate: true });
         } finally {
           setPreviewing(false);
         }
       })();
     }, 280);
     return () => window.clearTimeout(handle);
-  }, [name, slugTouched, token]);
+  }, [name, slugTouched, token, form]);
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function onSubmit(values: BrandFormValues) {
     if (!token) return;
-    setLoading(true);
-    setError(null);
+    setSubmitError(null);
     try {
       const data = await apiFetch<{ brand: Brand }>("/api/dashboard/brands", {
         method: "POST",
         token,
-        body: {
-          name: name.trim(),
-          slug: slug.trim() || undefined,
-          description: description.trim() || null,
-          is_active: isActive === "active",
-        },
+        body: toBrandApiBody(values),
       });
       navigate(`/brands/${data.brand.id}`);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to create brand");
-    } finally {
-      setLoading(false);
+      setSubmitError(
+        err instanceof ApiError ? err.message : "Failed to create brand",
+      );
     }
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
-      <div>
-        <Button asChild variant="ghost" size="sm" className="-ml-2 mb-2">
-          <Link to="/brands">
-            <ArrowLeft />
-            Brands
-          </Link>
-        </Button>
-        <h1 className="text-2xl font-semibold tracking-tight">Add brand</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Create the brand first, then select it on products.
-        </p>
-      </div>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-4">
+      <BrandFormHeader
+        title="Add brand"
+        subtitle="Create a shared catalog brand with Zod-validated fields. Assign it when adding products."
+      />
 
-      <Card>
-        <CardHeader>
-          <div className="mb-1 flex size-9 items-center justify-center rounded-md bg-brand-tint text-brand-deep">
-            <Tag className="size-4" />
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"
+          noValidate
+        >
+          <div className="space-y-5">
+            <BrandFormSection
+              step="01"
+              title="Brand identity"
+              description="Name and URL slug used across the product catalog."
+            >
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Handmade"
+                        autoFocus
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Slug {previewing ? "(updating…)" : ""}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        onChange={(e) => {
+                          setSlugTouched(true);
+                          field.onChange(slugifyClient(e.target.value));
+                        }}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Lowercase letters, numbers, and hyphens only.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </BrandFormSection>
+
+            <BrandFormSection
+              step="02"
+              title="Details & visibility"
+              description="Optional description, sort order, and publish status."
+            >
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        rows={3}
+                        placeholder="Optional note for staff (max 500 chars)"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="sort_order"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sort order</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={field.value}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value) || 0)
+                          }
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="is_active"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select
+                        value={field.value ? "active" : "inactive"}
+                        onValueChange={(v) => field.onChange(v === "active")}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </BrandFormSection>
+
+            <BrandStickyActions
+              message={
+                submitError ? (
+                  <p className="text-destructive" role="alert">
+                    {submitError}
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground">
+                    Validated with Zod · injection-safe strings
+                  </p>
+                )
+              }
+            >
+              <Button asChild type="button" variant="outline">
+                <Link to="/brands">Cancel</Link>
+              </Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Creating…" : "Create brand"}
+              </Button>
+            </BrandStickyActions>
           </div>
-          <CardTitle>Brand details</CardTitle>
-          <CardDescription>
-            Examples: Unknown, Handmade, or your own brand name.
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={onSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                minLength={2}
-                placeholder="Handmade"
-                autoFocus
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="slug">
-                Slug {previewing ? "(updating…)" : ""}
-              </Label>
-              <Input
-                id="slug"
-                value={slug}
-                onChange={(e) => {
-                  setSlugTouched(true);
-                  setSlug(slugifyClient(e.target.value));
-                }}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select value={isActive} onValueChange={setIsActive}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">active</SelectItem>
-                  <SelectItem value="inactive">inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {error ? (
-              <p className="text-sm text-destructive" role="alert">
-                {error}
-              </p>
-            ) : null}
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" disabled={loading || name.trim().length < 2}>
-              {loading ? "Creating…" : "Create brand"}
-            </Button>
-          </CardFooter>
+
+          <BrandLivePreview
+            mode="create"
+            name={name}
+            slug={slug}
+            description={description}
+            isActive={isActive}
+            sortOrder={sortOrder}
+          />
         </form>
-      </Card>
+      </Form>
     </div>
   );
 }
