@@ -169,18 +169,18 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
               className="bg-brand-primary text-white hover:bg-brand-hover hover:text-white active:bg-brand-hover active:text-white data-[active=true]:bg-brand-primary data-[active=true]:text-white"
             >
               <NavLink to={logoHref} end={logoHref === "/"}>
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-white/15">
+                <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/20 shadow-sm ring-1 ring-white/25">
                   <img
                     src="/logo/niyenin-white.png"
                     alt=""
-                    className="h-7 w-auto"
+                    className="size-5 object-contain"
                   />
                 </span>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold text-white">
+                <div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold tracking-tight text-white">
                     Niyenin
                   </span>
-                  <span className="truncate text-xs text-white/80">
+                  <span className="truncate text-[11px] text-white/75">
                     Dashboard
                   </span>
                 </div>

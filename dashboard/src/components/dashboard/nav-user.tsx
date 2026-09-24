@@ -41,30 +41,31 @@ function initials(user: StaffUser) {
 }
 
 function UserAvatar({ user, className }: { user: StaffUser; className?: string }) {
-  const sizeClass = className ?? "size-10";
+  const sizeClass = className ?? "size-8";
 
   if (user.avatar?.path) {
     return (
       <img
         src={user.avatar.path}
         alt={`${user.first_name} ${user.last_name}`.trim() || "Avatar"}
-        className={`rounded-lg object-cover ${sizeClass}`}
+        className={`shrink-0 rounded-lg object-cover ring-1 ring-border/60 ${sizeClass}`}
       />
     );
   }
 
   if (user.avatar_preset && isAvatarPresetId(user.avatar_preset)) {
     return (
-      <AvatarPresetSvg
-        id={user.avatar_preset}
-        className={`rounded-lg ${sizeClass}`}
-      />
+      <span
+        className={`flex shrink-0 items-center justify-center overflow-hidden rounded-lg ring-1 ring-border/60 ${sizeClass}`}
+      >
+        <AvatarPresetSvg id={user.avatar_preset} className="size-full" />
+      </span>
     );
   }
 
   return (
-    <Avatar className={`rounded-lg ${sizeClass}`}>
-      <AvatarFallback className="rounded-lg bg-brand-tint text-brand-deep text-sm font-semibold">
+    <Avatar className={`shrink-0 rounded-lg ring-1 ring-border/60 ${sizeClass}`}>
+      <AvatarFallback className="rounded-lg bg-brand-tint text-xs font-semibold text-brand-deep">
         {initials(user)}
       </AvatarFallback>
     </Avatar>
@@ -77,8 +78,12 @@ export function NavUser({ user }: { user: StaffUser }) {
   const logout = useAuthStore((state) => state.logout);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const name = `${user.first_name} ${user.last_name}`.trim();
-  const roleLabel = user.role.replace("_", " ");
+  const name =
+    `${user.first_name} ${user.last_name}`.trim() ||
+    user.username ||
+    user.email;
+  const roleLabel = user.role.replaceAll("_", " ");
+  const subtitle = user.email;
 
   useEffect(() => {
     setMounted(true);
@@ -95,14 +100,17 @@ export function NavUser({ user }: { user: StaffUser }) {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <UserAvatar user={user} />
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{name}</span>
-                <span className="truncate text-xs capitalize text-muted-foreground">
+              <UserAvatar user={user} className="size-8" />
+              <div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold tracking-tight">
+                  {name}
+                </span>
+                <span className="truncate text-[11px] capitalize text-muted-foreground">
                   {roleLabel}
+                  {subtitle ? ` · ${subtitle}` : ""}
                 </span>
               </div>
-              <ChevronsUpDown className="ml-auto size-4" />
+              <ChevronsUpDown className="ml-auto size-4 shrink-0 opacity-60" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -112,13 +120,20 @@ export function NavUser({ user }: { user: StaffUser }) {
             sideOffset={4}
           >
             <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <UserAvatar user={user} />
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{name}</span>
-                  <span className="truncate text-xs capitalize text-muted-foreground">
+              <div className="flex items-center gap-3 px-1 py-1.5 text-left text-sm">
+                <UserAvatar user={user} className="size-9" />
+                <div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold tracking-tight">
+                    {name}
+                  </span>
+                  <span className="truncate text-[11px] capitalize text-muted-foreground">
                     {roleLabel}
                   </span>
+                  {subtitle ? (
+                    <span className="truncate text-[11px] text-muted-foreground">
+                      {subtitle}
+                    </span>
+                  ) : null}
                 </div>
               </div>
             </DropdownMenuLabel>
