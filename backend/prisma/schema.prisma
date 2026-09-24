@@ -189,6 +189,8 @@ model UserSession {
   user_id          BigInt      @db.UnsignedBigInt
   token_hash       String      @unique @db.VarChar(64)
   ip_address       String?     @db.VarChar(45)
+  /// ISO 3166-1 alpha-2 country from IP (LO = local/private).
+  country          String?     @db.VarChar(2)
   user_agent       String?     @db.Text
   device_type      DeviceType  @default(unknown)
   browser          String?     @db.VarChar(100)
@@ -207,6 +209,7 @@ model UserSession {
   @@index([last_activity_at])
   @@index([expires_at])
   @@index([is_revoked])
+  @@index([country])
   @@map("user_sessions")
 }
 
@@ -724,4 +727,21 @@ model SiteSettings {
   og_image Media? @relation("SiteSettingsOgImage", fields: [og_image_id], references: [id], onDelete: SetNull)
 
   @@map("site_settings")
+}
+
+/// Anonymous storefront page hits for visitor-by-country analytics.
+model PageVisit {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  /// ISO 3166-1 alpha-2 (LO = local/private, XX = unknown).
+  country    String   @db.VarChar(2)
+  path       String   @db.VarChar(255)
+  referrer   String?  @db.VarChar(500)
+  /// Hashed IP only — never store raw visitor IPs for analytics.
+  ip_hash    String?  @db.VarChar(64)
+  device_type DeviceType @default(unknown)
+  created_at DateTime @default(now())
+
+  @@index([created_at])
+  @@index([country, created_at])
+  @@map("page_visits")
 }

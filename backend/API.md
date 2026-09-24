@@ -68,8 +68,10 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/auth` | `routes/customerAuth.ts` | Customers |
 | `/api/customer/addresses` | `routes/customerAddresses.ts` | Customers |
 | `/api/site-settings` | `routes/publicSiteSettings.ts` | Public |
+| `/api/analytics` | `routes/publicAnalytics.ts` | Public |
 | `/api/dashboard/auth` | `routes/dashboardAuth.ts` | Staff |
 | `/api/dashboard/users` | `routes/dashboardUsers.ts` | `super_admin` |
+| `/api/dashboard/overview` | `routes/dashboardOverview.ts` | `super_admin`, `admin` |
 | `/api/dashboard/site-settings` | `routes/dashboardSiteSettings.ts` | `super_admin` |
 | `/api/dashboard/shops` | `routes/dashboardVendors.ts` | `super_admin`, `vendor` |
 | `/api/dashboard/categories` | `routes/dashboardCategories.ts` | Staff |
@@ -93,6 +95,29 @@ No auth.
 ```
 
 **503** if DB down: `"status": "degraded"`.
+
+---
+
+## Public analytics — `/api/analytics`
+
+`POST /api/analytics/visit` — no auth. Storefront beacon for visitor-by-country.
+
+```json
+{ "path": "/", "referrer": "" }
+```
+
+Resolves country from IP (`geoip-lite`). Private IPs → `LO` (Local network).
+
+---
+
+## Dashboard overview — `/api/dashboard/overview`
+
+Auth: Bearer **`super_admin`** or **`admin`**.
+
+`GET /` → `{ overview: { stats, visitors_by_country, source, period_days } }`
+
+`stats`: products, orders, staff_users, shops, visits_30d, visits_7d, sessions_30d  
+`visitors_by_country`: `{ country, country_name, flag, visits, percent }[]`
 
 ---
 

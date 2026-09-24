@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { Request } from "express";
 import type { DeviceType, UserRole } from "@prisma/client";
+import { countryFromIp } from "./geo.js";
 import { prisma } from "./prisma.js";
 import { issueAuthTokens, tokenTtlsForRole } from "./token.js";
 
@@ -124,6 +125,7 @@ export async function createUserSession(input: {
   const sessionFields = {
     token_hash: hashToken(tokens.refreshToken),
     ip_address: ip,
+    country: countryFromIp(ip),
     user_agent: uaStored,
     device_type: parsed.device_type,
     browser: parsed.browser,

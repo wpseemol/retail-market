@@ -9,6 +9,7 @@ import Footer from "@/components/home/Footer";
 import AuthHydrator from "@/components/providers/AuthHydrator";
 import AuthSessionProvider from "@/components/providers/AuthSessionProvider";
 import { AnalyticsPixels } from "@/components/providers/AnalyticsPixels";
+import { VisitBeacon } from "@/components/providers/VisitBeacon";
 import { absoluteUrl, siteConfig } from "@/config/site";
 import { getSiteSettings } from "@/lib/siteSettings";
 
@@ -124,6 +125,7 @@ export default async function RootLayout({
                 className={`${poppins.className} min-h-full flex flex-col font-sans`}
             >
                 <AnalyticsPixels settings={settings} />
+                <VisitBeacon />
                 <ThemeProvider>
                     <StoreProvider>
                         <AuthSessionProvider>
