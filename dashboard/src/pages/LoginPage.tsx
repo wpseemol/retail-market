@@ -89,11 +89,11 @@ export function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-bg-base px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          <div className="flex h-14 w-full items-center justify-center rounded-md bg-brand-primary px-4">
+          <div className="flex h-16 w-full items-center justify-center rounded-md bg-brand-primary px-4">
             <img
               src="/logo/niyenin-white.png"
               alt="Niyenin"
-              className="h-8 w-auto"
+              className="h-10 w-auto"
             />
           </div>
           <p className="text-sm font-medium text-text-secondary">Dashboard</p>

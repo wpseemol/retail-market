@@ -41,12 +41,14 @@ function initials(user: StaffUser) {
 }
 
 function UserAvatar({ user, className }: { user: StaffUser; className?: string }) {
+  const sizeClass = className ?? "size-10";
+
   if (user.avatar?.path) {
     return (
       <img
         src={user.avatar.path}
         alt={`${user.first_name} ${user.last_name}`.trim() || "Avatar"}
-        className={`rounded-lg object-cover ${className ?? "size-8"}`}
+        className={`rounded-lg object-cover ${sizeClass}`}
       />
     );
   }
@@ -55,14 +57,14 @@ function UserAvatar({ user, className }: { user: StaffUser; className?: string }
     return (
       <AvatarPresetSvg
         id={user.avatar_preset}
-        className={`rounded-lg ${className ?? "size-8"}`}
+        className={`rounded-lg ${sizeClass}`}
       />
     );
   }
 
   return (
-    <Avatar className={`rounded-lg ${className ?? "size-8"}`}>
-      <AvatarFallback className="rounded-lg bg-brand-tint text-brand-deep">
+    <Avatar className={`rounded-lg ${sizeClass}`}>
+      <AvatarFallback className="rounded-lg bg-brand-tint text-brand-deep text-sm font-semibold">
         {initials(user)}
       </AvatarFallback>
     </Avatar>
