@@ -1,4 +1,5 @@
 import { Router } from "express";
+import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { toPublicMedia } from "../lib/user.js";
@@ -24,7 +25,7 @@ const slugParamSchema = withSafeInput(
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(48).default(24),
+  limit: z.coerce.number().int().min(1).max(48).optional(),
   q: z
     .string()
     .trim()
@@ -42,7 +43,13 @@ function toStorefrontShop(vendor: {
   shop_name: string;
   slug: string;
   description: string | null;
+  storefront_theme: string;
+  products_per_page: number;
+  featured_products_count: number;
+  show_banned_brands: boolean;
+  product_sort: string;
   logo: Parameters<typeof toPublicMedia>[0];
+  banner?: Parameters<typeof toPublicMedia>[0];
   _count?: { products: number };
 }) {
   return {
@@ -51,8 +58,34 @@ function toStorefrontShop(vendor: {
     slug: vendor.slug,
     description: vendor.description,
     logo: toPublicMedia(vendor.logo),
+    banner: toPublicMedia(vendor.banner),
+    storefront_theme: vendor.storefront_theme,
+    products_per_page: vendor.products_per_page,
+    featured_products_count: vendor.featured_products_count,
+    show_banned_brands: vendor.show_banned_brands,
+    product_sort: vendor.product_sort,
     products_count: vendor._count?.products ?? undefined,
   };
+}
+
+function productOrderBy(
+  sort: string,
+): Prisma.ProductOrderByWithRelationInput[] {
+  switch (sort) {
+    case "newest":
+      return [{ published_at: "desc" }, { id: "desc" }];
+    case "price_asc":
+      return [{ price: "asc" }, { id: "desc" }];
+    case "price_desc":
+      return [{ price: "desc" }, { id: "desc" }];
+    case "featured_first":
+    default:
+      return [
+        { is_featured: "desc" },
+        { published_at: "desc" },
+        { id: "desc" },
+      ];
+  }
 }
 
 /**
@@ -67,7 +100,8 @@ publicShopsRouter.get("/", async (req, res) => {
     });
   }
 
-  const { page, limit, q } = queryParsed.data;
+  const { page, q } = queryParsed.data;
+  const limit = queryParsed.data.limit ?? 24;
   const where = {
     status: "active" as const,
     deleted_at: null,
@@ -88,6 +122,7 @@ publicShopsRouter.get("/", async (req, res) => {
       where,
       include: {
         logo: true,
+        banner: true,
         _count: {
           select: {
             products: {
@@ -115,7 +150,7 @@ publicShopsRouter.get("/", async (req, res) => {
 
 /**
  * GET /api/shops/:slug
- * Public storefront — active store + active products only.
+ * Public storefront — layout from dashboard customization.
  */
 publicShopsRouter.get("/:slug", async (req, res) => {
   const slugParsed = slugParamSchema.safeParse(req.params.slug);
@@ -132,7 +167,7 @@ publicShopsRouter.get("/:slug", async (req, res) => {
     });
   }
 
-  const { page, limit } = queryParsed.data;
+  const { page } = queryParsed.data;
   const slug = slugParsed.data;
 
   const vendor = await prisma.vendor.findFirst({
@@ -141,17 +176,30 @@ publicShopsRouter.get("/:slug", async (req, res) => {
       status: "active",
       deleted_at: null,
     },
-    include: { logo: true },
+    include: { logo: true, banner: true },
   });
 
   if (!vendor) {
     return res.status(404).json({ message: "Store not found" });
   }
 
-  const where = {
+  const limit = Math.min(
+    48,
+    Math.max(4, queryParsed.data.limit ?? vendor.products_per_page),
+  );
+
+  const where: Prisma.ProductWhereInput = {
     vendor_id: vendor.id,
-    status: "active" as const,
+    status: "active",
     deleted_at: null,
+    ...(vendor.show_banned_brands
+      ? {}
+      : {
+          OR: [
+            { brand_id: null },
+            { brandRef: { is_active: true } },
+          ],
+        }),
   };
 
   const [total, rows] = await Promise.all([
@@ -159,19 +207,21 @@ publicShopsRouter.get("/:slug", async (req, res) => {
     prisma.product.findMany({
       where,
       include: productWithCatalogInclude,
-      orderBy: [
-        { is_featured: "desc" },
-        { published_at: "desc" },
-        { id: "desc" },
-      ],
+      orderBy: productOrderBy(vendor.product_sort),
       skip: (page - 1) * limit,
       take: limit,
     }),
   ]);
 
+  const products = rows.map(toPublicProduct);
+  const featured = products
+    .filter((p) => p.is_featured)
+    .slice(0, vendor.featured_products_count);
+
   return res.json({
     store: toStorefrontShop(vendor),
-    products: rows.map(toPublicProduct),
+    products,
+    featured_products: featured,
     pagination: {
       page,
       limit,

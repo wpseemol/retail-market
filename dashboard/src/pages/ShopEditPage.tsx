@@ -5,10 +5,16 @@ import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import {
   slugifyClient,
   shopStatusLabel,
+  storefrontThemeLabel,
+  productSortLabel,
   type Shop,
   type ShopHistoryItem,
   type ShopStatus,
+  type StorefrontTheme,
+  type ProductSort,
   SHOP_STATUSES,
+  STOREFRONT_THEMES,
+  PRODUCT_SORTS,
 } from "@/lib/shops";
 import { useAuthStore } from "@/store/auth";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +56,7 @@ export function ShopEditPage() {
   const { token, user } = useAuthStore();
   const isSuper = user?.role === "super_admin";
   const fileRef = useRef<HTMLInputElement>(null);
+  const bannerRef = useRef<HTMLInputElement>(null);
 
   const [shop, setShop] = useState<Shop | null>(null);
   const [history, setHistory] = useState<ShopHistoryItem[]>([]);
@@ -62,11 +69,18 @@ export function ShopEditPage() {
   const [status, setStatus] = useState<ShopStatus>("pending");
   const [ownerId, setOwnerId] = useState("");
   const [vendors, setVendors] = useState<VendorOption[]>([]);
+  const [theme, setTheme] = useState<StorefrontTheme>("classic");
+  const [productsPerPage, setProductsPerPage] = useState(12);
+  const [featuredCount, setFeaturedCount] = useState(4);
+  const [showBannedBrands, setShowBannedBrands] = useState(true);
+  const [productSort, setProductSort] =
+    useState<ProductSort>("featured_first");
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [bannerUploading, setBannerUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   async function loadAll() {
@@ -110,6 +124,11 @@ export function ShopEditPage() {
     setDescription(next.description ?? "");
     setStatus(next.status);
     setOwnerId(next.user_id);
+    setTheme(next.storefront_theme ?? "classic");
+    setProductsPerPage(next.products_per_page ?? 12);
+    setFeaturedCount(next.featured_products_count ?? 4);
+    setShowBannedBrands(next.show_banned_brands ?? true);
+    setProductSort(next.product_sort ?? "featured_first");
   }
 
   async function onSave(event: FormEvent<HTMLFormElement>) {
@@ -129,6 +148,11 @@ export function ShopEditPage() {
             shop_name: shopName.trim(),
             slug: slug.trim(),
             description: description.trim() || null,
+            storefront_theme: theme,
+            products_per_page: productsPerPage,
+            featured_products_count: featuredCount,
+            show_banned_brands: showBannedBrands,
+            product_sort: productSort,
             ...(isSuper
               ? {
                   status,
@@ -179,6 +203,36 @@ export function ShopEditPage() {
     } finally {
       setLogoUploading(false);
       if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
+  async function onBannerChange(file: File | null) {
+    if (!file || !token || !id) return;
+    setBannerUploading(true);
+    setSaveError(null);
+    setSaveSuccess(null);
+    try {
+      const form = new FormData();
+      form.append("banner", file);
+      const data = await apiUpload<{ message: string; shop: Shop }>(
+        `/api/dashboard/shops/${id}/banner`,
+        form,
+        { token },
+      );
+      applyShop(data.shop);
+      setSaveSuccess(data.message || "Store banner updated");
+      const hist = await apiFetch<{ history: ShopHistoryItem[] }>(
+        `/api/dashboard/shops/${id}/history`,
+        { token },
+      );
+      setHistory(hist.history);
+    } catch (err) {
+      setSaveError(
+        err instanceof ApiError ? err.message : "Banner upload failed",
+      );
+    } finally {
+      setBannerUploading(false);
+      if (bannerRef.current) bannerRef.current.value = "";
     }
   }
 
@@ -257,7 +311,7 @@ export function ShopEditPage() {
         <form onSubmit={onSave}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Store image</Label>
+              <Label>Store brand image (logo)</Label>
               <div className="flex items-center gap-4">
                 <div className="flex size-20 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
                   {shop.logo?.path ? (
@@ -287,10 +341,53 @@ export function ShopEditPage() {
                     disabled={logoUploading}
                     onClick={() => fileRef.current?.click()}
                   >
-                    {logoUploading ? "Uploading…" : "Change image"}
+                    {logoUploading ? "Uploading…" : "Change logo"}
                   </Button>
+                  <p className="text-xs text-muted-foreground">
+                    JPEG, PNG, WebP, or GIF · max 5 MB · always resized on the
+                    server
+                  </p>
                 </div>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Store banner</Label>
+              <div className="overflow-hidden rounded-md border border-border bg-muted">
+                <div className="flex aspect-[21/7] items-center justify-center">
+                  {shop.banner?.path ? (
+                    <img
+                      src={shop.banner.path}
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <ImagePlus className="size-8 text-muted-foreground" />
+                  )}
+                </div>
+              </div>
+              <input
+                ref={bannerRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={(e) =>
+                  void onBannerChange(e.target.files?.[0] ?? null)
+                }
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={bannerUploading}
+                onClick={() => bannerRef.current?.click()}
+              >
+                {bannerUploading ? "Uploading…" : "Change banner"}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Wide hero on /stores/{`{slug}`} · JPEG, PNG, WebP, or GIF · max
+                5 MB · always resized on the server
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -365,6 +462,107 @@ export function ShopEditPage() {
                 </div>
               </>
             ) : null}
+
+            <Separator />
+
+            <div>
+              <p className="text-sm font-semibold">Storefront layout</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Controls how this store appears on the customer site at
+                /stores/{shop.slug}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Page design</Label>
+              <Select
+                value={theme}
+                onValueChange={(value) => setTheme(value as StorefrontTheme)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STOREFRONT_THEMES.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {storefrontThemeLabel(item)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Classic = logo hero · Marketplace = banner + grid · Showcase =
+                banner + featured strip
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="products_per_page">Products per page</Label>
+                <Input
+                  id="products_per_page"
+                  type="number"
+                  min={4}
+                  max={48}
+                  value={productsPerPage}
+                  onChange={(e) =>
+                    setProductsPerPage(Number(e.target.value) || 12)
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="featured_count">Featured products</Label>
+                <Input
+                  id="featured_count"
+                  type="number"
+                  min={0}
+                  max={12}
+                  value={featuredCount}
+                  onChange={(e) =>
+                    setFeaturedCount(Number(e.target.value) || 0)
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Product order</Label>
+              <Select
+                value={productSort}
+                onValueChange={(value) =>
+                  setProductSort(value as ProductSort)
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRODUCT_SORTS.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {productSortLabel(item)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <label className="flex cursor-pointer items-start gap-3 rounded-md border border-border p-3">
+              <input
+                type="checkbox"
+                className="mt-1 size-4 accent-[var(--brand-primary,#00b207)]"
+                checked={showBannedBrands}
+                onChange={(e) => setShowBannedBrands(e.target.checked)}
+              />
+              <span>
+                <span className="block text-sm font-medium">
+                  Show banned-brand products
+                </span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">
+                  When on, products whose brand is inactive still appear — with
+                  a distinct “banned brand” style on the storefront.
+                </span>
+              </span>
+            </label>
 
             {saveError ? (
               <p className="text-sm text-destructive" role="alert">

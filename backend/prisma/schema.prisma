@@ -72,6 +72,13 @@ enum ProductStatus {
   out_of_stock
 }
 
+/// Per-store storefront layout on the customer site.
+enum StorefrontTheme {
+  classic
+  marketplace
+  showcase
+}
+
 enum OrderStatus {
   pending
   confirmed
@@ -177,6 +184,7 @@ model Media {
   productThumbnails   Product[]        @relation("ProductThumbnail")
   variantImages       ProductVariant[] @relation("VariantImage")
   vendorLogos         Vendor[]         @relation("VendorLogo")
+  vendorBanners       Vendor[]         @relation("VendorBanner")
 
   @@index([user_id])
   @@index([collection_name])
@@ -281,18 +289,31 @@ model Brand {
 model Vendor {
   id           BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
   user_id      BigInt     @unique @db.UnsignedBigInt
-  /// Shop logo from `medias` (collection: vendor_banners, uploads/shops/).
+  /// Store brand / logo image (uploads/shops/).
   logo_id      BigInt?    @unique @db.UnsignedBigInt
+  /// Wide storefront banner (uploads/shops/).
+  banner_id    BigInt?    @unique @db.UnsignedBigInt
   shop_name    String     @db.VarChar(200)
   slug         String     @unique @db.VarChar(220)
   description  String?    @db.Text
   status       UserStatus @default(pending)
+  /// Customer /stores/[slug] layout theme.
+  storefront_theme          StorefrontTheme @default(classic)
+  /// How many products to list on the store page.
+  products_per_page         Int             @default(12)
+  /// Featured strip size (showcase / marketplace themes).
+  featured_products_count   Int             @default(4)
+  /// Show products whose brand is inactive — styled as banned.
+  show_banned_brands        Boolean         @default(true)
+  /// Product ordering on the public store page.
+  product_sort              String          @default("featured_first") @db.VarChar(32)
   created_at   DateTime   @default(now())
   updated_at   DateTime   @updatedAt
   deleted_at   DateTime?
 
   user     User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
   logo     Media?          @relation("VendorLogo", fields: [logo_id], references: [id], onDelete: SetNull)
+  banner   Media?          @relation("VendorBanner", fields: [banner_id], references: [id], onDelete: SetNull)
   products Product[]
   history  VendorHistory[]
 

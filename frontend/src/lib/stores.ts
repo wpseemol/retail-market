@@ -7,12 +7,20 @@ export type StoreMedia = {
   alt_text?: string | null;
 } | null;
 
+export type StorefrontTheme = "classic" | "marketplace" | "showcase";
+
 export type StorefrontStore = {
   id: string;
   shop_name: string;
   slug: string;
   description: string | null;
   logo: StoreMedia;
+  banner?: StoreMedia;
+  storefront_theme?: StorefrontTheme;
+  products_per_page?: number;
+  featured_products_count?: number;
+  show_banned_brands?: boolean;
+  product_sort?: string;
   products_count?: number;
 };
 
@@ -25,14 +33,21 @@ export type StorefrontProduct = {
   short_description: string | null;
   is_featured: boolean;
   brand_name: string | null;
+  brand_banned?: boolean;
   thumbnail: StoreMedia;
   category: { id: string; name: string; slug: string } | null;
-  brand: { id: string | null; name: string; slug: string | null } | null;
+  brand: {
+    id: string | null;
+    name: string;
+    slug: string | null;
+    is_active?: boolean;
+  } | null;
 };
 
 export type StorePagePayload = {
   store: StorefrontStore;
   products: StorefrontProduct[];
+  featured_products?: StorefrontProduct[];
   pagination: {
     page: number;
     limit: number;

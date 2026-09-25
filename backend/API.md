@@ -121,19 +121,21 @@ Query: `page` (default 1), `limit` (default 24, max 48), `q?` (search name/slug/
 
 **200** → `{ stores, pagination }`
 
-`stores[]`: `id`, `shop_name`, `slug`, `description`, `logo`, `products_count`
+`stores[]`: `id`, `shop_name`, `slug`, `description`, `logo`, `banner`, storefront layout fields, `products_count`
 
 ### `GET /api/shops/:slug`
 
-Query: `page` (default 1), `limit` (default 24, max 48).
+Query: `page` (default 1), `limit?` (falls back to store `products_per_page`, max 48).
 
-**200** → `{ store, products, pagination }`
+**200** → `{ store, products, featured_products, pagination }`
 
-`store`: `id`, `shop_name`, `slug`, `description`, `logo`  
-`products`: public product list for that store (`status: active`)  
-`pagination`: `page`, `limit`, `total`, `total_pages`
+`store` includes: `logo`, `banner`, `storefront_theme` (`classic`|`marketplace`|`showcase`), `products_per_page`, `featured_products_count`, `show_banned_brands`, `product_sort`  
+`products[]` include `brand_banned` when linked brand is inactive  
+`featured_products`: featured slice for showcase layouts
 
 **404** if slug missing or store not active.
+
+Dashboard customize: `PATCH /api/dashboard/shops/:id` + `POST /:id/banner` (multipart field **`banner`** · max **5 MB** · resized).
 
 ---
 
@@ -343,6 +345,7 @@ Auth: Bearer **`super_admin`** or **`vendor`**. Vendors only see/manage their ow
 | POST | `/` | Create (`shop_name`, `slug?`, `description?`, `user_id?` required for super, `status?`) |
 | PATCH | `/:id` | Update |
 | POST | `/:id/logo` | Multipart **`logo`** · max **5 MB** · always resized |
+| POST | `/:id/banner` | Multipart **`banner`** · max **5 MB** · always resized |
 | DELETE | `/:id` | Soft-delete (super only) |
 
 **Shop object:** `id`, `user_id`, `logo_id`, `shop_name`, `slug`, `description`, `status` (`pending`\|`active`\|…), timestamps, `logo`, `user?`.

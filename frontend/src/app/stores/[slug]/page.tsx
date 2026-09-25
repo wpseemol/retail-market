@@ -49,6 +49,7 @@ export default async function StoreDetailPage({
       <StorePageContent
         store={data.store}
         products={data.products}
+        featuredProducts={data.featured_products}
         total={data.pagination.total}
       />
     </main>

@@ -108,10 +108,18 @@ export function toPublicProduct(row: ProductRow) {
           id: row.brandRef.id.toString(),
           name: row.brandRef.name,
           slug: row.brandRef.slug,
+          is_active: row.brandRef.is_active,
         }
       : row.brand
-        ? { id: null as string | null, name: row.brand, slug: null as string | null }
+        ? {
+            id: null as string | null,
+            name: row.brand,
+            slug: null as string | null,
+            is_active: true,
+          }
         : null,
+    /** True when linked brand is inactive (banned from catalog). */
+    brand_banned: row.brandRef ? !row.brandRef.is_active : false,
     description: row.description,
     short_description: row.short_description,
     type: row.type as ProductType,

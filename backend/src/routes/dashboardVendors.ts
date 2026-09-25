@@ -45,6 +45,14 @@ const SHOP_STATUSES: UserStatus[] = [
 /** Create flow: draft → pending, publish → active. */
 const CREATE_SHOP_STATUSES = ["pending", "active"] as const;
 
+const STOREFRONT_THEMES = ["classic", "marketplace", "showcase"] as const;
+const PRODUCT_SORTS = [
+  "featured_first",
+  "newest",
+  "price_asc",
+  "price_desc",
+] as const;
+
 const createShopSchema = z.object({
   shop_name: withSafeInput(z.string().trim().min(2).max(200)),
   slug: withSafeInput(
@@ -79,11 +87,17 @@ const updateShopSchema = z.object({
   description: withSafeInput(z.string().trim().max(5000)).optional().nullable(),
   status: z.enum(SHOP_STATUSES as [UserStatus, ...UserStatus[]]).optional(),
   user_id: z.string().regex(/^\d+$/).optional(),
+  storefront_theme: z.enum(STOREFRONT_THEMES).optional(),
+  products_per_page: z.coerce.number().int().min(4).max(48).optional(),
+  featured_products_count: z.coerce.number().int().min(0).max(12).optional(),
+  show_banned_brands: z.boolean().optional(),
+  product_sort: z.enum(PRODUCT_SORTS).optional(),
 });
 
 const shopInclude = {
   user: { include: userWithAvatarInclude },
   logo: true,
+  banner: true,
 } as const;
 
 type ChangeMap = Record<string, { from: unknown; to: unknown }>;
@@ -111,14 +125,21 @@ function toPublicShop(
     id: bigint;
     user_id: bigint;
     logo_id?: bigint | null;
+    banner_id?: bigint | null;
     shop_name: string;
     slug: string;
     description: string | null;
     status: UserStatus;
+    storefront_theme?: string;
+    products_per_page?: number;
+    featured_products_count?: number;
+    show_banned_brands?: boolean;
+    product_sort?: string;
     created_at: Date;
     updated_at: Date;
     deleted_at: Date | null;
     logo?: Parameters<typeof toPublicMedia>[0];
+    banner?: Parameters<typeof toPublicMedia>[0];
     user?: Parameters<typeof toPublicUser>[0];
   },
 ) {
@@ -126,13 +147,20 @@ function toPublicShop(
     id: vendor.id.toString(),
     user_id: vendor.user_id.toString(),
     logo_id: vendor.logo_id?.toString() ?? null,
+    banner_id: vendor.banner_id?.toString() ?? null,
     shop_name: vendor.shop_name,
     slug: vendor.slug,
     description: vendor.description,
     status: vendor.status,
+    storefront_theme: vendor.storefront_theme ?? "classic",
+    products_per_page: vendor.products_per_page ?? 12,
+    featured_products_count: vendor.featured_products_count ?? 4,
+    show_banned_brands: vendor.show_banned_brands ?? true,
+    product_sort: vendor.product_sort ?? "featured_first",
     created_at: vendor.created_at,
     updated_at: vendor.updated_at,
     logo: toPublicMedia(vendor.logo),
+    banner: toPublicMedia(vendor.banner),
     user: vendor.user ? toPublicUser(vendor.user) : undefined,
   };
 }
@@ -498,6 +526,51 @@ dashboardVendorsRouter.patch("/:id", async (req, res) => {
       to: nextUserId.toString(),
     };
   }
+  if (
+    data.storefront_theme !== undefined &&
+    data.storefront_theme !== existing.storefront_theme
+  ) {
+    changes.storefront_theme = {
+      from: existing.storefront_theme,
+      to: data.storefront_theme,
+    };
+  }
+  if (
+    data.products_per_page !== undefined &&
+    data.products_per_page !== existing.products_per_page
+  ) {
+    changes.products_per_page = {
+      from: existing.products_per_page,
+      to: data.products_per_page,
+    };
+  }
+  if (
+    data.featured_products_count !== undefined &&
+    data.featured_products_count !== existing.featured_products_count
+  ) {
+    changes.featured_products_count = {
+      from: existing.featured_products_count,
+      to: data.featured_products_count,
+    };
+  }
+  if (
+    data.show_banned_brands !== undefined &&
+    data.show_banned_brands !== existing.show_banned_brands
+  ) {
+    changes.show_banned_brands = {
+      from: existing.show_banned_brands,
+      to: data.show_banned_brands,
+    };
+  }
+  if (
+    data.product_sort !== undefined &&
+    data.product_sort !== existing.product_sort
+  ) {
+    changes.product_sort = {
+      from: existing.product_sort,
+      to: data.product_sort,
+    };
+  }
 
   const vendor = await prisma.vendor.update({
     where: { id },
@@ -508,6 +581,11 @@ dashboardVendorsRouter.patch("/:id", async (req, res) => {
         data.description === undefined ? undefined : data.description,
       status: isSuper ? data.status : undefined,
       user_id: nextUserId,
+      storefront_theme: data.storefront_theme,
+      products_per_page: data.products_per_page,
+      featured_products_count: data.featured_products_count,
+      show_banned_brands: data.show_banned_brands,
+      product_sort: data.product_sort,
     },
     include: shopInclude,
   });
@@ -638,6 +716,130 @@ dashboardVendorsRouter.post(
 
       return res.json({
         message: "Shop image updated",
+        shop: toPublicShop(vendor),
+      });
+    } catch (err) {
+      try {
+        fs.unlinkSync(finalized.absolutePath);
+      } catch {
+        /* ignore */
+      }
+      throw err;
+    }
+  },
+);
+
+/** Upload / replace storefront banner. */
+dashboardVendorsRouter.post(
+  "/:id/banner",
+  (req, res, next) => {
+    shopImageUpload.single("banner")(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({
+          message: err instanceof Error ? err.message : "Upload failed",
+        });
+      }
+      return next();
+    });
+  },
+  async (req, res) => {
+    const id = parseId(String(req.params.id));
+    if (!id) return res.status(400).json({ message: "Invalid shop id" });
+
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({
+        message: "Banner image is required (field: banner)",
+      });
+    }
+
+    const existing = await prisma.vendor.findFirst({
+      where: { id, deleted_at: null },
+      include: { banner: true },
+    });
+    if (!existing) {
+      try {
+        fs.unlinkSync(file.path);
+      } catch {
+        /* ignore */
+      }
+      return res.status(404).json({ message: "Shop not found" });
+    }
+
+    if (
+      !(await assertCanAccessShop(existing, req.auth!.userId, req.auth!.role))
+    ) {
+      try {
+        fs.unlinkSync(file.path);
+      } catch {
+        /* ignore */
+      }
+      return res.status(403).json({ message: "Insufficient permissions" });
+    }
+
+    const finalized = finalizeShopImageUpload(file.path, file.mimetype);
+    if (!finalized.ok) {
+      return res.status(400).json({
+        message: finalized.message,
+        code: finalized.code,
+      });
+    }
+
+    try {
+      const media = await prisma.media.create({
+        data: {
+          user_id: req.auth!.userId,
+          disk: "public",
+          file_name: finalized.fileName,
+          original_name: sanitizeOriginalName(file.originalname),
+          file_path: SHOP_IMAGES_RELATIVE,
+          file_size: BigInt(finalized.size),
+          mime_type: finalized.detected.mime,
+          alt_text: `${existing.shop_name} banner`.slice(0, 255),
+          collection_name: "vendor_banners",
+          is_public: true,
+          mediable_type: "Vendor",
+          mediable_id: id,
+          sort_order: 1,
+        },
+      });
+
+      const vendor = await prisma.vendor.update({
+        where: { id },
+        data: { banner_id: media.id },
+        include: shopInclude,
+      });
+
+      await recordHistory({
+        vendorId: id,
+        actorId: req.auth!.userId,
+        action: "banner_changed",
+        changes: {
+          banner_id: {
+            from: existing.banner_id?.toString() ?? null,
+            to: media.id.toString(),
+          },
+          banner_file: {
+            from: existing.banner?.file_name ?? null,
+            to: media.file_name,
+          },
+        },
+      });
+
+      if (existing.banner && existing.banner.id !== media.id) {
+        const oldPath = path.join(SHOP_IMAGES_DIR, existing.banner.file_name);
+        try {
+          if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        } catch {
+          /* ignore */
+        }
+        await prisma.media
+          .delete({ where: { id: existing.banner.id } })
+          .catch(() => undefined);
+      }
+
+      return res.json({
+        message: "Store banner updated",
         shop: toPublicShop(vendor),
       });
     } catch (err) {
