@@ -184,6 +184,10 @@ model Media {
   siteSettingsOg      SiteSettings[]   @relation("SiteSettingsOgImage")
   siteSettingsFavicon SiteSettings[]   @relation("SiteSettingsFavicon")
   siteSettingsLogin   SiteSettings[]   @relation("SiteSettingsLoginLogo")
+  homeHeroMainProduct HomeHeroBanner[] @relation("HomeHeroMainProduct")
+  homeHeroMainBg      HomeHeroBanner[] @relation("HomeHeroMainBg")
+  homeHeroSideProduct HomeHeroBanner[] @relation("HomeHeroSideProduct")
+  homeHeroSideBg      HomeHeroBanner[] @relation("HomeHeroSideBg")
   productThumbnails   Product[]        @relation("ProductThumbnail")
   variantImages       ProductVariant[] @relation("VariantImage")
   vendorLogos         Vendor[]         @relation("VendorLogo")
@@ -829,6 +833,40 @@ model HomeSection {
   @@unique([settings_id, key])
   @@index([settings_id, position])
   @@map("home_sections")
+}
+
+/// Singleton home page hero + side promo content (id = 1).
+model HomeHeroBanner {
+  id Int @id @default(1)
+
+  main_eyebrow          String  @default("Widescreen 4k .......") @db.VarChar(120)
+  main_headline         String  @default("DIGITAL SLR CAMERA HIGH DEFINITION") @db.VarChar(200)
+  main_subtext          String? @db.VarChar(300)
+  main_discount_percent Int?    @default(70)
+  main_price_label      String? @db.VarChar(40)
+  main_cta_label        String  @default("SHOP NOW") @db.VarChar(40)
+  main_cta_href         String  @default("/shop") @db.VarChar(300)
+  main_product_image_id BigInt? @unique @db.UnsignedBigInt
+  main_bg_image_id      BigInt? @unique @db.UnsignedBigInt
+
+  side_badge_label       String? @db.VarChar(40)
+  side_offer_percent     Int?    @default(25)
+  side_offer_label       String? @default("offer") @db.VarChar(40)
+  side_headline          String  @default("CLOUD CAM, SECURITY CAMERA") @db.VarChar(200)
+  side_discount_percent  Int?    @default(70)
+  side_cta_label         String  @default("SHOP NOW") @db.VarChar(40)
+  side_cta_href          String  @default("/shop") @db.VarChar(300)
+  side_product_image_id  BigInt? @unique @db.UnsignedBigInt
+  side_bg_image_id       BigInt? @unique @db.UnsignedBigInt
+
+  updated_at DateTime @updatedAt
+
+  main_product_image Media? @relation("HomeHeroMainProduct", fields: [main_product_image_id], references: [id], onDelete: SetNull)
+  main_bg_image      Media? @relation("HomeHeroMainBg", fields: [main_bg_image_id], references: [id], onDelete: SetNull)
+  side_product_image Media? @relation("HomeHeroSideProduct", fields: [side_product_image_id], references: [id], onDelete: SetNull)
+  side_bg_image      Media? @relation("HomeHeroSideBg", fields: [side_bg_image_id], references: [id], onDelete: SetNull)
+
+  @@map("home_hero_banners")
 }
 
 /// Audit trail for site settings create / edit / OG image / clear.

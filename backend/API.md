@@ -73,12 +73,14 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/shops` | `routes/publicShops.ts` | Public |
 | `/api/products` | `routes/publicProducts.ts` | Public |
 | `/api/categories` | `routes/publicCategories.ts` | Public |
+| `/api/home` | `routes/publicHome.ts` | Public |
 | `/api/dashboard/auth` | `routes/dashboardAuth.ts` | Staff |
 | `/api/dashboard/users` | `routes/dashboardUsers.ts` | `super_admin` |
 | `/api/dashboard/overview` | `routes/dashboardOverview.ts` | `super_admin`, `admin` |
 | `/api/dashboard/notifications` | `routes/dashboardNotifications.ts` | Staff |
 | `/api/dashboard/orders` | `routes/dashboardOrders.ts` | Staff |
 | `/api/dashboard/site-settings` | `routes/dashboardSiteSettings.ts` | `super_admin` |
+| `/api/dashboard/home-hero` | `routes/dashboardHomeHero.ts` | `super_admin` |
 | `/api/dashboard/shops` | `routes/dashboardVendors.ts` | `super_admin`, `vendor` |
 | `/api/dashboard/categories` | `routes/dashboardCategories.ts` | Staff |
 | `/api/dashboard/brands` | `routes/dashboardBrands.ts` | Staff |
@@ -151,6 +153,35 @@ Dashboard customize: `PATCH /api/dashboard/shops/:idOrSlug` + `POST /:idOrSlug/b
 No auth. Active root categories with nested children for the storefront header mega-menu.
 
 `GET /api/categories` → `{ categories: [{ id, name, slug, icon, image, products_count, children: [{ id, name, slug, products_count }] }] }`
+
+---
+
+## Public home — `/api/home`
+
+No auth. Used by the storefront home page (SSR fetch + cache tags).
+
+| Method | Path | Notes |
+|--------|------|--------|
+| GET | `/hero` | Singleton hero + side promo → `{ hero: { main, side, updated_at } }` |
+
+**`main`:** `eyebrow`, `headline`, `subtext`, `discount_percent`, `price_label`, `cta_label`, `cta_href`, `product_image`, `bg_image`  
+**`side`:** `badge_label`, `offer_percent`, `offer_label`, `headline`, `discount_percent`, `cta_label`, `cta_href`, `product_image`, `bg_image`  
+
+Missing uploaded images → storefront falls back to built-in static art.
+
+---
+
+## Dashboard home hero — `/api/dashboard/home-hero`
+
+Auth: Bearer **`super_admin`** only. Drives **Settings → Home → Hero banner**.
+
+| Method | Path | Notes |
+|--------|------|--------|
+| GET | `/` | Full hero for the editor |
+| PATCH | `/` | Zod body · safe strings · optional discount percents (0–100) |
+| POST | `/images/:slot` | Multipart field **`image`** · slots `main_product`\|`main_bg`\|`side_product`\|`side_bg` · max **1 MB** · always resized |
+
+Table: `home_hero_banners` (id = 1).
 
 ---
 
@@ -423,7 +454,7 @@ Auth: Bearer **`super_admin`** only. Drives the main website title, SEO, Open Gr
 **Analytics IDs:** Google Analytics (`G-…`), GTM (`GTM-…`), Hotjar, Plerdy
 **Pixels:** Google Ads (`AW-…`), TikTok, LinkedIn, Twitter/X, Meta (Facebook)
 
-Dashboard UI: `/settings` (shadcn Form + Zod). Tabs include **Header**, **Footer**, **Home**.
+Dashboard UI: `/settings` (shadcn Form + Zod). Tabs include **Header**, **Footer**, **Home** (hero banner editor + section order).
 
 ---
 

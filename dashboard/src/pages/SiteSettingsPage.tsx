@@ -26,6 +26,7 @@ import { useAuthStore } from "@/store/auth";
 import { FooterSettingsPanel } from "@/components/settings/FooterSettingsPanel";
 import { HeaderSettingsPanel } from "@/components/settings/HeaderSettingsPanel";
 import { HomeSectionsPanel } from "@/components/settings/HomeSectionsPanel";
+import { HeroBannerSettingsPanel } from "@/components/settings/HeroBannerSettingsPanel";
 import {
     SHOP_FACET_VISIBLE_OPTIONS,
     SHOP_PER_PAGE_OPTIONS,
@@ -937,37 +938,68 @@ export function SiteSettingsPage() {
                     )}
                 </SettingsSection>
             ) : activeTab === "home" && settingsSnapshot && token ? (
-                <SettingsSection
-                    title="Home page sections"
-                    description="Enable, disable, and reorder storefront home components."
-                    icon={LayoutTemplate}
-                >
-                    <HomeSectionsPanel
-                        token={token}
-                        sections={settingsSnapshot.home_sections ?? []}
-                        onUpdated={setSettingsSnapshot}
-                        onError={(m) => {
-                            setSubmitError(m);
-                            setSaveSuccess(null);
-                        }}
-                        onSuccess={(m) => {
-                            setSaveSuccess(m);
-                            setSubmitError(null);
-                        }}
-                    />
-                    {(submitError || saveSuccess) && (
-                        <p
-                            className={
-                                submitError
-                                    ? "text-sm text-destructive"
-                                    : "text-sm text-brand-primary"
-                            }
-                            role={submitError ? "alert" : "status"}
-                        >
-                            {submitError ?? saveSuccess}
-                        </p>
-                    )}
-                </SettingsSection>
+                <div className="space-y-5">
+                    <SettingsSection
+                        title="Hero banner"
+                        description="Main and side promo copy, CTAs, and images for the storefront home hero."
+                        icon={LayoutTemplate}
+                    >
+                        <HeroBannerSettingsPanel
+                            token={token}
+                            onError={(m) => {
+                                setSubmitError(m);
+                                setSaveSuccess(null);
+                            }}
+                            onSuccess={(m) => {
+                                setSaveSuccess(m);
+                                setSubmitError(null);
+                            }}
+                        />
+                        {(submitError || saveSuccess) && (
+                            <p
+                                className={
+                                    submitError
+                                        ? "text-sm text-destructive"
+                                        : "text-sm text-brand-primary"
+                                }
+                                role={submitError ? "alert" : "status"}
+                            >
+                                {submitError ?? saveSuccess}
+                            </p>
+                        )}
+                    </SettingsSection>
+                    <SettingsSection
+                        title="Home page sections"
+                        description="Enable, disable, and reorder storefront home components."
+                        icon={LayoutTemplate}
+                    >
+                        <HomeSectionsPanel
+                            token={token}
+                            sections={settingsSnapshot.home_sections ?? []}
+                            onUpdated={setSettingsSnapshot}
+                            onError={(m) => {
+                                setSubmitError(m);
+                                setSaveSuccess(null);
+                            }}
+                            onSuccess={(m) => {
+                                setSaveSuccess(m);
+                                setSubmitError(null);
+                            }}
+                        />
+                        {(submitError || saveSuccess) && (
+                            <p
+                                className={
+                                    submitError
+                                        ? "text-sm text-destructive"
+                                        : "text-sm text-brand-primary"
+                                }
+                                role={submitError ? "alert" : "status"}
+                            >
+                                {submitError ?? saveSuccess}
+                            </p>
+                        )}
+                    </SettingsSection>
+                </div>
             ) : (
                 <Form {...form}>
                     <form
