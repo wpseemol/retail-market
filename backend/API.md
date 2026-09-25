@@ -321,7 +321,7 @@ Multipart field **`avatar`** · max **5 MB** · JPEG/PNG/WebP/GIF. Clears `avata
 
 No auth. Used by the storefront for SEO / Open Graph and analytics pixels.
 
-`GET /api/site-settings` → `{ settings }` with `site_name`, `site_title`, `site_description`, `keywords`, OG/Twitter fields, `og_image`, nested `shop` (`default_view`: `grid4`|`grid3`|`grid2`|`list`, `products_per_page`), nested `analytics` + `pixels` (`enabled` + `id`).
+`GET /api/site-settings` → `{ settings }` with `site_name`, `site_title`, `site_description`, `keywords`, OG/Twitter fields, `og_image`, nested `shop` (`default_view`, `products_per_page`, `categories_visible`, `brands_visible`, `see_all_label`, `show_less_label`), nested `analytics` + `pixels` (`enabled` + `id`).
 
 ---
 
@@ -335,7 +335,7 @@ Auth: Bearer **`super_admin`** only. Drives the main website title, SEO, Open Gr
 | PATCH | `/` | Zod body · SQL/PHP/JS-safe strings · tracker ID formats · `shop_default_view` · `shop_products_per_page` (4–48) |
 | POST | `/og-image` | Multipart field **`image`** · max **1 MB** · always resized |
 
-**Shop catalog:** `shop_default_view` (`grid4`|`grid3`|`grid2`|`list`, default `grid4`), `shop_products_per_page` (default `12`)
+**Shop catalog:** `shop_default_view` (`grid4`|`grid3`|`grid2`|`list`, default `grid4`), `shop_products_per_page` (default `12`), `shop_categories_visible` (default `5`), `shop_brands_visible` (default `6`), `shop_see_all_label` / `shop_show_less_label` (sidebar expand/collapse text)
 **Analytics IDs:** Google Analytics (`G-…`), GTM (`GTM-…`), Hotjar, Plerdy
 **Pixels:** Google Ads (`AW-…`), TikTok, LinkedIn, Twitter/X, Meta (Facebook)
 

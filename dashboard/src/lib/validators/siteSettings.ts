@@ -134,6 +134,14 @@ export const siteSettingsFormSchema = z.object({
   // ── Shop catalog ──────────────────────────────────────────────────────────
   shop_default_view: z.enum(["grid4", "grid3", "grid2", "list"]),
   shop_products_per_page: z.coerce.number().int().min(4).max(48),
+  shop_categories_visible: z.coerce.number().int().min(1).max(50),
+  shop_brands_visible: z.coerce.number().int().min(1).max(50),
+  shop_see_all_label: withSafeInput(
+    z.string().trim().min(1, "See all label is required").max(40),
+  ),
+  shop_show_less_label: withSafeInput(
+    z.string().trim().min(1, "Show less label is required").max(40),
+  ),
 });
 
 export type SiteSettingsFormValues = z.infer<typeof siteSettingsFormSchema>;
@@ -146,6 +154,7 @@ export const SHOP_VIEW_OPTIONS = [
 ] as const;
 
 export const SHOP_PER_PAGE_OPTIONS = [8, 12, 16, 20, 24, 36, 48] as const;
+export const SHOP_FACET_VISIBLE_OPTIONS = [3, 4, 5, 6, 8, 10, 12, 15, 20] as const;
 
 /** API response shape for the dashboard GET/PATCH site-settings endpoints. */
 export type SiteSettingsApiResponse = {
@@ -180,6 +189,10 @@ export type SiteSettingsApiResponse = {
     meta_pixel_enabled: boolean;
     shop_default_view: "grid4" | "grid3" | "grid2" | "list";
     shop_products_per_page: number;
+    shop_categories_visible: number;
+    shop_brands_visible: number;
+    shop_see_all_label: string;
+    shop_show_less_label: string;
     og_image_id: string | null;
   };
 };

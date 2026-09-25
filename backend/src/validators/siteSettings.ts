@@ -135,6 +135,10 @@ export const updateSiteSettingsSchema = z.object({
     .min(4)
     .max(48)
     .optional(),
+  shop_categories_visible: z.coerce.number().int().min(1).max(50).optional(),
+  shop_brands_visible: z.coerce.number().int().min(1).max(50).optional(),
+  shop_see_all_label: withSafeInput(z.string().trim().min(1).max(40)).optional(),
+  shop_show_less_label: withSafeInput(z.string().trim().min(1).max(40)).optional(),
 });
 
 export type UpdateSiteSettingsInput = z.infer<typeof updateSiteSettingsSchema>;

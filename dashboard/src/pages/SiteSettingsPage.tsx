@@ -13,6 +13,7 @@ import {
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import {
+  SHOP_FACET_VISIBLE_OPTIONS,
   SHOP_PER_PAGE_OPTIONS,
   SHOP_VIEW_OPTIONS,
   siteSettingsFormSchema,
@@ -276,6 +277,10 @@ const DEFAULT_VALUES: SiteSettingsFormValues = {
   meta_pixel_enabled: false,
   shop_default_view: "grid4",
   shop_products_per_page: 12,
+  shop_categories_visible: 5,
+  shop_brands_visible: 6,
+  shop_see_all_label: "See all",
+  shop_show_less_label: "Show less",
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -342,6 +347,10 @@ export function SiteSettingsPage() {
           meta_pixel_enabled: s.meta_pixel_enabled,
           shop_default_view: s.shop_default_view ?? "grid4",
           shop_products_per_page: s.shop_products_per_page ?? 12,
+          shop_categories_visible: s.shop_categories_visible ?? 5,
+          shop_brands_visible: s.shop_brands_visible ?? 6,
+          shop_see_all_label: s.shop_see_all_label ?? "See all",
+          shop_show_less_label: s.shop_show_less_label ?? "Show less",
         });
       } catch (err) {
         if (!cancelled)
@@ -535,7 +544,7 @@ export function SiteSettingsPage() {
           <SettingsSection
             step="02"
             title="Shop catalog"
-            description="Default product grid layout and how many products show per page on /shop."
+            description="Default product grid, pagination, and sidebar category/brand preview on /shop."
             icon={LayoutGrid}
           >
             <div className="grid gap-4 sm:grid-cols-2">
@@ -597,6 +606,100 @@ export function SiteSettingsPage() {
                     </Select>
                     <FormDescription>
                       Pagination size for the shop catalog listing.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="shop_categories_visible"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Categories shown</FormLabel>
+                    <Select
+                      value={String(field.value)}
+                      onValueChange={(v) => field.onChange(Number(v))}
+                      disabled={isSubmitting}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select count" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {SHOP_FACET_VISIBLE_OPTIONS.map((n) => (
+                          <SelectItem key={n} value={String(n)}>
+                            {n} categories
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      How many categories appear before the expand button.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="shop_brands_visible"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Brands shown</FormLabel>
+                    <Select
+                      value={String(field.value)}
+                      onValueChange={(v) => field.onChange(Number(v))}
+                      disabled={isSubmitting}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select count" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {SHOP_FACET_VISIBLE_OPTIONS.map((n) => (
+                          <SelectItem key={n} value={String(n)}>
+                            {n} brands
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      How many brands appear before the expand button.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="shop_see_all_label"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Expand button label</FormLabel>
+                    <FormControl>
+                      <Input placeholder="See all" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Shown when more categories/brands are hidden.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="shop_show_less_label"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Collapse button label</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Show less" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Shown after the list is expanded.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

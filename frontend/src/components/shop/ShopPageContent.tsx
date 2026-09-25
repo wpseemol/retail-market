@@ -25,7 +25,75 @@ type ShopPageContentProps = {
   tags?: string[];
   defaultViewMode?: ShopViewMode;
   productsPerPage?: number;
+  categoriesVisible?: number;
+  brandsVisible?: number;
+  seeAllLabel?: string;
+  showLessLabel?: string;
 };
+
+function matchesSearch(product: ShopProduct, query: string) {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  const haystack = [
+    product.name,
+    product.brand,
+    product.category,
+    product.description,
+    product.sku,
+    product.model,
+    product.slug,
+    ...(product.tags ?? []),
+    ...(product.categoryLabels ?? []),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(q);
+}
+
+function matchesBrand(
+  product: ShopProduct,
+  selectedBrands: string[],
+  brands: ShopFacetOption[],
+) {
+  if (selectedBrands.length === 0) return true;
+  const brandSlug = product.brand.toLowerCase();
+  const brandLabel = (product.model ?? "").toLowerCase();
+  return selectedBrands.some((id) => {
+    const facet = brands.find((b) => b.id === id);
+    const idLower = id.toLowerCase();
+    const labelLower = (facet?.label ?? "").toLowerCase();
+    return (
+      brandSlug === idLower ||
+      brandLabel === idLower ||
+      (labelLower &&
+        (brandLabel === labelLower ||
+          brandSlug === labelLower ||
+          product.tags.some((t) => t.toLowerCase() === labelLower)))
+    );
+  });
+}
+
+function matchesCategory(
+  product: ShopProduct,
+  selectedCategory: string | null,
+  categories: ShopFacetOption[],
+) {
+  if (!selectedCategory) return true;
+  const facet = categories.find((c) => c.id === selectedCategory);
+  const idLower = selectedCategory.toLowerCase();
+  const labelLower = (facet?.label ?? "").toLowerCase();
+  const cat = product.category.toLowerCase();
+  return (
+    cat === idLower ||
+    (labelLower &&
+      (cat === labelLower ||
+        product.tags.some((t) => t.toLowerCase() === labelLower) ||
+        product.categoryLabels?.some(
+          (t) => t.toLowerCase() === labelLower,
+        )))
+  );
+}
 
 export default function ShopPageContent({
   products,
@@ -35,6 +103,10 @@ export default function ShopPageContent({
   tags = [],
   defaultViewMode = "grid4",
   productsPerPage = PRODUCTS_PER_PAGE,
+  categoriesVisible = 5,
+  brandsVisible = 6,
+  seeAllLabel = "See all",
+  showLessLabel = "Show less",
 }: ShopPageContentProps) {
   const rangeMin = Math.floor(priceRange.min || 0);
   const rangeMax = Math.max(
@@ -59,43 +131,22 @@ export default function ShopPageContent({
     useState<ShopProduct | null>(null);
 
   const filteredProducts = useMemo(() => {
-    let result = [...products];
+    let result = products.filter((p) => {
+      if (!matchesSearch(p, searchQuery)) return false;
+      if (p.priceMin < priceMin || p.priceMin > priceMax) return false;
+      if (selectedColor && !p.colors.includes(selectedColor)) return false;
+      if (!matchesCategory(p, selectedCategory, categories)) return false;
+      if (!matchesBrand(p, selectedBrands, brands)) return false;
+      if (
+        selectedTag &&
+        !p.tags.some((t) => t.toLowerCase() === selectedTag.toLowerCase())
+      ) {
+        return false;
+      }
+      return true;
+    });
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.brand.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q) ||
-          (p.description?.toLowerCase().includes(q) ?? false),
-      );
-    }
-
-    result = result.filter(
-      (p) => p.priceMin <= priceMax && p.priceMin >= priceMin,
-    );
-
-    if (selectedColor) {
-      result = result.filter((p) => p.colors.includes(selectedColor));
-    }
-
-    if (selectedCategory) {
-      result = result.filter((p) => p.category === selectedCategory);
-    }
-
-    if (selectedBrands.length > 0) {
-      result = result.filter((p) => selectedBrands.includes(p.brand));
-    }
-
-    if (selectedTag) {
-      result = result.filter((p) =>
-        p.tags.some(
-          (t) => t.toLowerCase() === selectedTag.toLowerCase(),
-        ),
-      );
-    }
-
+    result = [...result];
     switch (sortBy) {
       case "price-asc":
         result.sort((a, b) => a.priceMin - b.priceMin);
@@ -124,6 +175,8 @@ export default function ShopPageContent({
     selectedBrands,
     selectedTag,
     sortBy,
+    categories,
+    brands,
   ]);
 
   const totalPages = Math.max(
@@ -148,7 +201,27 @@ export default function ShopPageContent({
     resetPage();
   };
 
+  const clearFilters = () => {
+    setSearchQuery("");
+    setPriceMin(rangeMin);
+    setPriceMax(rangeMax);
+    setSelectedColor(null);
+    setSelectedCategory(null);
+    setSelectedBrands([]);
+    setSelectedTag(null);
+    setSortBy("default");
+    resetPage();
+  };
+
   const hasColorData = products.some((p) => p.colors.length > 0);
+  const hasActiveFilters =
+    searchQuery.trim() !== "" ||
+    priceMin > rangeMin ||
+    priceMax < rangeMax ||
+    selectedColor != null ||
+    selectedCategory != null ||
+    selectedBrands.length > 0 ||
+    selectedTag != null;
 
   return (
     <>
@@ -195,6 +268,10 @@ export default function ShopPageContent({
               categories={categories}
               brands={brands}
               tags={tags}
+              categoriesVisible={categoriesVisible}
+              brandsVisible={brandsVisible}
+              seeAllLabel={seeAllLabel}
+              showLessLabel={showLessLabel}
             />
 
             <div className="flex-1 min-w-0">
@@ -203,7 +280,7 @@ export default function ShopPageContent({
                   filteredProducts.length === 0 ? 0 : startIndex + 1
                 }
                 to={Math.min(
-                  startIndex + PRODUCTS_PER_PAGE,
+                  startIndex + perPage,
                   filteredProducts.length,
                 )}
                 total={filteredProducts.length}
@@ -216,6 +293,18 @@ export default function ShopPageContent({
                 }}
               />
 
+              {hasActiveFilters ? (
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="text-[13px] font-medium text-brand-primary hover:text-brand-hover cursor-pointer"
+                  >
+                    Clear all filters
+                  </button>
+                </div>
+              ) : null}
+
               {pageProducts.length === 0 ? (
                 <div className="py-20 text-center border border-dashed border-border-default rounded-lg bg-bg-surface">
                   <p className="text-text-secondary text-[15px] m-0">
@@ -225,16 +314,7 @@ export default function ShopPageContent({
                   </p>
                   <button
                     type="button"
-                    onClick={() => {
-                      setSearchQuery("");
-                      setPriceMin(rangeMin);
-                      setPriceMax(rangeMax);
-                      setSelectedColor(null);
-                      setSelectedCategory(null);
-                      setSelectedBrands([]);
-                      setSelectedTag(null);
-                      resetPage();
-                    }}
+                    onClick={clearFilters}
                     className="mt-4 text-brand-primary text-[14px] font-semibold hover:text-brand-hover cursor-pointer"
                   >
                     Clear all filters

@@ -36,6 +36,10 @@ export default async function ShopPage() {
         tags={tags}
         defaultViewMode={settings.shop.default_view as ShopViewMode}
         productsPerPage={settings.shop.products_per_page}
+        categoriesVisible={settings.shop.categories_visible}
+        brandsVisible={settings.shop.brands_visible}
+        seeAllLabel={settings.shop.see_all_label}
+        showLessLabel={settings.shop.show_less_label}
       />
     </main>
   );

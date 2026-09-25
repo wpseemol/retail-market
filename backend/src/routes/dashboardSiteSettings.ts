@@ -47,6 +47,10 @@ dashboardSiteSettingsRouter.get("/", async (_req, res) => {
       meta_pixel_enabled: row.meta_pixel_enabled,
       shop_default_view: row.shop_default_view,
       shop_products_per_page: row.shop_products_per_page,
+      shop_categories_visible: row.shop_categories_visible,
+      shop_brands_visible: row.shop_brands_visible,
+      shop_see_all_label: row.shop_see_all_label,
+      shop_show_less_label: row.shop_show_less_label,
       og_image_id: row.og_image_id?.toString() ?? null,
     },
   });
@@ -100,6 +104,18 @@ dashboardSiteSettingsRouter.patch("/", async (req, res) => {
       ...(data.shop_products_per_page !== undefined
         ? { shop_products_per_page: data.shop_products_per_page }
         : {}),
+      ...(data.shop_categories_visible !== undefined
+        ? { shop_categories_visible: data.shop_categories_visible }
+        : {}),
+      ...(data.shop_brands_visible !== undefined
+        ? { shop_brands_visible: data.shop_brands_visible }
+        : {}),
+      ...(data.shop_see_all_label !== undefined
+        ? { shop_see_all_label: data.shop_see_all_label }
+        : {}),
+      ...(data.shop_show_less_label !== undefined
+        ? { shop_show_less_label: data.shop_show_less_label }
+        : {}),
     },
     include: { og_image: true },
   });
@@ -128,6 +144,10 @@ dashboardSiteSettingsRouter.patch("/", async (req, res) => {
       meta_pixel_enabled: row.meta_pixel_enabled,
       shop_default_view: row.shop_default_view,
       shop_products_per_page: row.shop_products_per_page,
+      shop_categories_visible: row.shop_categories_visible,
+      shop_brands_visible: row.shop_brands_visible,
+      shop_see_all_label: row.shop_see_all_label,
+      shop_show_less_label: row.shop_show_less_label,
       og_image_id: row.og_image_id?.toString() ?? null,
     },
   });

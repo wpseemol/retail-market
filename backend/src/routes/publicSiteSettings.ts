@@ -14,6 +14,10 @@ const DEFAULTS = {
   twitter_handle: "@niyenin",
   shop_default_view: "grid4",
   shop_products_per_page: 12,
+  shop_categories_visible: 5,
+  shop_brands_visible: 6,
+  shop_see_all_label: "See all",
+  shop_show_less_label: "Show less",
 } as const;
 
 export async function ensureSiteSettings() {
@@ -49,6 +53,10 @@ export function toPublicSiteSettings(
     shop: {
       default_view: row.shop_default_view,
       products_per_page: row.shop_products_per_page,
+      categories_visible: row.shop_categories_visible,
+      brands_visible: row.shop_brands_visible,
+      see_all_label: row.shop_see_all_label,
+      show_less_label: row.shop_show_less_label,
     },
     analytics: {
       google_analytics: {

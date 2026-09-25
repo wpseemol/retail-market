@@ -747,6 +747,14 @@ model SiteSettings {
   shop_default_view       String @default("grid4") @db.VarChar(16)
   /// How many products to show per page on /shop.
   shop_products_per_page  Int    @default(12)
+  /// Sidebar: how many categories shown before “See all”.
+  shop_categories_visible Int    @default(5)
+  /// Sidebar: how many brands shown before “See all”.
+  shop_brands_visible     Int    @default(6)
+  /// Sidebar expand button label.
+  shop_see_all_label      String @default("See all") @db.VarChar(40)
+  /// Sidebar collapse button label.
+  shop_show_less_label    String @default("Show less") @db.VarChar(40)
 
   updated_at DateTime @updatedAt
 

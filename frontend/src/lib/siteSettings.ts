@@ -20,6 +20,10 @@ export type PublicSiteSettings = {
   shop: {
     default_view: "grid4" | "grid3" | "grid2" | "list";
     products_per_page: number;
+    categories_visible: number;
+    brands_visible: number;
+    see_all_label: string;
+    show_less_label: string;
   };
   analytics: {
     google_analytics: TrackerConfig;
@@ -50,6 +54,10 @@ const FALLBACK: PublicSiteSettings = {
   shop: {
     default_view: "grid4",
     products_per_page: 12,
+    categories_visible: 5,
+    brands_visible: 6,
+    see_all_label: "See all",
+    show_less_label: "Show less",
   },
   analytics: {
     google_analytics: { enabled: false, id: null },
@@ -68,19 +76,30 @@ const FALLBACK: PublicSiteSettings = {
 
 const SHOP_VIEWS = ["grid4", "grid3", "grid2", "list"] as const;
 
+function clampInt(value: unknown, min: number, max: number, fallback: number) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
+
 function normalizeShopSettings(
   shop: PublicSiteSettings["shop"] | undefined,
 ): PublicSiteSettings["shop"] {
   const view = shop?.default_view;
-  const perPage = shop?.products_per_page;
   return {
     default_view: SHOP_VIEWS.includes(view as (typeof SHOP_VIEWS)[number])
       ? (view as PublicSiteSettings["shop"]["default_view"])
       : "grid4",
-    products_per_page:
-      typeof perPage === "number" && perPage >= 4 && perPage <= 48
-        ? perPage
-        : 12,
+    products_per_page: clampInt(shop?.products_per_page, 4, 48, 12),
+    categories_visible: clampInt(shop?.categories_visible, 1, 50, 5),
+    brands_visible: clampInt(shop?.brands_visible, 1, 50, 6),
+    see_all_label:
+      typeof shop?.see_all_label === "string" && shop.see_all_label.trim()
+        ? shop.see_all_label.trim().slice(0, 40)
+        : "See all",
+    show_less_label:
+      typeof shop?.show_less_label === "string" && shop.show_less_label.trim()
+        ? shop.show_less_label.trim().slice(0, 40)
+        : "Show less",
   };
 }
 
