@@ -29,6 +29,9 @@ export type ManagedUser = {
   phone?: string | null;
   role: UserRole;
   status: UserStatus;
+  avatar_id?: string | null;
+  avatar_preset?: string | null;
+  avatar?: { id: string; path: string } | null;
   last_login_at?: string | null;
   created_at?: string;
   updated_at?: string;
