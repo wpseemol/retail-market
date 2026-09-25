@@ -315,7 +315,7 @@ Auth: Bearer **`super_admin`** or **`vendor`**. Vendors only see/manage their ow
 | GET | `/:id/history` | Audit log |
 | POST | `/` | Create (`shop_name`, `slug?`, `description?`, `user_id?` required for super, `status?`) |
 | PATCH | `/:id` | Update |
-| POST | `/:id/logo` | Multipart **`logo`** · max **5 MB** |
+| POST | `/:id/logo` | Multipart **`logo`** · max **5 MB** · always resized |
 | DELETE | `/:id` | Soft-delete (super only) |
 
 **Shop object:** `id`, `user_id`, `logo_id`, `shop_name`, `slug`, `description`, `status` (`pending`\|`active`\|…), timestamps, `logo`, `user?`.
@@ -559,7 +559,7 @@ Includes: `id`, `vendor_id`, `category_id`, `brand_id`, `thumbnail_id`, `name`, 
 | `POST /api/dashboard/site-settings/og-image` | `image` | **1 MB** · resized |
 | `POST /api/dashboard/products/:id/thumbnail` | `image` | **5 MB** · resized |
 | `POST /api/dashboard/products/:id/images` | `images` | **5 MB** × 12 · resized |
-| `POST /api/dashboard/shops/:id/logo` | `logo` | 5 MB |
+| `POST /api/dashboard/shops/:id/logo` | `logo` | **5 MB** · resized |
 
 Allowed MIME (all uploads): `image/jpeg`, `image/png`, `image/webp`, `image/gif`.  
 Do **not** upload SVG.
