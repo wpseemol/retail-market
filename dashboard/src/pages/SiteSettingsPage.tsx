@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   BarChart3,
   Globe,
+  History,
   ImagePlus,
   LayoutGrid,
   Megaphone,
@@ -49,7 +50,8 @@ type SettingsTabId =
   | "shop"
   | "social"
   | "analytics"
-  | "pixels";
+  | "pixels"
+  | "history";
 
 const SETTINGS_TABS: Array<{
   id: SettingsTabId;
@@ -61,7 +63,28 @@ const SETTINGS_TABS: Array<{
   { id: "social", label: "Social", icon: Share2 },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "pixels", label: "Pixels", icon: Megaphone },
+  { id: "history", label: "History", icon: History },
 ];
+
+type SettingsHistoryItem = {
+  id: string;
+  action: string;
+  changes: Record<string, { from: unknown; to: unknown }> | null;
+  note?: string | null;
+  created_at: string;
+  actor: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  } | null;
+};
+
+function formatHistoryValue(value: unknown) {
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "boolean") return value ? "on" : "off";
+  return String(value);
+}
 
 // ─── SettingsSection ──────────────────────────────────────────────────────────
 
@@ -309,6 +332,10 @@ export function SiteSettingsPage() {
   const [ogImageUrl, setOgImageUrl] = useState<string | null>(null);
   const [ogUploading, setOgUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<SettingsTabId>("identity");
+  const [history, setHistory] = useState<SettingsHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [clearingHistory, setClearingHistory] = useState(false);
 
   const ogFileRef = useRef<HTMLInputElement>(null);
 
@@ -380,6 +407,59 @@ export function SiteSettingsPage() {
       cancelled = true;
     };
   }, [token, form]);
+
+  useEffect(() => {
+    if (!token || activeTab !== "history") return;
+    let cancelled = false;
+    void (async () => {
+      setHistoryLoading(true);
+      setHistoryError(null);
+      try {
+        const data = await apiFetch<{ history: SettingsHistoryItem[] }>(
+          "/api/dashboard/site-settings/history",
+          { token },
+        );
+        if (!cancelled) setHistory(data.history);
+      } catch (err) {
+        if (!cancelled) {
+          setHistoryError(
+            err instanceof ApiError
+              ? err.message
+              : "Failed to load history",
+          );
+        }
+      } finally {
+        if (!cancelled) setHistoryLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, activeTab]);
+
+  async function onClearHistory() {
+    if (!token) return;
+    const ok = window.confirm(
+      "Clear all site settings history? This permanently deletes history rows from the database.",
+    );
+    if (!ok) return;
+    setClearingHistory(true);
+    setHistoryError(null);
+    try {
+      await apiFetch("/api/dashboard/site-settings/history", {
+        method: "DELETE",
+        token,
+      });
+      setHistory([]);
+      setSaveSuccess("Site settings history cleared");
+    } catch (err) {
+      setHistoryError(
+        err instanceof ApiError ? err.message : "Failed to clear history",
+      );
+    } finally {
+      setClearingHistory(false);
+    }
+  }
 
   async function onSubmit(values: SiteSettingsFormValues) {
     if (!token) return;
@@ -520,6 +600,90 @@ export function SiteSettingsPage() {
         })}
       </div>
 
+      {activeTab === "history" ? (
+        <SettingsSection
+          title="Change history"
+          description="Tracks site settings saves and OG image uploads. Clear permanently deletes rows from the database."
+          icon={History}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              {historyLoading
+                ? "Loading…"
+                : `${history.length} entr${history.length === 1 ? "y" : "ies"}`}
+            </p>
+            {history.length > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={clearingHistory}
+                onClick={() => void onClearHistory()}
+              >
+                {clearingHistory ? "Clearing…" : "Clear history"}
+              </Button>
+            ) : null}
+          </div>
+          {historyError ? (
+            <p className="text-sm text-destructive" role="alert">
+              {historyError}
+            </p>
+          ) : null}
+          {historyLoading ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Loading history…
+            </p>
+          ) : history.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              No history yet. Save settings to start tracking changes.
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {history.map((item) => (
+                <li
+                  key={item.id}
+                  className="rounded-xl border border-border/70 bg-muted/15 px-4 py-3"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-medium capitalize">
+                        {item.action.replaceAll("_", " ")}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.actor
+                          ? `${item.actor.first_name} ${item.actor.last_name}`
+                          : "System"}{" "}
+                        · {new Date(item.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="capitalize">
+                      {item.action}
+                    </Badge>
+                  </div>
+                  {item.note ? (
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {item.note}
+                    </p>
+                  ) : null}
+                  {item.changes && Object.keys(item.changes).length > 0 ? (
+                    <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                      {Object.entries(item.changes).map(([field, diff]) => (
+                        <li key={field}>
+                          <span className="font-medium text-foreground">
+                            {field}
+                          </span>
+                          : {formatHistoryValue(diff.from)} →{" "}
+                          {formatHistoryValue(diff.to)}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </SettingsSection>
+      ) : (
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -976,6 +1140,7 @@ export function SiteSettingsPage() {
           </SettingsStickyActions>
         </form>
       </Form>
+      )}
     </div>
   );
 }

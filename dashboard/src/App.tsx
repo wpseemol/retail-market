@@ -82,10 +82,10 @@ export default function App() {
           <Route element={<ProtectedRoute roles={["super_admin", "vendor"]} />}>
             <Route path="stores" element={<StoresPage />} />
             <Route path="stores/new" element={<StoreCreatePage />} />
-            <Route path="stores/:id" element={<StoreEditPage />} />
+            <Route path="stores/:slug" element={<StoreEditPage />} />
             <Route path="shops" element={<StoresPage />} />
             <Route path="shops/new" element={<StoreCreatePage />} />
-            <Route path="shops/:id" element={<StoreEditPage />} />
+            <Route path="shops/:slug" element={<StoreEditPage />} />
           </Route>
 
           <Route

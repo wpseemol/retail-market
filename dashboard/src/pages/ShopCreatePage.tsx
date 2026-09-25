@@ -252,7 +252,7 @@ export function StoreCreatePage() {
         );
       }
 
-      navigate(`/stores/${data.shop.id}`);
+      navigate(`/stores/${data.shop.slug}`);
     } catch (err) {
       setSubmitError(
         err instanceof ApiError ? err.message : "Failed to create store",

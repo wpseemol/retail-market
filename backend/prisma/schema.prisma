@@ -153,6 +153,7 @@ model User {
   notifications  Notification[]
   vendorProfile  Vendor?
   vendorHistory  VendorHistory[]     @relation("VendorHistoryActor")
+  siteSettingsHistory SiteSettingsHistory[] @relation("SiteSettingsHistoryActor")
 
   @@map("users")
 }
@@ -759,8 +760,29 @@ model SiteSettings {
   updated_at DateTime @updatedAt
 
   og_image Media? @relation("SiteSettingsOgImage", fields: [og_image_id], references: [id], onDelete: SetNull)
+  history  SiteSettingsHistory[]
 
   @@map("site_settings")
+}
+
+/// Audit trail for site settings create / edit / OG image / clear.
+model SiteSettingsHistory {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  /// Always points at the singleton site_settings row (id = 1).
+  settings_id Int     @default(1)
+  actor_id   BigInt?  @db.UnsignedBigInt
+  action     String   @db.VarChar(40)
+  /// Field-level diffs, e.g. { site_name: { from, to } }
+  changes    Json?
+  note       String?  @db.VarChar(500)
+  created_at DateTime @default(now())
+
+  settings SiteSettings @relation(fields: [settings_id], references: [id], onDelete: Cascade)
+  actor    User?        @relation("SiteSettingsHistoryActor", fields: [actor_id], references: [id], onDelete: SetNull)
+
+  @@index([settings_id, created_at])
+  @@index([actor_id])
+  @@map("site_settings_histories")
 }
 
 /// Anonymous storefront page hits for visitor-by-country analytics.

@@ -139,7 +139,7 @@ Query: `page` (default 1), `limit?` (falls back to store `products_per_page`, ma
 
 **404** if slug missing or store not active.
 
-Dashboard customize: `PATCH /api/dashboard/shops/:id` + `POST /:id/banner` (multipart field **`banner`** · max **5 MB** · resized).
+Dashboard customize: `PATCH /api/dashboard/shops/:idOrSlug` + `POST /:idOrSlug/banner` (multipart field **`banner`** · max **5 MB** · resized). Id or **slug** accepted.
 
 ---
 
@@ -428,15 +428,27 @@ Auth: Bearer **`super_admin`** or **`vendor`**. Vendors only see/manage their ow
 | GET | `/slug-preview?name=` | `{ slug, base }` · `exclude_id?` |
 | GET | `/` | List shops |
 | GET | `/me` | Current vendor shop (or `null`) |
-| GET | `/:id` | Detail |
-| GET | `/:id/history` | Audit log |
+| GET | `/:idOrSlug` | Detail (numeric id **or** slug) |
+| GET | `/:idOrSlug/history` | Audit log |
+| DELETE | `/:idOrSlug/history` | Clear audit log (DB delete) |
 | POST | `/` | Create (`shop_name`, `slug?`, `description?`, `user_id?` required for super, `status?`) |
-| PATCH | `/:id` | Update |
-| POST | `/:id/logo` | Multipart **`logo`** · max **5 MB** · always resized |
-| POST | `/:id/banner` | Multipart **`banner`** · max **5 MB** · always resized |
-| DELETE | `/:id` | Soft-delete (super only) |
+| PATCH | `/:idOrSlug` | Update |
+| POST | `/:idOrSlug/logo` | Multipart **`logo`** · max **5 MB** · always resized |
+| POST | `/:idOrSlug/banner` | Multipart **`banner`** · max **5 MB** · always resized |
+| DELETE | `/:idOrSlug` | Soft-delete (super only) |
 
 **Shop object:** `id`, `user_id`, `logo_id`, `shop_name`, `slug`, `description`, `status` (`pending`\|`active`\|…), timestamps, `logo`, `user?`.
+
+Dashboard UI uses **`/stores/{slug}`** (not id).
+
+---
+
+## Dashboard site settings — history
+
+`GET /api/dashboard/site-settings/history` — list audit rows (table `site_settings_histories`).  
+`DELETE /api/dashboard/site-settings/history` — clear all history rows for the singleton settings.
+
+Saves and OG image uploads append history with field diffs.
 
 ---
 

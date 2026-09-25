@@ -174,6 +174,43 @@ function parseId(raw: string) {
   }
 }
 
+const SLUG_PARAM_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+function vendorWhere(
+  idOrSlug: string,
+  includeDeleted?: boolean,
+): Prisma.VendorWhereInput | null {
+  const raw = idOrSlug.trim();
+  if (!raw) return null;
+  const deletedFilter = includeDeleted ? {} : { deleted_at: null };
+  const id = parseId(raw);
+  if (id) return { id, ...deletedFilter };
+  if (!SLUG_PARAM_RE.test(raw)) return null;
+  return { slug: raw, ...deletedFilter };
+}
+
+/** Resolve store by numeric id or unique slug. */
+async function findVendorByIdOrSlug(
+  idOrSlug: string,
+  options?: { includeDeleted?: boolean },
+) {
+  const where = vendorWhere(idOrSlug, options?.includeDeleted);
+  if (!where) return null;
+  return prisma.vendor.findFirst({ where });
+}
+
+async function findVendorWithMedia(
+  idOrSlug: string,
+  options?: { includeDeleted?: boolean },
+) {
+  const where = vendorWhere(idOrSlug, options?.includeDeleted);
+  if (!where) return null;
+  return prisma.vendor.findFirst({
+    where,
+    include: shopInclude,
+  });
+}
+
 async function slugTaken(slug: string, excludeId?: bigint) {
   const existing = await prisma.vendor.findFirst({
     where: {
@@ -266,15 +303,12 @@ dashboardVendorsRouter.get("/me", async (req, res) => {
   });
 });
 
-dashboardVendorsRouter.get("/:id/history", async (req, res) => {
-  const id = parseId(String(req.params.id));
-  if (!id) return res.status(400).json({ message: "Invalid shop id" });
-
-  const vendor = await prisma.vendor.findFirst({
-    where: { id },
+dashboardVendorsRouter.get("/:idOrSlug/history", async (req, res) => {
+  const vendor = await findVendorByIdOrSlug(String(req.params.idOrSlug), {
+    includeDeleted: true,
   });
-  if (!vendor || vendor.deleted_at) {
-    return res.status(404).json({ message: "Shop not found" });
+  if (!vendor) {
+    return res.status(404).json({ message: "Store not found" });
   }
   if (
     !(await assertCanAccessShop(vendor, req.auth!.userId, req.auth!.role))
@@ -283,7 +317,7 @@ dashboardVendorsRouter.get("/:id/history", async (req, res) => {
   }
 
   const rows = await prisma.vendorHistory.findMany({
-    where: { vendor_id: id },
+    where: { vendor_id: vendor.id },
     include: {
       actor: { include: userWithAvatarInclude },
     },
@@ -303,16 +337,33 @@ dashboardVendorsRouter.get("/:id/history", async (req, res) => {
   });
 });
 
-dashboardVendorsRouter.get("/:id", async (req, res) => {
-  const id = parseId(String(req.params.id));
-  if (!id) return res.status(400).json({ message: "Invalid shop id" });
+dashboardVendorsRouter.delete("/:idOrSlug/history", async (req, res) => {
+  const vendor = await findVendorByIdOrSlug(String(req.params.idOrSlug), {
+    includeDeleted: true,
+  });
+  if (!vendor) {
+    return res.status(404).json({ message: "Store not found" });
+  }
+  if (
+    !(await assertCanAccessShop(vendor, req.auth!.userId, req.auth!.role))
+  ) {
+    return res.status(403).json({ message: "Insufficient permissions" });
+  }
 
-  const vendor = await prisma.vendor.findFirst({
-    where: { id, deleted_at: null },
-    include: shopInclude,
+  const result = await prisma.vendorHistory.deleteMany({
+    where: { vendor_id: vendor.id },
   });
 
-  if (!vendor) return res.status(404).json({ message: "Shop not found" });
+  return res.json({
+    message: "Store history cleared",
+    deleted: result.count,
+  });
+});
+
+dashboardVendorsRouter.get("/:idOrSlug", async (req, res) => {
+  const vendor = await findVendorWithMedia(String(req.params.idOrSlug));
+
+  if (!vendor) return res.status(404).json({ message: "Store not found" });
 
   if (
     !(await assertCanAccessShop(vendor, req.auth!.userId, req.auth!.role))
@@ -426,10 +477,7 @@ dashboardVendorsRouter.post("/", async (req, res) => {
   });
 });
 
-dashboardVendorsRouter.patch("/:id", async (req, res) => {
-  const id = parseId(String(req.params.id));
-  if (!id) return res.status(400).json({ message: "Invalid shop id" });
-
+dashboardVendorsRouter.patch("/:idOrSlug", async (req, res) => {
   const parsed = updateShopSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({
@@ -443,10 +491,9 @@ dashboardVendorsRouter.patch("/:id", async (req, res) => {
     return res.status(400).json({ message: "At least one field is required" });
   }
 
-  const existing = await prisma.vendor.findFirst({
-    where: { id, deleted_at: null },
-  });
-  if (!existing) return res.status(404).json({ message: "Shop not found" });
+  const existing = await findVendorByIdOrSlug(String(req.params.idOrSlug));
+  if (!existing) return res.status(404).json({ message: "Store not found" });
+  const id = existing.id;
 
   const isSuper = req.auth!.role === "super_admin";
   if (
@@ -607,7 +654,7 @@ dashboardVendorsRouter.patch("/:id", async (req, res) => {
 
 /** Upload / replace shop logo (store image). */
 dashboardVendorsRouter.post(
-  "/:id/logo",
+  "/:idOrSlug/logo",
   (req, res, next) => {
     shopImageUpload.single("logo")(req, res, (err) => {
       if (err) {
@@ -619,8 +666,9 @@ dashboardVendorsRouter.post(
     });
   },
   async (req, res) => {
-    const id = parseId(String(req.params.id));
-    if (!id) return res.status(400).json({ message: "Invalid shop id" });
+    const existing = await findVendorWithMedia(String(req.params.idOrSlug));
+    if (!existing) return res.status(404).json({ message: "Store not found" });
+    const id = existing.id;
 
     const file = req.file;
     if (!file) {
@@ -629,27 +677,9 @@ dashboardVendorsRouter.post(
       });
     }
 
-    const existing = await prisma.vendor.findFirst({
-      where: { id, deleted_at: null },
-      include: { logo: true },
-    });
-    if (!existing) {
-      try {
-        fs.unlinkSync(file.path);
-      } catch {
-        /* ignore */
-      }
-      return res.status(404).json({ message: "Shop not found" });
-    }
-
     if (
       !(await assertCanAccessShop(existing, req.auth!.userId, req.auth!.role))
     ) {
-      try {
-        fs.unlinkSync(file.path);
-      } catch {
-        /* ignore */
-      }
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 
@@ -731,7 +761,7 @@ dashboardVendorsRouter.post(
 
 /** Upload / replace storefront banner. */
 dashboardVendorsRouter.post(
-  "/:id/banner",
+  "/:idOrSlug/banner",
   (req, res, next) => {
     shopImageUpload.single("banner")(req, res, (err) => {
       if (err) {
@@ -743,27 +773,24 @@ dashboardVendorsRouter.post(
     });
   },
   async (req, res) => {
-    const id = parseId(String(req.params.id));
-    if (!id) return res.status(400).json({ message: "Invalid shop id" });
+    const existing = await findVendorWithMedia(String(req.params.idOrSlug));
+    if (!existing) {
+      if (req.file?.path) {
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch {
+          /* ignore */
+        }
+      }
+      return res.status(404).json({ message: "Store not found" });
+    }
+    const id = existing.id;
 
     const file = req.file;
     if (!file) {
       return res.status(400).json({
         message: "Banner image is required (field: banner)",
       });
-    }
-
-    const existing = await prisma.vendor.findFirst({
-      where: { id, deleted_at: null },
-      include: { banner: true },
-    });
-    if (!existing) {
-      try {
-        fs.unlinkSync(file.path);
-      } catch {
-        /* ignore */
-      }
-      return res.status(404).json({ message: "Shop not found" });
     }
 
     if (
@@ -854,18 +881,14 @@ dashboardVendorsRouter.post(
 );
 
 /** Soft-delete shop — super admin only. */
-dashboardVendorsRouter.delete("/:id", async (req, res) => {
+dashboardVendorsRouter.delete("/:idOrSlug", async (req, res) => {
   if (req.auth!.role !== "super_admin") {
     return res.status(403).json({ message: "Only super admin can delete shops" });
   }
 
-  const id = parseId(String(req.params.id));
-  if (!id) return res.status(400).json({ message: "Invalid shop id" });
-
-  const existing = await prisma.vendor.findFirst({
-    where: { id, deleted_at: null },
-  });
-  if (!existing) return res.status(404).json({ message: "Shop not found" });
+  const existing = await findVendorByIdOrSlug(String(req.params.idOrSlug));
+  if (!existing) return res.status(404).json({ message: "Store not found" });
+  const id = existing.id;
 
   const vendor = await prisma.vendor.update({
     where: { id },
@@ -881,11 +904,11 @@ dashboardVendorsRouter.delete("/:id", async (req, res) => {
       deleted_at: { from: null, to: vendor.deleted_at?.toISOString() ?? null },
       status: { from: existing.status, to: "inactive" },
     },
-    note: "Shop soft-deleted by super admin",
+    note: "Store soft-deleted by super admin",
   });
 
   return res.json({
-    message: "Shop deleted",
+    message: "Store deleted",
     shop: toPublicShop(vendor),
   });
 });

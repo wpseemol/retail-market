@@ -51,7 +51,7 @@ function formatChangeValue(value: unknown) {
 }
 
 export function StoreEditPage() {
-  const { id } = useParams<{ id: string }>();
+  const { slug: routeSlug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { token, user } = useAuthStore();
   const isSuper = user?.role === "super_admin";
@@ -62,6 +62,7 @@ export function StoreEditPage() {
   const [history, setHistory] = useState<ShopHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [clearingHistory, setClearingHistory] = useState(false);
 
   const [shopName, setShopName] = useState("");
   const [slug, setSlug] = useState("");
@@ -84,23 +85,26 @@ export function StoreEditPage() {
   const [deleting, setDeleting] = useState(false);
 
   async function refreshHistory() {
-    if (!token || !id) return;
+    if (!token || !routeSlug) return;
     const hist = await apiFetch<{ history: ShopHistoryItem[] }>(
-      `/api/dashboard/shops/${id}/history`,
+      `/api/dashboard/shops/${encodeURIComponent(routeSlug)}/history`,
       { token },
     );
     setHistory(hist.history);
   }
 
   async function loadAll() {
-    if (!token || !id) return;
+    if (!token || !routeSlug) return;
     setLoading(true);
     setError(null);
     try {
       const [shopRes, historyRes] = await Promise.all([
-        apiFetch<{ shop: Shop }>(`/api/dashboard/shops/${id}`, { token }),
+        apiFetch<{ shop: Shop }>(
+          `/api/dashboard/shops/${encodeURIComponent(routeSlug)}`,
+          { token },
+        ),
         apiFetch<{ history: ShopHistoryItem[] }>(
-          `/api/dashboard/shops/${id}/history`,
+          `/api/dashboard/shops/${encodeURIComponent(routeSlug)}/history`,
           { token },
         ),
       ]);
@@ -124,7 +128,7 @@ export function StoreEditPage() {
   useEffect(() => {
     void loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, id, isSuper]);
+  }, [token, routeSlug, isSuper]);
 
   function applyShop(next: Shop) {
     setShop(next);
@@ -142,14 +146,14 @@ export function StoreEditPage() {
 
   async function onSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!token || !id) return;
+    if (!token || !routeSlug) return;
     setSaving(true);
     setSaveError(null);
     setSaveSuccess(null);
 
     try {
       const data = await apiFetch<{ message: string; shop: Shop }>(
-        `/api/dashboard/shops/${id}`,
+        `/api/dashboard/shops/${encodeURIComponent(routeSlug)}`,
         {
           method: "PATCH",
           token,
@@ -174,6 +178,9 @@ export function StoreEditPage() {
       applyShop(data.shop);
       setSaveSuccess(data.message || "Store updated");
       await refreshHistory();
+      if (data.shop.slug !== routeSlug) {
+        navigate(`/stores/${data.shop.slug}`, { replace: true });
+      }
     } catch (err) {
       setSaveError(err instanceof ApiError ? err.message : "Update failed");
     } finally {
@@ -182,7 +189,7 @@ export function StoreEditPage() {
   }
 
   async function onLogoChange(file: File | null) {
-    if (!file || !token || !id) return;
+    if (!file || !token || !routeSlug) return;
     const checked = validateShopImageFile(file);
     if (!checked.ok) {
       setSaveError(checked.message);
@@ -195,7 +202,7 @@ export function StoreEditPage() {
       const form = new FormData();
       form.append("logo", file);
       const data = await apiUpload<{ message: string; shop: Shop }>(
-        `/api/dashboard/shops/${id}/logo`,
+        `/api/dashboard/shops/${encodeURIComponent(routeSlug)}/logo`,
         form,
         { token },
       );
@@ -213,7 +220,7 @@ export function StoreEditPage() {
   }
 
   async function onBannerChange(file: File | null) {
-    if (!file || !token || !id) return;
+    if (!file || !token || !routeSlug) return;
     const checked = validateShopImageFile(file);
     if (!checked.ok) {
       setSaveError(checked.message);
@@ -226,7 +233,7 @@ export function StoreEditPage() {
       const form = new FormData();
       form.append("banner", file);
       const data = await apiUpload<{ message: string; shop: Shop }>(
-        `/api/dashboard/shops/${id}/banner`,
+        `/api/dashboard/shops/${encodeURIComponent(routeSlug)}/banner`,
         form,
         { token },
       );
@@ -244,7 +251,7 @@ export function StoreEditPage() {
   }
 
   async function onDelete() {
-    if (!token || !id || !isSuper) return;
+    if (!token || !routeSlug || !isSuper) return;
     const ok = window.confirm(
       `Delete store “${shop?.shop_name}”? This soft-deletes the store and is logged in history.`,
     );
@@ -253,15 +260,42 @@ export function StoreEditPage() {
     setDeleting(true);
     setSaveError(null);
     try {
-      await apiFetch(`/api/dashboard/shops/${id}`, {
-        method: "DELETE",
-        token,
-      });
+      await apiFetch(
+        `/api/dashboard/shops/${encodeURIComponent(routeSlug)}`,
+        {
+          method: "DELETE",
+          token,
+        },
+      );
       navigate("/stores");
     } catch (err) {
       setSaveError(err instanceof ApiError ? err.message : "Delete failed");
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function onClearHistory() {
+    if (!token || !routeSlug) return;
+    const ok = window.confirm(
+      "Clear all change history for this store? This permanently deletes history rows from the database.",
+    );
+    if (!ok) return;
+    setClearingHistory(true);
+    setSaveError(null);
+    try {
+      await apiFetch(
+        `/api/dashboard/shops/${encodeURIComponent(routeSlug)}/history`,
+        { method: "DELETE", token },
+      );
+      setHistory([]);
+      setSaveSuccess("Store history cleared");
+    } catch (err) {
+      setSaveError(
+        err instanceof ApiError ? err.message : "Failed to clear history",
+      );
+    } finally {
+      setClearingHistory(false);
     }
   }
 
@@ -551,8 +585,24 @@ export function StoreEditPage() {
           <StoreFormSection
             step="03"
             title="Change history"
-            description="Tracks create, edits, media uploads, and deletes."
+            description="Tracks create, edits, media uploads, and deletes. Clear removes rows from the database."
           >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">
+                {history.length} entr{history.length === 1 ? "y" : "ies"}
+              </p>
+              {history.length > 0 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={clearingHistory}
+                  onClick={() => void onClearHistory()}
+                >
+                  {clearingHistory ? "Clearing…" : "Clear history"}
+                </Button>
+              ) : null}
+            </div>
             {history.length === 0 ? (
               <p className="text-sm text-muted-foreground">No history yet.</p>
             ) : (

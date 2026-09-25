@@ -224,7 +224,7 @@ export function StoresPage() {
                             {stores.map((store) => (
                                 <li key={store.id}>
                                     <Link
-                                        to={`/stores/${store.id}`}
+                                        to={`/stores/${store.slug}`}
                                         className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-linear-to-br from-background to-muted/20 transition-all hover:border-brand-primary/30 hover:shadow-md"
                                     >
                                         <div className="relative aspect-video bg-linear-to-br from-brand-deep/90 via-[#0a4a10] to-brand-primary">
