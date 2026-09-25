@@ -24,6 +24,7 @@ const customerCareLinks: FooterLink[] = [
     { label: "My Account", href: "/account" },
     { label: "Track Your Order", href: "/track-order" },
     { label: "Wishlist", href: "/wishlist" },
+    { label: "Stores", href: "/stores" },
     { label: "Customer Service", href: "/customer-service" },
     { label: "Returns/Exchange", href: "/returns" },
     { label: "FAQ", href: "/faq" },

@@ -26,6 +26,8 @@ export default function Header() {
     const [mounted, setMounted] = useState(false);
     const isHome = pathname === "/";
     const isShop = pathname === "/shop" || pathname.startsWith("/shop/");
+    const isStores =
+        pathname === "/stores" || pathname.startsWith("/stores/");
     const isCart = pathname === "/cart" || pathname.startsWith("/cart/");
     const isContact =
         pathname === "/contact" || pathname.startsWith("/contact/");
@@ -341,6 +343,18 @@ export default function Header() {
                                 Shop
                             </Link>
                         </li>
+                        <li>
+                            <Link
+                                href="/stores"
+                                className={`hover:text-brand-hover transition-colors ${
+                                    isStores
+                                        ? "text-brand-primary font-semibold"
+                                        : "text-text-secondary hover:text-brand-primary"
+                                }`}
+                            >
+                                Stores
+                            </Link>
+                        </li>
                         <li className="relative group cursor-pointer">
                             <span className="flex items-center gap-1 text-text-secondary hover:text-brand-primary transition-colors">
                                 Pages
@@ -535,6 +549,17 @@ export default function Header() {
                                 }`}
                             >
                                 Shop
+                            </Link>
+                            <Link
+                                href="/stores"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className={`px-3 py-2 rounded-md hover:bg-bg-subtle ${
+                                    isStores
+                                        ? "text-brand-primary font-semibold"
+                                        : "text-text-primary"
+                                }`}
+                            >
+                                Stores
                             </Link>
 
                             {/* Collapsible: Pages */}

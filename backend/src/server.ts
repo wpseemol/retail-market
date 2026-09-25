@@ -14,6 +14,7 @@ import { dashboardBrandsRouter } from "./routes/dashboardBrands.js";
 import { dashboardProductsRouter } from "./routes/dashboardProducts.js";
 import { dashboardSiteSettingsRouter } from "./routes/dashboardSiteSettings.js";
 import { dashboardOverviewRouter } from "./routes/dashboardOverview.js";
+import { publicShopsRouter } from "./routes/publicShops.js";
 import { publicSiteSettingsRouter } from "./routes/publicSiteSettings.js";
 import { publicAnalyticsRouter } from "./routes/publicAnalytics.js";
 
@@ -41,6 +42,7 @@ app.use("/api/auth", customerAuthRouter);
 app.use("/api/customer/addresses", customerAddressRouter);
 app.use("/api/site-settings", publicSiteSettingsRouter);
 app.use("/api/analytics", publicAnalyticsRouter);
+app.use("/api/shops", publicShopsRouter);
 app.use("/api/dashboard/auth", dashboardAuthRouter);
 app.use("/api/dashboard/users", dashboardUsersRouter);
 app.use("/api/dashboard/shops", dashboardVendorsRouter);

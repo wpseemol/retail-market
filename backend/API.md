@@ -69,6 +69,7 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/customer/addresses` | `routes/customerAddresses.ts` | Customers |
 | `/api/site-settings` | `routes/publicSiteSettings.ts` | Public |
 | `/api/analytics` | `routes/publicAnalytics.ts` | Public |
+| `/api/shops` | `routes/publicShops.ts` | Public |
 | `/api/dashboard/auth` | `routes/dashboardAuth.ts` | Staff |
 | `/api/dashboard/users` | `routes/dashboardUsers.ts` | `super_admin` |
 | `/api/dashboard/overview` | `routes/dashboardOverview.ts` | `super_admin`, `admin` |
@@ -107,6 +108,32 @@ No auth.
 ```
 
 Resolves country from IP (`geoip-lite`). Private IPs → `LO` (Local network).
+
+---
+
+## Public stores — `/api/shops`
+
+No auth. Active stores only (dashboard create/edit stays on `/api/dashboard/shops`).
+
+### `GET /api/shops`
+
+Query: `page` (default 1), `limit` (default 24, max 48), `q?` (search name/slug/description).
+
+**200** → `{ stores, pagination }`
+
+`stores[]`: `id`, `shop_name`, `slug`, `description`, `logo`, `products_count`
+
+### `GET /api/shops/:slug`
+
+Query: `page` (default 1), `limit` (default 24, max 48).
+
+**200** → `{ store, products, pagination }`
+
+`store`: `id`, `shop_name`, `slug`, `description`, `logo`  
+`products`: public product list for that store (`status: active`)  
+`pagination`: `page`, `limit`, `total`, `total_pages`
+
+**404** if slug missing or store not active.
 
 ---
 
