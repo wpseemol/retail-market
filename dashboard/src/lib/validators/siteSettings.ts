@@ -133,9 +133,9 @@ export const siteSettingsFormSchema = z.object({
 
   // ── Shop catalog ──────────────────────────────────────────────────────────
   shop_default_view: z.enum(["grid4", "grid3", "grid2", "list"]),
-  shop_products_per_page: z.coerce.number().int().min(4).max(48),
-  shop_categories_visible: z.coerce.number().int().min(1).max(50),
-  shop_brands_visible: z.coerce.number().int().min(1).max(50),
+  shop_products_per_page: z.number().int().min(4).max(48),
+  shop_categories_visible: z.number().int().min(1).max(50),
+  shop_brands_visible: z.number().int().min(1).max(50),
   shop_see_all_label: withSafeInput(
     z.string().trim().min(1, "See all label is required").max(40),
   ),
