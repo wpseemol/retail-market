@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ImagePlus, Upload } from "lucide-react";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
@@ -31,29 +31,25 @@ type Props = {
   onSuccess: (message: string) => void;
 };
 
-const SLOT_META: Record<
-  HomeHeroImageSlot,
-  { title: string; fallbackHint: string }
-> = {
-  main_product: {
-    title: "Main product image",
-    fallbackHint: "Default: /images/camera.png",
-  },
-  main_bg: {
-    title: "Main background",
-    fallbackHint: "Default: hero background art",
-  },
-  side_product: {
-    title: "Side product image",
-    fallbackHint: "Default: /images/img_57 1.png",
-  },
-  side_bg: {
-    title: "Side background",
-    fallbackHint: "Default: hero background art",
-  },
+/** Built-in storefront art (also mirrored under dashboard /public). */
+const DEFAULT_HERO_IMAGES: Record<HomeHeroImageSlot, string> = {
+  main_product: "/images/camera.png",
+  main_bg: "/images/hero_bg_06 1.png",
+  side_product: "/images/img_57 1.png",
+  side_bg: "/images/hero_bg_06 1.png",
 };
 
-function slotPreview(hero: HomeHeroDto | null, slot: HomeHeroImageSlot) {
+const SLOT_LABEL: Record<HomeHeroImageSlot, string> = {
+  main_product: "Product photo",
+  main_bg: "Background",
+  side_product: "Product photo",
+  side_bg: "Background",
+};
+
+function uploadedPath(
+  hero: HomeHeroDto | null,
+  slot: HomeHeroImageSlot,
+): string | null {
   if (!hero) return null;
   switch (slot) {
     case "main_product":
@@ -65,6 +61,265 @@ function slotPreview(hero: HomeHeroDto | null, slot: HomeHeroImageSlot) {
     case "side_bg":
       return hero.side.bg_image?.path ?? null;
   }
+}
+
+/** Image the storefront actually shows right now (upload or built-in). */
+function displayImage(
+  hero: HomeHeroDto | null,
+  slot: HomeHeroImageSlot,
+): { src: string; isCustom: boolean } {
+  const custom = uploadedPath(hero, slot);
+  if (custom) return { src: custom, isCustom: true };
+  return { src: DEFAULT_HERO_IMAGES[slot], isCustom: false };
+}
+
+function PercentField({
+  field,
+  placeholder,
+}: {
+  field: {
+    value: number | null;
+    onChange: (v: number | null) => void;
+    onBlur: () => void;
+    name: string;
+    ref: React.Ref<HTMLInputElement>;
+  };
+  placeholder: string;
+}) {
+  return (
+    <Input
+      type="number"
+      min={0}
+      max={100}
+      placeholder={placeholder}
+      value={field.value ?? ""}
+      onChange={(e) => {
+        const raw = e.target.value;
+        const n = Number(raw);
+        field.onChange(raw === "" || Number.isNaN(n) ? null : n);
+      }}
+      onBlur={field.onBlur}
+      name={field.name}
+      ref={field.ref}
+    />
+  );
+}
+
+function HeroImageSlot({
+  slot,
+  hero,
+  uploading,
+  disabled,
+  onPick,
+  inputRef,
+  onFile,
+  tall,
+}: {
+  slot: HomeHeroImageSlot;
+  hero: HomeHeroDto | null;
+  uploading: boolean;
+  disabled: boolean;
+  onPick: () => void;
+  inputRef: (el: HTMLInputElement | null) => void;
+  onFile: (file: File | null) => void;
+  tall?: boolean;
+}) {
+  const { src, isCustom } = displayImage(hero, slot);
+  const label = SLOT_LABEL[slot];
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-background">
+      <div
+        className={cn(
+          "relative flex items-center justify-center overflow-hidden bg-muted/40",
+          tall ? "aspect-16/10" : "aspect-square",
+        )}
+      >
+        <img
+          key={src}
+          src={src}
+          alt={`${label} — currently on storefront`}
+          className={cn(
+            "size-full",
+            slot.endsWith("_bg") ? "object-cover opacity-80" : "object-contain p-3",
+          )}
+        />
+        <span
+          className={cn(
+            "absolute left-2 top-2 rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide shadow-sm",
+            isCustom
+              ? "bg-brand-primary text-white"
+              : "bg-background/90 text-muted-foreground ring-1 ring-border",
+          )}
+        >
+          {isCustom ? "Custom" : "Default · in use"}
+        </span>
+        {uploading ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/70 text-sm font-medium">
+            Uploading…
+          </div>
+        ) : null}
+      </div>
+      <div className="space-y-2 border-t border-border p-3">
+        <div>
+          <p className="text-sm font-medium">{label}</p>
+          <p className="text-[11px] text-muted-foreground">
+            {isCustom
+              ? "Custom upload is live on the storefront. Replace anytime."
+              : "Showing the built-in image shoppers see now. Upload to replace it."}
+          </p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            JPEG, PNG, WebP, or GIF · max 1 MB · always resized on the server
+          </p>
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          className="hidden"
+          onChange={(e) => onFile(e.target.files?.[0] ?? null)}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-full"
+          disabled={disabled || uploading}
+          onClick={onPick}
+        >
+          {uploading ? (
+            "Uploading…"
+          ) : (
+            <>
+              {isCustom ? (
+                <Upload className="size-3.5" />
+              ) : (
+                <ImagePlus className="size-3.5" />
+              )}
+              {isCustom ? "Change image" : "Replace default"}
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function LiveHeroPreview({
+  values,
+  hero,
+}: {
+  values: HomeHeroFormValues;
+  hero: HomeHeroDto | null;
+}) {
+  const mainBg = displayImage(hero, "main_bg").src;
+  const mainProduct = displayImage(hero, "main_product").src;
+  const sideBg = displayImage(hero, "side_bg").src;
+  const sideProduct = displayImage(hero, "side_product").src;
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-muted/20">
+      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2.5">
+        <div>
+          <p className="text-sm font-semibold">Live preview</p>
+          <p className="text-[11px] text-muted-foreground">
+            What shoppers see now — text updates as you type; images update after
+            upload.
+          </p>
+        </div>
+      </div>
+      <div className="grid gap-3 p-3 lg:grid-cols-12">
+        <div className="relative flex min-h-44 flex-col justify-between overflow-hidden rounded-lg border border-border bg-background p-4 lg:col-span-8 sm:min-h-52 sm:flex-row sm:items-center sm:gap-4">
+          <img
+            src={mainBg}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 size-full object-cover opacity-40"
+          />
+          <div className="relative z-10 max-w-70 space-y-1.5">
+            <p className="text-[11px] font-medium text-brand-primary">
+              {values.main_eyebrow || "Eyebrow"}
+            </p>
+            <p className="text-sm font-extrabold uppercase leading-snug tracking-tight sm:text-base">
+              {values.main_headline || "Headline"}
+            </p>
+            {values.main_subtext ? (
+              <p className="text-[11px] text-muted-foreground">
+                {values.main_subtext}
+              </p>
+            ) : null}
+            <div className="flex items-baseline gap-3 pt-1 text-brand-primary">
+              {values.main_discount_percent != null ? (
+                <span className="text-2xl font-black leading-none">
+                  {values.main_discount_percent}
+                  <span className="text-sm">%</span>
+                </span>
+              ) : null}
+              {values.main_price_label ? (
+                <span className="text-sm font-bold">{values.main_price_label}</span>
+              ) : null}
+            </div>
+            <span className="mt-2 inline-flex rounded-full bg-foreground px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-background">
+              {values.main_cta_label || "CTA"}
+            </span>
+          </div>
+          <div className="relative z-10 mx-auto mt-3 h-28 w-36 shrink-0 sm:mt-0 sm:h-36 sm:w-44">
+            <img
+              src={mainProduct}
+              alt="Main product"
+              className="size-full object-contain"
+            />
+          </div>
+        </div>
+
+        <div className="relative flex min-h-44 flex-col justify-between overflow-hidden rounded-lg border border-border bg-background p-4 lg:col-span-4">
+          <img
+            src={sideBg}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 size-full object-cover opacity-35"
+          />
+          {values.side_offer_percent != null ? (
+            <div className="absolute right-3 top-10 z-20 flex size-12 flex-col items-center justify-center rounded-full bg-brand-primary text-center text-white shadow">
+              <span className="text-xs font-black leading-none">
+                {values.side_offer_percent}%
+              </span>
+              {values.side_offer_label ? (
+                <span className="text-[9px] font-semibold leading-tight">
+                  {values.side_offer_label}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+          <div className="relative z-10 space-y-1.5 pr-10">
+            {values.side_badge_label ? (
+              <span className="inline-block rounded bg-brand-primary px-2 py-0.5 text-[10px] font-bold text-white">
+                {values.side_badge_label}
+              </span>
+            ) : null}
+            <p className="text-sm font-bold uppercase leading-snug">
+              {values.side_headline || "Side headline"}
+            </p>
+            {values.side_discount_percent != null ? (
+              <p className="text-xl font-black text-brand-primary">
+                {values.side_discount_percent}%
+              </p>
+            ) : null}
+            <span className="inline-flex rounded-full border-2 border-brand-primary px-2.5 py-1 text-[10px] font-bold uppercase text-brand-primary">
+              {values.side_cta_label || "CTA"}
+            </span>
+          </div>
+          <div className="relative z-10 mx-auto mt-2 h-24 w-28">
+            <img
+              src={sideProduct}
+              alt="Side product"
+              className="size-full object-contain"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function HeroBannerSettingsPanel({
@@ -103,6 +358,8 @@ export function HeroBannerSettingsPanel({
       side_cta_href: "/shop",
     },
   });
+
+  const watched = useWatch({ control: form.control });
 
   useEffect(() => {
     let cancelled = false;
@@ -186,7 +443,7 @@ export function HeroBannerSettingsPanel({
         { token },
       );
       setHero(data.hero);
-      onSuccess(data.message ?? "Image updated");
+      onSuccess(data.message ?? "Image updated — now live on the storefront");
     } catch (err) {
       onError(err instanceof ApiError ? err.message : "Upload failed");
     } finally {
@@ -202,13 +459,11 @@ export function HeroBannerSettingsPanel({
     );
   }
 
+  const previewValues = (watched ?? form.getValues()) as HomeHeroFormValues;
+
   return (
-    <div className="space-y-8">
-      <p className="text-sm text-muted-foreground">
-        Customize the storefront home hero (main + side promo). Text is
-        rendered server-side for SEO; images fall back to built-in art until
-        you upload replacements.
-      </p>
+    <div className="space-y-6">
+      <LiveHeroPreview values={previewValues} hero={hero} />
 
       <Form {...form}>
         <form
@@ -216,8 +471,42 @@ export function HeroBannerSettingsPanel({
           className="space-y-6"
           noValidate
         >
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold">Main banner</h3>
+          {/* ── Main banner ─────────────────────────────────────────── */}
+          <section className="space-y-4 rounded-xl border border-border bg-background p-4 sm:p-5">
+            <div>
+              <h3 className="text-sm font-semibold">Main banner</h3>
+              <p className="text-xs text-muted-foreground">
+                Large left block on the home page. Edit copy, then replace the
+                images shoppers currently see.
+              </p>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <HeroImageSlot
+                slot="main_product"
+                hero={hero}
+                uploading={uploadingSlot === "main_product"}
+                disabled={!!uploadingSlot}
+                onPick={() => fileRefs.current.main_product?.click()}
+                inputRef={(el) => {
+                  fileRefs.current.main_product = el;
+                }}
+                onFile={(f) => void onImageFile("main_product", f)}
+              />
+              <HeroImageSlot
+                slot="main_bg"
+                hero={hero}
+                uploading={uploadingSlot === "main_bg"}
+                disabled={!!uploadingSlot}
+                onPick={() => fileRefs.current.main_bg?.click()}
+                inputRef={(el) => {
+                  fileRefs.current.main_bg = el;
+                }}
+                onFile={(f) => void onImageFile("main_bg", f)}
+                tall
+              />
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}
@@ -286,23 +575,7 @@ export function HeroBannerSettingsPanel({
                   <FormItem>
                     <FormLabel>Discount %</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        placeholder="70"
-                        value={field.value ?? ""}
-                        onChange={(e) => {
-                          const raw = e.target.value;
-                          const n = Number(raw);
-                          field.onChange(
-                            raw === "" || Number.isNaN(n) ? null : n,
-                          );
-                        }}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                        ref={field.ref}
-                      />
+                      <PercentField field={field} placeholder="70" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -336,10 +609,44 @@ export function HeroBannerSettingsPanel({
                 )}
               />
             </div>
-          </div>
+          </section>
 
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold">Side promo</h3>
+          {/* ── Side promo ──────────────────────────────────────────── */}
+          <section className="space-y-4 rounded-xl border border-border bg-background p-4 sm:p-5">
+            <div>
+              <h3 className="text-sm font-semibold">Side promo</h3>
+              <p className="text-xs text-muted-foreground">
+                Narrow right card. Images below are what the storefront shows
+                today — replace defaults when you are ready.
+              </p>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <HeroImageSlot
+                slot="side_product"
+                hero={hero}
+                uploading={uploadingSlot === "side_product"}
+                disabled={!!uploadingSlot}
+                onPick={() => fileRefs.current.side_product?.click()}
+                inputRef={(el) => {
+                  fileRefs.current.side_product = el;
+                }}
+                onFile={(f) => void onImageFile("side_product", f)}
+              />
+              <HeroImageSlot
+                slot="side_bg"
+                hero={hero}
+                uploading={uploadingSlot === "side_bg"}
+                disabled={!!uploadingSlot}
+                onPick={() => fileRefs.current.side_bg?.click()}
+                inputRef={(el) => {
+                  fileRefs.current.side_bg = el;
+                }}
+                onFile={(f) => void onImageFile("side_bg", f)}
+                tall
+              />
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}
@@ -379,23 +686,7 @@ export function HeroBannerSettingsPanel({
                   <FormItem>
                     <FormLabel>Offer %</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        placeholder="25"
-                        value={field.value ?? ""}
-                        onChange={(e) => {
-                          const raw = e.target.value;
-                          const n = Number(raw);
-                          field.onChange(
-                            raw === "" || Number.isNaN(n) ? null : n,
-                          );
-                        }}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                        ref={field.ref}
-                      />
+                      <PercentField field={field} placeholder="25" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -421,23 +712,7 @@ export function HeroBannerSettingsPanel({
                   <FormItem>
                     <FormLabel>Discount %</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        placeholder="70"
-                        value={field.value ?? ""}
-                        onChange={(e) => {
-                          const raw = e.target.value;
-                          const n = Number(raw);
-                          field.onChange(
-                            raw === "" || Number.isNaN(n) ? null : n,
-                          );
-                        }}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                        ref={field.ref}
-                      />
+                      <PercentField field={field} placeholder="70" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -470,101 +745,13 @@ export function HeroBannerSettingsPanel({
                 </FormItem>
               )}
             />
-          </div>
+          </section>
 
-          <Button
-            type="submit"
-            disabled={form.formState.isSubmitting}
-          >
+          <Button type="submit" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? "Saving…" : "Save hero content"}
           </Button>
         </form>
       </Form>
-
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold">Hero images</h3>
-        <p className="text-xs text-muted-foreground">
-          JPEG, PNG, WebP, or GIF · max 1 MB · always resized on the server
-        </p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {(
-            [
-              "main_product",
-              "main_bg",
-              "side_product",
-              "side_bg",
-            ] as HomeHeroImageSlot[]
-          ).map((slot) => {
-            const preview = slotPreview(hero, slot);
-            const meta = SLOT_META[slot];
-            const uploading = uploadingSlot === slot;
-            return (
-              <div
-                key={slot}
-                className="overflow-hidden rounded-xl border border-dashed border-border bg-linear-to-br from-muted/40 via-background to-brand-tint/20"
-              >
-                <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
-                  <div
-                    className={cn(
-                      "relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background shadow-sm",
-                      slot.endsWith("_bg") && "size-24",
-                    )}
-                  >
-                    {preview ? (
-                      <img
-                        key={preview}
-                        src={preview}
-                        alt={`${meta.title} preview`}
-                        className="size-full object-contain p-1"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center gap-1 text-muted-foreground">
-                        <ImagePlus className="size-6" />
-                        <span className="px-1 text-center text-[9px] font-medium uppercase tracking-wide">
-                          Default
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <div>
-                      <p className="text-sm font-medium">{meta.title}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {preview ? "Custom upload" : meta.fallbackHint}
-                      </p>
-                    </div>
-                    <input
-                      ref={(el) => {
-                        fileRefs.current[slot] = el;
-                      }}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/gif"
-                      className="hidden"
-                      onChange={(e) =>
-                        void onImageFile(slot, e.target.files?.[0] ?? null)
-                      }
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={uploading || !!uploadingSlot}
-                      onClick={() => fileRefs.current[slot]?.click()}
-                    >
-                      <Upload className="size-3.5" />
-                      {uploading
-                        ? "Uploading…"
-                        : preview
-                          ? "Replace image"
-                          : "Upload image"}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }
