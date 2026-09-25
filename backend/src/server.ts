@@ -14,6 +14,9 @@ import { dashboardBrandsRouter } from "./routes/dashboardBrands.js";
 import { dashboardProductsRouter } from "./routes/dashboardProducts.js";
 import { dashboardSiteSettingsRouter } from "./routes/dashboardSiteSettings.js";
 import { dashboardOverviewRouter } from "./routes/dashboardOverview.js";
+import { dashboardNotificationsRouter } from "./routes/dashboardNotifications.js";
+import { dashboardOrdersRouter } from "./routes/dashboardOrders.js";
+import { customerOrdersRouter } from "./routes/customerOrders.js";
 import { publicProductsRouter } from "./routes/publicProducts.js";
 import { publicShopsRouter } from "./routes/publicShops.js";
 import { publicSiteSettingsRouter } from "./routes/publicSiteSettings.js";
@@ -41,6 +44,7 @@ app.use(
 app.use("/api/health", healthRouter);
 app.use("/api/auth", customerAuthRouter);
 app.use("/api/customer/addresses", customerAddressRouter);
+app.use("/api/customer/orders", customerOrdersRouter);
 app.use("/api/site-settings", publicSiteSettingsRouter);
 app.use("/api/analytics", publicAnalyticsRouter);
 app.use("/api/shops", publicShopsRouter);
@@ -53,6 +57,8 @@ app.use("/api/dashboard/brands", dashboardBrandsRouter);
 app.use("/api/dashboard/products", dashboardProductsRouter);
 app.use("/api/dashboard/site-settings", dashboardSiteSettingsRouter);
 app.use("/api/dashboard/overview", dashboardOverviewRouter);
+app.use("/api/dashboard/notifications", dashboardNotificationsRouter);
+app.use("/api/dashboard/orders", dashboardOrdersRouter);
 
 app.use(
   (

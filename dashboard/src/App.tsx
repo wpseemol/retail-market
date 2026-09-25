@@ -20,6 +20,7 @@ import { BrandEditPage } from "./pages/BrandEditPage";
 import { UserEditPage } from "./pages/UserEditPage";
 import { UsersPage } from "./pages/UsersPage";
 import { SiteSettingsPage } from "./pages/SiteSettingsPage";
+import { OrderDetailPage, OrdersPage } from "./pages/OrdersPage";
 import { useAuthStore } from "./store/auth";
 import type { StaffRole } from "./lib/api";
 
@@ -54,6 +55,17 @@ export default function App() {
         <Route element={<DashboardLayout />}>
           <Route index element={<OverviewGate />} />
           <Route path="profile" element={<ProfilePage />} />
+
+          <Route
+            element={
+              <ProtectedRoute
+                roles={["super_admin", "admin", "moderator", "vendor"]}
+              />
+            }
+          >
+            <Route path="orders" element={<OrdersPage />} />
+            <Route path="orders/:id" element={<OrderDetailPage />} />
+          </Route>
 
           <Route element={<ProtectedRoute roles={["super_admin"]} />}>
             <Route path="users" element={<UsersPage />} />

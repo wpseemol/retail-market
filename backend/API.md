@@ -67,6 +67,7 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/health` | `routes/health.ts` | Public |
 | `/api/auth` | `routes/customerAuth.ts` | Customers |
 | `/api/customer/addresses` | `routes/customerAddresses.ts` | Customers |
+| `/api/customer/orders` | `routes/customerOrders.ts` | Customers |
 | `/api/site-settings` | `routes/publicSiteSettings.ts` | Public |
 | `/api/analytics` | `routes/publicAnalytics.ts` | Public |
 | `/api/shops` | `routes/publicShops.ts` | Public |
@@ -74,6 +75,8 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/dashboard/auth` | `routes/dashboardAuth.ts` | Staff |
 | `/api/dashboard/users` | `routes/dashboardUsers.ts` | `super_admin` |
 | `/api/dashboard/overview` | `routes/dashboardOverview.ts` | `super_admin`, `admin` |
+| `/api/dashboard/notifications` | `routes/dashboardNotifications.ts` | Staff |
+| `/api/dashboard/orders` | `routes/dashboardOrders.ts` | Staff |
 | `/api/dashboard/site-settings` | `routes/dashboardSiteSettings.ts` | `super_admin` |
 | `/api/dashboard/shops` | `routes/dashboardVendors.ts` | `super_admin`, `vendor` |
 | `/api/dashboard/categories` | `routes/dashboardCategories.ts` | Staff |
@@ -254,6 +257,63 @@ Auth: Bearer **`customer`**.
 | `type` | no | `shipping` \| `billing` \| `both` |
 | `is_default_shipping` | no | boolean |
 | `is_default_billing` | no | boolean |
+
+---
+
+## Customer orders — `/api/customer/orders`
+
+Auth: Bearer **`customer`**. Placing an order creates inbox notifications for `super_admin` / `admin` / `moderator`, plus vendors whose products are in the cart.
+
+### `POST /api/customer/orders`
+
+```json
+{
+  "items": [
+    { "product_id": "12", "name": "Widget", "unit_price": 500, "quantity": 2 }
+  ],
+  "billing": {
+    "full_name": "Ada Lovelace",
+    "phone": "01700000000",
+    "line1": "12 Road",
+    "city": "Dhaka",
+    "postal_code": "1200",
+    "country": "Bangladesh"
+  },
+  "payment_method": "cash_on_delivery",
+  "notes": "",
+  "discount_amount": 0,
+  "shipping_fee": 0
+}
+```
+
+**201** → `{ message, order: { id, order_number, total, … } }`
+
+---
+
+## Dashboard notifications — `/api/dashboard/notifications`
+
+Auth: Bearer **staff**. Each staff user only sees their own inbox. Unread count drives the header bell badge; remove or mark-read decreases it.
+
+| Method | Path | Notes |
+|--------|------|--------|
+| GET | `/unread-count` | `{ unread_count }` |
+| GET | `/?page=&limit=&unread=` | List + `unread_count` |
+| POST | `/read-all` | Mark all read |
+| PATCH | `/:id/read` | Mark one read |
+| DELETE | `/:id` | Remove (badge decreases if unread) |
+
+Notification `data.link` is a dashboard path (e.g. `/orders/12`).
+
+---
+
+## Dashboard orders — `/api/dashboard/orders`
+
+Auth: Bearer **staff**. Vendors only see orders that include their products.
+
+| Method | Path | Notes |
+|--------|------|--------|
+| GET | `/?page=&limit=&status=` | List |
+| GET | `/:id` | Detail + addresses |
 
 ---
 

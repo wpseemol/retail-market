@@ -1,5 +1,6 @@
 import type { ComponentProps } from "react";
 import {
+  ClipboardList,
   FolderTree,
   LayoutDashboard,
   Package,
@@ -51,6 +52,12 @@ const topLinks: Array<{
     icon: LayoutDashboard,
     roles: ["super_admin", "admin"],
     end: true,
+  },
+  {
+    to: "/orders",
+    label: "Orders",
+    icon: ClipboardList,
+    roles: ["super_admin", "admin", "moderator", "vendor"],
   },
   {
     to: "/users",

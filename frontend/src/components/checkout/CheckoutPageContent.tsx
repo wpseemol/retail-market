@@ -10,6 +10,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
     applyCoupon,
@@ -21,9 +22,20 @@ import {
     selectCartTotal,
     selectCouponCode,
 } from "@/store/cartSlice";
+import { apiFetch, ApiError } from "@/lib/api";
 import { formatPrice } from "@/lib/money";
 
 type PaymentMethod = "bank" | "check" | "cod" | "paypal";
+
+const PAYMENT_API_MAP: Record<
+    PaymentMethod,
+    "cash_on_delivery" | "card" | "bank_transfer" | "wallet"
+> = {
+    bank: "bank_transfer",
+    check: "bank_transfer",
+    cod: "cash_on_delivery",
+    paypal: "wallet",
+};
 
 const COUNTRIES = [
     "United States",
@@ -388,6 +400,7 @@ const emptyAddress = {
 
 export default function CheckoutPageContent() {
     const router = useRouter();
+    const { data: session, status: authStatus } = useSession();
     const dispatch = useAppDispatch();
     const items = useAppSelector(selectCartItems);
     const subtotal = useAppSelector(selectCartSubtotal);
@@ -406,6 +419,9 @@ export default function CheckoutPageContent() {
     const [orderNotes, setOrderNotes] = useState("");
     const [payment, setPayment] = useState<PaymentMethod>("check");
     const [orderPlaced, setOrderPlaced] = useState(false);
+    const [orderNumber, setOrderNumber] = useState<string | null>(null);
+    const [placing, setPlacing] = useState(false);
+    const [placeError, setPlaceError] = useState<string | null>(null);
     const [billing, setBilling] = useState(emptyAddress);
     const [shipping, setShipping] = useState(emptyAddress);
     const [loginEmail, setLoginEmail] = useState("");
@@ -439,11 +455,63 @@ export default function CheckoutPageContent() {
         }
     };
 
-    const handlePlaceOrder = (event: FormEvent<HTMLFormElement>) => {
+    const toApiAddress = (addr: typeof emptyAddress) => ({
+        full_name: `${addr.firstName} ${addr.lastName}`.trim(),
+        phone: addr.phone.trim(),
+        line1: addr.address1.trim(),
+        line2: addr.address2.trim(),
+        city: addr.city.trim(),
+        state: "",
+        postal_code: addr.zip.trim(),
+        country: addr.country.trim() || "Bangladesh",
+    });
+
+    const handlePlaceOrder = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (items.length === 0) return;
-        setOrderPlaced(true);
-        dispatch(clearCart());
+        if (items.length === 0 || placing) return;
+
+        if (authStatus !== "authenticated" || !session?.user) {
+            setPlaceError("Please sign in to place your order.");
+            setShowLogin(true);
+            return;
+        }
+
+        setPlacing(true);
+        setPlaceError(null);
+        try {
+            const data = await apiFetch<{
+                order: { order_number: string };
+            }>("/api/customer/orders", {
+                method: "POST",
+                body: {
+                    items: items.map((item) => ({
+                        product_id: item.id,
+                        name: item.name,
+                        unit_price: item.price,
+                        quantity: item.quantity,
+                    })),
+                    billing: toApiAddress(billing),
+                    shipping: shipDifferent
+                        ? toApiAddress(shipping)
+                        : undefined,
+                    payment_method: PAYMENT_API_MAP[payment],
+                    notes: orderNotes.trim(),
+                    discount_amount: discount,
+                    shipping_fee: 0,
+                },
+            });
+            setOrderNumber(data.order.order_number);
+            setOrderPlaced(true);
+            dispatch(clearCart());
+        } catch (err) {
+            setPlaceError(
+                err instanceof ApiError
+                    ? err.message
+                    : "Could not place order. Please try again.",
+            );
+        } finally {
+            setPlacing(false);
+        }
     };
 
     if (items.length === 0 && !orderPlaced) {
@@ -477,7 +545,17 @@ export default function CheckoutPageContent() {
                         Thank you! Your order has been placed.
                     </p>
                     <p className="text-[14px] text-text-secondary m-0 max-w-md">
-                        We’ve received your order and will process it shortly.
+                        We’ve received your order
+                        {orderNumber ? (
+                            <>
+                                {" "}
+                                <span className="font-semibold text-text-primary">
+                                    {orderNumber}
+                                </span>
+                            </>
+                        ) : null}{" "}
+                        and will process it shortly. Staff will see it in the
+                        dashboard notifications.
                     </p>
                     <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
                         <Link
@@ -829,11 +907,28 @@ export default function CheckoutPageContent() {
                         </fieldset>
 
                         <div className="px-5 py-5">
+                            {placeError ? (
+                                <p
+                                    className="mb-3 text-[13px] text-error"
+                                    role="alert"
+                                >
+                                    {placeError}{" "}
+                                    {authStatus !== "authenticated" ? (
+                                        <Link
+                                            href="/login"
+                                            className="font-semibold underline"
+                                        >
+                                            Sign in
+                                        </Link>
+                                    ) : null}
+                                </p>
+                            ) : null}
                             <button
                                 type="submit"
-                                className="w-full h-12 inline-flex items-center justify-center rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[15px] font-semibold tracking-wide uppercase transition-colors cursor-pointer"
+                                disabled={placing}
+                                className="w-full h-12 inline-flex items-center justify-center rounded-md bg-brand-primary hover:bg-brand-hover disabled:opacity-60 text-white text-[15px] font-semibold tracking-wide uppercase transition-colors cursor-pointer"
                             >
-                                Place Order
+                                {placing ? "Placing…" : "Place Order"}
                             </button>
                         </div>
                     </aside>

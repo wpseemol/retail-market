@@ -1,5 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { ApiHealthBadge } from "@/components/ApiHealthBadge";
+import { NotificationsMenu } from "@/components/dashboard/notifications-menu";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -14,6 +15,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/": "Overview",
   "/profile": "Profile",
   "/users": "Users",
+  "/orders": "Orders",
   "/stores": "Stores",
   "/stores/new": "Create store",
   "/shops": "Stores",
@@ -30,9 +32,11 @@ export function SiteHeader() {
     PAGE_TITLES[pathname] ??
     (pathname.startsWith("/users/")
       ? "Edit user"
-      : pathname.startsWith("/stores/") || pathname.startsWith("/shops/")
-        ? "Edit store"
-        : "Dashboard");
+      : pathname.startsWith("/orders/")
+        ? "Order detail"
+        : pathname.startsWith("/stores/") || pathname.startsWith("/shops/")
+          ? "Edit store"
+          : "Dashboard");
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
@@ -51,7 +55,10 @@ export function SiteHeader() {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
-      <ApiHealthBadge />
+      <div className="flex items-center gap-1">
+        <NotificationsMenu />
+        <ApiHealthBadge />
+      </div>
     </header>
   );
 }
