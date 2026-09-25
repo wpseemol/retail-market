@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Pencil, Search, Users } from "lucide-react";
+import {
+  Pencil,
+  Search,
+  Shield,
+  UserRound,
+  Users,
+} from "lucide-react";
 import {
   ApiError,
   apiFetch,
@@ -11,15 +17,10 @@ import {
   USER_STATUSES,
 } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
+import { FadeIn, Stagger, StaggerItem } from "@/components/motion";
+import { PageHero } from "@/components/dashboard/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -28,21 +29,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 function statusBadgeClass(status: string) {
   switch (status) {
     case "active":
-      return "border-brand-tint bg-brand-tint text-brand-deep";
+      return "border-brand-primary/30 bg-brand-tint/60 text-brand-deep";
     case "pending":
-      return "border-warning/40 bg-warning/15 text-foreground";
+      return "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200";
     case "inactive":
       return "border-border bg-muted text-muted-foreground";
     case "suspended":
@@ -52,6 +46,12 @@ function statusBadgeClass(status: string) {
     default:
       return "";
   }
+}
+
+function initials(user: ManagedUser) {
+  const first = user.first_name?.[0] ?? "";
+  const last = user.last_name?.[0] ?? "";
+  return (first + last).toUpperCase() || user.role.slice(0, 2).toUpperCase();
 }
 
 export function UsersPage() {
@@ -130,186 +130,235 @@ export function UsersPage() {
     setSearchParams(params);
   }
 
+  const staffCount = users.filter((u) => u.role !== "customer").length;
+
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage all accounts — staff and customers. Change roles, edit
-          profiles, and apply restrictions.
-        </p>
-      </div>
+      <PageHero
+        eyebrow="Access control"
+        title="Users"
+        description="Manage staff and customer accounts — roles, profiles, and restrictions."
+      />
 
-      <Card>
-        <CardHeader className="gap-4">
-          <div className="flex items-start gap-3">
-            <div className="flex size-9 items-center justify-center rounded-md bg-brand-tint text-brand-deep">
-              <Users className="size-4" />
-            </div>
-            <div>
-              <CardTitle>All users</CardTitle>
-              <CardDescription>
-                {total} account{total === 1 ? "" : "s"} found
-              </CardDescription>
-            </div>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-[1fr_160px_160px_auto]">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={searchDraft}
-                onChange={(e) => setSearchDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    updateFilters({ q: searchDraft.trim() });
-                  }
-                }}
-                placeholder="Search name, email, username, phone…"
-                className="pl-9"
-              />
-            </div>
-            <Select
-              value={role}
-              onValueChange={(value) => updateFilters({ role: value })}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All roles</SelectItem>
-                {USER_ROLES.map((item) => (
-                  <SelectItem key={item} value={item}>
-                    {item.replace("_", " ")}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={status}
-              onValueChange={(value) => updateFilters({ status: value })}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {USER_STATUSES.map((item) => (
-                  <SelectItem key={item} value={item}>
-                    {item}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => updateFilters({ q: searchDraft.trim() })}
-            >
-              Search
-            </Button>
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          {error ? (
-            <p className="text-sm text-destructive" role="alert">
-              {error}
+      <Stagger className="grid gap-3 sm:grid-cols-3">
+        <StaggerItem className="flex items-center gap-3 rounded-2xl border border-border/80 bg-card px-4 py-4 shadow-sm">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-brand-tint text-brand-deep">
+            <Users className="size-4" />
+          </span>
+          <div>
+            <p className="text-xs text-muted-foreground">Total matches</p>
+            <p className="text-xl font-semibold tabular-nums">
+              {loading ? "…" : total}
             </p>
-          ) : null}
+          </div>
+        </StaggerItem>
+        <StaggerItem className="flex items-center gap-3 rounded-2xl border border-border/80 bg-card px-4 py-4 shadow-sm">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-brand-tint text-brand-deep">
+            <Shield className="size-4" />
+          </span>
+          <div>
+            <p className="text-xs text-muted-foreground">Staff on page</p>
+            <p className="text-xl font-semibold tabular-nums">
+              {loading ? "…" : staffCount}
+            </p>
+          </div>
+        </StaggerItem>
+        <StaggerItem className="flex items-center gap-3 rounded-2xl border border-border/80 bg-card px-4 py-4 shadow-sm">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-brand-tint text-brand-deep">
+            <UserRound className="size-4" />
+          </span>
+          <div>
+            <p className="text-xs text-muted-foreground">Page</p>
+            <p className="text-xl font-semibold tabular-nums">
+              {page} / {totalPages}
+            </p>
+          </div>
+        </StaggerItem>
+      </Stagger>
 
-          <div className="overflow-x-auto rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                      Loading users…
-                    </TableCell>
-                  </TableRow>
-                ) : users.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                      No users found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div className="font-medium">
-                          {user.first_name} {user.last_name}
+      <FadeIn>
+        <section className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
+          <div className="border-b border-border/70 bg-gradient-to-r from-brand-tint/40 via-background to-background px-5 py-4">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-primary text-white shadow-sm">
+                <Users className="size-3.5" />
+              </span>
+              <div>
+                <h2 className="text-sm font-semibold tracking-tight">
+                  Directory
+                </h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Search and filter, then open a profile to edit
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-[1fr_150px_150px_auto]">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchDraft}
+                  onChange={(e) => setSearchDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      updateFilters({ q: searchDraft.trim() });
+                    }
+                  }}
+                  placeholder="Search name, email, username, phone…"
+                  className="pl-9"
+                />
+              </div>
+              <Select
+                value={role}
+                onValueChange={(value) => updateFilters({ role: value })}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All roles</SelectItem>
+                  {USER_ROLES.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item.replace("_", " ")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={status}
+                onValueChange={(value) => updateFilters({ status: value })}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  {USER_STATUSES.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => updateFilters({ q: searchDraft.trim() })}
+              >
+                Search
+              </Button>
+            </div>
+          </div>
+
+          <div className="p-5">
+            {error ? (
+              <p className="mb-4 text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            ) : null}
+
+            {loading ? (
+              <p className="py-14 text-center text-sm text-muted-foreground">
+                Loading users…
+              </p>
+            ) : users.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border bg-muted/20 px-4 py-14 text-center">
+                <Users className="mx-auto size-8 text-muted-foreground/40" />
+                <p className="mt-3 text-sm font-medium">No users found</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Try a different search or clear filters.
+                </p>
+              </div>
+            ) : (
+              <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {users.map((user) => (
+                  <li key={user.id}>
+                    <Link
+                      to={`/users/${user.id}`}
+                      className="group flex h-full flex-col gap-3 rounded-2xl border border-border/80 bg-gradient-to-br from-background to-muted/20 p-4 transition-all hover:border-brand-primary/30 hover:shadow-md"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-brand-tint text-sm font-semibold text-brand-deep ring-1 ring-brand-primary/15">
+                          {user.avatar?.path ? (
+                            <img
+                              src={user.avatar.path}
+                              alt=""
+                              className="size-full object-cover"
+                            />
+                          ) : (
+                            initials(user)
+                          )}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold tracking-tight">
+                            {user.first_name} {user.last_name}
+                          </p>
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            {user.email}
+                          </p>
+                          {user.username ? (
+                            <p className="truncate text-[11px] text-muted-foreground">
+                              @{user.username}
+                            </p>
+                          ) : null}
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {user.email}
-                          {user.username ? ` · @${user.username}` : ""}
-                        </div>
-                      </TableCell>
-                      <TableCell className="capitalize">
-                        {user.role.replace("_", " ")}
-                      </TableCell>
-                      <TableCell>
+                      </div>
+                      <div className="mt-auto flex flex-wrap items-center gap-1.5">
+                        <Badge variant="outline" className="capitalize">
+                          {user.role.replace("_", " ")}
+                        </Badge>
                         <Badge
                           variant="outline"
-                          className={`capitalize ${statusBadgeClass(user.status)}`}
+                          className={cn(
+                            "capitalize",
+                            statusBadgeClass(user.status),
+                          )}
                         >
                           {user.status}
                         </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {user.phone || "—"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button asChild size="sm" variant="outline">
-                          <Link to={`/users/${user.id}`}>
-                            <Pencil />
-                            Edit
-                          </Link>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-brand-primary">
+                        <span className="inline-flex items-center gap-1 font-medium">
+                          <Pencil className="size-3" />
+                          Edit profile
+                        </span>
+                        <span className="text-muted-foreground">
+                          {user.phone || "No phone"}
+                        </span>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
 
-          <div className="mt-4 flex items-center justify-between gap-3">
-            <p className="text-sm text-muted-foreground">
-              Page {page} of {totalPages}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => updateFilters({ page: String(page - 1) })}
-              >
-                Previous
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => updateFilters({ page: String(page + 1) })}
-              >
-                Next
-              </Button>
+            <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/60 pt-4">
+              <p className="text-sm text-muted-foreground">
+                Page {page} of {totalPages}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => updateFilters({ page: String(page - 1) })}
+                >
+                  Previous
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages}
+                  onClick={() => updateFilters({ page: String(page + 1) })}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </section>
+      </FadeIn>
     </div>
   );
 }

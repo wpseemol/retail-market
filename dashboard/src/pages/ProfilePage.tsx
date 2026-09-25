@@ -1,7 +1,7 @@
-import { type ReactNode, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, KeyRound, Upload, UserRound } from "lucide-react";
+import { Eye, EyeOff, Upload, UserRound } from "lucide-react";
 import { ApiError, apiFetch, apiUpload, type StaffUser } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import {
@@ -16,6 +16,12 @@ import {
   AvatarPresetSvg,
   isAvatarPresetId,
 } from "@/lib/avatarPresets";
+import { FadeUp, Stagger, StaggerItem } from "@/components/motion";
+import {
+  FormSection,
+  PageHero,
+  StickyFormActions,
+} from "@/components/dashboard/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,8 +34,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function toStaffUser(raw: Record<string, unknown>): StaffUser {
   return {
@@ -53,63 +57,6 @@ function userInitials(user: StaffUser) {
   return (first + last).toUpperCase() || user.role.slice(0, 2).toUpperCase();
 }
 
-// ─── SettingsSection ──────────────────────────────────────────────────────────
-
-function SettingsSection({
-  step,
-  title,
-  description,
-  icon: Icon,
-  children,
-}: {
-  step: string;
-  title: string;
-  description: string;
-  icon?: typeof UserRound;
-  children: ReactNode;
-}) {
-  return (
-    <section className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
-      <div className="flex items-start gap-3 border-b border-border/70 bg-gradient-to-r from-brand-tint/50 via-background to-background px-5 py-4">
-        <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand-primary text-[11px] font-bold text-white">
-          {Icon ? <Icon className="size-3.5" /> : step}
-        </span>
-        <div className="min-w-0">
-          <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
-        </div>
-        {!Icon && (
-          <span className="ml-auto shrink-0 rounded-md bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-            {step}
-          </span>
-        )}
-      </div>
-      <div className="space-y-4 p-5">{children}</div>
-    </section>
-  );
-}
-
-// ─── Sticky actions bar ───────────────────────────────────────────────────────
-
-function StickyActions({
-  children,
-  message,
-}: {
-  children: ReactNode;
-  message?: ReactNode;
-}) {
-  return (
-    <div className="sticky bottom-3 z-10 rounded-2xl border border-border/80 bg-background/95 p-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0 text-sm">{message}</div>
-        <div className="flex flex-wrap items-center gap-2">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Avatar preview ───────────────────────────────────────────────────────────
-
 function AvatarPreview({
   user,
   size = "lg",
@@ -124,7 +71,7 @@ function AvatarPreview({
       <img
         src={user.avatar.path}
         alt="Profile photo"
-        className={`${dim} rounded-full object-cover ring-2 ring-brand-primary/20`}
+        className={`${dim} rounded-2xl object-cover ring-2 ring-brand-primary/20`}
       />
     );
   }
@@ -133,14 +80,14 @@ function AvatarPreview({
     return (
       <AvatarPresetSvg
         id={user.avatar_preset}
-        className={`${dim} rounded-full`}
+        className={`${dim} rounded-2xl`}
       />
     );
   }
 
   return (
     <div
-      className={`${dim} flex items-center justify-center rounded-full bg-brand-tint text-brand-deep font-semibold ${
+      className={`${dim} flex items-center justify-center rounded-2xl bg-brand-tint font-semibold text-brand-deep ${
         size === "lg" ? "text-2xl" : "text-sm"
       }`}
     >
@@ -148,8 +95,6 @@ function AvatarPreview({
     </div>
   );
 }
-
-// ─── Section 01: Photo & avatar ───────────────────────────────────────────────
 
 function PhotoSection({
   user,
@@ -218,34 +163,40 @@ function PhotoSection({
 
   return (
     <>
-      {/* Large preview + upload */}
-      <div className="flex flex-wrap items-end gap-5">
-        <AvatarPreview user={user} size="lg" />
-        <div className="space-y-1.5">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            className="hidden"
-            onChange={(e) => void handleFileChange(e.target.files?.[0] ?? null)}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={uploading}
-            onClick={() => fileRef.current?.click()}
-          >
-            <Upload className="size-3.5" />
-            {uploading ? "Uploading…" : "Upload photo"}
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            JPEG, PNG, WebP, or GIF · max 5 MB · always resized on the server
-          </p>
+      <div className="overflow-hidden rounded-xl border border-dashed border-border bg-gradient-to-br from-muted/40 via-background to-brand-tint/20 p-4">
+        <div className="flex flex-wrap items-center gap-5">
+          <AvatarPreview user={user} size="lg" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <div>
+              <p className="text-sm font-medium">Profile photo</p>
+              <p className="text-xs text-muted-foreground">
+                JPEG, PNG, WebP, or GIF · max 5 MB · always resized on the
+                server
+              </p>
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={(e) =>
+                void handleFileChange(e.target.files?.[0] ?? null)
+              }
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={uploading}
+              onClick={() => fileRef.current?.click()}
+            >
+              <Upload className="size-3.5" />
+              {uploading ? "Uploading…" : "Upload photo"}
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Preset grid */}
       <div>
         <p className="mb-3 text-sm font-medium text-muted-foreground">
           Or choose a built-in avatar
@@ -268,32 +219,30 @@ function PhotoSection({
                 }`}
               >
                 <AvatarPresetSvg id={id} className="size-10 rounded-full" />
-                {isSaving && (
+                {isSaving ? (
                   <span className="absolute inset-0 flex items-center justify-center rounded-full bg-background/60">
                     <span className="size-3 animate-spin rounded-full border-2 border-brand-primary border-t-transparent" />
                   </span>
-                )}
+                ) : null}
               </button>
             );
           })}
         </div>
       </div>
 
-      {error && (
+      {error ? (
         <p className="text-sm text-destructive" role="alert">
           {error}
         </p>
-      )}
-      {success && (
+      ) : null}
+      {success ? (
         <p className="text-sm text-brand-primary" role="status">
           {success}
         </p>
-      )}
+      ) : null}
     </>
   );
 }
-
-// ─── Section 02: Account details ──────────────────────────────────────────────
 
 function AccountDetailsSection({
   user,
@@ -322,19 +271,19 @@ function AccountDetailsSection({
     setSaveError(null);
     setSaveSuccess(null);
     try {
-      const data = await apiFetch<{ message: string; user: Record<string, unknown> }>(
-        "/api/dashboard/auth/me",
-        {
-          method: "PATCH",
-          token,
-          body: {
-            first_name: values.first_name.trim(),
-            last_name: values.last_name.trim(),
-            username: (values.username ?? "").trim() || undefined,
-            phone: (values.phone ?? "").trim() || null,
-          },
+      const data = await apiFetch<{
+        message: string;
+        user: Record<string, unknown>;
+      }>("/api/dashboard/auth/me", {
+        method: "PATCH",
+        token,
+        body: {
+          first_name: values.first_name.trim(),
+          last_name: values.last_name.trim(),
+          username: (values.username ?? "").trim() || undefined,
+          phone: (values.phone ?? "").trim() || null,
         },
-      );
+      });
       onUserUpdate(toStaffUser(data.user));
       setSaveSuccess(data.message || "Profile updated");
     } catch (err) {
@@ -441,7 +390,7 @@ function AccountDetailsSection({
           </div>
         </div>
 
-        <StickyActions
+        <StickyFormActions
           message={
             saveError ? (
               <p className="text-destructive" role="alert">
@@ -453,7 +402,7 @@ function AccountDetailsSection({
               </p>
             ) : (
               <p className="text-muted-foreground">
-                Changes save immediately to your account.
+                Validated with Zod · injection-safe strings
               </p>
             )
           }
@@ -461,13 +410,11 @@ function AccountDetailsSection({
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Saving…" : "Save changes"}
           </Button>
-        </StickyActions>
+        </StickyFormActions>
       </form>
     </Form>
   );
 }
-
-// ─── Section 03: Password ─────────────────────────────────────────────────────
 
 function PasswordSection() {
   const { token } = useAuthStore();
@@ -641,7 +588,7 @@ function PasswordSection() {
           />
         </div>
 
-        <StickyActions
+        <StickyFormActions
           message={
             saveError ? (
               <p className="text-destructive" role="alert">
@@ -661,13 +608,58 @@ function PasswordSection() {
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Updating…" : "Update password"}
           </Button>
-        </StickyActions>
+        </StickyFormActions>
       </form>
     </Form>
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+function ProfileLivePreview({ user }: { user: StaffUser }) {
+  return (
+    <FadeUp>
+      <aside className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm lg:sticky lg:top-4">
+        <div className="relative overflow-hidden bg-gradient-to-br from-brand-deep via-[#0a4a10] to-brand-primary px-5 pb-10 pt-5 text-white">
+          <div className="pointer-events-none absolute -right-10 -top-10 size-36 rounded-full bg-white/10 blur-2xl" />
+          <p className="relative text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
+            Your profile
+          </p>
+          <div className="relative mt-5 flex items-end gap-3">
+            <div className="overflow-hidden rounded-2xl border border-white/20 shadow-lg">
+              <AvatarPreview user={user} size="lg" />
+            </div>
+            <div className="min-w-0 pb-0.5">
+              <p className="truncate text-lg font-semibold tracking-tight">
+                {user.first_name} {user.last_name}
+              </p>
+              <p className="truncate text-sm text-white/70">{user.email}</p>
+            </div>
+          </div>
+        </div>
+        <Stagger className="-mt-5 space-y-2 px-5 pb-5">
+          <StaggerItem className="rounded-xl border border-border bg-background p-3 text-xs shadow-sm">
+            <p className="text-muted-foreground">Role</p>
+            <p className="mt-0.5 font-medium capitalize">
+              {user.role.replace(/_/g, " ")}
+            </p>
+          </StaggerItem>
+          <StaggerItem className="rounded-xl border border-border bg-background p-3 text-xs shadow-sm">
+            <p className="text-muted-foreground">Username</p>
+            <p className="mt-0.5 font-medium">
+              {user.username ? `@${user.username}` : "—"}
+            </p>
+          </StaggerItem>
+          <StaggerItem className="flex items-start gap-2 rounded-xl border border-brand-primary/15 bg-brand-tint/40 px-3 py-2.5 text-xs text-brand-deep">
+            <UserRound className="mt-0.5 size-3.5 shrink-0" />
+            <p>
+              Photo, details, and password update independently — save each
+              section when ready.
+            </p>
+          </StaggerItem>
+        </Stagger>
+      </aside>
+    </FadeUp>
+  );
+}
 
 export function ProfilePage() {
   const { user, setUser } = useAuthStore();
@@ -678,50 +670,46 @@ export function ProfilePage() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-4">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
-          <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-            Manage your photo, avatar, account details, and password.
-          </p>
+      <PageHero
+        eyebrow="Account"
+        title="Profile"
+        description="Manage your photo, account details, and password."
+        actions={
+          <Badge className="border-white/25 bg-white/10 capitalize text-white hover:bg-white/15">
+            {roleLabel}
+          </Badge>
+        }
+      />
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="space-y-5">
+          <FormSection
+            step="01"
+            title="Photo & avatar"
+            description="Upload a custom photo or pick a built-in preset."
+          >
+            <PhotoSection user={user} onUserUpdate={setUser} />
+          </FormSection>
+
+          <FormSection
+            step="02"
+            title="Account details"
+            description="Update your name, username, and phone number."
+          >
+            <AccountDetailsSection user={user} onUserUpdate={setUser} />
+          </FormSection>
+
+          <FormSection
+            step="03"
+            title="Password"
+            description="Change your login password. Use at least 8 characters."
+          >
+            <PasswordSection />
+          </FormSection>
         </div>
-        <Badge
-          variant="outline"
-          className="capitalize border-brand-primary/30 bg-brand-tint/60 text-brand-deep"
-        >
-          {roleLabel}
-        </Badge>
+
+        <ProfileLivePreview user={user} />
       </div>
-
-      {/* Section 01 */}
-      <SettingsSection
-        step="01"
-        title="Photo & avatar"
-        description="Upload a custom photo or pick one of the built-in presets."
-        icon={UserRound}
-      >
-        <PhotoSection user={user} onUserUpdate={setUser} />
-      </SettingsSection>
-
-      {/* Section 02 */}
-      <SettingsSection
-        step="02"
-        title="Account details"
-        description="Update your name, username, and phone number."
-      >
-        <AccountDetailsSection user={user} onUserUpdate={setUser} />
-      </SettingsSection>
-
-      {/* Section 03 */}
-      <SettingsSection
-        step="03"
-        title="Password"
-        description="Change your login password. Use at least 8 characters."
-        icon={KeyRound}
-      >
-        <PasswordSection />
-      </SettingsSection>
     </div>
   );
 }

@@ -1,0 +1,32 @@
+---
+description: Dashboard redesign language + lightweight Framer Motion rules
+globs: dashboard/src/**/*.{tsx,ts}
+alwaysApply: false
+---
+
+# Dashboard redesign + motion
+
+When redesigning or adding dashboard pages/forms, keep this visual and motion language.
+
+## Visual system
+
+- **Hero**: green gradient (`from-brand-deep via-[#0a4a10] to-brand-primary`), soft blur orb, eyebrow + title + short description. Use `PageHero` from `components/dashboard/page-shell.tsx`.
+- **Sections**: stepped cards (`01` / `02` / …) with `from-brand-tint/50` header strip. Use `FormSection`.
+- **Live preview**: sticky right column with same green hero + summary tiles (stores, users, profile).
+- **Actions**: sticky bottom bar (`StickyFormActions`) — not a lonely footer button.
+- **Surfaces**: `rounded-2xl`, `border-border/80`, light shadow — match Stores / Site settings / Role pages.
+- Prefer **Store / Users / Profile** naming in UI copy (not “shop” for vendor stores).
+
+## Motion (Framer Motion — keep memory low)
+
+- Dependency: `framer-motion`. Wrap dashboard in `MotionProvider` (`LazyMotion` + `domAnimation` only).
+- Import `FadeUp`, `FadeIn`, `Stagger`, `StaggerItem`, or `m` from `components/motion.tsx`.
+- Shared presets live in `lib/motion.ts` (`fadeUp`, `fadeIn`, stagger). Do not invent new spring/layout animations per page.
+- **Do**: opacity + small `translateY` (~10–12px), short duration (~0.28–0.35s), stagger children lightly.
+- **Do not**: `layout` animations, drag/gestures, AnimatePresence on large tables, full `motion` import (use LazyMotion `m`), heavy parallax, infinite loops.
+- Always go through `useMotionSafe()` so `prefers-reduced-motion` disables movement.
+
+## Forms
+
+- Create/edit mutating forms: shadcn Form + react-hook-form + zodResolver + safe-input (see form-upload-security rule).
+- Profile / user / store edit pages should use the page-shell section pattern above.
