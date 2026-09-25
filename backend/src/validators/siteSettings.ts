@@ -125,6 +125,17 @@ export const updateSiteSettingsSchema = z.object({
     40,
   ),
   meta_pixel_enabled: z.boolean().optional(),
+
+  shop_default_view: z
+    .enum(["grid4", "grid3", "grid2", "list"])
+    .optional(),
+  shop_products_per_page: z.coerce
+    .number()
+    .int()
+    .min(4)
+    .max(48)
+    .optional(),
 });
 
 export type UpdateSiteSettingsInput = z.infer<typeof updateSiteSettingsSchema>;
+export const SHOP_VIEW_MODES = ["grid4", "grid3", "grid2", "list"] as const;

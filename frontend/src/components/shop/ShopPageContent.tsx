@@ -23,6 +23,8 @@ type ShopPageContentProps = {
   brands: ShopFacetOption[];
   priceRange: { min: number; max: number };
   tags?: string[];
+  defaultViewMode?: ShopViewMode;
+  productsPerPage?: number;
 };
 
 export default function ShopPageContent({
@@ -31,12 +33,15 @@ export default function ShopPageContent({
   brands,
   priceRange,
   tags = [],
+  defaultViewMode = "grid4",
+  productsPerPage = PRODUCTS_PER_PAGE,
 }: ShopPageContentProps) {
   const rangeMin = Math.floor(priceRange.min || 0);
   const rangeMax = Math.max(
     Math.ceil(priceRange.max || 0),
     rangeMin + 1,
   );
+  const perPage = Math.min(48, Math.max(4, productsPerPage || PRODUCTS_PER_PAGE));
 
   const [searchQuery, setSearchQuery] = useState("");
   const [priceMin, setPriceMin] = useState(rangeMin);
@@ -47,7 +52,7 @@ export default function ShopPageContent({
   );
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ShopViewMode>("grid3");
+  const [viewMode, setViewMode] = useState<ShopViewMode>(defaultViewMode);
   const [sortBy, setSortBy] = useState<ShopSortOption>("default");
   const [currentPage, setCurrentPage] = useState(1);
   const [quickViewProduct, setQuickViewProduct] =
@@ -123,13 +128,13 @@ export default function ShopPageContent({
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE),
+    Math.ceil(filteredProducts.length / perPage),
   );
   const safePage = Math.min(currentPage, totalPages);
-  const startIndex = (safePage - 1) * PRODUCTS_PER_PAGE;
+  const startIndex = (safePage - 1) * perPage;
   const pageProducts = filteredProducts.slice(
     startIndex,
-    startIndex + PRODUCTS_PER_PAGE,
+    startIndex + perPage,
   );
 
   const resetPage = () => setCurrentPage(1);

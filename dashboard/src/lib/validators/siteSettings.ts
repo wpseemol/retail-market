@@ -130,9 +130,22 @@ export const siteSettingsFormSchema = z.object({
     40,
   ),
   meta_pixel_enabled: z.boolean(),
+
+  // ── Shop catalog ──────────────────────────────────────────────────────────
+  shop_default_view: z.enum(["grid4", "grid3", "grid2", "list"]),
+  shop_products_per_page: z.coerce.number().int().min(4).max(48),
 });
 
 export type SiteSettingsFormValues = z.infer<typeof siteSettingsFormSchema>;
+
+export const SHOP_VIEW_OPTIONS = [
+  { value: "grid4", label: "4 columns" },
+  { value: "grid3", label: "3 columns" },
+  { value: "grid2", label: "2 columns" },
+  { value: "list", label: "List" },
+] as const;
+
+export const SHOP_PER_PAGE_OPTIONS = [8, 12, 16, 20, 24, 36, 48] as const;
 
 /** API response shape for the dashboard GET/PATCH site-settings endpoints. */
 export type SiteSettingsApiResponse = {
@@ -165,6 +178,8 @@ export type SiteSettingsApiResponse = {
     twitter_pixel_enabled: boolean;
     meta_pixel_id: string | null;
     meta_pixel_enabled: boolean;
+    shop_default_view: "grid4" | "grid3" | "grid2" | "list";
+    shop_products_per_page: number;
     og_image_id: string | null;
   };
 };

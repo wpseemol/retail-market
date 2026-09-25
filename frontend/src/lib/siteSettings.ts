@@ -17,6 +17,10 @@ export type PublicSiteSettings = {
   twitter_title: string | null;
   twitter_description: string | null;
   twitter_handle: string | null;
+  shop: {
+    default_view: "grid4" | "grid3" | "grid2" | "list";
+    products_per_page: number;
+  };
   analytics: {
     google_analytics: TrackerConfig;
     google_tag_manager: TrackerConfig;
@@ -43,6 +47,10 @@ const FALLBACK: PublicSiteSettings = {
   twitter_title: null,
   twitter_description: null,
   twitter_handle: siteConfig.social.twitter,
+  shop: {
+    default_view: "grid4",
+    products_per_page: 12,
+  },
   analytics: {
     google_analytics: { enabled: false, id: null },
     google_tag_manager: { enabled: false, id: null },
@@ -58,6 +66,24 @@ const FALLBACK: PublicSiteSettings = {
   },
 };
 
+const SHOP_VIEWS = ["grid4", "grid3", "grid2", "list"] as const;
+
+function normalizeShopSettings(
+  shop: PublicSiteSettings["shop"] | undefined,
+): PublicSiteSettings["shop"] {
+  const view = shop?.default_view;
+  const perPage = shop?.products_per_page;
+  return {
+    default_view: SHOP_VIEWS.includes(view as (typeof SHOP_VIEWS)[number])
+      ? (view as PublicSiteSettings["shop"]["default_view"])
+      : "grid4",
+    products_per_page:
+      typeof perPage === "number" && perPage >= 4 && perPage <= 48
+        ? perPage
+        : 12,
+  };
+}
+
 /** Fetch live site settings from the API (cached ~60s). Falls back to static config. */
 export async function getSiteSettings(): Promise<PublicSiteSettings> {
   try {
@@ -66,7 +92,11 @@ export async function getSiteSettings(): Promise<PublicSiteSettings> {
     });
     if (!res.ok) return FALLBACK;
     const data = (await res.json()) as { settings?: PublicSiteSettings };
-    return data.settings ?? FALLBACK;
+    if (!data.settings) return FALLBACK;
+    return {
+      ...data.settings,
+      shop: normalizeShopSettings(data.settings.shop),
+    };
   } catch {
     return FALLBACK;
   }

@@ -5,6 +5,7 @@ import {
   BarChart3,
   Globe,
   ImagePlus,
+  LayoutGrid,
   Megaphone,
   Share2,
   Upload,
@@ -12,6 +13,8 @@ import {
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import {
+  SHOP_PER_PAGE_OPTIONS,
+  SHOP_VIEW_OPTIONS,
   siteSettingsFormSchema,
   validateOgImageFile,
   type SiteSettingsApiResponse,
@@ -271,6 +274,8 @@ const DEFAULT_VALUES: SiteSettingsFormValues = {
   twitter_pixel_enabled: false,
   meta_pixel_id: "",
   meta_pixel_enabled: false,
+  shop_default_view: "grid4",
+  shop_products_per_page: 12,
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -335,6 +340,8 @@ export function SiteSettingsPage() {
           twitter_pixel_enabled: s.twitter_pixel_enabled,
           meta_pixel_id: s.meta_pixel_id ?? "",
           meta_pixel_enabled: s.meta_pixel_enabled,
+          shop_default_view: s.shop_default_view ?? "grid4",
+          shop_products_per_page: s.shop_products_per_page ?? 12,
         });
       } catch (err) {
         if (!cancelled)
@@ -437,8 +444,8 @@ export function SiteSettingsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Site settings</h1>
         <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-          SEO metadata, social share previews, and analytics / advertising
-          integrations for the main storefront.
+          SEO metadata, shop catalog layout, social share previews, and
+          analytics / advertising integrations for the main storefront.
         </p>
       </div>
 
@@ -524,9 +531,83 @@ export function SiteSettingsPage() {
             />
           </SettingsSection>
 
-          {/* ── Section 02: Social share ──────────────────────────────────── */}
+          {/* ── Section 02: Shop catalog ──────────────────────────────────── */}
           <SettingsSection
             step="02"
+            title="Shop catalog"
+            description="Default product grid layout and how many products show per page on /shop."
+            icon={LayoutGrid}
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="shop_default_view"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Default product view</FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={isSubmitting}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select view" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {SHOP_VIEW_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Initial layout when shoppers open /shop (they can still
+                      switch in the toolbar).
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="shop_products_per_page"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Products per page</FormLabel>
+                    <Select
+                      value={String(field.value)}
+                      onValueChange={(v) => field.onChange(Number(v))}
+                      disabled={isSubmitting}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select count" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {SHOP_PER_PAGE_OPTIONS.map((n) => (
+                          <SelectItem key={n} value={String(n)}>
+                            {n} per page
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Pagination size for the shop catalog listing.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </SettingsSection>
+
+          {/* ── Section 03: Social share ──────────────────────────────────── */}
+          <SettingsSection
+            step="03"
             title="Social share"
             description="Open Graph and Twitter/X card metadata for link previews."
             icon={Share2}
@@ -616,9 +697,9 @@ export function SiteSettingsPage() {
             />
           </SettingsSection>
 
-          {/* ── Section 03: Analytics ─────────────────────────────────────── */}
+          {/* ── Section 04: Analytics ─────────────────────────────────────── */}
           <SettingsSection
-            step="03"
+            step="04"
             title="Analytics"
             description="Enable and configure analytics tracking for the storefront."
             icon={BarChart3}
@@ -657,9 +738,9 @@ export function SiteSettingsPage() {
             />
           </SettingsSection>
 
-          {/* ── Section 04: Advertising pixels ───────────────────────────── */}
+          {/* ── Section 05: Advertising pixels ───────────────────────────── */}
           <SettingsSection
-            step="04"
+            step="05"
             title="Advertising pixels"
             description="Enable and configure advertising conversion pixels."
             icon={Megaphone}

@@ -321,21 +321,22 @@ Multipart field **`avatar`** · max **5 MB** · JPEG/PNG/WebP/GIF. Clears `avata
 
 No auth. Used by the storefront for SEO / Open Graph and analytics pixels.
 
-`GET /api/site-settings` → `{ settings }` with `site_name`, `site_title`, `site_description`, `keywords`, OG/Twitter fields, `og_image`, nested `analytics` + `pixels` (`enabled` + `id`).
+`GET /api/site-settings` → `{ settings }` with `site_name`, `site_title`, `site_description`, `keywords`, OG/Twitter fields, `og_image`, nested `shop` (`default_view`: `grid4`|`grid3`|`grid2`|`list`, `products_per_page`), nested `analytics` + `pixels` (`enabled` + `id`).
 
 ---
 
 ## Dashboard site settings — `/api/dashboard/site-settings`
 
-Auth: Bearer **`super_admin`** only. Drives the main website title, SEO, Open Graph, and tracking pixels.
+Auth: Bearer **`super_admin`** only. Drives the main website title, SEO, Open Graph, shop catalog defaults, and tracking pixels.
 
 | Method | Path | Notes |
 |--------|------|--------|
 | GET | `/` | Full settings + flat tracker IDs for the form |
-| PATCH | `/` | Zod body · SQL/PHP/JS-safe strings · tracker ID formats |
+| PATCH | `/` | Zod body · SQL/PHP/JS-safe strings · tracker ID formats · `shop_default_view` · `shop_products_per_page` (4–48) |
 | POST | `/og-image` | Multipart field **`image`** · max **1 MB** · always resized |
 
-**Analytics IDs:** Google Analytics (`G-…`), GTM (`GTM-…`), Hotjar, Plerdy  
+**Shop catalog:** `shop_default_view` (`grid4`|`grid3`|`grid2`|`list`, default `grid4`), `shop_products_per_page` (default `12`)
+**Analytics IDs:** Google Analytics (`G-…`), GTM (`GTM-…`), Hotjar, Plerdy
 **Pixels:** Google Ads (`AW-…`), TikTok, LinkedIn, Twitter/X, Meta (Facebook)
 
 Dashboard UI: `/settings` (shadcn Form + Zod).

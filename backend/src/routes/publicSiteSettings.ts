@@ -12,6 +12,8 @@ const DEFAULTS = {
   keywords:
     "Niyenin, retail market, online shop, electronics, gadgets, ecommerce",
   twitter_handle: "@niyenin",
+  shop_default_view: "grid4",
+  shop_products_per_page: 12,
 } as const;
 
 export async function ensureSiteSettings() {
@@ -44,6 +46,10 @@ export function toPublicSiteSettings(
     twitter_title: row.twitter_title,
     twitter_description: row.twitter_description,
     twitter_handle: row.twitter_handle,
+    shop: {
+      default_view: row.shop_default_view,
+      products_per_page: row.shop_products_per_page,
+    },
     analytics: {
       google_analytics: {
         enabled: row.google_analytics_enabled,

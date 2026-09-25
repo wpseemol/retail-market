@@ -743,6 +743,11 @@ model SiteSettings {
   meta_pixel_id         String? @db.VarChar(40)
   meta_pixel_enabled    Boolean @default(false)
 
+  /// Storefront /shop catalog defaults (grid4|grid3|grid2|list).
+  shop_default_view       String @default("grid4") @db.VarChar(16)
+  /// How many products to show per page on /shop.
+  shop_products_per_page  Int    @default(12)
+
   updated_at DateTime @updatedAt
 
   og_image Media? @relation("SiteSettingsOgImage", fields: [og_image_id], references: [id], onDelete: SetNull)

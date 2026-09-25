@@ -45,6 +45,8 @@ dashboardSiteSettingsRouter.get("/", async (_req, res) => {
       twitter_pixel_enabled: row.twitter_pixel_enabled,
       meta_pixel_id: row.meta_pixel_id,
       meta_pixel_enabled: row.meta_pixel_enabled,
+      shop_default_view: row.shop_default_view,
+      shop_products_per_page: row.shop_products_per_page,
       og_image_id: row.og_image_id?.toString() ?? null,
     },
   });
@@ -92,6 +94,12 @@ dashboardSiteSettingsRouter.patch("/", async (req, res) => {
       twitter_pixel_enabled: data.twitter_pixel_enabled ?? false,
       meta_pixel_id: data.meta_pixel_id ?? null,
       meta_pixel_enabled: data.meta_pixel_enabled ?? false,
+      ...(data.shop_default_view !== undefined
+        ? { shop_default_view: data.shop_default_view }
+        : {}),
+      ...(data.shop_products_per_page !== undefined
+        ? { shop_products_per_page: data.shop_products_per_page }
+        : {}),
     },
     include: { og_image: true },
   });
@@ -118,6 +126,8 @@ dashboardSiteSettingsRouter.patch("/", async (req, res) => {
       twitter_pixel_enabled: row.twitter_pixel_enabled,
       meta_pixel_id: row.meta_pixel_id,
       meta_pixel_enabled: row.meta_pixel_enabled,
+      shop_default_view: row.shop_default_view,
+      shop_products_per_page: row.shop_products_per_page,
       og_image_id: row.og_image_id?.toString() ?? null,
     },
   });

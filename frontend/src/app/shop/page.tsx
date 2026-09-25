@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import ShopPageContent from "@/components/shop/ShopPageContent";
+import type { ShopViewMode } from "@/components/shop/types";
 import { createPageMetadata, siteConfig } from "@/config/site";
 import { fetchProducts, toShopProduct } from "@/lib/products";
+import { getSiteSettings } from "@/lib/siteSettings";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Shop",
@@ -10,7 +12,10 @@ export const metadata: Metadata = createPageMetadata({
 });
 
 export default async function ShopPage() {
-  const data = await fetchProducts({ limit: 48, sort: "default" });
+  const [data, settings] = await Promise.all([
+    fetchProducts({ limit: 48, sort: "default" }),
+    getSiteSettings(),
+  ]);
   const products = data.products.map(toShopProduct);
   const tags = Array.from(
     new Set(
@@ -29,6 +34,8 @@ export default async function ShopPage() {
           max: data.facets.price.max || 1000,
         }}
         tags={tags}
+        defaultViewMode={settings.shop.default_view as ShopViewMode}
+        productsPerPage={settings.shop.products_per_page}
       />
     </main>
   );
