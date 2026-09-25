@@ -835,6 +835,17 @@ model HomeSection {
   @@map("home_sections")
 }
 
+/// Per-section CMS JSON for home page blocks (hero uses home_hero_banners).
+model HomeBlockContent {
+  id         Int      @id @default(autoincrement())
+  /// Matches home_sections.key (welcome_modal, featured, …).
+  key        String   @unique @db.VarChar(64)
+  content    Json
+  updated_at DateTime @updatedAt
+
+  @@map("home_block_contents")
+}
+
 /// Singleton home page hero + side promo content (id = 1).
 model HomeHeroBanner {
   id Int @id @default(1)

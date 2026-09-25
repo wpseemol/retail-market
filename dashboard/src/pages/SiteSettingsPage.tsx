@@ -27,6 +27,7 @@ import { FooterSettingsPanel } from "@/components/settings/FooterSettingsPanel";
 import { HeaderSettingsPanel } from "@/components/settings/HeaderSettingsPanel";
 import { HomeSectionsPanel } from "@/components/settings/HomeSectionsPanel";
 import { HeroBannerSettingsPanel } from "@/components/settings/HeroBannerSettingsPanel";
+import { HomeBlocksSettingsPanel } from "@/components/settings/HomeBlocksSettingsPanel";
 import {
     SHOP_FACET_VISIBLE_OPTIONS,
     SHOP_PER_PAGE_OPTIONS,
@@ -945,6 +946,35 @@ export function SiteSettingsPage() {
                         icon={LayoutTemplate}
                     >
                         <HeroBannerSettingsPanel
+                            token={token}
+                            onError={(m) => {
+                                setSubmitError(m);
+                                setSaveSuccess(null);
+                            }}
+                            onSuccess={(m) => {
+                                setSaveSuccess(m);
+                                setSubmitError(null);
+                            }}
+                        />
+                        {(submitError || saveSuccess) && (
+                            <p
+                                className={
+                                    submitError
+                                        ? "text-sm text-destructive"
+                                        : "text-sm text-brand-primary"
+                                }
+                                role={submitError ? "alert" : "status"}
+                            >
+                                {submitError ?? saveSuccess}
+                            </p>
+                        )}
+                    </SettingsSection>
+                    <SettingsSection
+                        title="Other home sections"
+                        description="Edit CMS content for welcome modal, featured, deals, promo slider, brands, and more. Server-rendered on the storefront."
+                        icon={LayoutTemplate}
+                    >
+                        <HomeBlocksSettingsPanel
                             token={token}
                             onError={(m) => {
                                 setSubmitError(m);

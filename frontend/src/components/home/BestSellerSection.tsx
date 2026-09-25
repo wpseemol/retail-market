@@ -293,7 +293,11 @@ function StarRating({ rating }: { rating: number }) {
     );
 }
 
-export default function BestSellerSection() {
+export default function BestSellerSection({
+  content: _content,
+}: {
+  content?: import("@/lib/homeBlockDefaults").BestSellersContent;
+} = {}) {
     const [activeTab, setActiveTab] = useState<TabCategory>("Fuel Tank");
     const [currentIndex, setCurrentIndex] = useState(0);
     const [itemsPerView, setItemsPerView] = useState(4);

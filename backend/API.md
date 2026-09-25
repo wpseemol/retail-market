@@ -81,6 +81,7 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/dashboard/orders` | `routes/dashboardOrders.ts` | Staff |
 | `/api/dashboard/site-settings` | `routes/dashboardSiteSettings.ts` | `super_admin` |
 | `/api/dashboard/home-hero` | `routes/dashboardHomeHero.ts` | `super_admin` |
+| `/api/dashboard/home-blocks` | `routes/dashboardHomeBlocks.ts` | `super_admin` |
 | `/api/dashboard/shops` | `routes/dashboardVendors.ts` | `super_admin`, `vendor` |
 | `/api/dashboard/categories` | `routes/dashboardCategories.ts` | Staff |
 | `/api/dashboard/brands` | `routes/dashboardBrands.ts` | Staff |
@@ -163,9 +164,12 @@ No auth. Used by the storefront home page (SSR fetch + cache tags).
 | Method | Path | Notes |
 |--------|------|--------|
 | GET | `/hero` | Singleton hero + side promo → `{ hero: { main, side, updated_at } }` |
+| GET | `/blocks` | All CMS section JSON + hero → `{ blocks, hero }` (one round-trip) |
 
 **`main`:** `eyebrow`, `headline`, `subtext`, `discount_percent`, `price_label`, `cta_label`, `cta_href`, `product_image`, `bg_image`  
 **`side`:** `badge_label`, `offer_percent`, `offer_label`, `headline`, `discount_percent`, `cta_label`, `cta_href`, `product_image`, `bg_image`  
+
+**`blocks` keys:** `welcome_modal`, `featured`, `deals_banner`, `product_groups`, `promo_slider`, `best_sellers`, `latest_products`, `deals_of_day`, `laptop_repair`, `top_brands` (seeded defaults; table `home_block_contents`).
 
 Missing uploaded images → storefront falls back to built-in static art.
 
@@ -182,6 +186,19 @@ Auth: Bearer **`super_admin`** only. Drives **Settings → Home → Hero banner*
 | POST | `/images/:slot` | Multipart field **`image`** · slots `main_product`\|`main_bg`\|`side_product`\|`side_bg` · max **1 MB** · always resized |
 
 Table: `home_hero_banners` (id = 1).
+
+---
+
+## Dashboard home blocks — `/api/dashboard/home-blocks`
+
+Auth: Bearer **`super_admin`**. Drives **Settings → Home → Other home sections**.
+
+| Method | Path | Notes |
+|--------|------|--------|
+| GET | `/` | `{ blocks, keys }` |
+| GET | `/:key` | One block content |
+| PATCH | `/:key` | Body `{ content: object }` · recursive safe-input on strings |
+| POST | `/:key/reset` | Restore seeded defaults |
 
 ---
 

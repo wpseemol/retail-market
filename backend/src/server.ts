@@ -24,6 +24,8 @@ import { publicSiteSettingsRouter } from "./routes/publicSiteSettings.js";
 import { publicAnalyticsRouter } from "./routes/publicAnalytics.js";
 import { publicCategoriesRouter } from "./routes/publicCategories.js";
 import { publicHomeRouter } from "./routes/publicHome.js";
+import { publicHomeBlocksRouter } from "./routes/publicHomeBlocks.js";
+import { dashboardHomeBlocksRouter } from "./routes/dashboardHomeBlocks.js";
 
 const app = express();
 
@@ -54,6 +56,7 @@ app.use("/api/shops", publicShopsRouter);
 app.use("/api/products", publicProductsRouter);
 app.use("/api/categories", publicCategoriesRouter);
 app.use("/api/home", publicHomeRouter);
+app.use("/api/home", publicHomeBlocksRouter);
 app.use("/api/dashboard/auth", dashboardAuthRouter);
 app.use("/api/dashboard/users", dashboardUsersRouter);
 app.use("/api/dashboard/shops", dashboardVendorsRouter);
@@ -62,6 +65,7 @@ app.use("/api/dashboard/brands", dashboardBrandsRouter);
 app.use("/api/dashboard/products", dashboardProductsRouter);
 app.use("/api/dashboard/site-settings", dashboardSiteSettingsRouter);
 app.use("/api/dashboard/home-hero", dashboardHomeHeroRouter);
+app.use("/api/dashboard/home-blocks", dashboardHomeBlocksRouter);
 app.use("/api/dashboard/overview", dashboardOverviewRouter);
 app.use("/api/dashboard/notifications", dashboardNotificationsRouter);
 app.use("/api/dashboard/orders", dashboardOrdersRouter);

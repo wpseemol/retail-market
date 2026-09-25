@@ -3,7 +3,12 @@ import DealsLeftPromo from "./DealsLeftPromo";
 import DealsCenterProduct from "./DealsCenterProduct";
 import DealsRightProduct from "./DealsRightProduct";
 
-export default function DealsOfTheDaySection() {
+export default function DealsOfTheDaySection({
+  content,
+}: {
+  content?: import("@/lib/homeBlockDefaults").DealsOfDayContent;
+} = {}) {
+    const title = content?.title || "Deals of The Day";
     return (
         <section
             aria-label="Deals of the Day Section"
@@ -13,7 +18,7 @@ export default function DealsOfTheDaySection() {
                 {/* Section Header */}
                 <div className="relative pb-2 mb-5 border-b border-border-default/60">
                     <h2 className="text-text-primary text-xl sm:text-2xl font-bold tracking-tight pb-2">
-                        Deals of The Day
+                        {title}
                     </h2>
                     <span className="absolute bottom-0 left-0 w-7 h-0.5 bg-brand-primary" />
                 </div>

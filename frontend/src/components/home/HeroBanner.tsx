@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getHeroBanner } from "@/lib/homeHero";
+import { getHeroBanner, type HomeHeroBanner } from "@/lib/homeHero";
 
 function isRemoteSrc(src: string) {
   return /^https?:\/\//i.test(src) || src.startsWith("/uploads/");
@@ -73,8 +73,12 @@ function HeroProduct({
   );
 }
 
-export default async function HeroBanner() {
-  const hero = await getHeroBanner();
+export default async function HeroBanner({
+  data,
+}: {
+  data?: HomeHeroBanner;
+} = {}) {
+  const hero = data ?? (await getHeroBanner());
   const mainBg = hero.main.bg_image?.path ?? "/images/hero_bg_06 1.png";
   const mainProduct =
     hero.main.product_image?.path ?? "/images/camera.png";

@@ -158,7 +158,11 @@ const launchedProductsData: LaunchedItem[] = [
     },
 ];
 
-export default function ProductGroupsSection() {
+export default function ProductGroupsSection({
+  content: _content,
+}: {
+  content?: import("@/lib/homeBlockDefaults").ProductGroupsContent;
+} = {}) {
     const [sliderIndex, setSliderIndex] = useState(0);
 
     const prevSlide = () => {
