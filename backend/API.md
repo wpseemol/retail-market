@@ -381,7 +381,7 @@ Multipart field **`avatar`** · max **5 MB** · JPEG/PNG/WebP/GIF. Clears `avata
 
 No auth. Used by the storefront for SEO / Open Graph and analytics pixels.
 
-`GET /api/site-settings` → `{ settings }` with `site_name`, `site_title`, `site_description`, `keywords`, OG/Twitter fields, `og_image`, nested `shop` (`default_view`, `products_per_page`, `categories_visible`, `brands_visible`, `see_all_label`, `show_less_label`), nested `analytics` + `pixels` (`enabled` + `id`).
+`GET /api/site-settings` → `{ settings }` with `site_name`, `site_title`, `site_description`, `keywords`, OG/Twitter fields, `og_image`, `favicon`, `login_logo`, nested `shop` (`default_view`, `products_per_page`, `categories_visible`, `brands_visible`, `see_all_label`, `show_less_label`), nested `analytics` + `pixels` (`enabled` + `id`).
 
 ---
 
@@ -394,12 +394,25 @@ Auth: Bearer **`super_admin`** only. Drives the main website title, SEO, Open Gr
 | GET | `/` | Full settings + flat tracker IDs for the form |
 | PATCH | `/` | Zod body · SQL/PHP/JS-safe strings · tracker ID formats · `shop_default_view` · `shop_products_per_page` (4–48) |
 | POST | `/og-image` | Multipart field **`image`** · max **1 MB** · always resized |
+| POST | `/favicon` | Multipart field **`image`** · max **1 MB** · always resized |
+| POST | `/login-logo` | Multipart field **`image`** · max **1 MB** · always resized |
+| PATCH | `/chrome` | Header/footer contact + social URL fields |
+| POST | `/nav` | Create menu item (`header`\|`footer_find`\|`footer_care`\|`footer_sell`) |
+| PATCH | `/nav/:id` | Update label/href/enabled |
+| DELETE | `/nav/:id` | Delete menu item |
+| PUT | `/nav/reorder` | Body `{ menu, ordered_ids[] }` · drag-drop positions |
+| PATCH | `/home-sections/:id` | Enable/disable home section |
+| PUT | `/home-sections/reorder` | Body `{ ordered_ids[] }` |
 
+**Identity media:** `og_image`, `favicon`, `login_logo`  
+**Chrome:** `topbar_email`, `topbar_phone`, `footer_blurb`, `footer_phone`, `footer_callout`, `social_*`  
+**Menus:** table `site_nav_items` (associative to `site_settings`)  
+**Home:** table `home_sections` (component keys + position + enabled)  
 **Shop catalog:** `shop_default_view` (`grid4`|`grid3`|`grid2`|`list`, default `grid4`), `shop_products_per_page` (default `12`), `shop_categories_visible` (default `5`), `shop_brands_visible` (default `6`), `shop_see_all_label` / `shop_show_less_label` (sidebar expand/collapse text)
 **Analytics IDs:** Google Analytics (`G-…`), GTM (`GTM-…`), Hotjar, Plerdy
 **Pixels:** Google Ads (`AW-…`), TikTok, LinkedIn, Twitter/X, Meta (Facebook)
 
-Dashboard UI: `/settings` (shadcn Form + Zod).
+Dashboard UI: `/settings` (shadcn Form + Zod). Tabs include **Header**, **Footer**, **Home**.
 
 ---
 
@@ -687,6 +700,8 @@ Includes: `id`, `vendor_id`, `category_id`, `brand_id`, `thumbnail_id`, `name`, 
 | `POST /api/dashboard/categories/:id/image` | `image` | **1 MB** |
 | `POST /api/dashboard/brands/:id/image` | `image` | **1 MB** |
 | `POST /api/dashboard/site-settings/og-image` | `image` | **1 MB** · resized |
+| `POST /api/dashboard/site-settings/favicon` | `image` | **1 MB** · resized |
+| `POST /api/dashboard/site-settings/login-logo` | `image` | **1 MB** · resized |
 | `POST /api/dashboard/products/:id/thumbnail` | `image` | **5 MB** · resized |
 | `POST /api/dashboard/products/:id/images` | `images` | **5 MB** × 12 · resized |
 | `POST /api/dashboard/shops/:id/logo` | `logo` | **5 MB** · resized |

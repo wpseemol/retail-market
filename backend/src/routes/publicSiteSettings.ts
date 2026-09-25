@@ -1,8 +1,20 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
+import {
+  ensureSiteChromeDefaults,
+  loadHomeSections,
+  loadSiteNavTree,
+  toPublicNavItem,
+} from "../lib/siteChrome.js";
 import { toPublicMedia } from "../lib/user.js";
 
 export const publicSiteSettingsRouter = Router();
+
+export const siteSettingsMediaInclude = {
+  og_image: true,
+  favicon: true,
+  login_logo: true,
+} as const;
 
 const DEFAULTS = {
   site_name: "Niyenin",
@@ -18,22 +30,57 @@ const DEFAULTS = {
   shop_brands_visible: 6,
   shop_see_all_label: "See all",
   shop_show_less_label: "Show less",
+  topbar_email: "retailmarket@gmail.com",
+  topbar_phone: "+1(213)628-3034",
+  footer_blurb:
+    "Phasellus justo ligula, dictum sit amet tortor eu, iaculis tristique turpis. Mauris non orci sed est suscipit tempor ut quis felis.",
+  footer_phone: "+1(000)000-000",
+  footer_callout: "Got Question? Call Us 24/7!",
+  social_facebook: "https://facebook.com",
+  social_twitter: "https://x.com",
+  social_youtube: "https://youtube.com",
+  social_linkedin: "https://linkedin.com",
+  social_instagram: "https://instagram.com",
 } as const;
 
 export async function ensureSiteSettings() {
   const existing = await prisma.siteSettings.findUnique({
     where: { id: 1 },
-    include: { og_image: true },
+    include: siteSettingsMediaInclude,
   });
-  if (existing) return existing;
+  if (existing) {
+    await ensureSiteChromeDefaults();
+    return existing;
+  }
 
-  return prisma.siteSettings.create({
+  const created = await prisma.siteSettings.create({
     data: {
       id: 1,
       ...DEFAULTS,
     },
-    include: { og_image: true },
+    include: siteSettingsMediaInclude,
   });
+  await ensureSiteChromeDefaults();
+  return created;
+}
+
+export function toPublicChrome(
+  row: Awaited<ReturnType<typeof ensureSiteSettings>>,
+) {
+  return {
+    topbar_email: row.topbar_email,
+    topbar_phone: row.topbar_phone,
+    footer_blurb: row.footer_blurb,
+    footer_phone: row.footer_phone,
+    footer_callout: row.footer_callout,
+    social: {
+      facebook: row.social_facebook,
+      twitter: row.social_twitter,
+      youtube: row.social_youtube,
+      linkedin: row.social_linkedin,
+      instagram: row.social_instagram,
+    },
+  };
 }
 
 export function toPublicSiteSettings(
@@ -47,6 +94,8 @@ export function toPublicSiteSettings(
     og_title: row.og_title,
     og_description: row.og_description,
     og_image: toPublicMedia(row.og_image),
+    favicon: toPublicMedia(row.favicon),
+    login_logo: toPublicMedia(row.login_logo),
     twitter_title: row.twitter_title,
     twitter_description: row.twitter_description,
     twitter_handle: row.twitter_handle,
@@ -58,6 +107,7 @@ export function toPublicSiteSettings(
       see_all_label: row.shop_see_all_label,
       show_less_label: row.shop_show_less_label,
     },
+    chrome: toPublicChrome(row),
     analytics: {
       google_analytics: {
         enabled: row.google_analytics_enabled,
@@ -87,8 +137,40 @@ export function toPublicSiteSettings(
   };
 }
 
-/** Public storefront SEO + tracking config (no auth). */
+/** Public storefront SEO + chrome + tracking config (no auth). */
 publicSiteSettingsRouter.get("/", async (_req, res) => {
   const row = await ensureSiteSettings();
-  return res.json({ settings: toPublicSiteSettings(row) });
+  const [navRows, homeRows] = await Promise.all([
+    loadSiteNavTree(false),
+    loadHomeSections(false),
+  ]);
+
+  const nav = {
+    header: navRows
+      .filter((n) => n.menu === "header")
+      .map(toPublicNavItem),
+    footer_find: navRows
+      .filter((n) => n.menu === "footer_find")
+      .map(toPublicNavItem),
+    footer_care: navRows
+      .filter((n) => n.menu === "footer_care")
+      .map(toPublicNavItem),
+    footer_sell: navRows
+      .filter((n) => n.menu === "footer_sell")
+      .map(toPublicNavItem),
+  };
+
+  return res.json({
+    settings: {
+      ...toPublicSiteSettings(row),
+      nav,
+      home_sections: homeRows.map((s) => ({
+        id: s.id.toString(),
+        key: s.key,
+        label: s.label,
+        position: s.position,
+        is_enabled: s.is_enabled,
+      })),
+    },
+  });
 });

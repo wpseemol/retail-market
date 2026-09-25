@@ -166,6 +166,8 @@ export type SiteSettingsApiResponse = {
     og_title: string | null;
     og_description: string | null;
     og_image: { id: string; path: string; alt_text?: string | null } | null;
+    favicon: { id: string; path: string; alt_text?: string | null } | null;
+    login_logo: { id: string; path: string; alt_text?: string | null } | null;
     twitter_title: string | null;
     twitter_description: string | null;
     twitter_handle: string | null;
@@ -194,9 +196,92 @@ export type SiteSettingsApiResponse = {
     shop_see_all_label: string;
     shop_show_less_label: string;
     og_image_id: string | null;
+    favicon_id: string | null;
+    login_logo_id: string | null;
+    topbar_email?: string | null;
+    topbar_phone?: string | null;
+    footer_blurb?: string | null;
+    footer_phone?: string | null;
+    footer_callout?: string | null;
+    social_facebook?: string | null;
+    social_twitter?: string | null;
+    social_youtube?: string | null;
+    social_linkedin?: string | null;
+    social_instagram?: string | null;
+    nav?: {
+      header: Array<{
+        id: string;
+        menu: string;
+        label: string;
+        href: string;
+        external: boolean;
+        position: number;
+        is_enabled: boolean;
+        parent_id: string | null;
+        children: Array<{
+          id: string;
+          menu?: string;
+          label: string;
+          href: string;
+          external: boolean;
+          position: number;
+          is_enabled: boolean;
+          parent_id?: string | null;
+          children?: unknown[];
+        }>;
+      }>;
+      footer_find: Array<{
+        id: string;
+        menu: string;
+        label: string;
+        href: string;
+        external: boolean;
+        position: number;
+        is_enabled: boolean;
+        parent_id: string | null;
+        children: unknown[];
+      }>;
+      footer_care: Array<{
+        id: string;
+        menu: string;
+        label: string;
+        href: string;
+        external: boolean;
+        position: number;
+        is_enabled: boolean;
+        parent_id: string | null;
+        children: unknown[];
+      }>;
+      footer_sell: Array<{
+        id: string;
+        menu: string;
+        label: string;
+        href: string;
+        external: boolean;
+        position: number;
+        is_enabled: boolean;
+        parent_id: string | null;
+        children: unknown[];
+      }>;
+    };
+    home_sections?: Array<{
+      id: string;
+      key: string;
+      label: string;
+      position: number;
+      is_enabled: boolean;
+    }>;
   };
 };
 
 export function validateOgImageFile(file: File | null | undefined) {
   return validateSafeImageFile(file, OG_IMAGE_MAX_BYTES, "OG image");
+}
+
+export function validateFaviconFile(file: File | null | undefined) {
+  return validateSafeImageFile(file, OG_IMAGE_MAX_BYTES, "Favicon");
+}
+
+export function validateLoginLogoFile(file: File | null | undefined) {
+  return validateSafeImageFile(file, OG_IMAGE_MAX_BYTES, "Login logo");
 }

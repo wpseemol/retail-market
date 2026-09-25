@@ -6,6 +6,21 @@ export type TrackerConfig = {
   id: string | null;
 };
 
+export type PublicNavItem = {
+  id: string;
+  label: string;
+  href: string;
+  external: boolean;
+  position: number;
+  children?: Array<{
+    id: string;
+    label: string;
+    href: string;
+    external: boolean;
+    position: number;
+  }>;
+};
+
 export type PublicSiteSettings = {
   site_name: string;
   site_title: string;
@@ -14,6 +29,8 @@ export type PublicSiteSettings = {
   og_title: string | null;
   og_description: string | null;
   og_image: { path: string } | null;
+  favicon: { path: string } | null;
+  login_logo: { path: string } | null;
   twitter_title: string | null;
   twitter_description: string | null;
   twitter_handle: string | null;
@@ -25,6 +42,33 @@ export type PublicSiteSettings = {
     see_all_label: string;
     show_less_label: string;
   };
+  chrome?: {
+    topbar_email: string | null;
+    topbar_phone: string | null;
+    footer_blurb: string | null;
+    footer_phone: string | null;
+    footer_callout: string | null;
+    social: {
+      facebook: string | null;
+      twitter: string | null;
+      youtube: string | null;
+      linkedin: string | null;
+      instagram: string | null;
+    };
+  };
+  nav?: {
+    header: PublicNavItem[];
+    footer_find: PublicNavItem[];
+    footer_care: PublicNavItem[];
+    footer_sell: PublicNavItem[];
+  };
+  home_sections?: Array<{
+    id: string;
+    key: string;
+    label: string;
+    position: number;
+    is_enabled: boolean;
+  }>;
   analytics: {
     google_analytics: TrackerConfig;
     google_tag_manager: TrackerConfig;
@@ -48,6 +92,8 @@ const FALLBACK: PublicSiteSettings = {
   og_title: null,
   og_description: null,
   og_image: null,
+  favicon: null,
+  login_logo: null,
   twitter_title: null,
   twitter_description: null,
   twitter_handle: siteConfig.social.twitter,

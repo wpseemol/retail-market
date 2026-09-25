@@ -13,23 +13,87 @@ import {
     selectCartItemCount,
     selectCartTotal,
 } from "@/store/cartSlice";
+import { selectHeaderNav } from "@/store/siteChromeSlice";
+import { resolveStorefrontHref } from "@/lib/storefrontLinks";
+
+const FALLBACK_HEADER_NAV = [
+    { id: "home", label: "Home", href: "/", external: false, position: 0 },
+    { id: "shop", label: "Shop", href: "/shop", external: false, position: 1 },
+    {
+        id: "stores",
+        label: "Stores",
+        href: "/stores",
+        external: false,
+        position: 2,
+    },
+    {
+        id: "pages",
+        label: "Pages",
+        href: "#",
+        external: false,
+        position: 3,
+        children: [
+            { id: "faq", label: "FAQ", href: "/faq", external: false, position: 0 },
+            {
+                id: "terms",
+                label: "Terms",
+                href: "/terms",
+                external: false,
+                position: 1,
+            },
+        ],
+    },
+    {
+        id: "blog",
+        label: "Blog",
+        href: "/blog",
+        external: false,
+        position: 4,
+        children: [
+            {
+                id: "blog-main",
+                label: "Blog",
+                href: "/blog",
+                external: false,
+                position: 0,
+            },
+        ],
+    },
+    {
+        id: "about",
+        label: "About Us",
+        href: "/about",
+        external: false,
+        position: 5,
+    },
+    {
+        id: "contact",
+        label: "Contact",
+        href: "/contact",
+        external: false,
+        position: 6,
+    },
+];
 
 export default function Header() {
     const pathname = usePathname();
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
-    const isHome = pathname === "/";
-    const isShop = pathname === "/shop" || pathname.startsWith("/shop/");
-    const isStores =
-        pathname === "/stores" || pathname.startsWith("/stores/");
-    const isCart = pathname === "/cart" || pathname.startsWith("/cart/");
-    const isContact =
-        pathname === "/contact" || pathname.startsWith("/contact/");
     const [isSticky, setIsSticky] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const cartCount = useAppSelector(selectCartItemCount);
     const cartTotal = useAppSelector(selectCartTotal);
+    const configuredNav = useAppSelector(selectHeaderNav);
+    const headerNav =
+        configuredNav.length > 0 ? configuredNav : FALLBACK_HEADER_NAV;
+
+    function linkActive(href: string) {
+        if (href === "/") return pathname === "/";
+        return pathname === href || pathname.startsWith(`${href}/`);
+    }
+
+    const isCart = linkActive("/cart");
 
     useEffect(() => {
         setMounted(true);
@@ -313,100 +377,85 @@ export default function Header() {
 
                     {/* Desktop Nav Links */}
                     <ul className="flex items-center gap-6 xl:gap-8 text-[14px] font-medium list-none m-0 p-0">
-                        <li>
-                            <Link
-                                href="/"
-                                className={`hover:text-brand-hover transition-colors ${
-                                    isHome
-                                        ? "text-brand-primary font-semibold"
-                                        : "text-text-secondary hover:text-brand-primary"
-                                }`}
-                            >
-                                Home
-                            </Link>
-                        </li>
-                        <li>
-                            <Link
-                                href="/shop"
-                                className={`hover:text-brand-hover transition-colors ${
-                                    isShop
-                                        ? "text-brand-primary font-semibold"
-                                        : "text-text-secondary hover:text-brand-primary"
-                                }`}
-                            >
-                                Shop
-                            </Link>
-                        </li>
-                        <li>
-                            <Link
-                                href="/stores"
-                                className={`hover:text-brand-hover transition-colors ${
-                                    isStores
-                                        ? "text-brand-primary font-semibold"
-                                        : "text-text-secondary hover:text-brand-primary"
-                                }`}
-                            >
-                                Stores
-                            </Link>
-                        </li>
-                        <li className="relative group cursor-pointer">
-                            <span className="flex items-center gap-1 text-text-secondary hover:text-brand-primary transition-colors">
-                                Pages
-                                <svg
-                                    width="10"
-                                    height="6"
-                                    viewBox="0 0 10 6"
-                                    fill="none"
-                                    className="stroke-current stroke-[1.5]"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        d="M1 1L5 5L9 1"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    />
-                                </svg>
-                            </span>
-                        </li>
-                        <li className="relative group cursor-pointer">
-                            <span className="flex items-center gap-1 text-text-secondary hover:text-brand-primary transition-colors">
-                                Blog
-                                <svg
-                                    width="10"
-                                    height="6"
-                                    viewBox="0 0 10 6"
-                                    fill="none"
-                                    className="stroke-current stroke-[1.5]"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        d="M1 1L5 5L9 1"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    />
-                                </svg>
-                            </span>
-                        </li>
-                        <li>
-                            <Link
-                                href="/about"
-                                className="text-text-secondary hover:text-brand-primary transition-colors"
-                            >
-                                About Us
-                            </Link>
-                        </li>
-                        <li>
-                            <Link
-                                href="/contact"
-                                className={`transition-colors ${
-                                    isContact
-                                        ? "text-brand-primary font-semibold"
-                                        : "text-text-secondary hover:text-brand-primary"
-                                }`}
-                            >
-                                Contact
-                            </Link>
-                        </li>
+                        {headerNav.map((item) => {
+                            const hasChildren = Boolean(item.children?.length);
+                            const resolved = resolveStorefrontHref(item.href);
+                            const active = linkActive(resolved.href);
+                            if (hasChildren) {
+                                return (
+                                    <li
+                                        key={item.id}
+                                        className="relative group cursor-pointer"
+                                    >
+                                        <span className="flex items-center gap-1 text-text-secondary hover:text-brand-primary transition-colors">
+                                            {item.label}
+                                            <svg
+                                                width="10"
+                                                height="6"
+                                                viewBox="0 0 10 6"
+                                                fill="none"
+                                                className="stroke-current stroke-[1.5]"
+                                                aria-hidden="true"
+                                            >
+                                                <path
+                                                    d="M1 1L5 5L9 1"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                />
+                                            </svg>
+                                        </span>
+                                        <div className="invisible absolute left-0 top-full z-20 min-w-40 rounded-md border border-border-default bg-bg-base py-2 opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100">
+                                            {item.children!.map((child) => {
+                                                const c =
+                                                    resolveStorefrontHref(
+                                                        child.href,
+                                                    );
+                                                return c.external ? (
+                                                    <a
+                                                        key={child.id}
+                                                        href={c.href}
+                                                        className="block px-3 py-1.5 text-text-secondary hover:text-brand-primary"
+                                                    >
+                                                        {child.label}
+                                                    </a>
+                                                ) : (
+                                                    <Link
+                                                        key={child.id}
+                                                        href={c.href}
+                                                        className="block px-3 py-1.5 text-text-secondary hover:text-brand-primary"
+                                                    >
+                                                        {child.label}
+                                                    </Link>
+                                                );
+                                            })}
+                                        </div>
+                                    </li>
+                                );
+                            }
+                            return (
+                                <li key={item.id}>
+                                    {resolved.external ? (
+                                        <a
+                                            href={resolved.href}
+                                            className="text-text-secondary hover:text-brand-primary transition-colors"
+                                        >
+                                            {item.label}
+                                        </a>
+                                    ) : (
+                                        <Link
+                                            href={resolved.href}
+                                            className={`hover:text-brand-hover transition-colors ${
+                                                active
+                                                    ? "text-brand-primary font-semibold"
+                                                    : "text-text-secondary hover:text-brand-primary"
+                                            }`}
+                                        >
+                                            {item.label}
+                                        </Link>
+                                    )}
+                                </li>
+                            );
+                        })}
                     </ul>
 
                     {/* Desktop Search Field */}
@@ -522,141 +571,121 @@ export default function Header() {
 
                         {/* Navigation List */}
                         <nav className="flex flex-col gap-1 text-[15px] font-medium">
-                            <Link
-                                href="/"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className={`px-3 py-2 rounded-md hover:bg-bg-subtle ${
-                                    isHome
-                                        ? "text-brand-primary font-semibold"
-                                        : "text-text-primary"
-                                }`}
-                            >
-                                Home
-                            </Link>
-                            <Link
-                                href="/shop"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className={`px-3 py-2 rounded-md hover:bg-bg-subtle ${
-                                    isShop
-                                        ? "text-brand-primary font-semibold"
-                                        : "text-text-primary"
-                                }`}
-                            >
-                                Shop
-                            </Link>
-                            <Link
-                                href="/stores"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className={`px-3 py-2 rounded-md hover:bg-bg-subtle ${
-                                    isStores
-                                        ? "text-brand-primary font-semibold"
-                                        : "text-text-primary"
-                                }`}
-                            >
-                                Stores
-                            </Link>
-
-                            {/* Collapsible: Pages */}
-                            <div>
-                                <button
-                                    type="button"
-                                    onClick={() => toggleDropdown("pages")}
-                                    className="w-full flex items-center justify-between px-3 py-2 rounded-md text-text-primary hover:bg-bg-subtle"
-                                >
-                                    <span>Pages</span>
-                                    <svg
-                                        width="10"
-                                        height="6"
-                                        viewBox="0 0 10 6"
-                                        fill="none"
-                                        className={`stroke-current stroke-[1.5] transition-transform ${
-                                            openDropdown === "pages"
-                                                ? "rotate-180"
-                                                : ""
+                            {headerNav.map((item) => {
+                                const hasChildren = Boolean(
+                                    item.children?.length,
+                                );
+                                const resolved = resolveStorefrontHref(
+                                    item.href,
+                                );
+                                const active = linkActive(resolved.href);
+                                if (hasChildren) {
+                                    return (
+                                        <div key={item.id}>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    toggleDropdown(item.id)
+                                                }
+                                                className="w-full flex items-center justify-between px-3 py-2 rounded-md text-text-primary hover:bg-bg-subtle"
+                                            >
+                                                <span>{item.label}</span>
+                                                <svg
+                                                    width="10"
+                                                    height="6"
+                                                    viewBox="0 0 10 6"
+                                                    fill="none"
+                                                    className={`stroke-current stroke-[1.5] transition-transform ${
+                                                        openDropdown === item.id
+                                                            ? "rotate-180"
+                                                            : ""
+                                                    }`}
+                                                >
+                                                    <path d="M1 1L5 5L9 1" />
+                                                </svg>
+                                            </button>
+                                            {openDropdown === item.id ? (
+                                                <div className="pl-6 flex flex-col gap-1 py-1 text-sm text-text-secondary">
+                                                    {item.children!.map(
+                                                        (child) => {
+                                                            const c =
+                                                                resolveStorefrontHref(
+                                                                    child.href,
+                                                                );
+                                                            return c.external ? (
+                                                                <a
+                                                                    key={
+                                                                        child.id
+                                                                    }
+                                                                    href={
+                                                                        c.href
+                                                                    }
+                                                                    onClick={() =>
+                                                                        setIsMobileMenuOpen(
+                                                                            false,
+                                                                        )
+                                                                    }
+                                                                    className="py-1 hover:text-brand-primary"
+                                                                >
+                                                                    {
+                                                                        child.label
+                                                                    }
+                                                                </a>
+                                                            ) : (
+                                                                <Link
+                                                                    key={
+                                                                        child.id
+                                                                    }
+                                                                    href={
+                                                                        c.href
+                                                                    }
+                                                                    onClick={() =>
+                                                                        setIsMobileMenuOpen(
+                                                                            false,
+                                                                        )
+                                                                    }
+                                                                    className="py-1 hover:text-brand-primary"
+                                                                >
+                                                                    {
+                                                                        child.label
+                                                                    }
+                                                                </Link>
+                                                            );
+                                                        },
+                                                    )}
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    );
+                                }
+                                return resolved.external ? (
+                                    <a
+                                        key={item.id}
+                                        href={resolved.href}
+                                        onClick={() =>
+                                            setIsMobileMenuOpen(false)
+                                        }
+                                        className="px-3 py-2 rounded-md text-text-primary hover:bg-bg-subtle"
+                                    >
+                                        {item.label}
+                                    </a>
+                                ) : (
+                                    <Link
+                                        key={item.id}
+                                        href={resolved.href}
+                                        onClick={() =>
+                                            setIsMobileMenuOpen(false)
+                                        }
+                                        className={`px-3 py-2 rounded-md hover:bg-bg-subtle ${
+                                            active
+                                                ? "text-brand-primary font-semibold"
+                                                : "text-text-primary"
                                         }`}
                                     >
-                                        <path d="M1 1L5 5L9 1" />
-                                    </svg>
-                                </button>
-                                {openDropdown === "pages" && (
-                                    <div className="pl-6 flex flex-col gap-1 py-1 text-sm text-text-secondary">
-                                        <Link
-                                            href="/faq"
-                                            onClick={() =>
-                                                setIsMobileMenuOpen(false)
-                                            }
-                                            className="py-1 hover:text-brand-primary"
-                                        >
-                                            FAQ
-                                        </Link>
-                                        <Link
-                                            href="/terms"
-                                            onClick={() =>
-                                                setIsMobileMenuOpen(false)
-                                            }
-                                            className="py-1 hover:text-brand-primary"
-                                        >
-                                            Terms of Service
-                                        </Link>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Collapsible: Blog */}
-                            <div>
-                                <button
-                                    type="button"
-                                    onClick={() => toggleDropdown("blog")}
-                                    className="w-full flex items-center justify-between px-3 py-2 rounded-md text-text-primary hover:bg-bg-subtle"
-                                >
-                                    <span>Blog</span>
-                                    <svg
-                                        width="10"
-                                        height="6"
-                                        viewBox="0 0 10 6"
-                                        fill="none"
-                                        className={`stroke-current stroke-[1.5] transition-transform ${
-                                            openDropdown === "blog"
-                                                ? "rotate-180"
-                                                : ""
-                                        }`}
-                                    >
-                                        <path d="M1 1L5 5L9 1" />
-                                    </svg>
-                                </button>
-                                {openDropdown === "blog" && (
-                                    <div className="pl-6 flex flex-col gap-1 py-1 text-sm text-text-secondary">
-                                        <Link
-                                            href="/blog"
-                                            onClick={() =>
-                                                setIsMobileMenuOpen(false)
-                                            }
-                                            className="py-1 hover:text-brand-primary"
-                                        >
-                                            Latest Articles
-                                        </Link>
-                                    </div>
-                                )}
-                            </div>
-
-                            <Link
-                                href="/about"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="px-3 py-2 rounded-md text-text-primary hover:bg-bg-subtle"
-                            >
-                                About Us
-                            </Link>
-                            <Link
-                                href="/contact"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className={`px-3 py-2 rounded-md hover:bg-bg-subtle ${
-                                    isContact
-                                        ? "text-brand-primary font-semibold"
-                                        : "text-text-primary"
-                                }`}
-                            >
-                                Contact
-                            </Link>
+                                        {item.label}
+                                    </Link>
+                                );
+                            })}
                             <Link
                                 href="/wishlist"
                                 onClick={() => setIsMobileMenuOpen(false)}

@@ -1,7 +1,11 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { dashboardLoginUrl } from "@/config/site";
+import { useAppSelector } from "@/store/hooks";
+import { selectSiteChrome } from "@/store/siteChromeSlice";
+import { resolveStorefrontHref } from "@/lib/storefrontLinks";
 
 interface FooterLink {
     label: string;
@@ -32,42 +36,32 @@ const customerCareLinks: FooterLink[] = [
 ];
 
 const sellAndManageLinks: FooterLink[] = [
-    {
-        label: "Become a Seller",
-        href: dashboardLoginUrl("vendor"),
-        external: true,
-    },
+    { label: "Become a Seller", href: "dashboard:vendor", external: true },
     {
         label: "Super Admin Login",
-        href: dashboardLoginUrl("super_admin"),
+        href: "dashboard:super_admin",
         external: true,
     },
-    {
-        label: "Admin Login",
-        href: dashboardLoginUrl("admin"),
-        external: true,
-    },
-    {
-        label: "Moderator Login",
-        href: dashboardLoginUrl("moderator"),
-        external: true,
-    },
+    { label: "Admin Login", href: "dashboard:admin", external: true },
+    { label: "Moderator Login", href: "dashboard:moderator", external: true },
 ];
 
 function FooterNavLink({ link }: { link: FooterLink }) {
     const className =
         "text-text-secondary hover:text-brand-primary text-[14px] transition-colors";
+    const resolved = resolveStorefrontHref(link.href);
+    const external = link.external || resolved.external;
 
-    if (link.external) {
+    if (external) {
         return (
-            <a href={link.href} className={className}>
+            <a href={resolved.href} className={className}>
                 {link.label}
             </a>
         );
     }
 
     return (
-        <Link href={link.href} className={className}>
+        <Link href={resolved.href} className={className}>
             {link.label}
         </Link>
     );
@@ -114,6 +108,19 @@ const weeklySelectedProducts = [
 
 export default function Footer() {
     const currentYear = 2026;
+    const chrome = useAppSelector(selectSiteChrome);
+    const findLinks =
+        chrome.nav.footer_find.length > 0
+            ? chrome.nav.footer_find
+            : findItFastLinks;
+    const careLinks =
+        chrome.nav.footer_care.length > 0
+            ? chrome.nav.footer_care
+            : customerCareLinks;
+    const sellLinks =
+        chrome.nav.footer_sell.length > 0
+            ? chrome.nav.footer_sell
+            : sellAndManageLinks;
 
     return (
         <footer className="w-full bg-bg-surface border-t border-border-default pt-12 pb-6 transition-colors duration-200">
@@ -126,14 +133,14 @@ export default function Footer() {
                         <Link href="/" className="relative mb-4 inline-block h-[50px] w-[180px]">
                             <Image
                                 src="/logo/niyenin-white.png"
-                                alt="Niyenin Logo"
+                                alt={`${chrome.siteName} Logo`}
                                 fill
                                 sizes="180px"
                                 className="object-contain object-left dark:hidden"
                             />
                             <Image
                                 src="/logo/niyenin-dark.png"
-                                alt="Niyenin Logo"
+                                alt={`${chrome.siteName} Logo`}
                                 fill
                                 sizes="180px"
                                 className="hidden object-contain object-left dark:block"
@@ -141,9 +148,8 @@ export default function Footer() {
                         </Link>
 
                         <p className="text-text-secondary text-sm leading-relaxed mb-6 max-w-sm">
-                            Phasellus justo ligula, dictum sit amet tortor eu,
-                            iaculis tristique turpis. Mauris non orci sed est
-                            suscipit tempor ut quis felis. Praesent pellentesque
+                            {chrome.footerBlurb ||
+                                "Phasellus justo ligula, dictum sit amet tortor eu, iaculis tristique turpis."}
                         </p>
 
                         {/* Support Contact */}
@@ -165,10 +171,11 @@ export default function Footer() {
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-brand-primary text-xs font-bold uppercase tracking-wider">
-                                    Got Question? Call Us 24/7!
+                                    {chrome.footerCallout ||
+                                        "Got Question? Call Us 24/7!"}
                                 </span>
                                 <span className="text-text-primary text-[19px] font-bold tracking-tight">
-                                    +1(000)000-000
+                                    {chrome.footerPhone || "+1(000)000-000"}
                                 </span>
                             </div>
                         </div>
@@ -227,8 +234,8 @@ export default function Footer() {
                             Find It Fast
                         </h3>
                         <ul className="flex flex-col gap-3 list-none p-0 m-0">
-                            {findItFastLinks.map((link) => (
-                                <li key={link.label}>
+                            {findLinks.map((link) => (
+                                <li key={"id" in link ? link.id : link.label}>
                                     <FooterNavLink link={link} />
                                 </li>
                             ))}
@@ -241,8 +248,8 @@ export default function Footer() {
                             Customer Care
                         </h3>
                         <ul className="flex flex-col gap-3 list-none p-0 m-0">
-                            {customerCareLinks.map((link) => (
-                                <li key={link.label}>
+                            {careLinks.map((link) => (
+                                <li key={"id" in link ? link.id : link.label}>
                                     <FooterNavLink link={link} />
                                 </li>
                             ))}
@@ -255,8 +262,8 @@ export default function Footer() {
                             Sell & Manage
                         </h3>
                         <ul className="flex flex-col gap-3 list-none p-0 m-0">
-                            {sellAndManageLinks.map((link) => (
-                                <li key={link.label}>
+                            {sellLinks.map((link) => (
+                                <li key={"id" in link ? link.id : link.label}>
                                     <FooterNavLink link={link} />
                                 </li>
                             ))}
@@ -304,102 +311,35 @@ export default function Footer() {
                     <p className="text-text-secondary text-[13px]">
                         Copyright &copy; {currentYear}.{" "}
                         <strong className="text-[#00B207] font-semibold">
-                            Niyenin
+                            {chrome.siteName}
                         </strong>
                         . All Rights Reserved.
                     </p>
 
                     {/* Social Icons */}
                     <div className="flex items-center gap-5 text-text-primary">
-                        {/* Facebook */}
-                        <Link
-                            href="#"
-                            aria-label="Facebook"
-                            className="hover:text-brand-primary transition-colors"
-                        >
-                            <svg
-                                width="18"
-                                height="18"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                            >
-                                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-                            </svg>
-                        </Link>
-                        {/* X (Twitter) */}
-                        <Link
-                            href="#"
-                            aria-label="X Twitter"
-                            className="hover:text-brand-primary transition-colors"
-                        >
-                            <svg
-                                width="17"
-                                height="17"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                            >
-                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                            </svg>
-                        </Link>
-                        {/* YouTube */}
-                        <Link
-                            href="#"
-                            aria-label="YouTube"
-                            className="hover:text-brand-primary transition-colors"
-                        >
-                            <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                            >
-                                <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33zM9.75 15.02V8.48l6.5 3.27-6.5 3.27z" />
-                            </svg>
-                        </Link>
-                        {/* LinkedIn */}
-                        <Link
-                            href="#"
-                            aria-label="LinkedIn"
-                            className="hover:text-brand-primary transition-colors"
-                        >
-                            <svg
-                                width="18"
-                                height="18"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                            >
-                                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z" />
-                                <circle cx="4" cy="4" r="2" />
-                            </svg>
-                        </Link>
-                        {/* Instagram */}
-                        <Link
-                            href="#"
-                            aria-label="Instagram"
-                            className="hover:text-brand-primary transition-colors"
-                        >
-                            <svg
-                                width="18"
-                                height="18"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            >
-                                <rect
-                                    x="2"
-                                    y="2"
-                                    width="20"
-                                    height="20"
-                                    rx="5"
-                                    ry="5"
-                                />
-                                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                            </svg>
-                        </Link>
+                        {(
+                            [
+                                ["facebook", chrome.social.facebook],
+                                ["twitter", chrome.social.twitter],
+                                ["youtube", chrome.social.youtube],
+                                ["linkedin", chrome.social.linkedin],
+                                ["instagram", chrome.social.instagram],
+                            ] as const
+                        ).map(([key, href]) =>
+                            href ? (
+                                <a
+                                    key={key}
+                                    href={href}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    aria-label={key}
+                                    className="hover:text-brand-primary transition-colors capitalize"
+                                >
+                                    {key}
+                                </a>
+                            ) : null,
+                        )}
                     </div>
 
                     {/* Payment Providers */}

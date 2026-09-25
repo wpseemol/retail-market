@@ -7,19 +7,33 @@ import {
     History,
     ImagePlus,
     LayoutGrid,
+    LayoutTemplate,
     Megaphone,
+    Menu,
+    PanelBottom,
     Share2,
     Upload,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
+import {
+    invalidateSiteBrandingCache,
+    applyFaviconHref,
+    FALLBACK_FAVICON,
+    FALLBACK_LOGIN_LOGO,
+} from "@/lib/siteBranding";
 import { useAuthStore } from "@/store/auth";
+import { FooterSettingsPanel } from "@/components/settings/FooterSettingsPanel";
+import { HeaderSettingsPanel } from "@/components/settings/HeaderSettingsPanel";
+import { HomeSectionsPanel } from "@/components/settings/HomeSectionsPanel";
 import {
     SHOP_FACET_VISIBLE_OPTIONS,
     SHOP_PER_PAGE_OPTIONS,
     SHOP_VIEW_OPTIONS,
     siteSettingsFormSchema,
     validateOgImageFile,
+    validateFaviconFile,
+    validateLoginLogoFile,
     type SiteSettingsApiResponse,
     type SiteSettingsFormValues,
 } from "@/lib/validators/siteSettings";
@@ -47,6 +61,9 @@ import { cn } from "@/lib/utils";
 
 type SettingsTabId =
     | "identity"
+    | "header"
+    | "footer"
+    | "home"
     | "shop"
     | "social"
     | "analytics"
@@ -59,6 +76,9 @@ const SETTINGS_TABS: Array<{
     icon: typeof Globe;
 }> = [
     { id: "identity", label: "Identity", icon: Globe },
+    { id: "header", label: "Header", icon: Menu },
+    { id: "footer", label: "Footer", icon: PanelBottom },
+    { id: "home", label: "Home", icon: LayoutTemplate },
     { id: "shop", label: "Shop", icon: LayoutGrid },
     { id: "social", label: "Social", icon: Share2 },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
@@ -210,49 +230,78 @@ function TrackerRow({
     );
 }
 
-// ─── OG Image Dropzone ────────────────────────────────────────────────────────
+// ─── Branding image dropzone ──────────────────────────────────────────────────
 
-function OgImageDropzone({
+function BrandingImageDropzone({
+    title,
+    description,
+    emptyLabel,
     previewUrl,
+    fallbackUrl,
+    previewClassName,
+    imgClassName,
     uploading,
     disabled,
     onPick,
     inputRef,
     onFile,
 }: {
+    title: string;
+    description: string;
+    emptyLabel: string;
     previewUrl?: string | null;
+    /** Shown when no uploaded media yet (current site default). */
+    fallbackUrl?: string | null;
+    previewClassName?: string;
+    imgClassName?: string;
     uploading?: boolean;
     disabled?: boolean;
     onPick: () => void;
     inputRef: React.RefObject<HTMLInputElement | null>;
     onFile: (file: File | null) => void;
 }) {
+    const displayUrl = previewUrl || fallbackUrl || null;
+    const hasCustomUpload = Boolean(previewUrl);
+
     return (
         <div className="overflow-hidden rounded-xl border border-dashed border-border bg-linear-to-br from-muted/40 via-background to-brand-tint/20">
             <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
-                <div className="relative flex h-24 w-40 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background shadow-sm">
-                    {previewUrl ? (
+                <div
+                    className={cn(
+                        "relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background shadow-sm",
+                        previewClassName,
+                    )}
+                >
+                    {displayUrl ? (
                         <img
-                            src={previewUrl}
-                            alt="OG preview"
-                            className="size-full object-cover"
+                            key={displayUrl}
+                            src={displayUrl}
+                            alt={`${title} preview`}
+                            className={cn(
+                                "size-full object-contain p-2",
+                                imgClassName,
+                            )}
                         />
                     ) : (
                         <div className="flex flex-col items-center gap-1 text-muted-foreground">
                             <ImagePlus className="size-6" />
                             <span className="text-[10px] font-medium uppercase tracking-wide">
-                                OG Image
+                                {emptyLabel}
                             </span>
                         </div>
                     )}
                 </div>
                 <div className="min-w-0 flex-1 space-y-2">
                     <div>
-                        <p className="text-sm font-medium">Open Graph image</p>
+                        <p className="text-sm font-medium">{title}</p>
                         <p className="text-xs text-muted-foreground">
-                            Optional. JPEG, PNG, WebP, or GIF · max 1 MB ·
-                            always resized on the server.
+                            {description}
                         </p>
+                        {displayUrl && !hasCustomUpload ? (
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                                Showing current site logo. Upload to replace it.
+                            </p>
+                        ) : null}
                     </div>
                     <input
                         ref={inputRef}
@@ -271,7 +320,7 @@ function OgImageDropzone({
                         <Upload className="size-3.5" />
                         {uploading
                             ? "Uploading…"
-                            : previewUrl
+                            : hasCustomUpload
                               ? "Replace image"
                               : "Upload image"}
                     </Button>
@@ -350,7 +399,14 @@ export function SiteSettingsPage() {
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
     const [ogImageUrl, setOgImageUrl] = useState<string | null>(null);
+    const [faviconUrl, setFaviconUrl] = useState<string | null>(null);
+    const [loginLogoUrl, setLoginLogoUrl] = useState<string | null>(null);
+    const [settingsSnapshot, setSettingsSnapshot] = useState<
+        SiteSettingsApiResponse["settings"] | null
+    >(null);
     const [ogUploading, setOgUploading] = useState(false);
+    const [faviconUploading, setFaviconUploading] = useState(false);
+    const [loginLogoUploading, setLoginLogoUploading] = useState(false);
     const [activeTab, setActiveTab] = useState<SettingsTabId>("identity");
     const [history, setHistory] = useState<SettingsHistoryItem[]>([]);
     const [historyLoading, setHistoryLoading] = useState(false);
@@ -358,6 +414,8 @@ export function SiteSettingsPage() {
     const [clearingHistory, setClearingHistory] = useState(false);
 
     const ogFileRef = useRef<HTMLInputElement>(null);
+    const faviconFileRef = useRef<HTMLInputElement>(null);
+    const loginLogoFileRef = useRef<HTMLInputElement>(null);
 
     const form = useForm<SiteSettingsFormValues>({
         resolver: zodResolver(siteSettingsFormSchema),
@@ -378,7 +436,10 @@ export function SiteSettingsPage() {
                 );
                 if (cancelled) return;
                 const s = data.settings;
+                setSettingsSnapshot(s);
                 setOgImageUrl(s.og_image?.path ?? null);
+                setFaviconUrl(s.favicon?.path ?? null);
+                setLoginLogoUrl(s.login_logo?.path ?? null);
                 form.reset({
                     site_name: s.site_name,
                     site_title: s.site_title,
@@ -495,7 +556,10 @@ export function SiteSettingsPage() {
                 { method: "PATCH", token, body: values },
             );
             const s = data.settings;
+            setSettingsSnapshot(s);
             setOgImageUrl(s.og_image?.path ?? null);
+            setFaviconUrl(s.favicon?.path ?? null);
+            setLoginLogoUrl(s.login_logo?.path ?? null);
             setSaveSuccess("Site settings saved");
         } catch (err) {
             setSubmitError(
@@ -537,6 +601,79 @@ export function SiteSettingsPage() {
         } finally {
             setOgUploading(false);
             if (ogFileRef.current) ogFileRef.current.value = "";
+        }
+    }
+
+    async function onFaviconFile(file: File | null) {
+        if (!token || !file) return;
+        const checked = validateFaviconFile(file);
+        if (!checked.ok) {
+            setSubmitError(checked.message);
+            setSaveSuccess(null);
+            if (faviconFileRef.current) faviconFileRef.current.value = "";
+            return;
+        }
+        setFaviconUploading(true);
+        setSubmitError(null);
+        setSaveSuccess(null);
+        try {
+            const fd = new FormData();
+            fd.append("image", file);
+            const data = await apiUpload<SiteSettingsApiResponse>(
+                "/api/dashboard/site-settings/favicon",
+                fd,
+                { token },
+            );
+            setFaviconUrl(data.settings.favicon?.path ?? null);
+            if (data.settings.favicon?.path) {
+                applyFaviconHref(data.settings.favicon.path);
+            }
+            invalidateSiteBrandingCache();
+            setSaveSuccess("Favicon updated");
+        } catch (err) {
+            setSubmitError(
+                err instanceof ApiError
+                    ? err.message
+                    : "Favicon upload failed",
+            );
+        } finally {
+            setFaviconUploading(false);
+            if (faviconFileRef.current) faviconFileRef.current.value = "";
+        }
+    }
+
+    async function onLoginLogoFile(file: File | null) {
+        if (!token || !file) return;
+        const checked = validateLoginLogoFile(file);
+        if (!checked.ok) {
+            setSubmitError(checked.message);
+            setSaveSuccess(null);
+            if (loginLogoFileRef.current) loginLogoFileRef.current.value = "";
+            return;
+        }
+        setLoginLogoUploading(true);
+        setSubmitError(null);
+        setSaveSuccess(null);
+        try {
+            const fd = new FormData();
+            fd.append("image", file);
+            const data = await apiUpload<SiteSettingsApiResponse>(
+                "/api/dashboard/site-settings/login-logo",
+                fd,
+                { token },
+            );
+            setLoginLogoUrl(data.settings.login_logo?.path ?? null);
+            invalidateSiteBrandingCache();
+            setSaveSuccess("Login logo updated");
+        } catch (err) {
+            setSubmitError(
+                err instanceof ApiError
+                    ? err.message
+                    : "Login logo upload failed",
+            );
+        } finally {
+            setLoginLogoUploading(false);
+            if (loginLogoFileRef.current) loginLogoFileRef.current.value = "";
         }
     }
 
@@ -735,6 +872,102 @@ export function SiteSettingsPage() {
                         </ul>
                     )}
                 </SettingsSection>
+            ) : activeTab === "header" && settingsSnapshot && token ? (
+                <SettingsSection
+                    title="Header & top bar"
+                    description="Contact details, social links, and primary navigation (drag to reorder)."
+                    icon={Menu}
+                >
+                    <HeaderSettingsPanel
+                        token={token}
+                        settings={settingsSnapshot}
+                        onUpdated={setSettingsSnapshot}
+                        onError={(m) => {
+                            setSubmitError(m);
+                            setSaveSuccess(null);
+                        }}
+                        onSuccess={(m) => {
+                            setSaveSuccess(m);
+                            setSubmitError(null);
+                        }}
+                    />
+                    {(submitError || saveSuccess) && (
+                        <p
+                            className={
+                                submitError
+                                    ? "text-sm text-destructive"
+                                    : "text-sm text-brand-primary"
+                            }
+                            role={submitError ? "alert" : "status"}
+                        >
+                            {submitError ?? saveSuccess}
+                        </p>
+                    )}
+                </SettingsSection>
+            ) : activeTab === "footer" && settingsSnapshot && token ? (
+                <SettingsSection
+                    title="Footer"
+                    description="Support blurb, phone, and footer link columns (drag to reorder)."
+                    icon={PanelBottom}
+                >
+                    <FooterSettingsPanel
+                        token={token}
+                        settings={settingsSnapshot}
+                        onUpdated={setSettingsSnapshot}
+                        onError={(m) => {
+                            setSubmitError(m);
+                            setSaveSuccess(null);
+                        }}
+                        onSuccess={(m) => {
+                            setSaveSuccess(m);
+                            setSubmitError(null);
+                        }}
+                    />
+                    {(submitError || saveSuccess) && (
+                        <p
+                            className={
+                                submitError
+                                    ? "text-sm text-destructive"
+                                    : "text-sm text-brand-primary"
+                            }
+                            role={submitError ? "alert" : "status"}
+                        >
+                            {submitError ?? saveSuccess}
+                        </p>
+                    )}
+                </SettingsSection>
+            ) : activeTab === "home" && settingsSnapshot && token ? (
+                <SettingsSection
+                    title="Home page sections"
+                    description="Enable, disable, and reorder storefront home components."
+                    icon={LayoutTemplate}
+                >
+                    <HomeSectionsPanel
+                        token={token}
+                        sections={settingsSnapshot.home_sections ?? []}
+                        onUpdated={setSettingsSnapshot}
+                        onError={(m) => {
+                            setSubmitError(m);
+                            setSaveSuccess(null);
+                        }}
+                        onSuccess={(m) => {
+                            setSaveSuccess(m);
+                            setSubmitError(null);
+                        }}
+                    />
+                    {(submitError || saveSuccess) && (
+                        <p
+                            className={
+                                submitError
+                                    ? "text-sm text-destructive"
+                                    : "text-sm text-brand-primary"
+                            }
+                            role={submitError ? "alert" : "status"}
+                        >
+                            {submitError ?? saveSuccess}
+                        </p>
+                    )}
+                </SettingsSection>
             ) : (
                 <Form {...form}>
                     <form
@@ -745,7 +978,7 @@ export function SiteSettingsPage() {
                         {activeTab === "identity" ? (
                             <SettingsSection
                                 title="Website identity"
-                                description="Site name, page title, meta description, and keywords."
+                                description="Site name, page title, meta description, keywords, login logo, and favicon."
                                 icon={Globe}
                             >
                                 <div className="grid gap-4 sm:grid-cols-2">
@@ -830,6 +1063,42 @@ export function SiteSettingsPage() {
                                         </FormItem>
                                     )}
                                 />
+                                <div className="grid gap-4 lg:grid-cols-2">
+                                    <BrandingImageDropzone
+                                        title="Login logo"
+                                        emptyLabel="Login"
+                                        description="Shown on the dashboard sign-in screen. JPEG, PNG, WebP, or GIF · max 1 MB · always resized on the server."
+                                        previewUrl={loginLogoUrl}
+                                        fallbackUrl={FALLBACK_LOGIN_LOGO}
+                                        previewClassName="h-16 w-56 bg-brand-primary"
+                                        uploading={loginLogoUploading}
+                                        disabled={form.formState.isSubmitting}
+                                        onPick={() =>
+                                            loginLogoFileRef.current?.click()
+                                        }
+                                        inputRef={loginLogoFileRef}
+                                        onFile={(file) =>
+                                            void onLoginLogoFile(file)
+                                        }
+                                    />
+                                    <BrandingImageDropzone
+                                        title="Favicon"
+                                        emptyLabel="Favicon"
+                                        description="Browser tab icon for the dashboard and storefront. JPEG, PNG, WebP, or GIF · max 1 MB · always resized on the server."
+                                        previewUrl={faviconUrl}
+                                        fallbackUrl={FALLBACK_FAVICON}
+                                        previewClassName="size-16 bg-muted/40"
+                                        uploading={faviconUploading}
+                                        disabled={form.formState.isSubmitting}
+                                        onPick={() =>
+                                            faviconFileRef.current?.click()
+                                        }
+                                        inputRef={faviconFileRef}
+                                        onFile={(file) =>
+                                            void onFaviconFile(file)
+                                        }
+                                    />
+                                </div>
                             </SettingsSection>
                         ) : null}
 
@@ -1077,8 +1346,12 @@ export function SiteSettingsPage() {
                                 description="Open Graph and Twitter/X card metadata for link previews."
                                 icon={Share2}
                             >
-                                <OgImageDropzone
+                                <BrandingImageDropzone
+                                    title="Open Graph image"
+                                    emptyLabel="OG Image"
+                                    description="Optional. JPEG, PNG, WebP, or GIF · max 1 MB · always resized on the server."
                                     previewUrl={ogImageUrl}
+                                    previewClassName="h-24 w-40"
                                     uploading={ogUploading}
                                     disabled={isSubmitting}
                                     inputRef={ogFileRef}

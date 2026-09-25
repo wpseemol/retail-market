@@ -139,6 +139,134 @@ export const updateSiteSettingsSchema = z.object({
   shop_brands_visible: z.coerce.number().int().min(1).max(50).optional(),
   shop_see_all_label: withSafeInput(z.string().trim().min(1).max(40)).optional(),
   shop_show_less_label: withSafeInput(z.string().trim().min(1).max(40)).optional(),
+
+  topbar_email: z
+    .union([withSafeInput(z.string().trim().max(160)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+  topbar_phone: z
+    .union([withSafeInput(z.string().trim().max(40)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+  footer_blurb: z
+    .union([withSafeInput(z.string().trim().max(500)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+  footer_phone: z
+    .union([withSafeInput(z.string().trim().max(40)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+  footer_callout: z
+    .union([withSafeInput(z.string().trim().max(120)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+  social_facebook: z
+    .union([withSafeInput(z.string().trim().max(300)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+  social_twitter: z
+    .union([withSafeInput(z.string().trim().max(300)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+  social_youtube: z
+    .union([withSafeInput(z.string().trim().max(300)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+  social_linkedin: z
+    .union([withSafeInput(z.string().trim().max(300)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+  social_instagram: z
+    .union([withSafeInput(z.string().trim().max(300)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+});
+
+export const updateSiteChromeSchema = z.object({
+  topbar_email: z
+    .union([withSafeInput(z.string().trim().max(160)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+  topbar_phone: z
+    .union([withSafeInput(z.string().trim().max(40)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+  footer_blurb: z
+    .union([withSafeInput(z.string().trim().max(500)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+  footer_phone: z
+    .union([withSafeInput(z.string().trim().max(40)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+  footer_callout: z
+    .union([withSafeInput(z.string().trim().max(120)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+  social_facebook: z
+    .union([withSafeInput(z.string().trim().max(300)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+  social_twitter: z
+    .union([withSafeInput(z.string().trim().max(300)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+  social_youtube: z
+    .union([withSafeInput(z.string().trim().max(300)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+  social_linkedin: z
+    .union([withSafeInput(z.string().trim().max(300)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+  social_instagram: z
+    .union([withSafeInput(z.string().trim().max(300)), z.literal(""), z.null()])
+    .optional()
+    .transform(emptyToNull),
+});
+
+const navMenuEnum = z.enum([
+  "header",
+  "footer_find",
+  "footer_care",
+  "footer_sell",
+]);
+
+export const createSiteNavItemSchema = z.object({
+  menu: navMenuEnum,
+  label: withSafeInput(z.string().trim().min(1).max(120)),
+  href: withSafeInput(z.string().trim().min(1).max(500)),
+  external: z.boolean().optional().default(false),
+  is_enabled: z.boolean().optional().default(true),
+  parent_id: z
+    .union([z.string().regex(/^\d+$/), z.null()])
+    .optional()
+    .nullable(),
+});
+
+export const updateSiteNavItemSchema = z.object({
+  label: withSafeInput(z.string().trim().min(1).max(120)).optional(),
+  href: withSafeInput(z.string().trim().min(1).max(500)).optional(),
+  external: z.boolean().optional(),
+  is_enabled: z.boolean().optional(),
+  parent_id: z
+    .union([z.string().regex(/^\d+$/), z.null()])
+    .optional()
+    .nullable(),
+});
+
+export const reorderSiteNavSchema = z.object({
+  menu: navMenuEnum,
+  ordered_ids: z.array(z.string().regex(/^\d+$/)).min(1),
+});
+
+export const reorderHomeSectionsSchema = z.object({
+  ordered_ids: z.array(z.string().regex(/^\d+$/)).min(1),
+});
+
+export const updateHomeSectionSchema = z.object({
+  is_enabled: z.boolean().optional(),
+  label: withSafeInput(z.string().trim().min(1).max(120)).optional(),
 });
 
 export type UpdateSiteSettingsInput = z.infer<typeof updateSiteSettingsSchema>;

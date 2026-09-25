@@ -182,6 +182,8 @@ model Media {
   categoryImages      Category[]       @relation("CategoryImage")
   brandImages         Brand[]          @relation("BrandImage")
   siteSettingsOg      SiteSettings[]   @relation("SiteSettingsOgImage")
+  siteSettingsFavicon SiteSettings[]   @relation("SiteSettingsFavicon")
+  siteSettingsLogin   SiteSettings[]   @relation("SiteSettingsLoginLogo")
   productThumbnails   Product[]        @relation("ProductThumbnail")
   variantImages       ProductVariant[] @relation("VariantImage")
   vendorLogos         Vendor[]         @relation("VendorLogo")
@@ -719,6 +721,10 @@ model SiteSettings {
   og_title       String?  @db.VarChar(160)
   og_description String?  @db.VarChar(500)
   og_image_id    BigInt?  @unique @db.UnsignedBigInt
+  /// Browser tab / bookmark icon.
+  favicon_id     BigInt?  @unique @db.UnsignedBigInt
+  /// Logo shown on dashboard (and storefront) login screens.
+  login_logo_id  BigInt?  @unique @db.UnsignedBigInt
 
   twitter_title       String? @db.VarChar(160)
   twitter_description String? @db.VarChar(500)
@@ -757,12 +763,72 @@ model SiteSettings {
   /// Sidebar collapse button label.
   shop_show_less_label    String @default("Show less") @db.VarChar(40)
 
+  /// Top bar + footer chrome (storefront header/footer).
+  topbar_email     String? @db.VarChar(160)
+  topbar_phone     String? @db.VarChar(40)
+  footer_blurb     String? @db.VarChar(500)
+  footer_phone     String? @db.VarChar(40)
+  footer_callout   String? @db.VarChar(120)
+  social_facebook  String? @db.VarChar(300)
+  social_twitter   String? @db.VarChar(300)
+  social_youtube   String? @db.VarChar(300)
+  social_linkedin  String? @db.VarChar(300)
+  social_instagram String? @db.VarChar(300)
+
   updated_at DateTime @updatedAt
 
-  og_image Media? @relation("SiteSettingsOgImage", fields: [og_image_id], references: [id], onDelete: SetNull)
-  history  SiteSettingsHistory[]
+  og_image    Media? @relation("SiteSettingsOgImage", fields: [og_image_id], references: [id], onDelete: SetNull)
+  favicon     Media? @relation("SiteSettingsFavicon", fields: [favicon_id], references: [id], onDelete: SetNull)
+  login_logo  Media? @relation("SiteSettingsLoginLogo", fields: [login_logo_id], references: [id], onDelete: SetNull)
+  history     SiteSettingsHistory[]
+  nav_items   SiteNavItem[]
+  home_sections HomeSection[]
 
   @@map("site_settings")
+}
+
+/// Header / footer menu links (ordered; drag-drop position in dashboard).
+model SiteNavItem {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  settings_id Int     @default(1)
+  /// header | footer_find | footer_care | footer_sell
+  menu       String   @db.VarChar(32)
+  label      String   @db.VarChar(120)
+  href       String   @db.VarChar(500)
+  external   Boolean  @default(false)
+  position   Int      @default(0)
+  is_enabled Boolean  @default(true)
+  /// Optional parent for dropdown children (header only).
+  parent_id  BigInt?  @db.UnsignedBigInt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  settings SiteSettings @relation(fields: [settings_id], references: [id], onDelete: Cascade)
+  parent   SiteNavItem?  @relation("SiteNavChildren", fields: [parent_id], references: [id], onDelete: Cascade)
+  children SiteNavItem[] @relation("SiteNavChildren")
+
+  @@index([settings_id, menu, position])
+  @@index([parent_id])
+  @@map("site_nav_items")
+}
+
+/// Home page section visibility + order (component-wise).
+model HomeSection {
+  id          BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  settings_id Int      @default(1)
+  /// Stable key matching frontend component (hero, featured, …).
+  key         String   @db.VarChar(64)
+  label       String   @db.VarChar(120)
+  position    Int      @default(0)
+  is_enabled  Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  settings SiteSettings @relation(fields: [settings_id], references: [id], onDelete: Cascade)
+
+  @@unique([settings_id, key])
+  @@index([settings_id, position])
+  @@map("home_sections")
 }
 
 /// Audit trail for site settings create / edit / OG image / clear.

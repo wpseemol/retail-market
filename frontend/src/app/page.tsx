@@ -9,21 +9,45 @@ import LatestProductsSection from "@/components/home/LatestProducts/LatestProduc
 import ProductGroupsSection from "@/components/home/ProductGroupsSection";
 import PromoBannerSlider from "@/components/home/PromoBannerSlider";
 import TopBrandsSection from "@/components/home/TopBrandsSection";
+import { getSiteSettings } from "@/lib/siteSettings";
+import type { ReactNode } from "react";
 
-export default function Home() {
-    return (
-        <main>
-            <HomeWelcomeModal />
-            <HeroBanner />
-            <FeaturedSection />
-            <DealsBannerSection />
-            <ProductGroupsSection />
-            <PromoBannerSlider />
-            <BestSellerSection />
-            <LatestProductsSection />
-            <DealsOfTheDaySection />
-            <LaptopRepairBanner />
-            <TopBrandsSection />
-        </main>
-    );
+const HOME_SECTION_MAP: Record<string, ReactNode> = {
+  welcome_modal: <HomeWelcomeModal />,
+  hero: <HeroBanner />,
+  featured: <FeaturedSection />,
+  deals_banner: <DealsBannerSection />,
+  product_groups: <ProductGroupsSection />,
+  promo_slider: <PromoBannerSlider />,
+  best_sellers: <BestSellerSection />,
+  latest_products: <LatestProductsSection />,
+  deals_of_day: <DealsOfTheDaySection />,
+  laptop_repair: <LaptopRepairBanner />,
+  top_brands: <TopBrandsSection />,
+};
+
+const DEFAULT_ORDER = Object.keys(HOME_SECTION_MAP);
+
+export default async function Home() {
+  const settings = await getSiteSettings();
+  const sections =
+    settings.home_sections?.filter((s) => s.is_enabled).sort(
+      (a, b) => a.position - b.position,
+    ) ?? DEFAULT_ORDER.map((key, position) => ({
+      id: key,
+      key,
+      label: key,
+      position,
+      is_enabled: true,
+    }));
+
+  return (
+    <main>
+      {sections.map((section) => {
+        const node = HOME_SECTION_MAP[section.key];
+        if (!node) return null;
+        return <div key={section.id || section.key}>{node}</div>;
+      })}
+    </main>
+  );
 }

@@ -10,6 +10,7 @@ import AuthHydrator from "@/components/providers/AuthHydrator";
 import AuthSessionProvider from "@/components/providers/AuthSessionProvider";
 import { AnalyticsPixels } from "@/components/providers/AnalyticsPixels";
 import { VisitBeacon } from "@/components/providers/VisitBeacon";
+import { SiteChromeHydrator } from "@/components/providers/SiteChromeHydrator";
 import { absoluteUrl, siteConfig } from "@/config/site";
 import { getSiteSettings } from "@/lib/siteSettings";
 
@@ -79,8 +80,8 @@ export async function generateMetadata(): Promise<Metadata> {
             creator: twitterHandle,
         },
         icons: {
-            icon: siteConfig.logo.dark,
-            apple: siteConfig.logo.dark,
+            icon: settings.favicon?.path || siteConfig.logo.dark,
+            apple: settings.favicon?.path || siteConfig.logo.dark,
         },
         robots: {
             index: true,
@@ -114,6 +115,22 @@ export default async function RootLayout({
     children,
 }: LayoutProps<"/">) {
     const settings = await getSiteSettings();
+    const chromePayload = {
+        siteName: settings.site_name,
+        topbarEmail: settings.chrome?.topbar_email ?? null,
+        topbarPhone: settings.chrome?.topbar_phone ?? null,
+        footerBlurb: settings.chrome?.footer_blurb ?? null,
+        footerPhone: settings.chrome?.footer_phone ?? null,
+        footerCallout: settings.chrome?.footer_callout ?? null,
+        social: settings.chrome?.social,
+        nav: {
+            header: settings.nav?.header ?? [],
+            footer_find: settings.nav?.footer_find ?? [],
+            footer_care: settings.nav?.footer_care ?? [],
+            footer_sell: settings.nav?.footer_sell ?? [],
+        },
+        homeSections: settings.home_sections ?? [],
+    };
 
     return (
         <html
@@ -130,6 +147,7 @@ export default async function RootLayout({
                     <StoreProvider>
                         <AuthSessionProvider>
                             <AuthHydrator />
+                            <SiteChromeHydrator payload={chromePayload} />
                             <TopBar />
                             <Header />
                             {children}

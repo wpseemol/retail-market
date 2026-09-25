@@ -1,7 +1,15 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
+import { useAppSelector } from "@/store/hooks";
+import { selectSiteChrome } from "@/store/siteChromeSlice";
 
 export default function TopBar() {
+    const chrome = useAppSelector(selectSiteChrome);
+    const email = chrome.topbarEmail || "retailmarket@gmail.com";
+    const phone = chrome.topbarPhone || "+1(213)628-3034";
+    const social = chrome.social;
     return (
         <header className="w-full h-12 bg-bg-base border-b border-border-default transition-colors duration-200">
             <div className="container h-full mx-auto flex items-center justify-between gap-2 overflow-hidden">
@@ -123,10 +131,10 @@ export default function TopBar() {
                             className="shrink-0"
                         />
                         <a
-                            href="mailto:retailmarket@gmail.com"
+                            href={`mailto:${email}`}
                             className="text-[12px] leading-[120%] text-text-secondary hover:text-brand-primary transition-colors"
                         >
-                            retailmarket@gmail.com
+                            {email}
                         </a>
                     </div>
 
@@ -142,10 +150,10 @@ export default function TopBar() {
                             className="shrink-0"
                         />
                         <a
-                            href="tel:+12136283034"
+                            href={`tel:${phone.replace(/[^\d+]/g, "")}`}
                             className="text-[12px] leading-[120%] text-text-secondary hover:text-brand-primary transition-colors"
                         >
-                            +1(213)628-3034
+                            {phone}
                         </a>
                     </div>
 
@@ -193,85 +201,54 @@ export default function TopBar() {
 
                     {/* Social Media Icons — hidden on narrow phones to avoid overflow */}
                     <div className="hidden sm:flex items-center gap-2">
-                        <a
-                            href="https://facebook.com"
-                            target="_blank"
-                            rel="noreferrer"
-                            aria-label="Facebook"
-                            className="opacity-80 hover:opacity-100 hover:scale-110 transition-transform"
-                        >
-                            <Image
-                                src="/icons/fb.svg"
-                                alt="Facebook"
-                                width={16}
-                                height={16}
-                                className="brightness-0 dark:invert"
-                            />
-                        </a>
-
-                        <a
-                            href="https://x.com"
-                            target="_blank"
-                            rel="noreferrer"
-                            aria-label="Twitter X"
-                            className="opacity-80 hover:opacity-100 hover:scale-110 transition-transform"
-                        >
-                            <Image
-                                src="/icons/Twitter X.svg"
-                                alt="Twitter X"
-                                width={16}
-                                height={16}
-                                className="brightness-0 dark:invert"
-                            />
-                        </a>
-
-                        <a
-                            href="https://youtube.com"
-                            target="_blank"
-                            rel="noreferrer"
-                            aria-label="YouTube"
-                            className="opacity-80 hover:opacity-100 hover:scale-110 transition-transform"
-                        >
-                            <Image
-                                src="/icons/youtube.svg"
-                                alt="YouTube"
-                                width={16}
-                                height={16}
-                                className="brightness-0 dark:invert"
-                            />
-                        </a>
-
-                        <a
-                            href="https://linkedin.com"
-                            target="_blank"
-                            rel="noreferrer"
-                            aria-label="LinkedIn"
-                            className="opacity-80 hover:opacity-100 hover:scale-110 transition-transform"
-                        >
-                            <Image
-                                src="/icons/linkedIn.svg"
-                                alt="LinkedIn"
-                                width={16}
-                                height={16}
-                                className="brightness-0 dark:invert"
-                            />
-                        </a>
-
-                        <a
-                            href="https://instagram.com"
-                            target="_blank"
-                            rel="noreferrer"
-                            aria-label="Instagram"
-                            className="opacity-80 hover:opacity-100 hover:scale-110 transition-transform"
-                        >
-                            <Image
-                                src="/icons/insta.svg"
-                                alt="Instagram"
-                                width={16}
-                                height={16}
-                                className="brightness-0 dark:invert"
-                            />
-                        </a>
+                        {(
+                            [
+                                {
+                                    href: social.facebook,
+                                    icon: "/icons/fb.svg",
+                                    label: "Facebook",
+                                },
+                                {
+                                    href: social.twitter,
+                                    icon: "/icons/Twitter X.svg",
+                                    label: "Twitter X",
+                                },
+                                {
+                                    href: social.youtube,
+                                    icon: "/icons/youtube.svg",
+                                    label: "YouTube",
+                                },
+                                {
+                                    href: social.linkedin,
+                                    icon: "/icons/linkedIn.svg",
+                                    label: "LinkedIn",
+                                },
+                                {
+                                    href: social.instagram,
+                                    icon: "/icons/insta.svg",
+                                    label: "Instagram",
+                                },
+                            ] as const
+                        ).map((item) =>
+                            item.href ? (
+                                <a
+                                    key={item.label}
+                                    href={item.href}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    aria-label={item.label}
+                                    className="opacity-80 hover:opacity-100 hover:scale-110 transition-transform"
+                                >
+                                    <Image
+                                        src={item.icon}
+                                        alt={item.label}
+                                        width={16}
+                                        height={16}
+                                        className="brightness-0 dark:invert"
+                                    />
+                                </a>
+                            ) : null,
+                        )}
                     </div>
                 </div>
             </div>

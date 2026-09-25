@@ -2,6 +2,7 @@ import { type FormEvent, useMemo, useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { ApiError, apiFetch, type StaffRole, type StaffUser } from "@/lib/api";
+import { useLoginBranding } from "@/lib/siteBranding";
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { token, refreshToken, user, setSession } = useAuthStore();
+  const { logoUrl, siteName } = useLoginBranding();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -91,8 +93,8 @@ export function LoginPage() {
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <div className="flex h-16 w-full items-center justify-center rounded-md bg-brand-primary px-4">
             <img
-              src="/logo/niyenin-white.png"
-              alt="Niyenin"
+              src={logoUrl}
+              alt={siteName}
               className="h-10 w-auto"
             />
           </div>

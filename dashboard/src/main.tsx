@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { SiteBrandingHydrator } from "@/lib/siteBranding";
 import App from "./App";
 import "./index.css";
 
@@ -11,6 +12,7 @@ createRoot(document.getElementById("root")!).render(
     <ThemeProvider>
       <TooltipProvider>
         <BrowserRouter>
+          <SiteBrandingHydrator />
           <App />
         </BrowserRouter>
       </TooltipProvider>
