@@ -13,6 +13,7 @@ import { VisitBeacon } from "@/components/providers/VisitBeacon";
 import { SiteChromeHydrator } from "@/components/providers/SiteChromeHydrator";
 import { absoluteUrl, siteConfig } from "@/config/site";
 import { getSiteSettings } from "@/lib/siteSettings";
+import { getCategories } from "@/lib/categories";
 
 const poppins = Poppins({
     variable: "--font-poppins",
@@ -115,6 +116,7 @@ export default async function RootLayout({
     children,
 }: LayoutProps<"/">) {
     const settings = await getSiteSettings();
+    const categories = await getCategories();
     const chromePayload = {
         siteName: settings.site_name,
         topbarEmail: settings.chrome?.topbar_email ?? null,
@@ -149,7 +151,7 @@ export default async function RootLayout({
                             <AuthHydrator />
                             <SiteChromeHydrator payload={chromePayload} />
                             <TopBar />
-                            <Header />
+                            <Header categories={categories} />
                             {children}
                             <Footer />
                         </AuthSessionProvider>

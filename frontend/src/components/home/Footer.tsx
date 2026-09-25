@@ -235,7 +235,13 @@ export default function Footer() {
                         </h3>
                         <ul className="flex flex-col gap-3 list-none p-0 m-0">
                             {findLinks.map((link) => (
-                                <li key={"id" in link ? link.id : link.label}>
+                                <li
+                                    key={
+                                        "id" in link && typeof link.id === "string"
+                                            ? link.id
+                                            : link.label
+                                    }
+                                >
                                     <FooterNavLink link={link} />
                                 </li>
                             ))}
@@ -249,7 +255,13 @@ export default function Footer() {
                         </h3>
                         <ul className="flex flex-col gap-3 list-none p-0 m-0">
                             {careLinks.map((link) => (
-                                <li key={"id" in link ? link.id : link.label}>
+                                <li
+                                    key={
+                                        "id" in link && typeof link.id === "string"
+                                            ? link.id
+                                            : link.label
+                                    }
+                                >
                                     <FooterNavLink link={link} />
                                 </li>
                             ))}
@@ -263,7 +275,13 @@ export default function Footer() {
                         </h3>
                         <ul className="flex flex-col gap-3 list-none p-0 m-0">
                             {sellLinks.map((link) => (
-                                <li key={"id" in link ? link.id : link.label}>
+                                <li
+                                    key={
+                                        "id" in link && typeof link.id === "string"
+                                            ? link.id
+                                            : link.label
+                                    }
+                                >
                                     <FooterNavLink link={link} />
                                 </li>
                             ))}

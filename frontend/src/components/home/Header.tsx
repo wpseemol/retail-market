@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import PromoAdSlider from "./PromoAdSlider";
 import AccountMenu from "./AccountMenu";
+import CategoryBrowseMenu from "./CategoryBrowseMenu";
 import { useAppSelector } from "@/store/hooks";
 import { formatPrice } from "@/lib/money";
 import {
@@ -15,6 +16,7 @@ import {
 } from "@/store/cartSlice";
 import { selectHeaderNav } from "@/store/siteChromeSlice";
 import { resolveStorefrontHref } from "@/lib/storefrontLinks";
+import type { PublicCategory } from "@/lib/categories";
 
 const FALLBACK_HEADER_NAV = [
     { id: "home", label: "Home", href: "/", external: false, position: 0 },
@@ -75,7 +77,11 @@ const FALLBACK_HEADER_NAV = [
     },
 ];
 
-export default function Header() {
+export default function Header({
+    categories = [],
+}: {
+    categories?: PublicCategory[];
+}) {
     const pathname = usePathname();
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
@@ -329,51 +335,7 @@ export default function Header() {
             >
                 <div className="container mx-auto flex items-center justify-between gap-4 px-6">
                     {/* Browse Categories Button */}
-                    <button
-                        type="button"
-                        className="flex items-center gap-2.5 bg-brand-primary hover:bg-brand-hover text-white text-[14px] font-semibold px-4 py-2 rounded transition-colors cursor-pointer"
-                    >
-                        <svg
-                            width="18"
-                            height="18"
-                            viewBox="0 0 18 18"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="shrink-0"
-                            aria-hidden="true"
-                        >
-                            {/* Left Column (3 circles) */}
-                            <circle cx="5" cy="4" r="1.6" fill="currentColor" />
-                            <circle cx="5" cy="9" r="1.6" fill="currentColor" />
-                            <circle
-                                cx="5"
-                                cy="14"
-                                r="1.6"
-                                fill="currentColor"
-                            />
-
-                            {/* Right Column (3 circles) */}
-                            <circle
-                                cx="13"
-                                cy="4"
-                                r="1.6"
-                                fill="currentColor"
-                            />
-                            <circle
-                                cx="13"
-                                cy="9"
-                                r="1.6"
-                                fill="currentColor"
-                            />
-                            <circle
-                                cx="13"
-                                cy="14"
-                                r="1.6"
-                                fill="currentColor"
-                            />
-                        </svg>
-                        <span>Browse Category</span>
-                    </button>
+                    <CategoryBrowseMenu categories={categories} />
 
                     {/* Desktop Nav Links */}
                     <ul className="flex items-center gap-6 xl:gap-8 text-[14px] font-medium list-none m-0 p-0">
@@ -533,41 +495,11 @@ export default function Header() {
                         </div>
 
                         {/* Category Button in Mobile */}
-                        <button
-                            type="button"
-                            className="w-full flex items-center justify-center gap-2 bg-brand-primary text-white text-sm font-semibold py-2.5 rounded"
-                        >
-                            <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                fill="currentColor"
-                            >
-                                <rect x="1" y="1" width="5" height="5" rx="1" />
-                                <rect
-                                    x="10"
-                                    y="1"
-                                    width="5"
-                                    height="5"
-                                    rx="1"
-                                />
-                                <rect
-                                    x="1"
-                                    y="10"
-                                    width="5"
-                                    height="5"
-                                    rx="1"
-                                />
-                                <rect
-                                    x="10"
-                                    y="10"
-                                    width="5"
-                                    height="5"
-                                    rx="1"
-                                />
-                            </svg>
-                            <span>Browse Category</span>
-                        </button>
+                        <CategoryBrowseMenu
+                            categories={categories}
+                            variant="mobile"
+                            onNavigate={() => setIsMobileMenuOpen(false)}
+                        />
 
                         {/* Navigation List */}
                         <nav className="flex flex-col gap-1 text-[15px] font-medium">

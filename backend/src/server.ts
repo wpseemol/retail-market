@@ -21,6 +21,7 @@ import { publicProductsRouter } from "./routes/publicProducts.js";
 import { publicShopsRouter } from "./routes/publicShops.js";
 import { publicSiteSettingsRouter } from "./routes/publicSiteSettings.js";
 import { publicAnalyticsRouter } from "./routes/publicAnalytics.js";
+import { publicCategoriesRouter } from "./routes/publicCategories.js";
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use("/api/site-settings", publicSiteSettingsRouter);
 app.use("/api/analytics", publicAnalyticsRouter);
 app.use("/api/shops", publicShopsRouter);
 app.use("/api/products", publicProductsRouter);
+app.use("/api/categories", publicCategoriesRouter);
 app.use("/api/dashboard/auth", dashboardAuthRouter);
 app.use("/api/dashboard/users", dashboardUsersRouter);
 app.use("/api/dashboard/shops", dashboardVendorsRouter);

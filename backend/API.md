@@ -72,6 +72,7 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/analytics` | `routes/publicAnalytics.ts` | Public |
 | `/api/shops` | `routes/publicShops.ts` | Public |
 | `/api/products` | `routes/publicProducts.ts` | Public |
+| `/api/categories` | `routes/publicCategories.ts` | Public |
 | `/api/dashboard/auth` | `routes/dashboardAuth.ts` | Staff |
 | `/api/dashboard/users` | `routes/dashboardUsers.ts` | `super_admin` |
 | `/api/dashboard/overview` | `routes/dashboardOverview.ts` | `super_admin`, `admin` |
@@ -140,6 +141,16 @@ Query: `page` (default 1), `limit?` (falls back to store `products_per_page`, ma
 **404** if slug missing or store not active.
 
 Dashboard customize: `PATCH /api/dashboard/shops/:idOrSlug` + `POST /:idOrSlug/banner` (multipart field **`banner`** · max **5 MB** · resized). Id or **slug** accepted.
+
+---
+
+---
+
+## Public categories — `/api/categories`
+
+No auth. Active root categories with nested children for the storefront header mega-menu.
+
+`GET /api/categories` → `{ categories: [{ id, name, slug, icon, image, products_count, children: [{ id, name, slug, products_count }] }] }`
 
 ---
 
