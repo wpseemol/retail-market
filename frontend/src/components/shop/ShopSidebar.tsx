@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import { SHOP_COLORS } from "./data";
 import type { ShopFacetOption } from "./ShopPageContent";
+import { formatPrice } from "@/lib/money";
 
 interface ShopSidebarProps {
   searchQuery: string;
@@ -132,7 +133,7 @@ export default function ShopSidebar({
         <p className="text-[14px] text-text-secondary">
           Price:{" "}
           <span className="text-text-primary font-medium">
-            ${priceMin} — ${priceMax}
+            {formatPrice(priceMin)} — {formatPrice(priceMax)}
           </span>
         </p>
       </section>

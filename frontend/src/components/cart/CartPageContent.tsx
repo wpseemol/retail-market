@@ -16,13 +16,7 @@ import {
     selectCartTotal,
     selectCouponCode,
 } from "@/store/cartSlice";
-
-function formatPrice(value: number) {
-    return value.toLocaleString("en-US", {
-        style: "currency",
-        currency: "USD",
-    });
-}
+import { formatPrice } from "@/lib/money";
 
 function CartBreadcrumb() {
     return (

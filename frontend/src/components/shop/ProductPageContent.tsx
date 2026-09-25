@@ -15,6 +15,7 @@ import {
 import type { ProductTabId, ShopProduct } from "./types";
 import { useAppDispatch } from "@/store/hooks";
 import { addToCart } from "@/store/cartSlice";
+import { formatPrice, formatPriceRange } from "@/lib/money";
 
 interface ProductPageContentProps {
     product: ShopProduct;
@@ -83,13 +84,6 @@ const SHARE_LINKS = [
     { label: "X", color: "#000000", href: "#" },
     { label: "Pinterest", color: "#E60023", href: "#" },
 ] as const;
-
-function formatPrice(value: number) {
-    return value.toLocaleString("en-US", {
-        style: "currency",
-        currency: "USD",
-    });
-}
 
 function StarRating({
     rating,
@@ -332,9 +326,7 @@ export default function ProductPageContent({
                         />
 
                         <p className="text-[22px] sm:text-[24px] font-bold text-brand-primary m-0">
-                            {product.priceMax > product.priceMin
-                                ? `${formatPrice(product.priceMin)} - ${formatPrice(product.priceMax)}`
-                                : formatPrice(product.priceMin)}
+                            {formatPriceRange(product.priceMin, product.priceMax)}
                         </p>
 
                         <p className="text-[13px] text-text-secondary m-0">

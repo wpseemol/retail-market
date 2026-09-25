@@ -16,7 +16,7 @@ export const siteConfig = {
     dashboardUrl:
         process.env.NEXT_PUBLIC_DASHBOARD_URL?.replace(/\/$/, "") ??
         "http://localhost:5173",
-    locale: "en_US",
+    locale: "en_BD",
     language: "en",
     keywords: [
         "Niyenin",

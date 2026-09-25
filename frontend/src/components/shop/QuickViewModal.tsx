@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { formatPrice } from "@/lib/money";
 import { SHOP_BRANDS, SHOP_CATEGORIES } from "./data";
 import type { ShopProduct } from "./types";
 import { useAppDispatch } from "@/store/hooks";
@@ -56,13 +57,6 @@ function ProductImage({
             aria-hidden={ariaHidden}
         />
     );
-}
-
-function formatPrice(value: number) {
-    return value.toLocaleString("en-US", {
-        style: "currency",
-        currency: "USD",
-    });
 }
 
 function StarRating({

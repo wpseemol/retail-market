@@ -23,7 +23,7 @@ interface PromoSlide {
 const promoSlides: PromoSlide[] = [
     {
         id: 1,
-        price: "$106.00",
+        price: "৳23,640",
         tagline: "ALL-NEW-SPORT",
         highlightText: "5K",
         subHighlight: "STARTING AT",
@@ -37,7 +37,7 @@ const promoSlides: PromoSlide[] = [
     },
     {
         id: 2,
-        price: "$299.99",
+        price: "৳35,999",
         tagline: "PRO WORKSPACE",
         highlightText: "4K",
         subHighlight: "STARTING AT",
@@ -51,7 +51,7 @@ const promoSlides: PromoSlide[] = [
     },
     {
         id: 3,
-        price: "$450.00",
+        price: "৳54,000",
         tagline: "ULTRA POWER",
         highlightText: "12th",
         subHighlight: "GEN INTEL",

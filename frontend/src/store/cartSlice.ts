@@ -21,7 +21,7 @@ const DEMO_CART_ITEMS: CartItem[] = [
         name: 'Fire HD 10 tablet, 10.1", 1080p Full HD',
         image: "/images/best_seller_product (1).png",
         alt: "Fire HD 10 tablet",
-        price: 30.52,
+        price: 3662,
         quantity: 2,
     },
     {
@@ -29,7 +29,7 @@ const DEMO_CART_ITEMS: CartItem[] = [
         name: "Toaster 2 Slice Stainless Steel Extra Wide Slot",
         image: "/images/best_seller_product (2).png",
         alt: "Toaster 2 Slice Stainless Steel",
-        price: 30.52,
+        price: 3662,
         quantity: 1,
     },
     {
@@ -37,7 +37,7 @@ const DEMO_CART_ITEMS: CartItem[] = [
         name: "HP M32f 32 Inch FHD LED Black Monitor",
         image: "/images/best_seller_product (3).png",
         alt: "HP M32f 32 Inch FHD LED Monitor",
-        price: 30.52,
+        price: 3662,
         quantity: 3,
     },
 ];

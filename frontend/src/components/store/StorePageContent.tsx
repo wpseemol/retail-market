@@ -4,13 +4,7 @@ import type {
   StorefrontStore,
   StorefrontTheme,
 } from "@/lib/stores";
-
-function formatPrice(value: number) {
-  return value.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-  });
-}
+import { formatPrice } from "@/lib/money";
 
 function StoreBreadcrumb({ name }: { name: string }) {
   return (

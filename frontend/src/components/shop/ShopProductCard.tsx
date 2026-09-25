@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import type { ShopProduct, ShopViewMode } from "./types";
 import { useAppDispatch } from "@/store/hooks";
 import { addToCart } from "@/store/cartSlice";
+import { formatPriceRange } from "@/lib/money";
 
 function ProductThumb({
   src,
@@ -75,13 +76,6 @@ function StarRating({
             </span>
         </div>
     );
-}
-
-function formatPrice(value: number) {
-    return value.toLocaleString("en-US", {
-        style: "currency",
-        currency: "USD",
-    });
 }
 
 function ActionButton({
@@ -287,9 +281,7 @@ export default function ShopProductCard({
                     </h3>
 
                     <p className="text-[16px] font-bold text-brand-primary m-0">
-                        {product.priceMax > product.priceMin
-                            ? `${formatPrice(product.priceMin)} - ${formatPrice(product.priceMax)}`
-                            : formatPrice(product.priceMin)}
+                            {formatPriceRange(product.priceMin, product.priceMax)}
                     </p>
 
                     <p className="text-[13px] text-text-secondary leading-relaxed m-0 line-clamp-2 max-w-2xl">
@@ -459,9 +451,7 @@ export default function ShopProductCard({
                               : "text-[15px] mt-0.5"
                     }`}
                 >
-                    {product.priceMax > product.priceMin
-                        ? `${formatPrice(product.priceMin)} - ${formatPrice(product.priceMax)}`
-                        : formatPrice(product.priceMin)}
+                            {formatPriceRange(product.priceMin, product.priceMax)}
                 </p>
 
                 {isWide && (

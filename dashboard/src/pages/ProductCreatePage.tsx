@@ -553,7 +553,7 @@ export function ProductCreatePage() {
                     name="price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Price</FormLabel>
+                        <FormLabel>Price (BDT)</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -681,7 +681,7 @@ export function ProductCreatePage() {
                       type="number"
                       min={0}
                       step="0.01"
-                      placeholder="Base price"
+                      placeholder="Base price (BDT)"
                       value={price}
                       onChange={(e) =>
                         form.setValue("price", Number(e.target.value) || 0)

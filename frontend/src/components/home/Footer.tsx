@@ -77,37 +77,37 @@ const weeklySelectedProducts = [
     {
         id: 1,
         title: "Smart Watch for Men Women",
-        price: "$197",
+        price: "৳23,640",
         image: "/images/bottom_banner_left_product.png",
     },
     {
         id: 2,
         title: "Apple iPhone 14 Pro Max, 256GB",
-        price: "$891",
+        price: "৳106,920",
         image: "/images/Leatest Item (3).png",
     },
     {
         id: 3,
         title: "Surface Laptop Touchscreen",
-        price: "$1,510",
+        price: "৳181,200",
         image: "/images/Deals of The Day product center 1.png",
     },
     {
         id: 4,
         title: "Bearway Super Console x2",
-        price: "$118",
+        price: "৳14,160",
         image: "/images/buttom_right_product.png",
     },
     {
         id: 5,
         title: "OneOdio Wired Headphones",
-        price: "$149",
+        price: "৳17,880",
         image: "/images/Leatest Item (5).png",
     },
     {
         id: 6,
         title: "Microsoft Surface Pro 9 Tablet",
-        price: "$791",
+        price: "৳94,920",
         image: "/images/Deals of The Day product center 4.png",
     },
 ];

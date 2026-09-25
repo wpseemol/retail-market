@@ -44,9 +44,7 @@ export async function generateMetadata({
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  console.log("[shop/slug] loading product", slug, "API_URL", process.env.NEXT_PUBLIC_API_URL);
   const data = await fetchProductByIdOrSlug(slug);
-  console.log("[shop/slug] result", data ? data.product.slug : null);
 
   if (!data) {
     notFound();

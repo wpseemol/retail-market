@@ -57,28 +57,28 @@ interface FashionItem {
 const fashionDealsData: FashionItem[] = [
     {
         id: 1,
-        dealLabel: "Tops under $25",
+        dealLabel: "Tops under ৳3,000",
         image: "/images/products_group (5).jpg",
         alt: "Graphic Summer Tops and Camis",
         link: "/shop?deals=tops-under-25",
     },
     {
         id: 2,
-        dealLabel: "Jeans under $50",
+        dealLabel: "Jeans under ৳6,000",
         image: "/images/products_group (6).jpg",
         alt: "Classic Wash Denim Jeans",
         link: "/shop?deals=jeans-under-50",
     },
     {
         id: 3,
-        dealLabel: "Dresses under $30",
+        dealLabel: "Dresses under ৳3,600",
         image: "/images/products_group (7).jpg",
         alt: "Satin Slip Dresses",
         link: "/shop?deals=dresses-under-30",
     },
     {
         id: 4,
-        dealLabel: "Shoes under $50",
+        dealLabel: "Shoes under ৳6,000",
         image: "/images/products_group (8).jpg",
         alt: "Block Heel Suede Ankle Boots",
         link: "/shop?deals=shoes-under-50",

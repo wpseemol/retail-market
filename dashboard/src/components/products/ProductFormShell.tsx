@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { formatPrice } from "@/lib/money";
 
 export function ProductFormSection({
   step,
@@ -146,7 +147,9 @@ export function ProductLivePreview({
             </div>
             <div className="rounded-lg bg-muted/50 px-2.5 py-2">
               <dt className="text-muted-foreground">Price</dt>
-              <dd className="mt-0.5 font-medium tabular-nums">{price || 0}</dd>
+              <dd className="mt-0.5 font-medium tabular-nums">
+                {formatPrice(Number(price) || 0)}
+              </dd>
             </div>
             <div className="rounded-lg bg-muted/50 px-2.5 py-2">
               <dt className="text-muted-foreground">Stock</dt>

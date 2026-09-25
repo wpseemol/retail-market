@@ -74,7 +74,7 @@ export function toShopProduct(product: ApiProduct): ShopProduct {
 
   return {
     id: Number(product.id),
-    slug: product.slug,
+    slug: product.slug || String(product.id),
     name: product.name,
     image: thumb,
     alt: product.thumbnail?.alt_text || product.name,
@@ -150,19 +150,12 @@ export async function fetchProductByIdOrSlug(
   const url = `${API_URL}/api/products/${encodeURIComponent(idOrSlug)}`;
   try {
     const res = await fetch(url, {
-      cache: "no-store",
+      next: { revalidate: 60, tags: [`product:${idOrSlug}`] },
     });
     if (res.status === 404) return null;
-    if (!res.ok) {
-      console.error(
-        `[fetchProductByIdOrSlug] ${res.status} ${url}`,
-        await res.text().catch(() => ""),
-      );
-      return null;
-    }
+    if (!res.ok) return null;
     return (await res.json()) as ProductDetailPayload;
-  } catch (err) {
-    console.error(`[fetchProductByIdOrSlug] failed ${url}`, err);
+  } catch {
     return null;
   }
 }

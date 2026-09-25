@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatPrice } from "@/lib/money";
 
 interface CenterProductItem {
     id: number;
@@ -26,8 +27,8 @@ const centerProducts: CenterProductItem[] = [
         brand: "Microsoft Surface",
         title: "Surface Pro 9",
         subtitle: "Laptop Power, Tablet Flexibility",
-        price: 160.0,
-        originalPrice: 200.0,
+        price: 19200,
+        originalPrice: 24000,
         discountPercent: 20,
         rating: 3,
         mainImage: "/images/Deals of The Day img_82 3.png",
@@ -40,8 +41,8 @@ const centerProducts: CenterProductItem[] = [
         brand: "Logitech Vision",
         title: "StreamCam HD Pro",
         subtitle: "Ultra 1080p 60FPS Video Streaming",
-        price: 99.0,
-        originalPrice: 129.0,
+        price: 11880,
+        originalPrice: 15480,
         discountPercent: 23,
         rating: 4,
         mainImage: "/images/Deals of The Day product center 2.png",
@@ -54,8 +55,8 @@ const centerProducts: CenterProductItem[] = [
         brand: "Razer Gaming",
         title: "Basilisk V3 Pro",
         subtitle: "Customizable Ergonomic Gaming Mouse",
-        price: 69.0,
-        originalPrice: 89.0,
+        price: 8280,
+        originalPrice: 10680,
         discountPercent: 22,
         rating: 5,
         mainImage: "/images/Deals of The Day product center 3.png",
@@ -68,8 +69,8 @@ const centerProducts: CenterProductItem[] = [
         brand: "Lenovo IdeaPad",
         title: "IdeaPad Flex 5",
         subtitle: "2-in-1 Touchscreen Laptop Mode",
-        price: 499.0,
-        originalPrice: 599.0,
+        price: 59880,
+        originalPrice: 71880,
         discountPercent: 17,
         rating: 4,
         mainImage: "/images/Deals of The Day product center 4.png",
@@ -200,10 +201,10 @@ export default function DealsCenterProduct() {
                             {/* Pricing */}
                             <div className="flex items-center gap-2.5 mb-4">
                                 <span className="text-text-primary text-lg font-bold">
-                                    ${activeProduct.price.toFixed(2)}
+                                    {formatPrice(activeProduct.price)}
                                 </span>
                                 <span className="text-text-secondary line-through text-sm">
-                                    ${activeProduct.originalPrice.toFixed(2)}
+                                    {formatPrice(activeProduct.originalPrice)}
                                 </span>
                                 <span className="bg-brand-primary text-white text-[11px] font-bold px-1.5 py-0.5 rounded-sm">
                                     -{activeProduct.discountPercent}%

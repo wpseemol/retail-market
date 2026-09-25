@@ -21,6 +21,7 @@ import {
     selectCartTotal,
     selectCouponCode,
 } from "@/store/cartSlice";
+import { formatPrice } from "@/lib/money";
 
 type PaymentMethod = "bank" | "check" | "cod" | "paypal";
 
@@ -64,13 +65,6 @@ const PAYMENT_OPTIONS: {
             "Pay via PayPal; you can pay with your credit card if you don’t have a PayPal account.",
     },
 ];
-
-function formatPrice(value: number) {
-    return value.toLocaleString("en-US", {
-        style: "currency",
-        currency: "USD",
-    });
-}
 
 function CheckoutBreadcrumb() {
     return (

@@ -653,7 +653,7 @@ export function ProductEditPage() {
                     name="price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Price</FormLabel>
+                        <FormLabel>Price (BDT)</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -804,7 +804,7 @@ export function ProductEditPage() {
                             type="number"
                             min={0}
                             step="0.01"
-                            placeholder="Price"
+                            placeholder="Price (BDT)"
                             value={v.price}
                             onChange={(e) => {
                               const next = [...variants];

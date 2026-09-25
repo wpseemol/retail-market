@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { formatPrice } from "@/lib/money";
 
 interface LatestItem {
     id: number;
@@ -17,48 +18,48 @@ const latestProductsPage1: LatestItem[] = [
     {
         id: 1,
         name: "Canon EOS 4000D 18M DSLR Camera",
-        price: 400,
-        originalPrice: 450,
+        price: 48000,
+        originalPrice: 54000,
         image: "/images/Leatest Item (1).png",
         alt: "Canon EOS 4000D DSLR Camera",
     },
     {
         id: 2,
         name: "Table Fan 12-Inch Oscillating Table Fan",
-        price: 29,
-        originalPrice: 45,
+        price: 3480,
+        originalPrice: 5400,
         image: "/images/Leatest Item (2).png",
         alt: "Oscillating Table Fan",
     },
     {
         id: 3,
         name: "Samsung Galaxy A13 LTE Cell Phone",
-        price: 177,
-        originalPrice: 185,
+        price: 21240,
+        originalPrice: 22200,
         image: "/images/Leatest Item (3).png",
         alt: "Samsung Galaxy A13 LTE Cell Phone",
     },
     {
         id: 4,
         name: "Sceptre Curved 24 inch Gaming Monitor",
-        price: 84,
-        originalPrice: 95,
+        price: 10080,
+        originalPrice: 11400,
         image: "/images/Leatest Item (4).png",
         alt: "Sceptre Curved Gaming Monitor",
     },
     {
         id: 5,
         name: "Sony WH-CH720N Wireless Headphones",
-        price: 27,
-        originalPrice: 39,
+        price: 3240,
+        originalPrice: 4680,
         image: "/images/Leatest Item (5).png",
         alt: "Sony WH-CH720N Wireless Headphones",
     },
     {
         id: 6,
         name: "Canon G3270 Wireless Inkjet Printer",
-        price: 147,
-        originalPrice: 175,
+        price: 17640,
+        originalPrice: 21000,
         image: "/images/Leatest Item (6).png",
         alt: "Canon G3270 Wireless Inkjet Printer",
     },
@@ -68,48 +69,48 @@ const latestProductsPage2: LatestItem[] = [
     {
         id: 7,
         name: "Canon G3270 Wireless Inkjet Printer",
-        price: 147,
-        originalPrice: 175,
+        price: 17640,
+        originalPrice: 21000,
         image: "/images/Leatest Item (6).png",
         alt: "Canon G3270 Wireless Inkjet Printer",
     },
     {
         id: 8,
         name: "Sony WH-CH720N Wireless Headphones",
-        price: 27,
-        originalPrice: 39,
+        price: 3240,
+        originalPrice: 4680,
         image: "/images/Leatest Item (5).png",
         alt: "Sony Wireless Headphones",
     },
     {
         id: 9,
         name: "Sceptre Curved 24 inch Gaming Monitor",
-        price: 84,
-        originalPrice: 95,
+        price: 10080,
+        originalPrice: 11400,
         image: "/images/Leatest Item (4).png",
         alt: "Curved Gaming Monitor",
     },
     {
         id: 10,
         name: "Samsung Galaxy A13 LTE Cell Phone",
-        price: 177,
-        originalPrice: 185,
+        price: 21240,
+        originalPrice: 22200,
         image: "/images/Leatest Item (3).png",
         alt: "Samsung Galaxy Cell Phone",
     },
     {
         id: 11,
         name: "Table Fan 12-Inch Oscillating Table Fan",
-        price: 29,
-        originalPrice: 45,
+        price: 3480,
+        originalPrice: 5400,
         image: "/images/Leatest Item (2).png",
         alt: "Oscillating Table Fan",
     },
     {
         id: 12,
         name: "Canon EOS 4000D 18M DSLR Camera",
-        price: 400,
-        originalPrice: 450,
+        price: 48000,
+        originalPrice: 54000,
         image: "/images/Leatest Item (1).png",
         alt: "Canon DSLR Camera",
     },
@@ -205,10 +206,10 @@ export default function LatestItemsSidebar() {
                                 </h3>
                                 <div className="flex items-center gap-1.5 mt-0.5 text-[13px]">
                                     <span className="text-brand-primary font-bold">
-                                        ${item.price}
+                                        {formatPrice(item.price)}
                                     </span>
                                     <span className="text-text-secondary line-through font-normal text-xs">
-                                        ${item.originalPrice}
+                                        {formatPrice(item.originalPrice)}
                                     </span>
                                 </div>
                             </div>

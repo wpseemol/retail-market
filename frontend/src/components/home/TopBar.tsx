@@ -173,7 +173,7 @@ export default function TopBar() {
 
                     {/* Currency Selector */}
                     <div className="flex items-center gap-1.5 px-px py-0.5 rounded bg-transparent dark:bg-bg-surface cursor-pointer text-text-secondary hover:text-brand-primary transition-colors">
-                        <span className="text-[12px] leading-[130%]">USD</span>
+                        <span className="text-[12px] leading-[130%]">BDT</span>
                         <svg
                             width="7"
                             height="4"

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatPrice } from "@/lib/money";
 
 interface RightProductItem {
     id: number;
@@ -24,8 +25,8 @@ const rightProducts: RightProductItem[] = [
     {
         id: 1,
         name: "AltoPlus Amplified Corded Phone with Caller ID",
-        price: 147,
-        originalPrice: 150,
+        price: 17640,
+        originalPrice: 18000,
         discountPercent: 20,
         rating: 3,
         available: 334,
@@ -38,8 +39,8 @@ const rightProducts: RightProductItem[] = [
     {
         id: 2,
         name: "Corsair RM850x Fully Modular Power Supply",
-        price: 139,
-        originalPrice: 169,
+        price: 16680,
+        originalPrice: 20280,
         discountPercent: 18,
         rating: 4,
         available: 120,
@@ -52,8 +53,8 @@ const rightProducts: RightProductItem[] = [
     {
         id: 3,
         name: "Dell Inspiron 15 Core i5 Workstation Laptop",
-        price: 520,
-        originalPrice: 650,
+        price: 62400,
+        originalPrice: 78000,
         discountPercent: 20,
         rating: 4,
         available: 95,
@@ -66,8 +67,8 @@ const rightProducts: RightProductItem[] = [
     {
         id: 4,
         name: "Beats Solo3 Wireless Over-Ear Headphones",
-        price: 159,
-        originalPrice: 199,
+        price: 19080,
+        originalPrice: 23880,
         discountPercent: 20,
         rating: 5,
         available: 210,
@@ -234,10 +235,10 @@ export default function DealsRightProduct() {
                     {/* Pricing */}
                     <div className="flex items-center gap-2">
                         <span className="text-brand-primary text-base sm:text-lg font-bold">
-                            ${activeProduct.price}
+                            {formatPrice(activeProduct.price)}
                         </span>
                         <span className="text-text-secondary line-through text-xs sm:text-sm">
-                            ${activeProduct.originalPrice}
+                            {formatPrice(activeProduct.originalPrice)}
                         </span>
                         <span className="bg-brand-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm">
                             -{activeProduct.discountPercent}%

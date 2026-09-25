@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatPrice } from "@/lib/money";
 import LatestItemsSidebar from "./LatestItemsSidebar";
 import BottomBanners from "./BottomBanners";
 
@@ -36,7 +37,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Desktop Display Monitor",
             rating: 4,
             currentPrice: 399,
-            originalPrice: 450,
+            originalPrice: 54000,
             isNew: true,
         },
         {
@@ -46,7 +47,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Gaming Laptop Computer",
             rating: 4,
             currentPrice: 409,
-            originalPrice: 430,
+            originalPrice: 51600,
             isNew: true,
         },
         {
@@ -56,7 +57,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Front Load Washing Machine",
             rating: 4,
             currentPrice: 199,
-            originalPrice: 250,
+            originalPrice: 30000,
             isNew: true,
         },
         {
@@ -66,7 +67,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Red Wireless Headphones",
             rating: 4,
             currentPrice: 379,
-            originalPrice: 400,
+            originalPrice: 48000,
             isNew: true,
         },
     ],
@@ -78,7 +79,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Red Wireless Headphones",
             rating: 4,
             currentPrice: 379,
-            originalPrice: 400,
+            originalPrice: 48000,
             isNew: true,
         },
         {
@@ -88,7 +89,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Desktop Display Monitor",
             rating: 4,
             currentPrice: 399,
-            originalPrice: 450,
+            originalPrice: 54000,
             isNew: true,
         },
         {
@@ -98,7 +99,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Front Load Washing Machine",
             rating: 4,
             currentPrice: 199,
-            originalPrice: 250,
+            originalPrice: 30000,
             isNew: true,
         },
         {
@@ -108,7 +109,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Gaming Laptop Computer",
             rating: 4,
             currentPrice: 409,
-            originalPrice: 430,
+            originalPrice: 51600,
             isNew: true,
         },
     ],
@@ -120,7 +121,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Gaming Laptop Computer",
             rating: 4,
             currentPrice: 409,
-            originalPrice: 430,
+            originalPrice: 51600,
             isNew: true,
         },
         {
@@ -130,7 +131,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Front Load Washing Machine",
             rating: 4,
             currentPrice: 199,
-            originalPrice: 250,
+            originalPrice: 30000,
             isNew: true,
         },
         {
@@ -140,7 +141,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Desktop Display Monitor",
             rating: 4,
             currentPrice: 399,
-            originalPrice: 450,
+            originalPrice: 54000,
             isNew: true,
         },
         {
@@ -150,7 +151,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Red Wireless Headphones",
             rating: 4,
             currentPrice: 379,
-            originalPrice: 400,
+            originalPrice: 48000,
             isNew: true,
         },
     ],
@@ -162,7 +163,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Front Load Washing Machine",
             rating: 4,
             currentPrice: 199,
-            originalPrice: 250,
+            originalPrice: 30000,
             isNew: true,
         },
         {
@@ -172,7 +173,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Red Wireless Headphones",
             rating: 4,
             currentPrice: 379,
-            originalPrice: 400,
+            originalPrice: 48000,
             isNew: true,
         },
         {
@@ -182,7 +183,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Desktop Display Monitor",
             rating: 4,
             currentPrice: 399,
-            originalPrice: 450,
+            originalPrice: 54000,
             isNew: true,
         },
         {
@@ -192,7 +193,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Gaming Laptop Computer",
             rating: 4,
             currentPrice: 409,
-            originalPrice: 430,
+            originalPrice: 51600,
             isNew: true,
         },
     ],
@@ -204,7 +205,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Desktop Display Monitor",
             rating: 5,
             currentPrice: 399,
-            originalPrice: 450,
+            originalPrice: 54000,
             isNew: true,
         },
         {
@@ -214,7 +215,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Gaming Laptop Computer",
             rating: 5,
             currentPrice: 409,
-            originalPrice: 430,
+            originalPrice: 51600,
             isNew: true,
         },
         {
@@ -224,7 +225,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Front Load Washing Machine",
             rating: 5,
             currentPrice: 199,
-            originalPrice: 250,
+            originalPrice: 30000,
             isNew: true,
         },
         {
@@ -234,7 +235,7 @@ const showcaseProducts: Record<TabOption, ProductItem[]> = {
             alt: "Red Wireless Headphones",
             rating: 5,
             currentPrice: 379,
-            originalPrice: 400,
+            originalPrice: 48000,
             isNew: true,
         },
     ],
@@ -370,16 +371,14 @@ export default function LatestProductsSection() {
 
                                                     <div className="flex items-center gap-1.5 text-xs sm:text-[13px] font-semibold mt-1">
                                                         <span className="text-brand-primary">
-                                                            $
-                                                            {
-                                                                product.currentPrice
-                                                            }
+                                                            {formatPrice(
+                                                                product.currentPrice,
+                                                            )}
                                                         </span>
                                                         <span className="text-text-secondary line-through font-normal">
-                                                            $
-                                                            {
-                                                                product.originalPrice
-                                                            }
+                                                            {formatPrice(
+                                                                product.originalPrice,
+                                                            )}
                                                         </span>
                                                     </div>
                                                 </div>

@@ -8,17 +8,11 @@ import { useTheme } from "next-themes";
 import PromoAdSlider from "./PromoAdSlider";
 import AccountMenu from "./AccountMenu";
 import { useAppSelector } from "@/store/hooks";
+import { formatPrice } from "@/lib/money";
 import {
     selectCartItemCount,
     selectCartTotal,
 } from "@/store/cartSlice";
-
-function formatPrice(value: number) {
-    return value.toLocaleString("en-US", {
-        style: "currency",
-        currency: "USD",
-    });
-}
 
 export default function Header() {
     const pathname = usePathname();
