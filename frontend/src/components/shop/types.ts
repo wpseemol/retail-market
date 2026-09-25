@@ -9,6 +9,7 @@ export type ShopSortOption =
 
 export interface ShopProduct {
     id: number;
+    slug: string;
     name: string;
     image: string;
     alt: string;

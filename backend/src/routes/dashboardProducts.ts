@@ -210,10 +210,11 @@ async function replaceOptionsAndVariants(input: {
     is_default?: boolean;
   }>;
 }) {
-  // Soft-delete old variants + wipe options (cascade values/links).
+  // Soft-delete all variants for this product and free SKUs
+  // (unique index still applies to soft-deleted rows).
   await prisma.productVariant.updateMany({
-    where: { product_id: input.productId, deleted_at: null },
-    data: { deleted_at: new Date(), is_active: false },
+    where: { product_id: input.productId },
+    data: { deleted_at: new Date(), is_active: false, sku: null },
   });
   await prisma.productOption.deleteMany({
     where: { product_id: input.productId },

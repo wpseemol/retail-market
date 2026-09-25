@@ -63,7 +63,7 @@ function StoreProductCard({
   product: StorefrontProduct;
   muted?: boolean;
 }) {
-  const href = `/shop/${product.id}`;
+  const href = `/shop/${product.slug}`;
   const hasCompare =
     product.compare_at_price != null &&
     product.compare_at_price > product.price;

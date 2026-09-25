@@ -70,6 +70,7 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/site-settings` | `routes/publicSiteSettings.ts` | Public |
 | `/api/analytics` | `routes/publicAnalytics.ts` | Public |
 | `/api/shops` | `routes/publicShops.ts` | Public |
+| `/api/products` | `routes/publicProducts.ts` | Public |
 | `/api/dashboard/auth` | `routes/dashboardAuth.ts` | Staff |
 | `/api/dashboard/users` | `routes/dashboardUsers.ts` | `super_admin` |
 | `/api/dashboard/overview` | `routes/dashboardOverview.ts` | `super_admin`, `admin` |
@@ -136,6 +137,32 @@ Query: `page` (default 1), `limit?` (falls back to store `products_per_page`, ma
 **404** if slug missing or store not active.
 
 Dashboard customize: `PATCH /api/dashboard/shops/:id` + `POST /:id/banner` (multipart field **`banner`** · max **5 MB** · resized).
+
+---
+
+## Public products — `/api/products`
+
+No auth. Active products only (inactive / draft stay dashboard-only).
+
+### `GET /api/products`
+
+Query: `page`, `limit` (max 48), `q?`, `category?` (slug), `brand?` (slug), `sort` (`default`|`price-asc`|`price-desc`|`name-asc`|`newest`).
+
+**200** → `{ products, facets, pagination }`
+
+`facets.categories` / `facets.brands`: `{ id, label, count }[]`  
+`facets.price`: `{ min, max }`
+
+### `GET /api/products/:idOrSlug`
+
+Numeric id or product slug.
+
+**200** → `{ product, related }`
+
+`product`: public product detail + `gallery` media  
+`related`: up to 8 active products from the same store (or category)
+
+**404** if not found / not active.
 
 ---
 

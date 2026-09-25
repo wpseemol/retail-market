@@ -18,6 +18,54 @@ import { addToCart } from "@/store/cartSlice";
 
 interface ProductPageContentProps {
     product: ShopProduct;
+    relatedProducts?: ShopProduct[];
+    store?: { name: string; slug: string } | null;
+}
+
+function ProductImage({
+    src,
+    alt,
+    fill,
+    sizes,
+    className,
+    priority,
+    "aria-hidden": ariaHidden,
+}: {
+    src: string;
+    alt: string;
+    fill?: boolean;
+    sizes?: string;
+    className?: string;
+    priority?: boolean;
+    "aria-hidden"?: boolean;
+}) {
+    const remote = /^https?:\/\//i.test(src);
+    if (remote) {
+        return (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+                src={src}
+                alt={alt}
+                className={
+                    fill
+                        ? `absolute inset-0 size-full ${className ?? ""}`
+                        : className
+                }
+                aria-hidden={ariaHidden}
+            />
+        );
+    }
+    return (
+        <Image
+            src={src}
+            alt={alt}
+            fill={fill}
+            sizes={sizes}
+            className={className}
+            priority={priority}
+            aria-hidden={ariaHidden}
+        />
+    );
 }
 
 const TABS: { id: ProductTabId; label: string }[] = [
@@ -104,12 +152,19 @@ function CartIcon() {
     );
 }
 
-export default function ProductPageContent({ product }: ProductPageContentProps) {
+export default function ProductPageContent({
+    product,
+    relatedProducts: relatedFromApi,
+    store = null,
+}: ProductPageContentProps) {
     const dispatch = useAppDispatch();
     const gallery = useMemo(() => getProductGallery(product), [product]);
     const relatedProducts = useMemo(
-        () => getRelatedProducts(product, 4),
-        [product],
+        () =>
+            relatedFromApi && relatedFromApi.length > 0
+                ? relatedFromApi
+                : getRelatedProducts(product, 4),
+        [product, relatedFromApi],
     );
 
     const [activeImage, setActiveImage] = useState(gallery[0]);
@@ -192,11 +247,29 @@ export default function ProductPageContent({ product }: ProductPageContentProps)
                         <li>
                             <Link
                                 href="/shop"
-                                className="text-brand-primary font-medium hover:text-brand-hover transition-colors"
+                                className="text-text-secondary hover:text-brand-primary transition-colors"
                             >
                                 Shop
                             </Link>
                         </li>
+                        {store ? (
+                            <>
+                                <li
+                                    aria-hidden="true"
+                                    className="text-text-secondary"
+                                >
+                                    &gt;
+                                </li>
+                                <li>
+                                    <Link
+                                        href={`/stores/${store.slug}`}
+                                        className="text-brand-primary font-medium hover:text-brand-hover transition-colors"
+                                    >
+                                        {store.name}
+                                    </Link>
+                                </li>
+                            </>
+                        ) : null}
                     </ol>
                 </div>
             </nav>
@@ -207,7 +280,7 @@ export default function ProductPageContent({ product }: ProductPageContentProps)
                     {/* Gallery: main + vertical thumbs */}
                     <div className="lg:col-span-5 flex flex-col sm:flex-row gap-3 sm:gap-4">
                         <div className="relative flex-1 min-h-[280px] sm:min-h-[360px] lg:min-h-[420px] rounded-lg border border-border-default bg-bg-subtle overflow-hidden">
-                            <Image
+                            <ProductImage
                                 src={activeImage}
                                 alt={product.alt}
                                 fill
@@ -233,13 +306,13 @@ export default function ProductPageContent({ product }: ProductPageContentProps)
                                                 : "border-border-default hover:border-brand-primary"
                                         }`}
                                     >
-                                        <Image
+                                        <ProductImage
                                             src={src}
                                             alt=""
                                             fill
                                             sizes="76px"
                                             className="object-contain p-1.5"
-                                            aria-hidden="true"
+                                            aria-hidden
                                         />
                                     </button>
                                 );
@@ -259,8 +332,9 @@ export default function ProductPageContent({ product }: ProductPageContentProps)
                         />
 
                         <p className="text-[22px] sm:text-[24px] font-bold text-brand-primary m-0">
-                            {formatPrice(product.priceMin)} -{" "}
-                            {formatPrice(product.priceMax)}
+                            {product.priceMax > product.priceMin
+                                ? `${formatPrice(product.priceMin)} - ${formatPrice(product.priceMax)}`
+                                : formatPrice(product.priceMin)}
                         </p>
 
                         <p className="text-[13px] text-text-secondary m-0">
@@ -637,11 +711,11 @@ export default function ProductPageContent({ product }: ProductPageContentProps)
                                 {visibleRelated.map((item) => (
                                     <li key={item.id}>
                                         <Link
-                                            href={`/shop/${item.id}`}
+                                            href={`/shop/${item.slug}`}
                                             className="flex gap-3 group"
                                         >
                                             <div className="relative h-[72px] w-[72px] rounded-md border border-border-default bg-bg-subtle overflow-hidden shrink-0">
-                                                <Image
+                                                <ProductImage
                                                     src={item.image}
                                                     alt={item.alt}
                                                     fill

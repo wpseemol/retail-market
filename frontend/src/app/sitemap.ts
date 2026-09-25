@@ -22,7 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     const productRoutes: MetadataRoute.Sitemap = shopProducts.map(
         (product) => ({
-            url: `${base}/shop/${product.id}`,
+            url: `${base}/shop/${product.slug}`,
             lastModified: now,
             changeFrequency: "weekly" as const,
             priority: 0.8,

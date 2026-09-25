@@ -13,6 +13,51 @@ interface QuickViewModalProps {
     onClose: () => void;
 }
 
+function ProductImage({
+    src,
+    alt,
+    fill,
+    sizes,
+    className,
+    priority,
+    "aria-hidden": ariaHidden,
+}: {
+    src: string;
+    alt: string;
+    fill?: boolean;
+    sizes?: string;
+    className?: string;
+    priority?: boolean;
+    "aria-hidden"?: boolean;
+}) {
+    if (/^https?:\/\//i.test(src)) {
+        return (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+                src={src}
+                alt={alt}
+                className={
+                    fill
+                        ? `absolute inset-0 size-full ${className ?? ""}`
+                        : className
+                }
+                aria-hidden={ariaHidden}
+            />
+        );
+    }
+    return (
+        <Image
+            src={src}
+            alt={alt}
+            fill={fill}
+            sizes={sizes}
+            className={className}
+            priority={priority}
+            aria-hidden={ariaHidden}
+        />
+    );
+}
+
 function formatPrice(value: number) {
     return value.toLocaleString("en-US", {
         style: "currency",
@@ -74,21 +119,19 @@ export default function QuickViewModal({
         if (product.gallery && product.gallery.length > 0) {
             return product.gallery;
         }
-        return [
-            product.image,
-            "/images/Best Seller Product anather (1).png",
-            "/images/best_seller_product (2).png",
-            "/images/best_seller_product (4).png",
-        ];
+        return [product.image];
     }, [product.gallery, product.image]);
 
     const [activeImage, setActiveImage] = useState(gallery[0]);
     const [quantity, setQuantity] = useState(1);
 
     const brandLabel =
-        SHOP_BRANDS.find((b) => b.id === product.brand)?.label ?? product.brand;
+        SHOP_BRANDS.find((b) => b.id === product.brand)?.label ??
+        product.model ??
+        product.brand;
     const categoryLabel =
         SHOP_CATEGORIES.find((c) => c.id === product.category)?.label ??
+        product.categoryLabels?.[1] ??
         product.category;
     const sku =
         product.sku ??
@@ -175,7 +218,7 @@ export default function QuickViewModal({
                     {/* Gallery */}
                     <div className="lg:col-span-5 flex flex-col sm:flex-row gap-3 sm:gap-4">
                         <div className="relative flex-1 min-h-64 sm:min-h-80 rounded-lg border border-border-default bg-bg-subtle overflow-hidden">
-                            <Image
+                            <ProductImage
                                 src={activeImage}
                                 alt={product.alt}
                                 fill
@@ -201,13 +244,13 @@ export default function QuickViewModal({
                                                 : "border-border-default hover:border-brand-primary"
                                         }`}
                                     >
-                                        <Image
+                                        <ProductImage
                                             src={src}
                                             alt=""
                                             fill
                                             sizes="72px"
                                             className="object-contain p-1.5"
-                                            aria-hidden="true"
+                                            aria-hidden
                                         />
                                     </button>
                                 );

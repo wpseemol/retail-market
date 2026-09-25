@@ -8,6 +8,38 @@ import type { ShopProduct, ShopViewMode } from "./types";
 import { useAppDispatch } from "@/store/hooks";
 import { addToCart } from "@/store/cartSlice";
 
+function ProductThumb({
+  src,
+  alt,
+  sizes,
+  className,
+}: {
+  src: string;
+  alt: string;
+  sizes: string;
+  className?: string;
+}) {
+  if (/^https?:\/\//i.test(src)) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={alt}
+        className={`absolute inset-0 size-full ${className ?? ""}`}
+      />
+    );
+  }
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      sizes={sizes}
+      className={className}
+    />
+  );
+}
+
 function StarRating({
     rating,
     reviewCount,
@@ -213,7 +245,7 @@ export default function ShopProductCard({
     };
 
     const handleExpandProduct = () => {
-        router.push(`/shop/${product.id}`);
+        router.push(`/shop/${product.slug}`);
     };
 
     if (viewMode === "list") {
@@ -226,13 +258,12 @@ export default function ShopProductCard({
                         </span>
                     )}
                     <Link
-                        href={`/shop/${product.id}`}
+                        href={`/shop/${product.slug}`}
                         className="absolute inset-0"
                     >
-                        <Image
+                        <ProductThumb
                             src={product.image}
                             alt={product.alt}
-                            fill
                             sizes="240px"
                             className="object-contain p-4 transition-transform duration-300 group-hover:scale-105"
                         />
@@ -248,7 +279,7 @@ export default function ShopProductCard({
 
                     <h3 className="text-[16px] sm:text-[18px] font-semibold text-text-primary leading-snug m-0">
                         <Link
-                            href={`/shop/${product.id}`}
+                            href={`/shop/${product.slug}`}
                             className="hover:text-brand-primary transition-colors"
                         >
                             {product.name}
@@ -256,8 +287,9 @@ export default function ShopProductCard({
                     </h3>
 
                     <p className="text-[16px] font-bold text-brand-primary m-0">
-                        {formatPrice(product.priceMin)} -{" "}
-                        {formatPrice(product.priceMax)}
+                        {product.priceMax > product.priceMin
+                            ? `${formatPrice(product.priceMin)} - ${formatPrice(product.priceMax)}`
+                            : formatPrice(product.priceMin)}
                     </p>
 
                     <p className="text-[13px] text-text-secondary leading-relaxed m-0 line-clamp-2 max-w-2xl">
@@ -328,13 +360,12 @@ export default function ShopProductCard({
                     )}
 
                     <Link
-                        href={`/shop/${product.id}`}
+                        href={`/shop/${product.slug}`}
                         className="absolute inset-0 flex items-center justify-center p-4"
                     >
-                        <Image
+                        <ProductThumb
                             src={product.image}
                             alt={product.alt}
-                            fill
                             sizes={
                                 viewMode === "grid4"
                                     ? "(max-width: 768px) 50vw, 25vw"
@@ -398,7 +429,7 @@ export default function ShopProductCard({
                     }`}
                 >
                     <Link
-                        href={`/shop/${product.id}`}
+                        href={`/shop/${product.slug}`}
                         className="hover:text-brand-primary transition-colors"
                     >
                         {product.name}
@@ -428,8 +459,9 @@ export default function ShopProductCard({
                               : "text-[15px] mt-0.5"
                     }`}
                 >
-                    {formatPrice(product.priceMin)} -{" "}
-                    {formatPrice(product.priceMax)}
+                    {product.priceMax > product.priceMin
+                        ? `${formatPrice(product.priceMin)} - ${formatPrice(product.priceMax)}`
+                        : formatPrice(product.priceMin)}
                 </p>
 
                 {isWide && (

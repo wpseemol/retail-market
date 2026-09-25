@@ -63,6 +63,8 @@ export const PRODUCTS_PER_PAGE = 12;
 export const shopProducts: ShopProduct[] = [
     {
         id: 1,
+
+        slug: "product-1",
         name: 'SAMSUNG Galaxy A7 Lite 8.7" 32GB Android Tablet',
         image: "/images/best_seller_product (1).png",
         alt: "Samsung Galaxy A7 Lite Tablet",
@@ -79,6 +81,8 @@ export const shopProducts: ShopProduct[] = [
     },
     {
         id: 2,
+
+        slug: "product-2",
         name: "All-in-One Desktop PC with UltraWide Display",
         image: "/images/Best Seller Product anather (1).png",
         alt: "All-in-One Desktop PC",
@@ -95,6 +99,8 @@ export const shopProducts: ShopProduct[] = [
     },
     {
         id: 3,
+
+        slug: "product-3",
         name: "HP DeskJet 4255e Wireless All-in-One Printer",
         image: "/images/best_seller_product (2).png",
         alt: "HP DeskJet Wireless Printer",
@@ -111,6 +117,8 @@ export const shopProducts: ShopProduct[] = [
     },
     {
         id: 4,
+
+        slug: "product-4",
         name: "Optoma UHZ35ST Ultra Short Throw 4K Projector",
         image: "/images/best_seller_product (3).png",
         alt: "Optoma UHZ35ST Projector",
@@ -127,6 +135,8 @@ export const shopProducts: ShopProduct[] = [
     },
     {
         id: 5,
+
+        slug: "product-5",
         name: "Canon EOS Rebel T7 DSLR Camera with Lens Kit",
         image: "/images/best_seller_product (4).png",
         alt: "Canon EOS Rebel T7 Camera",
@@ -143,6 +153,8 @@ export const shopProducts: ShopProduct[] = [
     },
     {
         id: 6,
+
+        slug: "product-6",
         name: "Microsoft Surface Laptop Touchscreen 13.5 Inch",
         image: "/images/Deals of The Day product center 1.png",
         alt: "Microsoft Surface Laptop",
@@ -159,6 +171,8 @@ export const shopProducts: ShopProduct[] = [
     },
     {
         id: 7,
+
+        slug: "product-7",
         name: "OneOdio Wired Over-Ear Studio Headphones",
         image: "/images/Leatest Item (5).png",
         alt: "OneOdio Wired Headphones",
@@ -175,6 +189,8 @@ export const shopProducts: ShopProduct[] = [
     },
     {
         id: 8,
+
+        slug: "product-8",
         name: "Apple iPhone 14 Pro Max 256GB Unlocked",
         image: "/images/Leatest Item (3).png",
         alt: "Apple iPhone 14 Pro Max",
@@ -191,6 +207,8 @@ export const shopProducts: ShopProduct[] = [
     },
     {
         id: 9,
+
+        slug: "product-9",
         name: "Smart Watch for Men Women Fitness Tracker",
         image: "/images/bottom_banner_left_product.png",
         alt: "Smart Watch Fitness Tracker",
@@ -207,6 +225,8 @@ export const shopProducts: ShopProduct[] = [
     },
     {
         id: 10,
+
+        slug: "product-10",
         name: "Bearway Super Console X2 Retro Gaming Handheld",
         image: "/images/buttom_right_product.png",
         alt: "Bearway Super Console X2",
@@ -223,6 +243,8 @@ export const shopProducts: ShopProduct[] = [
     },
     {
         id: 11,
+
+        slug: "product-11",
         name: "Microsoft Surface Pro 9 13 Inch Tablet PC",
         image: "/images/Deals of The Day product center 4.png",
         alt: "Microsoft Surface Pro 9",
@@ -239,6 +261,8 @@ export const shopProducts: ShopProduct[] = [
     },
     {
         id: 12,
+
+        slug: "product-12",
         name: "Cloud Cam Wireless Home Security Camera",
         image: "/images/best_seller_product_banner_poset_image.png",
         alt: "Cloud Cam Security Camera",
@@ -255,6 +279,8 @@ export const shopProducts: ShopProduct[] = [
     },
     {
         id: 13,
+
+        slug: "product-13",
         name: "Gaming Desktop Tower with RGB Lighting",
         image: "/images/Best Seller Product anather (2).png",
         alt: "Gaming Desktop Tower",
@@ -271,6 +297,8 @@ export const shopProducts: ShopProduct[] = [
     },
     {
         id: 14,
+
+        slug: "product-14",
         name: "4K Ultra HD Curved Gaming Monitor 32 Inch",
         image: "/images/Best Seller Product anather (3).png",
         alt: "4K Curved Gaming Monitor",
@@ -287,6 +315,8 @@ export const shopProducts: ShopProduct[] = [
     },
     {
         id: 15,
+
+        slug: "product-15",
         name: "Lenovo ThinkPad X1 Carbon Business Laptop",
         image: "/images/top_products (1).png",
         alt: "Lenovo ThinkPad X1 Carbon",
@@ -303,6 +333,8 @@ export const shopProducts: ShopProduct[] = [
     },
     {
         id: 16,
+
+        slug: "product-16",
         name: "Wireless Bluetooth Portable Speaker Mini",
         image: "/images/top_products (2).png",
         alt: "Wireless Bluetooth Portable Speaker",
@@ -319,6 +351,8 @@ export const shopProducts: ShopProduct[] = [
     },
     {
         id: 17,
+
+        slug: "product-17",
         name: "Dell UltraSharp USB-C Hub Monitor Dock",
         image: "/images/top_products (3).png",
         alt: "Dell UltraSharp Monitor Dock",
@@ -335,6 +369,8 @@ export const shopProducts: ShopProduct[] = [
     },
     {
         id: 18,
+
+        slug: "product-18",
         name: "ASUS ROG Strix Gaming Laptop RTX Edition",
         image: "/images/top_products (4).png",
         alt: "ASUS ROG Strix Gaming Laptop",
