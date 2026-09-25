@@ -747,9 +747,25 @@ export function HeroBannerSettingsPanel({
             />
           </section>
 
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Saving…" : "Save hero content"}
-          </Button>
+          {/* Spacer so sticky bar doesn't cover the last fields */}
+          <div className="h-16" aria-hidden />
+
+          <div className="sticky bottom-3 z-20 rounded-2xl border border-border/80 bg-background/95 p-3 shadow-lg backdrop-blur supports-backdrop-filter:bg-background/80">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="min-w-0 text-sm text-muted-foreground">
+                {form.formState.isDirty
+                  ? "You have unsaved text changes."
+                  : "Text edits need Save. Image uploads apply immediately."}
+              </p>
+              <Button
+                type="submit"
+                size="lg"
+                disabled={form.formState.isSubmitting || !form.formState.isDirty}
+              >
+                {form.formState.isSubmitting ? "Saving…" : "Save hero content"}
+              </Button>
+            </div>
+          </div>
         </form>
       </Form>
     </div>
