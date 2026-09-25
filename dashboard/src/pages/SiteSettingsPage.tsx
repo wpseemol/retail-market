@@ -10,6 +10,7 @@ import {
   Share2,
   Upload,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import {
@@ -41,17 +42,35 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+
+type SettingsTabId =
+  | "identity"
+  | "shop"
+  | "social"
+  | "analytics"
+  | "pixels";
+
+const SETTINGS_TABS: Array<{
+  id: SettingsTabId;
+  label: string;
+  icon: typeof Globe;
+}> = [
+  { id: "identity", label: "Identity", icon: Globe },
+  { id: "shop", label: "Shop", icon: LayoutGrid },
+  { id: "social", label: "Social", icon: Share2 },
+  { id: "analytics", label: "Analytics", icon: BarChart3 },
+  { id: "pixels", label: "Pixels", icon: Megaphone },
+];
 
 // ─── SettingsSection ──────────────────────────────────────────────────────────
 
 function SettingsSection({
-  step,
   title,
   description,
   icon: Icon,
   children,
 }: {
-  step: string;
   title: string;
   description: string;
   icon?: typeof Globe;
@@ -59,17 +78,12 @@ function SettingsSection({
 }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
-      <div className="flex items-start gap-3 border-b border-border/70 bg-gradient-to-r from-brand-tint/50 via-background to-background px-5 py-4">
-        <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand-primary text-[11px] font-bold text-white">
-          {step}
+      <div className="flex items-start gap-3 border-b border-border/70 bg-gradient-to-r from-brand-tint/40 via-background to-background px-5 py-4">
+        <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-primary text-white shadow-sm">
+          {Icon ? <Icon className="size-3.5" /> : null}
         </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            {Icon ? (
-              <Icon className="size-3.5 shrink-0 text-brand-deep" />
-            ) : null}
-            <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
-          </div>
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
         </div>
       </div>
@@ -294,6 +308,7 @@ export function SiteSettingsPage() {
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [ogImageUrl, setOgImageUrl] = useState<string | null>(null);
   const [ogUploading, setOgUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState<SettingsTabId>("identity");
 
   const ogFileRef = useRef<HTMLInputElement>(null);
 
@@ -448,14 +463,61 @@ export function SiteSettingsPage() {
   const isSubmitting = form.formState.isSubmitting;
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-4">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Site settings</h1>
-        <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-          SEO metadata, shop catalog layout, social share previews, and
-          analytics / advertising integrations for the main storefront.
-        </p>
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 pb-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <Link
+              to="/profile"
+              className="hover:text-brand-primary transition-colors"
+            >
+              Profile
+            </Link>
+            <span className="mx-1.5 text-border">/</span>
+            Site settings
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+            Site settings
+          </h1>
+          <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+            Storefront identity, shop catalog, social previews, and tracking.
+            Open this page from your profile menu.
+          </p>
+        </div>
+        <Badge
+          variant="outline"
+          className="border-brand-primary/30 bg-brand-tint/60 text-brand-deep"
+        >
+          Super admin
+        </Badge>
+      </div>
+
+      <div
+        role="tablist"
+        aria-label="Settings sections"
+        className="flex flex-wrap gap-1 rounded-2xl border border-border/80 bg-muted/40 p-1"
+      >
+        {SETTINGS_TABS.map((tab) => {
+          const active = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
+                active
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <tab.icon className="size-3.5 shrink-0" />
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       <Form {...form}>
@@ -464,9 +526,8 @@ export function SiteSettingsPage() {
           className="space-y-5"
           noValidate
         >
-          {/* ── Section 01: Website identity ─────────────────────────────── */}
+          {activeTab === "identity" ? (
           <SettingsSection
-            step="01"
             title="Website identity"
             description="Site name, page title, meta description, and keywords."
             icon={Globe}
@@ -539,10 +600,10 @@ export function SiteSettingsPage() {
               )}
             />
           </SettingsSection>
+          ) : null}
 
-          {/* ── Section 02: Shop catalog ──────────────────────────────────── */}
+          {activeTab === "shop" ? (
           <SettingsSection
-            step="02"
             title="Shop catalog"
             description="Default product grid, pagination, and sidebar category/brand preview on /shop."
             icon={LayoutGrid}
@@ -707,10 +768,10 @@ export function SiteSettingsPage() {
               />
             </div>
           </SettingsSection>
+          ) : null}
 
-          {/* ── Section 03: Social share ──────────────────────────────────── */}
+          {activeTab === "social" ? (
           <SettingsSection
-            step="03"
             title="Social share"
             description="Open Graph and Twitter/X card metadata for link previews."
             icon={Share2}
@@ -799,10 +860,10 @@ export function SiteSettingsPage() {
               )}
             />
           </SettingsSection>
+          ) : null}
 
-          {/* ── Section 04: Analytics ─────────────────────────────────────── */}
+          {activeTab === "analytics" ? (
           <SettingsSection
-            step="04"
             title="Analytics"
             description="Enable and configure analytics tracking for the storefront."
             icon={BarChart3}
@@ -840,10 +901,10 @@ export function SiteSettingsPage() {
               idPlaceholder="abcd1234"
             />
           </SettingsSection>
+          ) : null}
 
-          {/* ── Section 05: Advertising pixels ───────────────────────────── */}
+          {activeTab === "pixels" ? (
           <SettingsSection
-            step="05"
             title="Advertising pixels"
             description="Enable and configure advertising conversion pixels."
             icon={Megaphone}
@@ -889,8 +950,8 @@ export function SiteSettingsPage() {
               idPlaceholder="123456789012345"
             />
           </SettingsSection>
+          ) : null}
 
-          {/* ── Sticky save bar ───────────────────────────────────────────── */}
           <SettingsStickyActions
             message={
               submitError ? (
@@ -903,7 +964,8 @@ export function SiteSettingsPage() {
                 </p>
               ) : (
                 <p className="text-muted-foreground">
-                  Changes apply to the storefront immediately after saving.
+                  Saving updates the live storefront for the current tab and all
+                  other settings.
                 </p>
               )
             }

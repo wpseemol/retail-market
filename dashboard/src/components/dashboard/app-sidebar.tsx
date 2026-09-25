@@ -3,7 +3,6 @@ import {
   FolderTree,
   LayoutDashboard,
   Package,
-  Settings,
   Shield,
   ShieldCheck,
   Store,
@@ -57,12 +56,6 @@ const topLinks: Array<{
     to: "/users",
     label: "Users",
     icon: Users,
-    roles: ["super_admin"],
-  },
-  {
-    to: "/settings",
-    label: "Site settings",
-    icon: Settings,
     roles: ["super_admin"],
   },
   {

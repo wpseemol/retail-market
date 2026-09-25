@@ -237,7 +237,6 @@ export function HomePage() {
                 ["/products", "Products", "Catalog listings", true],
                 ["/stores", "Stores", "Partner stores", true],
                 ["/users", "Users", "Staff accounts", isSuperAdmin],
-                ["/settings", "Site settings", "SEO & pixels", isSuperAdmin],
               ] as const
             )
               .filter((row) => row[3])
