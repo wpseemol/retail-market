@@ -197,8 +197,13 @@ Auth: Bearer **`super_admin`**. Drives **Settings → Home → Other home sectio
 |--------|------|--------|
 | GET | `/` | `{ blocks, keys }` |
 | GET | `/:key` | One block content |
-| PATCH | `/:key` | Body `{ content: object }` · recursive safe-input on strings |
+| PATCH | `/:key` | Body `{ content: object }` · recursive safe-input · **`welcome_modal`** uses dedicated Zod schema |
 | POST | `/:key/reset` | Restore seeded defaults |
+| POST | `/:key/images` | Multipart field **`image`** · query/body **`field`** (dot path, e.g. `product_image` or `cards.0.image`) · max **1 MB** · always resized · writes URL into block JSON |
+
+**Welcome modal fields:** `badge_label`, `eyebrow`, `headline_before`, `discount_percent` (0–100), `headline_after`, `body`, `cta_label`, `cta_href`, `dismiss_label`, `countdown_seconds` (5–120), `product_image`, `bg_image`.
+
+Dashboard UI: **Settings → Home → Welcome modal** (shadcn Form + Zod · image preview + file upload).
 
 ---
 

@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { WhereItShows } from "@/components/settings/home/HomeEditorChrome";
+import { resolveHomeImagePreview } from "@/components/settings/home/HomeImageField";
 
 type Props = {
   token: string;
@@ -40,10 +42,10 @@ const DEFAULT_HERO_IMAGES: Record<HomeHeroImageSlot, string> = {
 };
 
 const SLOT_LABEL: Record<HomeHeroImageSlot, string> = {
-  main_product: "Product photo",
-  main_bg: "Background",
-  side_product: "Product photo",
-  side_bg: "Background",
+  main_product: "Main product image",
+  main_bg: "Main background image",
+  side_product: "Side product image",
+  side_bg: "Side background image",
 };
 
 function uploadedPath(
@@ -69,8 +71,11 @@ function displayImage(
   slot: HomeHeroImageSlot,
 ): { src: string; isCustom: boolean } {
   const custom = uploadedPath(hero, slot);
-  if (custom) return { src: custom, isCustom: true };
-  return { src: DEFAULT_HERO_IMAGES[slot], isCustom: false };
+  if (custom) return { src: resolveHomeImagePreview(custom), isCustom: true };
+  return {
+    src: resolveHomeImagePreview(DEFAULT_HERO_IMAGES[slot]),
+    isCustom: false,
+  };
 }
 
 function PercentField({
@@ -162,13 +167,13 @@ function HeroImageSlot({
       </div>
       <div className="space-y-2 border-t border-border p-3">
         <div>
-          <p className="text-sm font-medium">{label}</p>
+          <p className="text-sm font-semibold tracking-tight">{label}</p>
           <p className="text-[11px] text-muted-foreground">
             {isCustom
               ? "Custom upload is live on the storefront. Replace anytime."
               : "Showing the built-in image shoppers see now. Upload to replace it."}
           </p>
-          <p className="mt-1 text-[11px] text-muted-foreground">
+          <p className="mt-1 text-[11px] font-medium text-muted-foreground">
             JPEG, PNG, WebP, or GIF · max 1 MB · always resized on the server
           </p>
         </div>
@@ -463,6 +468,11 @@ export function HeroBannerSettingsPanel({
 
   return (
     <div className="space-y-6">
+      <WhereItShows
+        type="Hero"
+        where="Top of the home page — large main banner + side promo"
+        description="Main: eyebrow, headline, discount, price, CTA, product & background. Side: badge, offer, headline, CTA, images."
+      />
       <LiveHeroPreview values={previewValues} hero={hero} />
 
       <Form {...form}>

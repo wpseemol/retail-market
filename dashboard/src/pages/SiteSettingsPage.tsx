@@ -27,7 +27,8 @@ import { FooterSettingsPanel } from "@/components/settings/FooterSettingsPanel";
 import { HeaderSettingsPanel } from "@/components/settings/HeaderSettingsPanel";
 import { HomeSectionsPanel } from "@/components/settings/HomeSectionsPanel";
 import { HeroBannerSettingsPanel } from "@/components/settings/HeroBannerSettingsPanel";
-import { HomeBlocksSettingsPanel } from "@/components/settings/HomeBlocksSettingsPanel";
+import { HomeComponentsEditor } from "@/components/settings/HomeComponentsEditor";
+import { WelcomeModalSettingsPanel } from "@/components/settings/WelcomeModalSettingsPanel";
 import {
     SHOP_FACET_VISIBLE_OPTIONS,
     SHOP_PER_PAGE_OPTIONS,
@@ -115,19 +116,48 @@ function SettingsSection({
     description,
     icon: Icon,
     children,
+    collapsible = false,
+    defaultOpen = true,
 }: {
     title: string;
     description: string;
     icon?: typeof Globe;
     children: ReactNode;
+    collapsible?: boolean;
+    defaultOpen?: boolean;
 }) {
+    const [open, setOpen] = useState(defaultOpen);
+
     return (
         <section className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
-            <div className="flex items-start gap-3 border-b border-border/70 bg-linear-to-r from-brand-tint/40 via-background to-background px-5 py-4">
+            <div
+                className={cn(
+                    "flex items-start gap-3 border-b border-border/70 bg-linear-to-r from-brand-tint/40 via-background to-background px-5 py-4",
+                    collapsible && "cursor-pointer select-none",
+                )}
+                onClick={
+                    collapsible
+                        ? () => setOpen((v) => !v)
+                        : undefined
+                }
+                onKeyDown={
+                    collapsible
+                        ? (e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  setOpen((v) => !v);
+                              }
+                          }
+                        : undefined
+                }
+                role={collapsible ? "button" : undefined}
+                tabIndex={collapsible ? 0 : undefined}
+                aria-expanded={collapsible ? open : undefined}
+            >
                 <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-primary text-white shadow-sm">
                     {Icon ? <Icon className="size-3.5" /> : null}
                 </span>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                     <h2 className="text-sm font-semibold tracking-tight">
                         {title}
                     </h2>
@@ -135,8 +165,25 @@ function SettingsSection({
                         {description}
                     </p>
                 </div>
+                {collapsible ? (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setOpen((v) => !v);
+                        }}
+                        aria-label={open ? "Collapse section" : "Expand section"}
+                    >
+                        {open ? "Hide" : "Show"}
+                    </Button>
+                ) : null}
             </div>
-            <div className="space-y-4 p-5">{children}</div>
+            {(!collapsible || open) && (
+                <div className="space-y-4 p-5">{children}</div>
+            )}
         </section>
     );
 }
@@ -941,9 +988,42 @@ export function SiteSettingsPage() {
             ) : activeTab === "home" && settingsSnapshot && token ? (
                 <div className="space-y-5">
                     <SettingsSection
-                        title="Hero banner"
-                        description="Main and side promo copy, CTAs, and images for the storefront home hero."
+                        title="Welcome modal"
+                        description="Home page popup offer — badge, headline, countdown, CTA, and images. Click Hide to collapse."
                         icon={LayoutTemplate}
+                        collapsible
+                        defaultOpen={false}
+                    >
+                        <WelcomeModalSettingsPanel
+                            token={token}
+                            onError={(m) => {
+                                setSubmitError(m);
+                                setSaveSuccess(null);
+                            }}
+                            onSuccess={(m) => {
+                                setSaveSuccess(m);
+                                setSubmitError(null);
+                            }}
+                        />
+                        {(submitError || saveSuccess) && (
+                            <p
+                                className={
+                                    submitError
+                                        ? "text-sm text-destructive"
+                                        : "text-sm text-brand-primary"
+                                }
+                                role={submitError ? "alert" : "status"}
+                            >
+                                {submitError ?? saveSuccess}
+                            </p>
+                        )}
+                    </SettingsSection>
+                    <SettingsSection
+                        title="Hero banner"
+                        description="Main and side promo copy, CTAs, and images. Click Hide to collapse."
+                        icon={LayoutTemplate}
+                        collapsible
+                        defaultOpen={false}
                     >
                         <HeroBannerSettingsPanel
                             token={token}
@@ -971,10 +1051,10 @@ export function SiteSettingsPage() {
                     </SettingsSection>
                     <SettingsSection
                         title="Other home sections"
-                        description="Edit CMS content for welcome modal, featured, deals, promo slider, brands, and more. Server-rendered on the storefront."
+                        description="Pick a block, edit what shoppers see. Images preview from the storefront; each form validates before save."
                         icon={LayoutTemplate}
                     >
-                        <HomeBlocksSettingsPanel
+                        <HomeComponentsEditor
                             token={token}
                             onError={(m) => {
                                 setSubmitError(m);

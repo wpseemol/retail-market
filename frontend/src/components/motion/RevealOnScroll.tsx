@@ -23,25 +23,24 @@ type RevealProps = {
 const EASE: Transition["ease"] = [0.22, 1, 0.36, 1];
 
 /**
- * Bottom → top reveal. Hides when scrolled away; plays again when it
- * reappears. SSR stays visible for SEO until the client takes over.
+ * Bottom → top reveal — plays **once** the first time the block enters view.
+ * Stays visible after that (no hide / replay on scroll). SSR stays visible for SEO.
  */
 export function RevealOnScroll({
   children,
   delay = 0,
   className,
-  distance = 56,
+  distance = 48,
 }: RevealProps) {
   const reduceMotion = useReducedMotion();
   const ref = useRef<HTMLDivElement | null>(null);
   const inView = useInView(ref, {
-    once: false,
-    amount: 0.2,
-    margin: "0px 0px -5% 0px",
+    once: true,
+    amount: 0.15,
+    margin: "0px 0px -6% 0px",
   });
-  const wasInView = useRef(false);
   const [ready, setReady] = useState(false);
-  const [visible, setVisible] = useState(true);
+  const [played, setPlayed] = useState(false);
 
   useEffect(() => {
     if (reduceMotion) return;
@@ -50,28 +49,22 @@ export function RevealOnScroll({
   }, [reduceMotion]);
 
   useEffect(() => {
-    if (reduceMotion || !ready) return;
-
-    // Entering viewport → snap hidden, then rise in.
-    if (inView && !wasInView.current) {
-      wasInView.current = true;
-      setVisible(false);
-      const id = requestAnimationFrame(() => {
-        requestAnimationFrame(() => setVisible(true));
-      });
-      return () => cancelAnimationFrame(id);
-    }
-
-    // Leaving viewport → hide so the next enter can animate again.
-    if (!inView && wasInView.current) {
-      wasInView.current = false;
-      setVisible(false);
-    }
-  }, [inView, ready, reduceMotion]);
+    if (reduceMotion || !ready || played || !inView) return;
+    // Snap to hidden for one frame, then rise in (so motion is visible).
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setPlayed(true));
+    });
+    return () => cancelAnimationFrame(id);
+  }, [inView, ready, played, reduceMotion]);
 
   if (reduceMotion) {
     return <div className={className}>{children}</div>;
   }
+
+  // Before client ready: fully visible (SEO / no blank crawl).
+  const show = !ready || played;
+  // Armed (ready but not yet played): briefly hidden until first in-view play.
+  const hidden = ready && !played;
 
   return (
     <motion.div
@@ -79,16 +72,16 @@ export function RevealOnScroll({
       className={className}
       initial={false}
       animate={
-        !ready || visible
+        show
           ? { opacity: 1, y: 0 }
-          : { opacity: 0, y: distance }
+          : hidden
+            ? { opacity: 0, y: distance }
+            : { opacity: 1, y: 0 }
       }
       transition={
-        !ready
-          ? { duration: 0 }
-          : visible
-            ? { duration: 0.7, ease: EASE, delay }
-            : { duration: 0.35, ease: EASE }
+        played
+          ? { duration: 0.7, ease: EASE, delay }
+          : { duration: 0 }
       }
     >
       {children}
@@ -102,6 +95,7 @@ type RevealItemProps = {
   className?: string;
 };
 
+/** Staggered child rise — once only. */
 export function RevealItem({
   children,
   index = 0,
@@ -109,10 +103,9 @@ export function RevealItem({
 }: RevealItemProps) {
   const reduceMotion = useReducedMotion();
   const ref = useRef<HTMLDivElement | null>(null);
-  const inView = useInView(ref, { once: false, amount: 0.25 });
-  const wasInView = useRef(false);
+  const inView = useInView(ref, { once: true, amount: 0.2 });
   const [ready, setReady] = useState(false);
-  const [visible, setVisible] = useState(true);
+  const [played, setPlayed] = useState(false);
 
   useEffect(() => {
     if (reduceMotion) return;
@@ -121,26 +114,19 @@ export function RevealItem({
   }, [reduceMotion]);
 
   useEffect(() => {
-    if (reduceMotion || !ready) return;
-
-    if (inView && !wasInView.current) {
-      wasInView.current = true;
-      setVisible(false);
-      const id = requestAnimationFrame(() => {
-        requestAnimationFrame(() => setVisible(true));
-      });
-      return () => cancelAnimationFrame(id);
-    }
-
-    if (!inView && wasInView.current) {
-      wasInView.current = false;
-      setVisible(false);
-    }
-  }, [inView, ready, reduceMotion]);
+    if (reduceMotion || !ready || played || !inView) return;
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setPlayed(true));
+    });
+    return () => cancelAnimationFrame(id);
+  }, [inView, ready, played, reduceMotion]);
 
   if (reduceMotion) {
     return <div className={className}>{children}</div>;
   }
+
+  const show = !ready || played;
+  const hidden = ready && !played;
 
   return (
     <motion.div
@@ -148,20 +134,20 @@ export function RevealItem({
       className={className}
       initial={false}
       animate={
-        !ready || visible
+        show
           ? { opacity: 1, y: 0 }
-          : { opacity: 0, y: 36 }
+          : hidden
+            ? { opacity: 0, y: 32 }
+            : { opacity: 1, y: 0 }
       }
       transition={
-        !ready
-          ? { duration: 0 }
-          : visible
-            ? {
-                duration: 0.55,
-                ease: EASE,
-                delay: Math.min(index * 0.08, 0.4),
-              }
-            : { duration: 0.28, ease: EASE }
+        played
+          ? {
+              duration: 0.55,
+              ease: EASE,
+              delay: Math.min(index * 0.08, 0.4),
+            }
+          : { duration: 0 }
       }
     >
       {children}

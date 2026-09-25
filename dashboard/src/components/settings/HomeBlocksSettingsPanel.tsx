@@ -14,7 +14,6 @@ type Props = {
 };
 
 const BLOCK_LABELS: Record<string, string> = {
-  welcome_modal: "Welcome modal",
   featured: "Featured USPs",
   deals_banner: "Deals banner cards",
   product_groups: "Product groups",
@@ -25,6 +24,9 @@ const BLOCK_LABELS: Record<string, string> = {
   laptop_repair: "Laptop repair banner",
   top_brands: "Top brands",
 };
+
+/** Keys with a dedicated form panel (not the JSON editor). */
+const KEYS_WITH_DEDICATED_EDITOR = new Set(["welcome_modal"]);
 
 type BlocksResponse = {
   blocks: Record<string, unknown>;
@@ -54,7 +56,11 @@ export function HomeBlocksSettingsPanel({
         );
         if (cancelled) return;
         setBlocks(data.blocks ?? {});
-        setKeys(data.keys ?? Object.keys(data.blocks ?? {}));
+        setKeys(
+          (data.keys ?? Object.keys(data.blocks ?? {})).filter(
+            (k) => !KEYS_WITH_DEDICATED_EDITOR.has(k),
+          ),
+        );
       } catch (err) {
         if (!cancelled) {
           onError(
