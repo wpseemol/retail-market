@@ -115,15 +115,23 @@ export default function App() {
             <Route path="brands/:id" element={<BrandEditPage />} />
           </Route>
 
-          <Route element={<ProtectedRoute roles={["admin"]} />}>
+          <Route
+            element={<ProtectedRoute roles={["admin", "super_admin"]} />}
+          >
             <Route path="admin" element={<RolePage role="Admin" />} />
           </Route>
 
-          <Route element={<ProtectedRoute roles={["moderator"]} />}>
+          <Route
+            element={
+              <ProtectedRoute roles={["moderator", "super_admin"]} />
+            }
+          >
             <Route path="moderator" element={<RolePage role="Moderator" />} />
           </Route>
 
-          <Route element={<ProtectedRoute roles={["vendor"]} />}>
+          <Route
+            element={<ProtectedRoute roles={["vendor", "super_admin"]} />}
+          >
             <Route path="vendor" element={<RolePage role="Vendor" />} />
           </Route>
         </Route>
