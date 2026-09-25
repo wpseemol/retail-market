@@ -66,6 +66,9 @@ export default function App() {
           </Route>
 
           <Route element={<ProtectedRoute roles={["super_admin", "vendor"]} />}>
+            <Route path="stores" element={<ShopsPage />} />
+            <Route path="stores/new" element={<ShopCreatePage />} />
+            <Route path="stores/:id" element={<ShopEditPage />} />
             <Route path="shops" element={<ShopsPage />} />
             <Route path="shops/new" element={<ShopCreatePage />} />
             <Route path="shops/:id" element={<ShopEditPage />} />

@@ -85,8 +85,8 @@ export function ProductsPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Products</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {isVendor
-              ? "Add products under your shop — category, brand, photos, and variants."
-              : "Manage catalog products across shops. Each product sits under a shop and category."}
+              ? "Add products under your store — category, brand, photos, and variants."
+              : "Manage catalog products across stores. Each product sits under a store and category."}
           </p>
         </div>
         <Button asChild>

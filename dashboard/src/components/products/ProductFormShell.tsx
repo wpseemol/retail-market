@@ -168,7 +168,7 @@ export function ProductLivePreview({
             </p>
             {shopName ? (
               <p>
-                <span className="font-medium text-foreground">Shop:</span>{" "}
+                <span className="font-medium text-foreground">Store:</span>{" "}
                 {shopName}
               </p>
             ) : null}
@@ -184,7 +184,7 @@ export function ProductLivePreview({
           <p>
             {mode === "edit"
               ? "Saving updates this product for every storefront listing."
-              : "Create under a shop, then assign category, brand, and photos."}
+              : "Create under a store, then assign category, brand, and photos."}
           </p>
         </div>
       </div>

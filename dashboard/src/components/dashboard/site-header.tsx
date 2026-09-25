@@ -14,8 +14,10 @@ const PAGE_TITLES: Record<string, string> = {
   "/": "Overview",
   "/profile": "Profile",
   "/users": "Users",
-  "/shops": "Shops",
-  "/shops/new": "Create shop",
+  "/stores": "Stores",
+  "/stores/new": "Create store",
+  "/shops": "Stores",
+  "/shops/new": "Create store",
   "/super-admin": "Super Admin",
   "/admin": "Admin",
   "/moderator": "Moderator",
@@ -28,8 +30,8 @@ export function SiteHeader() {
     PAGE_TITLES[pathname] ??
     (pathname.startsWith("/users/")
       ? "Edit user"
-      : pathname.startsWith("/shops/")
-        ? "Edit shop"
+      : pathname.startsWith("/stores/") || pathname.startsWith("/shops/")
+        ? "Edit store"
         : "Dashboard");
 
   return (

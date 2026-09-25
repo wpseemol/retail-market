@@ -53,9 +53,9 @@ export function ShopFormHeader({
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <Button asChild variant="ghost" size="sm" className="-ml-2 mb-2">
-          <Link to="/shops">
+          <Link to="/stores">
             <ArrowLeft />
-            Shops
+            Stores
           </Link>
         </Button>
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
@@ -271,7 +271,7 @@ export function ShopLivePreview({
           <p>
             {mode === "edit"
               ? "Products and brands stay on the product form — including active or banned brands."
-              : "Create the shop first. Attach products (and brands) later from the product pages."}
+              : "Create the store first. Attach products (and brands) later from the product pages."}
           </p>
         </div>
       </div>

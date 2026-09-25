@@ -15,8 +15,8 @@ export const shopCreateFormSchema = z.object({
     z
       .string()
       .trim()
-      .min(2, "Shop name must be at least 2 characters")
-      .max(200, "Shop name must be at most 200 characters"),
+      .min(2, "Store name must be at least 2 characters")
+      .max(200, "Store name must be at most 200 characters"),
   ),
   slug: withSafeInput(
     z

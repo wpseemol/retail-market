@@ -88,7 +88,7 @@ export function CategoriesPage() {
             Product categories
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Shared catalog tree with SVG icons. Staff manage categories; shops
+            Shared catalog tree with SVG icons. Staff manage categories; stores
             pick one when adding products.
           </p>
         </div>

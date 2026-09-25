@@ -92,7 +92,7 @@ export function ShopEditPage() {
         setVendors(users.users);
       }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to load shop");
+      setError(err instanceof ApiError ? err.message : "Failed to load store");
     } finally {
       setLoading(false);
     }
@@ -139,7 +139,7 @@ export function ShopEditPage() {
         },
       );
       applyShop(data.shop);
-      setSaveSuccess(data.message || "Shop updated");
+      setSaveSuccess(data.message || "Store updated");
       const hist = await apiFetch<{ history: ShopHistoryItem[] }>(
         `/api/dashboard/shops/${id}/history`,
         { token },
@@ -185,7 +185,7 @@ export function ShopEditPage() {
   async function onDelete() {
     if (!token || !id || !isSuper) return;
     const ok = window.confirm(
-      `Delete shop “${shop?.shop_name}”? This soft-deletes the shop and is logged in history.`,
+      `Delete store “${shop?.shop_name}”? This soft-deletes the store and is logged in history.`,
     );
     if (!ok) return;
 
@@ -196,7 +196,7 @@ export function ShopEditPage() {
         method: "DELETE",
         token,
       });
-      navigate("/shops");
+      navigate("/stores");
     } catch (err) {
       setSaveError(err instanceof ApiError ? err.message : "Delete failed");
     } finally {
@@ -205,19 +205,19 @@ export function ShopEditPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-muted-foreground">Loading shop…</p>;
+    return <p className="text-sm text-muted-foreground">Loading store…</p>;
   }
 
   if (error || !shop) {
     return (
       <div className="space-y-4">
         <Button asChild variant="outline" size="sm">
-          <Link to="/shops">
+          <Link to="/stores">
             <ArrowLeft />
             Back
           </Link>
         </Button>
-        <p className="text-sm text-destructive">{error ?? "Shop not found"}</p>
+        <p className="text-sm text-destructive">{error ?? "Store not found"}</p>
       </div>
     );
   }
@@ -227,9 +227,9 @@ export function ShopEditPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <Button asChild variant="ghost" size="sm" className="-ml-2 mb-2">
-            <Link to="/shops">
+            <Link to="/stores">
               <ArrowLeft />
-              Shops
+              Stores
             </Link>
           </Button>
           <h1 className="text-2xl font-semibold tracking-tight">
@@ -247,11 +247,11 @@ export function ShopEditPage() {
           <div className="mb-1 flex size-9 items-center justify-center rounded-md bg-brand-tint text-brand-deep">
             <Store className="size-4" />
           </div>
-          <CardTitle>Edit shop</CardTitle>
+          <CardTitle>Edit store</CardTitle>
           <CardDescription>
             {isSuper
               ? "Super admin can edit name, slug, image, status, owner — and delete."
-              : "Update your shop name, slug, description, and store image."}
+              : "Update your store name, slug, description, and store image."}
           </CardDescription>
         </CardHeader>
         <form onSubmit={onSave}>
@@ -294,7 +294,7 @@ export function ShopEditPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="shop_name">Shop name</Label>
+              <Label htmlFor="shop_name">Store name</Label>
               <Input
                 id="shop_name"
                 value={shopName}
@@ -389,7 +389,7 @@ export function ShopEditPage() {
                 onClick={() => void onDelete()}
               >
                 <Trash2 />
-                {deleting ? "Deleting…" : "Delete shop"}
+                {deleting ? "Deleting…" : "Delete store"}
               </Button>
             ) : null}
           </CardFooter>

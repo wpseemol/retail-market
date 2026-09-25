@@ -138,7 +138,7 @@ export function BrandsPage() {
               </div>
               <CardTitle>Catalog</CardTitle>
               <CardDescription>
-                Browse and edit brands used across every shop
+                Browse and edit brands used across every store
               </CardDescription>
             </div>
             <div className="flex rounded-lg border border-border bg-muted/40 p-0.5">

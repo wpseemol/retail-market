@@ -221,7 +221,7 @@ export function ShopCreatePage() {
     if (!token) return;
 
     if (isSuper && !values.user_id) {
-      setSubmitError("Search and select an owner email for this shop");
+      setSubmitError("Search and select an owner email for this store");
       return;
     }
 
@@ -252,10 +252,10 @@ export function ShopCreatePage() {
         );
       }
 
-      navigate(`/shops/${data.shop.id}`);
+      navigate(`/stores/${data.shop.id}`);
     } catch (err) {
       setSubmitError(
-        err instanceof ApiError ? err.message : "Failed to create shop",
+        err instanceof ApiError ? err.message : "Failed to create store",
       );
     }
   }
@@ -264,7 +264,7 @@ export function ShopCreatePage() {
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-4">
       <ShopFormHeader
         title="Create store"
-        subtitle="Name, slug, and optional store image — same green storefront language as the customer shop. Products and brands attach later."
+        subtitle="Name, slug, and optional store image. Products and brands attach later."
       />
 
       <Form {...form}>
@@ -277,7 +277,7 @@ export function ShopCreatePage() {
             <ShopFormSection
               step="01"
               title="Store identity"
-              description="Logo, shop name, and URL slug shown on the storefront."
+              description="Logo, store name, and URL slug shown on the storefront."
             >
               <ShopImageDropzone
                 previewUrl={logoPreview}
@@ -299,7 +299,7 @@ export function ShopCreatePage() {
                 name="shop_name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Shop name</FormLabel>
+                    <FormLabel>Store name</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Niyenin Gadgets"
@@ -380,7 +380,7 @@ export function ShopCreatePage() {
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      Draft keeps the shop private; publish makes it live.
+                      Draft keeps the store private; publish makes it live.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -506,7 +506,7 @@ export function ShopCreatePage() {
               }
             >
               <Button asChild type="button" variant="outline">
-                <Link to="/shops">Cancel</Link>
+                <Link to="/stores">Cancel</Link>
               </Button>
               <Button
                 type="submit"

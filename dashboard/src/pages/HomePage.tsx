@@ -103,7 +103,7 @@ export function HomePage() {
       icon: Users,
     },
     {
-      title: "Shops",
+      title: "Stores",
       value: stats?.shops ?? "—",
       hint: "Partner stores",
       icon: Store,
@@ -235,7 +235,7 @@ export function HomePage() {
             {(
               [
                 ["/products", "Products", "Catalog listings", true],
-                ["/shops", "Shops", "Partner stores", true],
+                ["/stores", "Stores", "Partner stores", true],
                 ["/users", "Users", "Staff accounts", isSuperAdmin],
                 ["/settings", "Site settings", "SEO & pixels", isSuperAdmin],
               ] as const

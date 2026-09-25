@@ -266,7 +266,7 @@ export function ProductCreatePage() {
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-4">
       <ProductFormHeader
         title="Add product"
-        subtitle="Shop → category → brand → photos, details, and rich description."
+        subtitle="Store → category → brand → photos, details, and rich description."
       />
 
       <Form {...form}>
@@ -297,7 +297,7 @@ export function ProductCreatePage() {
             <ProductFormSection
               step="02"
               title="Catalog placement"
-              description="Assign shop, category, and brand so the product appears in the right listings."
+              description="Assign store, category, and brand so the product appears in the right listings."
             >
               {isElevated && (
                 <FormField
@@ -305,14 +305,14 @@ export function ProductCreatePage() {
                   name="vendor_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Shop</FormLabel>
+                      <FormLabel>Store</FormLabel>
                       <Select
                         value={field.value || undefined}
                         onValueChange={field.onChange}
                       >
                         <FormControl>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select shop" />
+                            <SelectValue placeholder="Select store" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>

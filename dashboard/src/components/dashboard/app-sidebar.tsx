@@ -66,8 +66,8 @@ const topLinks: Array<{
     roles: ["super_admin"],
   },
   {
-    to: "/shops",
-    label: "Shops",
+    to: "/stores",
+    label: "Stores",
     icon: Store,
     roles: ["super_admin", "vendor"],
   },

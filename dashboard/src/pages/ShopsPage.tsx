@@ -45,7 +45,7 @@ export function ShopsPage() {
       setLoading(true);
       setError(null);
       try {
-        // Vendor: if they have no shop yet, send them to create.
+        // Vendor: if they have no store yet, send them to create.
         if (isVendor && !isSuper) {
           const me = await apiFetch<{ shop: Shop | null }>(
             "/api/dashboard/shops/me",
@@ -53,7 +53,7 @@ export function ShopsPage() {
           );
           if (cancelled) return;
           if (!me.shop) {
-            navigate("/shops/new", { replace: true });
+            navigate("/stores/new", { replace: true });
             return;
           }
         }
@@ -69,7 +69,9 @@ export function ShopsPage() {
         setTotal(data.pagination.total);
       } catch (err) {
         if (cancelled) return;
-        setError(err instanceof ApiError ? err.message : "Failed to load shops");
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load stores",
+        );
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -85,17 +87,17 @@ export function ShopsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Shops</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Stores</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {isSuper
-              ? "Create and edit every vendor shop — name, slug, status, and owner."
-              : "Manage your shop name and unique slug."}
+              ? "Create and edit every vendor store — name, slug, status, and owner."
+              : "Manage your store name and unique slug."}
           </p>
         </div>
         <Button asChild>
-          <Link to="/shops/new">
+          <Link to="/stores/new">
             <Plus />
-            Create shop
+            Create store
           </Link>
         </Button>
       </div>
@@ -107,9 +109,9 @@ export function ShopsPage() {
               <Store className="size-4" />
             </div>
             <div>
-              <CardTitle>All shops</CardTitle>
+              <CardTitle>All stores</CardTitle>
               <CardDescription>
-                {total} shop{total === 1 ? "" : "s"}
+                {total} store{total === 1 ? "" : "s"}
               </CardDescription>
             </div>
           </div>
@@ -123,7 +125,7 @@ export function ShopsPage() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") setQ(searchDraft.trim());
                   }}
-                  placeholder="Search shop name or slug…"
+                  placeholder="Search store name or slug…"
                   className="pl-9"
                 />
               </div>
@@ -147,7 +149,7 @@ export function ShopsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Shop</TableHead>
+                  <TableHead>Store</TableHead>
                   <TableHead>Slug</TableHead>
                   <TableHead>Status</TableHead>
                   {isSuper ? <TableHead>Owner</TableHead> : null}
@@ -170,8 +172,11 @@ export function ShopsPage() {
                       colSpan={isSuper ? 5 : 4}
                       className="h-24 text-center text-muted-foreground"
                     >
-                      No shops yet.{" "}
-                      <Link to="/shops/new" className="text-brand-primary underline">
+                      No stores yet.{" "}
+                      <Link
+                        to="/stores/new"
+                        className="text-brand-primary underline"
+                      >
                         Create one
                       </Link>
                     </TableCell>
@@ -212,7 +217,7 @@ export function ShopsPage() {
                       ) : null}
                       <TableCell className="text-right">
                         <Button asChild size="sm" variant="outline">
-                          <Link to={`/shops/${shop.id}`}>
+                          <Link to={`/stores/${shop.id}`}>
                             <Pencil />
                             Edit
                           </Link>

@@ -405,7 +405,7 @@ export function ProductEditPage() {
             <ProductFormSection
               step="02"
               title="Catalog placement"
-              description="Shop, category, and brand for this product's listings."
+              description="Store, category, and brand for this product's listings."
             >
               {isElevated && (
                 <FormField
@@ -413,14 +413,14 @@ export function ProductEditPage() {
                   name="vendor_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Shop</FormLabel>
+                      <FormLabel>Store</FormLabel>
                       <Select
                         value={field.value || undefined}
                         onValueChange={field.onChange}
                       >
                         <FormControl>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select shop" />
+                            <SelectValue placeholder="Select store" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
