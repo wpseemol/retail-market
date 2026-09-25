@@ -13,11 +13,11 @@ import {
 } from "@/lib/validators/shop";
 import { useAuthStore } from "@/store/auth";
 import {
-  ShopFormHeader,
-  ShopFormSection,
-  ShopImageDropzone,
-  ShopLivePreview,
-  ShopStickyActions,
+  StoreFormHeader,
+  StoreFormSection,
+  StoreImageDropzone,
+  StoreLivePreview,
+  StoreStickyActions,
 } from "@/components/shops/ShopFormShell";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,7 +50,7 @@ type OwnerOption = {
 const OWNER_SEARCH_LIMIT = 6;
 const OWNER_ROLES = "super_admin,admin,moderator,vendor";
 
-export function ShopCreatePage() {
+export function StoreCreatePage() {
   const navigate = useNavigate();
   const { token, user } = useAuthStore();
   const isSuper = user?.role === "super_admin";
@@ -262,9 +262,9 @@ export function ShopCreatePage() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-4">
-      <ShopFormHeader
+      <StoreFormHeader
         title="Create store"
-        subtitle="Name, slug, and optional store image. Products and brands attach later."
+        subtitle="Set up a partner storefront — name, slug, and optional logo."
       />
 
       <Form {...form}>
@@ -274,12 +274,13 @@ export function ShopCreatePage() {
           noValidate
         >
           <div className="space-y-5">
-            <ShopFormSection
+            <StoreFormSection
               step="01"
               title="Store identity"
               description="Logo, store name, and URL slug shown on the storefront."
             >
-              <ShopImageDropzone
+              <StoreImageDropzone
+                label="Store logo"
                 previewUrl={logoPreview}
                 disabled={form.formState.isSubmitting}
                 inputRef={fileRef}
@@ -335,9 +336,9 @@ export function ShopCreatePage() {
                   </FormItem>
                 )}
               />
-            </ShopFormSection>
+            </StoreFormSection>
 
-            <ShopFormSection
+            <StoreFormSection
               step="02"
               title="Details & visibility"
               description="Optional description and draft vs publish. Brands stay on products."
@@ -490,9 +491,9 @@ export function ShopCreatePage() {
                   )}
                 </div>
               ) : null}
-            </ShopFormSection>
+            </StoreFormSection>
 
-            <ShopStickyActions
+            <StoreStickyActions
               message={
                 submitError ? (
                   <p className="text-destructive" role="alert">
@@ -516,10 +517,10 @@ export function ShopCreatePage() {
               >
                 {form.formState.isSubmitting ? "Creating…" : "Create store"}
               </Button>
-            </ShopStickyActions>
+            </StoreStickyActions>
           </div>
 
-          <ShopLivePreview
+          <StoreLivePreview
             mode="create"
             shopName={shopName}
             slug={slug}
@@ -533,3 +534,6 @@ export function ShopCreatePage() {
     </div>
   );
 }
+
+/** @deprecated Use StoreCreatePage */
+export const ShopCreatePage = StoreCreatePage;

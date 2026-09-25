@@ -5,9 +5,9 @@ import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { RolePage } from "./pages/RolePage";
-import { ShopCreatePage } from "./pages/ShopCreatePage";
-import { ShopEditPage } from "./pages/ShopEditPage";
-import { ShopsPage } from "./pages/ShopsPage";
+import { StoreCreatePage } from "./pages/ShopCreatePage";
+import { StoreEditPage } from "./pages/ShopEditPage";
+import { StoresPage } from "./pages/ShopsPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { CategoryCreatePage } from "./pages/CategoryCreatePage";
 import { CategoryEditPage } from "./pages/CategoryEditPage";
@@ -21,6 +21,7 @@ import { UserEditPage } from "./pages/UserEditPage";
 import { UsersPage } from "./pages/UsersPage";
 import { SiteSettingsPage } from "./pages/SiteSettingsPage";
 import { OrderDetailPage, OrdersPage } from "./pages/OrdersPage";
+import { NotificationsPage } from "./pages/NotificationsPage";
 import { useAuthStore } from "./store/auth";
 import type { StaffRole } from "./lib/api";
 
@@ -65,6 +66,7 @@ export default function App() {
           >
             <Route path="orders" element={<OrdersPage />} />
             <Route path="orders/:id" element={<OrderDetailPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={["super_admin"]} />}>
@@ -78,12 +80,12 @@ export default function App() {
           </Route>
 
           <Route element={<ProtectedRoute roles={["super_admin", "vendor"]} />}>
-            <Route path="stores" element={<ShopsPage />} />
-            <Route path="stores/new" element={<ShopCreatePage />} />
-            <Route path="stores/:id" element={<ShopEditPage />} />
-            <Route path="shops" element={<ShopsPage />} />
-            <Route path="shops/new" element={<ShopCreatePage />} />
-            <Route path="shops/:id" element={<ShopEditPage />} />
+            <Route path="stores" element={<StoresPage />} />
+            <Route path="stores/new" element={<StoreCreatePage />} />
+            <Route path="stores/:id" element={<StoreEditPage />} />
+            <Route path="shops" element={<StoresPage />} />
+            <Route path="shops/new" element={<StoreCreatePage />} />
+            <Route path="shops/:id" element={<StoreEditPage />} />
           </Route>
 
           <Route

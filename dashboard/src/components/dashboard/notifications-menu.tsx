@@ -213,7 +213,7 @@ export function NotificationsMenu() {
               <Bell className="mx-auto size-8 text-muted-foreground/40" />
               <p className="mt-2 text-sm font-medium">No notifications</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                New customer orders will show up here.
+                New alerts of any type will show up here.
               </p>
             </div>
           ) : (
@@ -296,7 +296,7 @@ export function NotificationsMenu() {
             className="h-8 w-full justify-center text-xs"
             onClick={() => setOpen(false)}
           >
-            <Link to="/orders">View all orders</Link>
+            <Link to="/notifications">View all notifications</Link>
           </Button>
         </div>
       </DropdownMenuContent>

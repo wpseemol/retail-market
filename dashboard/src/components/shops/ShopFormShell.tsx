@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ShopCreateStatus } from "@/lib/shops";
 
-export function ShopFormSection({
+export function StoreFormSection({
   step,
   title,
   description,
@@ -40,7 +40,10 @@ export function ShopFormSection({
   );
 }
 
-export function ShopFormHeader({
+/** @deprecated Use StoreFormSection */
+export const ShopFormSection = StoreFormSection;
+
+export function StoreFormHeader({
   title,
   subtitle,
   badge,
@@ -66,7 +69,10 @@ export function ShopFormHeader({
   );
 }
 
-type ShopImageDropzoneProps = {
+/** @deprecated Use StoreFormHeader */
+export const ShopFormHeader = StoreFormHeader;
+
+type ImageDropzoneProps = {
   previewUrl?: string | null;
   uploading?: boolean;
   disabled?: boolean;
@@ -74,9 +80,12 @@ type ShopImageDropzoneProps = {
   onClear?: () => void;
   inputRef: RefObject<HTMLInputElement | null>;
   onFile: (file: File | null) => void;
+  label?: string;
+  hint?: string;
+  variant?: "logo" | "banner";
 };
 
-export function ShopImageDropzone({
+export function StoreImageDropzone({
   previewUrl,
   uploading,
   disabled,
@@ -84,33 +93,43 @@ export function ShopImageDropzone({
   onClear,
   inputRef,
   onFile,
-}: ShopImageDropzoneProps) {
+  label = "Store logo",
+  hint = "JPEG, PNG, WebP, or GIF · max 5 MB · always resized on the server",
+  variant = "logo",
+}: ImageDropzoneProps) {
+  const isBanner = variant === "banner";
+
   return (
     <div className="overflow-hidden rounded-xl border border-dashed border-border bg-gradient-to-br from-muted/40 via-background to-brand-tint/20">
-      <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
-        <div className="relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+      <div
+        className={cn(
+          "flex flex-col gap-4 p-4",
+          !isBanner && "sm:flex-row sm:items-center",
+        )}
+      >
+        <div
+          className={cn(
+            "relative flex shrink-0 items-center justify-center overflow-hidden border border-border bg-background shadow-sm",
+            isBanner
+              ? "aspect-[21/7] w-full rounded-xl"
+              : "size-24 rounded-xl",
+          )}
+        >
           {previewUrl ? (
-            <img
-              src={previewUrl}
-              alt=""
-              className="size-full object-cover"
-            />
+            <img src={previewUrl} alt="" className="size-full object-cover" />
           ) : (
             <div className="flex flex-col items-center gap-1 text-muted-foreground">
-              <ImagePlus className="size-6" />
+              <ImagePlus className={isBanner ? "size-8" : "size-6"} />
               <span className="text-[10px] font-medium uppercase tracking-wide">
-                Store
+                {isBanner ? "Banner" : "Logo"}
               </span>
             </div>
           )}
         </div>
         <div className="min-w-0 flex-1 space-y-2">
           <div>
-            <p className="text-sm font-medium">Store image</p>
-            <p className="text-xs text-muted-foreground">
-              Optional. JPEG, PNG, WebP, or GIF · max 5 MB · always resized on
-              the server.
-            </p>
+            <p className="text-sm font-medium">{label}</p>
+            <p className="text-xs text-muted-foreground">{hint}</p>
           </div>
           <input
             ref={inputRef}
@@ -131,8 +150,12 @@ export function ShopImageDropzone({
               {uploading
                 ? "Uploading…"
                 : previewUrl
-                  ? "Replace image"
-                  : "Upload image"}
+                  ? isBanner
+                    ? "Replace banner"
+                    : "Replace logo"
+                  : isBanner
+                    ? "Upload banner"
+                    : "Upload logo"}
             </Button>
             {previewUrl && onClear ? (
               <Button
@@ -152,13 +175,18 @@ export function ShopImageDropzone({
   );
 }
 
-export function ShopLivePreview({
+/** @deprecated Use StoreImageDropzone */
+export const ShopImageDropzone = StoreImageDropzone;
+
+export function StoreLivePreview({
   shopName,
   slug,
   description,
   status,
   imageUrl,
+  bannerUrl,
   ownerEmail,
+  theme,
   mode,
 }: {
   shopName: string;
@@ -166,7 +194,9 @@ export function ShopLivePreview({
   description: string;
   status: ShopCreateStatus | string;
   imageUrl?: string | null;
+  bannerUrl?: string | null;
   ownerEmail?: string;
+  theme?: string;
   mode: "create" | "edit";
 }) {
   const displayName = shopName.trim() || "Your store";
@@ -176,49 +206,59 @@ export function ShopLivePreview({
 
   return (
     <aside className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm lg:sticky lg:top-4">
-      {/* Storefront-style hero — mirrors frontend /shop brand green plane */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-brand-deep via-[#0a4a10] to-brand-primary px-5 pb-12 pt-5 text-white">
-        <div className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute bottom-0 left-0 h-16 w-full bg-gradient-to-t from-black/20 to-transparent" />
-        <div className="relative flex items-center justify-between gap-2">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
-            Storefront preview
-          </p>
-          <Badge
-            variant="outline"
-            className={cn(
-              "border-white/25 bg-white/10 capitalize text-white",
-              !isLive && "opacity-70",
-            )}
-          >
-            {isLive ? "publish" : "draft"}
-          </Badge>
-        </div>
-        <div className="relative mt-6 flex items-end gap-4">
-          <div className="flex size-16 items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-white/15 text-2xl font-semibold shadow-lg backdrop-blur-sm">
-            {imageUrl ? (
-              <img
-                src={imageUrl}
-                alt=""
-                className="size-full object-cover"
-              />
-            ) : (
-              initial
-            )}
-          </div>
-          <div className="min-w-0 pb-0.5">
-            <h3 className="truncate text-xl font-semibold tracking-tight">
-              {displayName}
-            </h3>
-            <p className="mt-0.5 truncate text-sm text-white/70">
-              /shop · {displaySlug}
+      <div className="relative overflow-hidden bg-gradient-to-br from-brand-deep via-[#0a4a10] to-brand-primary text-white">
+        {bannerUrl ? (
+          <img
+            src={bannerUrl}
+            alt=""
+            className="absolute inset-0 size-full object-cover opacity-40"
+          />
+        ) : (
+          <>
+            <div className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-white/10 blur-2xl" />
+            <div className="pointer-events-none absolute bottom-0 left-0 h-16 w-full bg-gradient-to-t from-black/20 to-transparent" />
+          </>
+        )}
+        <div className="relative px-5 pb-12 pt-5">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
+              Storefront preview
             </p>
+            <Badge
+              variant="outline"
+              className={cn(
+                "border-white/25 bg-white/10 capitalize text-white",
+                !isLive && "opacity-70",
+              )}
+            >
+              {isLive ? "live" : status}
+            </Badge>
+          </div>
+          <div className="mt-6 flex items-end gap-4">
+            <div className="flex size-16 items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-white/15 text-2xl font-semibold shadow-lg backdrop-blur-sm">
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt=""
+                  className="size-full object-cover"
+                />
+              ) : (
+                initial
+              )}
+            </div>
+            <div className="min-w-0 pb-0.5">
+              <h3 className="truncate text-xl font-semibold tracking-tight">
+                {displayName}
+              </h3>
+              <p className="mt-0.5 truncate text-sm text-white/70">
+                /stores/{displaySlug}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="-mt-6 space-y-4 px-5 pb-5">
-        {/* Product-card shaped tile — echoes frontend ShopProductCard */}
         <div className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
           <div className="relative aspect-[4/3] bg-gradient-to-br from-muted/60 to-brand-tint/30">
             {imageUrl ? (
@@ -250,8 +290,10 @@ export function ShopLivePreview({
                 <dd className="mt-0.5 truncate font-medium">/{displaySlug}</dd>
               </div>
               <div className="rounded-lg bg-muted/50 px-2.5 py-2">
-                <dt className="text-muted-foreground">Products</dt>
-                <dd className="mt-0.5 font-medium tabular-nums">0</dd>
+                <dt className="text-muted-foreground">Theme</dt>
+                <dd className="mt-0.5 truncate font-medium capitalize">
+                  {theme?.replaceAll("_", " ") || "classic"}
+                </dd>
               </div>
             </dl>
             {ownerEmail ? (
@@ -270,8 +312,8 @@ export function ShopLivePreview({
           )}
           <p>
             {mode === "edit"
-              ? "Products and brands stay on the product form — including active or banned brands."
-              : "Create the store first. Attach products (and brands) later from the product pages."}
+              ? "Save to update identity, media, and storefront layout on the public store page."
+              : "Create the store first. Attach products later from Catalog."}
           </p>
         </div>
       </div>
@@ -279,7 +321,10 @@ export function ShopLivePreview({
   );
 }
 
-export function ShopStickyActions({
+/** @deprecated Use StoreLivePreview */
+export const ShopLivePreview = StoreLivePreview;
+
+export function StoreStickyActions({
   children,
   message,
 }: {
@@ -295,3 +340,6 @@ export function ShopStickyActions({
     </div>
   );
 }
+
+/** @deprecated Use StoreStickyActions */
+export const ShopStickyActions = StoreStickyActions;

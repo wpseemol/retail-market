@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, History, ImagePlus, Store, Trash2 } from "lucide-react";
+import { History, Trash2 } from "lucide-react";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import {
   slugifyClient,
@@ -16,17 +16,17 @@ import {
   STOREFRONT_THEMES,
   PRODUCT_SORTS,
 } from "@/lib/shops";
+import { validateShopImageFile } from "@/lib/validators/shop";
 import { useAuthStore } from "@/store/auth";
+import {
+  StoreFormHeader,
+  StoreFormSection,
+  StoreImageDropzone,
+  StoreLivePreview,
+  StoreStickyActions,
+} from "@/components/shops/ShopFormShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -36,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 
 type VendorOption = {
   id: string;
@@ -50,7 +50,7 @@ function formatChangeValue(value: unknown) {
   return String(value);
 }
 
-export function ShopEditPage() {
+export function StoreEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { token, user } = useAuthStore();
@@ -82,6 +82,15 @@ export function ShopEditPage() {
   const [logoUploading, setLogoUploading] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  async function refreshHistory() {
+    if (!token || !id) return;
+    const hist = await apiFetch<{ history: ShopHistoryItem[] }>(
+      `/api/dashboard/shops/${id}/history`,
+      { token },
+    );
+    setHistory(hist.history);
+  }
 
   async function loadAll() {
     if (!token || !id) return;
@@ -164,11 +173,7 @@ export function ShopEditPage() {
       );
       applyShop(data.shop);
       setSaveSuccess(data.message || "Store updated");
-      const hist = await apiFetch<{ history: ShopHistoryItem[] }>(
-        `/api/dashboard/shops/${id}/history`,
-        { token },
-      );
-      setHistory(hist.history);
+      await refreshHistory();
     } catch (err) {
       setSaveError(err instanceof ApiError ? err.message : "Update failed");
     } finally {
@@ -178,6 +183,11 @@ export function ShopEditPage() {
 
   async function onLogoChange(file: File | null) {
     if (!file || !token || !id) return;
+    const checked = validateShopImageFile(file);
+    if (!checked.ok) {
+      setSaveError(checked.message);
+      return;
+    }
     setLogoUploading(true);
     setSaveError(null);
     setSaveSuccess(null);
@@ -190,15 +200,11 @@ export function ShopEditPage() {
         { token },
       );
       applyShop(data.shop);
-      setSaveSuccess(data.message || "Store image updated");
-      const hist = await apiFetch<{ history: ShopHistoryItem[] }>(
-        `/api/dashboard/shops/${id}/history`,
-        { token },
-      );
-      setHistory(hist.history);
+      setSaveSuccess(data.message || "Store logo updated");
+      await refreshHistory();
     } catch (err) {
       setSaveError(
-        err instanceof ApiError ? err.message : "Image upload failed",
+        err instanceof ApiError ? err.message : "Logo upload failed",
       );
     } finally {
       setLogoUploading(false);
@@ -208,6 +214,11 @@ export function ShopEditPage() {
 
   async function onBannerChange(file: File | null) {
     if (!file || !token || !id) return;
+    const checked = validateShopImageFile(file);
+    if (!checked.ok) {
+      setSaveError(checked.message);
+      return;
+    }
     setBannerUploading(true);
     setSaveError(null);
     setSaveSuccess(null);
@@ -221,11 +232,7 @@ export function ShopEditPage() {
       );
       applyShop(data.shop);
       setSaveSuccess(data.message || "Store banner updated");
-      const hist = await apiFetch<{ history: ShopHistoryItem[] }>(
-        `/api/dashboard/shops/${id}/history`,
-        { token },
-      );
-      setHistory(hist.history);
+      await refreshHistory();
     } catch (err) {
       setSaveError(
         err instanceof ApiError ? err.message : "Banner upload failed",
@@ -259,141 +266,80 @@ export function ShopEditPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-muted-foreground">Loading store…</p>;
+    return (
+      <p className="py-12 text-center text-sm text-muted-foreground">
+        Loading store…
+      </p>
+    );
   }
 
   if (error || !shop) {
     return (
-      <div className="space-y-4">
-        <Button asChild variant="outline" size="sm">
-          <Link to="/stores">
-            <ArrowLeft />
-            Back
-          </Link>
-        </Button>
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
+        <StoreFormHeader
+          title="Store not found"
+          subtitle="This store may have been removed or you do not have access."
+        />
         <p className="text-sm text-destructive">{error ?? "Store not found"}</p>
       </div>
     );
   }
 
+  const ownerEmail =
+    shop.user?.email ??
+    vendors.find((v) => v.id === ownerId)?.email ??
+    undefined;
+
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <Button asChild variant="ghost" size="sm" className="-ml-2 mb-2">
-            <Link to="/stores">
-              <ArrowLeft />
-              Stores
-            </Link>
-          </Button>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {shop.shop_name}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">/{shop.slug}</p>
-        </div>
-        <Badge variant="outline" className="capitalize">
-          {shopStatusLabel(shop.status)}
-        </Badge>
-      </div>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-4">
+      <StoreFormHeader
+        title={shop.shop_name}
+        subtitle={`Edit store · /stores/${shop.slug}`}
+        badge={
+          <Badge variant="outline" className="capitalize">
+            {shopStatusLabel(shop.status)}
+          </Badge>
+        }
+      />
 
-      <Card>
-        <CardHeader>
-          <div className="mb-1 flex size-9 items-center justify-center rounded-md bg-brand-tint text-brand-deep">
-            <Store className="size-4" />
-          </div>
-          <CardTitle>Edit store</CardTitle>
-          <CardDescription>
-            {isSuper
-              ? "Super admin can edit name, slug, image, status, owner — and delete."
-              : "Update your store name, slug, description, and store image."}
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={onSave}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Store brand image (logo)</Label>
-              <div className="flex items-center gap-4">
-                <div className="flex size-20 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
-                  {shop.logo?.path ? (
-                    <img
-                      src={shop.logo.path}
-                      alt={shop.shop_name}
-                      className="size-full object-cover"
-                    />
-                  ) : (
-                    <ImagePlus className="size-6 text-muted-foreground" />
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    className="hidden"
-                    onChange={(e) =>
-                      void onLogoChange(e.target.files?.[0] ?? null)
-                    }
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={logoUploading}
-                    onClick={() => fileRef.current?.click()}
-                  >
-                    {logoUploading ? "Uploading…" : "Change logo"}
-                  </Button>
-                  <p className="text-xs text-muted-foreground">
-                    JPEG, PNG, WebP, or GIF · max 5 MB · always resized on the
-                    server
-                  </p>
-                </div>
-              </div>
-            </div>
+      <form
+        onSubmit={onSave}
+        className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"
+        noValidate
+      >
+        <div className="space-y-5">
+          <StoreFormSection
+            step="01"
+            title="Store identity"
+            description="Logo, banner, name, and URL slug for the public store page."
+          >
+            <StoreImageDropzone
+              variant="logo"
+              label="Store logo"
+              hint="Square brand mark · JPEG, PNG, WebP, or GIF · max 5 MB · always resized on the server"
+              previewUrl={shop.logo?.path}
+              uploading={logoUploading}
+              disabled={saving}
+              inputRef={fileRef}
+              onPick={() => fileRef.current?.click()}
+              onFile={(file) => void onLogoChange(file)}
+            />
+            <StoreImageDropzone
+              variant="banner"
+              label="Store banner"
+              hint={`Wide hero on /stores/${shop.slug} · JPEG, PNG, WebP, or GIF · max 5 MB · always resized on the server`}
+              previewUrl={shop.banner?.path}
+              uploading={bannerUploading}
+              disabled={saving}
+              inputRef={bannerRef}
+              onPick={() => bannerRef.current?.click()}
+              onFile={(file) => void onBannerChange(file)}
+            />
 
             <div className="space-y-2">
-              <Label>Store banner</Label>
-              <div className="overflow-hidden rounded-md border border-border bg-muted">
-                <div className="flex aspect-[21/7] items-center justify-center">
-                  {shop.banner?.path ? (
-                    <img
-                      src={shop.banner.path}
-                      alt=""
-                      className="size-full object-cover"
-                    />
-                  ) : (
-                    <ImagePlus className="size-8 text-muted-foreground" />
-                  )}
-                </div>
-              </div>
-              <input
-                ref={bannerRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                className="hidden"
-                onChange={(e) =>
-                  void onBannerChange(e.target.files?.[0] ?? null)
-                }
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={bannerUploading}
-                onClick={() => bannerRef.current?.click()}
-              >
-                {bannerUploading ? "Uploading…" : "Change banner"}
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                Wide hero on /stores/{`{slug}`} · JPEG, PNG, WebP, or GIF · max
-                5 MB · always resized on the server
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="shop_name">Store name</Label>
+              <Label htmlFor="store_name">Store name</Label>
               <Input
-                id="shop_name"
+                id="store_name"
                 value={shopName}
                 onChange={(e) => setShopName(e.target.value)}
                 required
@@ -401,25 +347,30 @@ export function ShopEditPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="slug">Unique slug</Label>
+              <Label htmlFor="store_slug">Unique slug</Label>
               <Input
-                id="slug"
+                id="store_slug"
                 value={slug}
                 onChange={(e) => setSlug(slugifyClient(e.target.value))}
                 required
               />
+              <p className="text-xs text-muted-foreground">
+                Public URL: /stores/{slug || "…"}
+              </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
+              <Label htmlFor="store_description">Description</Label>
+              <Textarea
+                id="store_description"
+                rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                placeholder="Optional short store description"
               />
             </div>
 
             {isSuper ? (
-              <>
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Status</Label>
                   <Select
@@ -460,19 +411,15 @@ export function ShopEditPage() {
                     </SelectContent>
                   </Select>
                 </div>
-              </>
+              </div>
             ) : null}
+          </StoreFormSection>
 
-            <Separator />
-
-            <div>
-              <p className="text-sm font-semibold">Storefront layout</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Controls how this store appears on the customer site at
-                /stores/{shop.slug}
-              </p>
-            </div>
-
+          <StoreFormSection
+            step="02"
+            title="Storefront layout"
+            description="How this store appears on the customer site."
+          >
             <div className="space-y-2">
               <Label>Page design</Label>
               <Select
@@ -546,7 +493,7 @@ export function ShopEditPage() {
               </Select>
             </div>
 
-            <label className="flex cursor-pointer items-start gap-3 rounded-md border border-border p-3">
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/80 bg-muted/20 p-4">
               <input
                 type="checkbox"
                 className="mt-1 size-4 accent-[var(--brand-primary,#00b207)]"
@@ -563,93 +510,117 @@ export function ShopEditPage() {
                 </span>
               </span>
             </label>
+          </StoreFormSection>
 
-            {saveError ? (
-              <p className="text-sm text-destructive" role="alert">
-                {saveError}
-              </p>
-            ) : null}
-            {saveSuccess ? (
-              <p className="text-sm text-brand-primary" role="status">
-                {saveSuccess}
-              </p>
-            ) : null}
-          </CardContent>
-          <CardFooter className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={saving}>
-              {saving ? "Saving…" : "Save changes"}
+          <StoreStickyActions
+            message={
+              saveError ? (
+                <p className="text-destructive" role="alert">
+                  {saveError}
+                </p>
+              ) : saveSuccess ? (
+                <p className="text-brand-primary" role="status">
+                  {saveSuccess}
+                </p>
+              ) : (
+                <p className="text-muted-foreground">
+                  Updates save to the live storefront after you click Save.
+                </p>
+              )
+            }
+          >
+            <Button asChild type="button" variant="outline">
+              <Link to="/stores">Cancel</Link>
             </Button>
             {isSuper ? (
               <Button
                 type="button"
                 variant="destructive"
-                disabled={deleting}
+                disabled={deleting || saving}
                 onClick={() => void onDelete()}
               >
-                <Trash2 />
-                {deleting ? "Deleting…" : "Delete store"}
+                <Trash2 className="size-3.5" />
+                {deleting ? "Deleting…" : "Delete"}
               </Button>
             ) : null}
-          </CardFooter>
-        </form>
-      </Card>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Saving…" : "Save changes"}
+            </Button>
+          </StoreStickyActions>
 
-      <Card>
-        <CardHeader>
-          <div className="mb-1 flex size-9 items-center justify-center rounded-md bg-brand-tint text-brand-deep">
-            <History className="size-4" />
-          </div>
-          <CardTitle>Change history</CardTitle>
-          <CardDescription>
-            Tracks create, edits, logo changes, and deletes.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {history.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No history yet.</p>
-          ) : (
-            history.map((item, index) => (
-              <div key={item.id}>
-                {index > 0 ? <Separator className="mb-4" /> : null}
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-medium capitalize">
-                      {item.action.replace("_", " ")}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.actor
-                        ? `${item.actor.first_name} ${item.actor.last_name}`
-                        : "System"}{" "}
-                      · {new Date(item.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="capitalize">
-                    {item.action}
-                  </Badge>
-                </div>
-                {item.note ? (
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {item.note}
-                  </p>
-                ) : null}
-                {item.changes && Object.keys(item.changes).length > 0 ? (
-                  <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-                    {Object.entries(item.changes).map(([field, diff]) => (
-                      <li key={field}>
-                        <span className="font-medium text-foreground">
-                          {field}
-                        </span>
-                        : {formatChangeValue(diff.from)} →{" "}
-                        {formatChangeValue(diff.to)}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
+          <StoreFormSection
+            step="03"
+            title="Change history"
+            description="Tracks create, edits, media uploads, and deletes."
+          >
+            {history.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No history yet.</p>
+            ) : (
+              <ul className="space-y-3">
+                {history.map((item) => (
+                  <li
+                    key={item.id}
+                    className="rounded-xl border border-border/70 bg-muted/15 px-4 py-3"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="flex items-start gap-2">
+                        <History className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium capitalize">
+                            {item.action.replaceAll("_", " ")}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {item.actor
+                              ? `${item.actor.first_name} ${item.actor.last_name}`
+                              : "System"}{" "}
+                            · {new Date(item.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="capitalize">
+                        {item.action}
+                      </Badge>
+                    </div>
+                    {item.note ? (
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {item.note}
+                      </p>
+                    ) : null}
+                    {item.changes && Object.keys(item.changes).length > 0 ? (
+                      <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                        {Object.entries(item.changes).map(([field, diff]) => (
+                          <li key={field}>
+                            <span className="font-medium text-foreground">
+                              {field}
+                            </span>
+                            : {formatChangeValue(diff.from)} →{" "}
+                            {formatChangeValue(diff.to)}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </StoreFormSection>
+        </div>
+
+        <StoreLivePreview
+          mode="edit"
+          shopName={shopName}
+          slug={slug}
+          description={description}
+          status={status}
+          imageUrl={shop.logo?.path}
+          bannerUrl={shop.banner?.path}
+          ownerEmail={ownerEmail}
+          theme={theme}
+        />
+      </form>
     </div>
   );
 }
+
+/** @deprecated Use StoreEditPage */
+export const ShopEditPage = StoreEditPage;
