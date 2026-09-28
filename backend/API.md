@@ -67,7 +67,7 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/health` | `routes/health.ts` | Public |
 | `/api/auth` | `routes/customerAuth.ts` | Customers |
 | `/api/customer/addresses` | `routes/customerAddresses.ts` | Customers |
-| `/api/customer/orders` | `routes/customerOrders.ts` | Customers |
+| `/api/customer/orders` | `routes/customerOrders.ts` | Guests (POST) + customers |
 | `/api/site-settings` | `routes/publicSiteSettings.ts` | Public |
 | `/api/analytics` | `routes/publicAnalytics.ts` | Public |
 | `/api/shops` | `routes/publicShops.ts` | Public |
@@ -278,7 +278,9 @@ Auth: Bearer **`super_admin`** or **`admin`**.
 }
 ```
 
-**201/200:** `{ message, accessToken, refreshToken, token, sessionId, user }`
+**201/200:** `{ message, accessToken, refreshToken, token, sessionId, user, claimed_orders }`
+
+`phone` is normalized to E.164 (`01712345678` → `+8801712345678`). Register, login and Google login all return `claimed_orders`: the number of guest orders attached to the account because its **verified** email or phone matched (see *Guest orders & verification* below).
 
 ### `POST /api/auth/login`
 
@@ -308,9 +310,32 @@ At least one of `idToken` / `accessToken`.
 
 Optional: `first_name`, `last_name`, `phone`, `gender` (`male`\|`female`\|`other`), `date_of_birth` (`YYYY-MM-DD`).
 
+Changing `phone` clears `phone_verified_at` (the new number must be verified again).
+
 ### `POST /api/auth/me/avatar` — Bearer customer
 
-Multipart field: **`avatar`** · max **5 MB** · JPEG/PNG/WebP/GIF.
+Multipart field: **`avatar`** · max **5 MB** · JPEG/PNG/WebP/GIF · always resized on the server.
+
+### Guest orders & verification — Bearer customer
+
+Guest orders are attached to an account **only** through a verified contact:
+`email_verified_at` + matching `orders.customer_email`, or `phone_verified_at` + matching `orders.customer_phone`.
+Matching is checked on register / login / Google login and right after a successful verification.
+Google sign-in marks the email as verified automatically.
+
+| Method | Path | Body | Response |
+|--------|------|------|----------|
+| GET | `/api/auth/me/verification` | — | `{ email, email_verified, phone, phone_verified, pending_guest_orders: { email, phone } }` |
+| POST | `/api/auth/me/verify/email/send` | — | `{ message, expires_in, resend_in }` |
+| POST | `/api/auth/me/verify/email/confirm` | `{ "code": "123456" }` | `{ message, user, claimed_orders }` |
+| POST | `/api/auth/me/verify/phone/send` | `{ "phone"?: "01712345678" }` | `{ message, phone, expires_in, resend_in }` |
+| POST | `/api/auth/me/verify/phone/confirm` | `{ "code": "123456" }` | `{ message, user, claimed_orders }` |
+
+- Codes: 6 digits, stored hashed (HMAC-SHA256), valid **10 min**, max **5** wrong attempts.
+- Resend cooldown **60 s** per channel (`429 RESEND_TOO_SOON`, `retry_after`); max **5** codes per target per hour (`429 TOO_MANY_CODES`).
+- `phone/send` without `phone` uses the profile number; with `phone`, the number is saved to the profile only after the code is confirmed (`409 PHONE_IN_USE` if another account owns it).
+- Error codes: `ALREADY_VERIFIED`, `PHONE_REQUIRED`, `CODE_EXPIRED`, `INVALID_CODE` (+ `attempts_left`), `TOO_MANY_ATTEMPTS`, `SEND_FAILED`, `TARGET_CHANGED`.
+- Delivery: `SMTP_*` env for email, `SMS_PROVIDER=bulksmsbd` + `SMS_API_KEY` + `SMS_SENDER_ID` for SMS. In development without config, codes are logged to the backend console; in production a missing config returns `502 SEND_FAILED`.
 
 ---
 
@@ -346,12 +371,18 @@ Auth: Bearer **`customer`**.
 
 ## Customer orders — `/api/customer/orders`
 
-Auth: Bearer **`customer`**. Placing an order creates inbox notifications for `super_admin` / `admin` / `moderator`, plus vendors whose products are in the cart.
+Placing an order creates inbox notifications for `super_admin` / `admin` / `moderator`, plus vendors whose products are in the cart.
 
-### `POST /api/customer/orders`
+### `POST /api/customer/orders` — guest **or** Bearer customer
+
+- **No `Authorization` header → guest checkout.** `email` is required; the order is stored with `user_id = null`, `customer_email`, and `customer_phone` (normalized billing phone).
+- **Bearer customer →** linked to the account; `email` defaults to the account email.
+- An invalid/expired Bearer token returns `401` (it does not fall back to guest). Staff tokens return `403 STAFF_CANNOT_ORDER`.
+- `billing.phone` / `shipping.phone` must be a valid mobile number and are normalized to E.164 (`+8801712345678`).
 
 ```json
 {
+  "email": "ada@example.com",
   "items": [
     { "product_id": "12", "name": "Widget", "unit_price": 500, "quantity": 2 }
   ],
@@ -370,7 +401,13 @@ Auth: Bearer **`customer`**. Placing an order creates inbox notifications for `s
 }
 ```
 
-**201** → `{ message, order: { id, order_number, total, … } }`
+**201** → `{ message, order: { id, order_number, total, …, is_guest } }`
+
+### `GET /api/customer/orders` — Bearer customer
+
+Query: `page` (default 1), `limit` (1–50, default 10). Includes guest orders claimed after verification (`claimed_at` set).
+
+**200** → `{ orders: [{ id, order_number, status, payment_status, payment_method, currency, total, placed_at, claimed_at, item_count, items[] }], pagination }`
 
 ---
 
@@ -398,6 +435,8 @@ Auth: Bearer **staff**. Vendors only see orders that include their products.
 |--------|------|--------|
 | GET | `/?page=&limit=&status=` | List |
 | GET | `/:id` | Detail + addresses |
+
+Each order includes `is_guest`, `claimed_at`, and `customer: { id | null, name, email, phone }` — for guest orders `id` is `null`, `name` comes from the billing address and `email`/`phone` from checkout.
 
 ---
 

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+    useEffect,
     useId,
     useState,
     type FormEvent,
@@ -24,6 +25,7 @@ import {
 } from "@/store/cartSlice";
 import { apiFetch, ApiError } from "@/lib/api";
 import { formatPrice } from "@/lib/money";
+import { validateCheckoutContact } from "@/lib/validators/checkout";
 
 type PaymentMethod = "bank" | "check" | "cod" | "paypal";
 
@@ -420,6 +422,7 @@ export default function CheckoutPageContent() {
     const [payment, setPayment] = useState<PaymentMethod>("check");
     const [orderPlaced, setOrderPlaced] = useState(false);
     const [orderNumber, setOrderNumber] = useState<string | null>(null);
+    const [placedAsGuest, setPlacedAsGuest] = useState(false);
     const [placing, setPlacing] = useState(false);
     const [placeError, setPlaceError] = useState<string | null>(null);
     const [billing, setBilling] = useState(emptyAddress);
@@ -466,13 +469,32 @@ export default function CheckoutPageContent() {
         country: addr.country.trim() || "Bangladesh",
     });
 
+    const isLoggedIn = authStatus === "authenticated" && Boolean(session?.user);
+
+    const sessionUser = session?.backendUser;
+    useEffect(() => {
+        if (!sessionUser) return;
+        setBilling((prev) => ({
+            ...prev,
+            firstName: prev.firstName || sessionUser.first_name || "",
+            lastName: prev.lastName || sessionUser.last_name || "",
+            email: prev.email || sessionUser.email || "",
+            phone: prev.phone || sessionUser.phone || "",
+        }));
+    }, [sessionUser]);
+
     const handlePlaceOrder = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (items.length === 0 || placing) return;
 
-        if (authStatus !== "authenticated" || !session?.user) {
-            setPlaceError("Please sign in to place your order.");
-            setShowLogin(true);
+        const contact = validateCheckoutContact({
+            email: billing.email,
+            phone: billing.phone,
+        });
+        if (!contact.success) {
+            setPlaceError(
+                contact.errors.email ?? contact.errors.phone ?? "Check your contact details.",
+            );
             return;
         }
 
@@ -480,10 +502,11 @@ export default function CheckoutPageContent() {
         setPlaceError(null);
         try {
             const data = await apiFetch<{
-                order: { order_number: string };
+                order: { order_number: string; is_guest?: boolean };
             }>("/api/customer/orders", {
                 method: "POST",
                 body: {
+                    email: billing.email.trim().toLowerCase(),
                     items: items.map((item) => ({
                         product_id: item.id,
                         name: item.name,
@@ -501,13 +524,19 @@ export default function CheckoutPageContent() {
                 },
             });
             setOrderNumber(data.order.order_number);
+            setPlacedAsGuest(Boolean(data.order.is_guest));
             setOrderPlaced(true);
             dispatch(clearCart());
         } catch (err) {
+            const fieldMessage =
+                err instanceof ApiError && err.errors
+                    ? Object.values(err.errors).flat().find(Boolean)
+                    : undefined;
             setPlaceError(
-                err instanceof ApiError
-                    ? err.message
-                    : "Could not place order. Please try again.",
+                fieldMessage ??
+                    (err instanceof ApiError
+                        ? err.message
+                        : "Could not place order. Please try again."),
             );
         } finally {
             setPlacing(false);
@@ -554,9 +583,42 @@ export default function CheckoutPageContent() {
                                 </span>
                             </>
                         ) : null}{" "}
-                        and will process it shortly. Staff will see it in the
-                        dashboard notifications.
+                        and will process it shortly.
                     </p>
+                    {placedAsGuest ? (
+                        <div className="max-w-md rounded-lg border border-brand-primary/30 bg-brand-primary/5 px-4 py-3 text-left text-[13px] leading-relaxed text-text-secondary">
+                            <p className="m-0 font-semibold text-text-primary">
+                                Want to track this order in your account?
+                            </p>
+                            <p className="m-0 mt-1">
+                                Sign in or create an account, then verify the same
+                                email (<span className="font-medium text-text-primary">{billing.email}</span>)
+                                or mobile number. Your order will be added to
+                                “My Orders” automatically.
+                            </p>
+                            <div className="mt-3 flex flex-wrap gap-3">
+                                <Link
+                                    href="/register?next=/account/orders"
+                                    className="font-semibold text-brand-primary hover:underline"
+                                >
+                                    Create account
+                                </Link>
+                                <Link
+                                    href="/login?next=/account/orders"
+                                    className="font-semibold text-brand-primary hover:underline"
+                                >
+                                    Sign in
+                                </Link>
+                            </div>
+                        </div>
+                    ) : (
+                        <Link
+                            href="/account/orders"
+                            className="text-[13px] font-semibold text-brand-primary hover:underline"
+                        >
+                            View in My Orders
+                        </Link>
+                    )}
                     <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
                         <Link
                             href="/shop"
@@ -583,6 +645,7 @@ export default function CheckoutPageContent() {
 
             <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-10 lg:py-12">
                 <div className="flex flex-col gap-3 mb-8">
+                    {!isLoggedIn && (
                     <NoticeBar
                         open={showLogin}
                         onToggle={() => setShowLogin((v) => !v)}
@@ -614,7 +677,7 @@ export default function CheckoutPageContent() {
                                     Login
                                 </button>
                                 <Link
-                                    href="/login"
+                                    href="/login?next=/checkout"
                                     className="text-[13px] text-brand-primary hover:underline"
                                 >
                                     Go to login page
@@ -622,6 +685,7 @@ export default function CheckoutPageContent() {
                             </div>
                         </div>
                     </NoticeBar>
+                    )}
 
                     <NoticeBar
                         open={showCoupon}
@@ -912,15 +976,19 @@ export default function CheckoutPageContent() {
                                     className="mb-3 text-[13px] text-error"
                                     role="alert"
                                 >
-                                    {placeError}{" "}
-                                    {authStatus !== "authenticated" ? (
-                                        <Link
-                                            href="/login"
-                                            className="font-semibold underline"
-                                        >
-                                            Sign in
-                                        </Link>
-                                    ) : null}
+                                    {placeError}
+                                </p>
+                            ) : null}
+                            {!isLoggedIn ? (
+                                <p className="mb-3 text-[12px] leading-relaxed text-text-secondary m-0">
+                                    Checking out as a guest.{" "}
+                                    <Link
+                                        href="/login?next=/checkout"
+                                        className="font-semibold text-brand-primary hover:underline"
+                                    >
+                                        Sign in
+                                    </Link>{" "}
+                                    to save this order to your account.
                                 </p>
                             ) : null}
                             <button

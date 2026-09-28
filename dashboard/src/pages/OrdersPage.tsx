@@ -22,7 +22,14 @@ type OrderRow = {
   currency: string;
   total: string;
   placed_at: string;
-  customer: { id: string; name: string; email: string };
+  is_guest?: boolean;
+  claimed_at?: string | null;
+  customer: {
+    id: string | null;
+    name: string;
+    email: string | null;
+    phone?: string | null;
+  };
   item_count: number;
   items: Array<{
     id: string;
@@ -137,7 +144,9 @@ export function OrdersPage() {
                         {order.order_number}
                       </p>
                       <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        {order.customer.name} · {order.customer.email} ·{" "}
+                        {order.is_guest ? "Guest · " : ""}
+                        {order.customer.name} ·{" "}
+                        {order.customer.email ?? order.customer.phone ?? "—"} ·{" "}
                         {order.item_count} item(s)
                       </p>
                     </div>
@@ -259,8 +268,18 @@ export function OrderDetailPage() {
               </CardHeader>
               <CardContent className="space-y-1 text-sm">
                 <p className="font-medium">{order.customer.name}</p>
-                <p className="text-muted-foreground">{order.customer.email}</p>
+                {order.customer.email && (
+                  <p className="text-muted-foreground">{order.customer.email}</p>
+                )}
+                {order.customer.phone && (
+                  <p className="text-muted-foreground">{order.customer.phone}</p>
+                )}
                 <div className="flex flex-wrap gap-2 pt-2">
+                  {order.is_guest ? (
+                    <Badge variant="secondary">Guest checkout</Badge>
+                  ) : order.claimed_at ? (
+                    <Badge variant="secondary">Linked from guest order</Badge>
+                  ) : null}
                   <Badge variant="outline" className="capitalize">
                     {order.status}
                   </Badge>

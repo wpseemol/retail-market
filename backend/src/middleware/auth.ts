@@ -58,6 +58,15 @@ export async function requireAuth(
   }
 }
 
+/**
+ * Guest-friendly routes: no `Authorization` header → continue as guest.
+ * A header that is present but invalid still returns 401 so the client can refresh.
+ */
+export function optionalAuth(req: Request, res: Response, next: NextFunction) {
+  if (!req.headers.authorization) return next();
+  return requireAuth(req, res, next);
+}
+
 export function requireRoles(...roles: UserRole[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.auth) {

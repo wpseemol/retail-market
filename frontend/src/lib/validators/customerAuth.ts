@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizePhone, PHONE_FORMAT_MESSAGE } from "@/lib/phone";
 
 const HTML_TAG_RE = /<\s*\/?\s*[a-zA-Z!][^>]*>/;
 const SCRIPT_TAG_RE = /<\s*\/?\s*script\b/i;
@@ -275,11 +276,8 @@ const phoneFieldSchema = z
       ctx.addIssue({ code: "custom", message: unsafe });
       return;
     }
-    if (!/^[+\d][\d\s().-]{5,29}$/.test(value)) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Enter a valid phone number",
-      });
+    if (!normalizePhone(value)) {
+      ctx.addIssue({ code: "custom", message: PHONE_FORMAT_MESSAGE });
     }
   });
 

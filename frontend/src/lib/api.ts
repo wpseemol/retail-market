@@ -8,6 +8,8 @@ export type ApiUser = {
   status: string;
   gender: "male" | "female" | "other" | null;
   date_of_birth: string | null;
+  email_verified_at?: string | null;
+  phone_verified_at?: string | null;
   provider_name?: string | null;
   avatar_id?: string | null;
   avatar: {

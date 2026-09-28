@@ -28,12 +28,15 @@ function toPublicOrder(
     total: { toFixed: (n: number) => string };
     notes: string | null;
     placed_at: Date;
+    customer_email: string | null;
+    customer_phone: string | null;
+    claimed_at: Date | null;
     user: {
       id: bigint;
       first_name: string;
       last_name: string;
       email: string;
-    };
+    } | null;
     items: Array<{
       id: bigint;
       product_id: bigint | null;
@@ -58,6 +61,7 @@ function toPublicOrder(
   },
   detailed = false,
 ) {
+  const billing = order.addresses?.find((a) => a.type === "billing");
   return {
     id: order.id.toString(),
     order_number: order.order_number,
@@ -72,10 +76,15 @@ function toPublicOrder(
     total: money(order.total),
     notes: order.notes,
     placed_at: order.placed_at.toISOString(),
+    is_guest: order.user == null,
+    claimed_at: order.claimed_at?.toISOString() ?? null,
     customer: {
-      id: order.user.id.toString(),
-      name: `${order.user.first_name} ${order.user.last_name}`.trim(),
-      email: order.user.email,
+      id: order.user?.id.toString() ?? null,
+      name: order.user
+        ? `${order.user.first_name} ${order.user.last_name}`.trim()
+        : (billing?.full_name ?? "Guest"),
+      email: order.user?.email ?? order.customer_email,
+      phone: order.customer_phone ?? billing?.phone ?? null,
     },
     item_count: order.items.reduce((n, i) => n + i.quantity, 0),
     items: order.items.map((item) => ({
@@ -164,6 +173,7 @@ dashboardOrdersRouter.get(
             },
           },
           items: true,
+          addresses: { where: { type: "billing" } },
         },
         orderBy: { placed_at: "desc" },
         skip: (page - 1) * limit,

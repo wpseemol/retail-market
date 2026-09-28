@@ -27,6 +27,7 @@ import {
   validateAvatarFile,
 } from "@/lib/validators/avatarImage";
 import { syncSessionUserAction } from "@/app/actions/auth";
+import AccountVerification from "@/components/account/AccountVerification";
 
 function initials(user: ApiUser) {
   const a = user.first_name?.trim()?.[0] ?? "";
@@ -519,6 +520,14 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
               </div>
             </form>
           </motion.section>
+
+          <AccountVerification
+            user={user}
+            onUserChange={async (next) => {
+              applyUser(next);
+              await syncSessionUserAction();
+            }}
+          />
         </motion.div>
       </div>
     </main>

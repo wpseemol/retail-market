@@ -45,4 +45,25 @@ export const env = {
     process.env.PUBLIC_API_URL ??
     `http://localhost:${Number(process.env.PORT) || 8001}`
   ).replace(/\/$/, ""),
+  /** Brand name shown in verification emails / SMS. */
+  appName: process.env.APP_NAME ?? "Niyenin",
+  /** SMTP for verification emails. Empty host → codes are logged to the console (dev). */
+  smtp: {
+    host: process.env.SMTP_HOST ?? "",
+    port: Number(process.env.SMTP_PORT) || 587,
+    secure: process.env.SMTP_SECURE === "true",
+    user: process.env.SMTP_USER ?? "",
+    pass: process.env.SMTP_PASS ?? "",
+    from: process.env.SMTP_FROM ?? "Niyenin <no-reply@niyenin.com>",
+  },
+  /**
+   * SMS gateway for phone verification.
+   * `console` logs codes (dev); `bulksmsbd` uses https://bulksmsbd.net.
+   */
+  sms: {
+    provider: (process.env.SMS_PROVIDER ?? "console") as "console" | "bulksmsbd",
+    apiKey: process.env.SMS_API_KEY ?? "",
+    senderId: process.env.SMS_SENDER_ID ?? "",
+    apiUrl: process.env.SMS_API_URL ?? "https://bulksmsbd.net/api/smsapi",
+  },
 };

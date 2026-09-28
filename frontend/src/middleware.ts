@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-const PROTECTED_PREFIXES = ["/account", "/checkout"];
+// /checkout is public: guests can order; orders merge after email/phone verification.
+const PROTECTED_PREFIXES = ["/account"];
 const AUTH_PAGES = new Set(["/login", "/register"]);
 
 function isProtectedPath(pathname: string) {
@@ -62,8 +63,6 @@ export const config = {
   matcher: [
     "/account",
     "/account/:path*",
-    "/checkout",
-    "/checkout/:path*",
     "/login",
     "/register",
     "/auth/login",

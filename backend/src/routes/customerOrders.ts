@@ -2,13 +2,11 @@ import { Router } from "express";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { notifyNewOrder } from "../lib/notifications.js";
-import { requireAuth, requireRoles } from "../middleware/auth.js";
+import { optionalAuth, requireAuth, requireRoles } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { placeOrderSchema } from "../validators/order.js";
+import { customerOrdersQuerySchema, placeOrderSchema } from "../validators/order.js";
 
 export const customerOrdersRouter = Router();
-
-customerOrdersRouter.use(requireAuth, requireRoles("customer"));
 
 function countryCode(value: string) {
   const trimmed = value.trim();
@@ -35,8 +33,10 @@ function orderNumber() {
   return `NIY-${y}${m}${day}-${rand}`;
 }
 
+/** Guest checkout (no token) or customer checkout (Bearer token). */
 customerOrdersRouter.post(
   "/",
+  optionalAuth,
   asyncHandler(async (req, res) => {
     const parsed = placeOrderSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -46,9 +46,24 @@ customerOrdersRouter.post(
       });
     }
 
+    if (req.auth && req.auth.role !== "customer") {
+      return res.status(403).json({
+        message: "Staff accounts cannot place storefront orders",
+        code: "STAFF_CANNOT_ORDER",
+      });
+    }
+
     const input = parsed.data;
-    const userId = req.auth!.userId;
-    const customer = req.auth!.user;
+    const customer = req.auth?.user ?? null;
+    const userId = req.auth?.userId ?? null;
+    const contactEmail = input.email ?? customer?.email.toLowerCase() ?? null;
+    if (!contactEmail) {
+      return res.status(400).json({
+        message: "Validation failed",
+        errors: { email: ["Email is required for guest checkout"] },
+      });
+    }
+    const contactPhone = input.billing.phone;
 
     const productIds = input.items
       .map((item) => {
@@ -127,6 +142,8 @@ customerOrdersRouter.post(
       const created = await tx.order.create({
         data: {
           user_id: userId,
+          customer_email: contactEmail,
+          customer_phone: contactPhone,
           order_number: number,
           status: "pending",
           payment_status: "pending",
@@ -194,8 +211,9 @@ customerOrdersRouter.post(
       .map((l) => l.vendor_user_id)
       .filter((id): id is bigint => id != null);
 
-    const customerName =
-      `${customer.first_name} ${customer.last_name}`.trim() || customer.email;
+    const customerName = customer
+      ? `${customer.first_name} ${customer.last_name}`.trim() || customer.email
+      : `${input.billing.full_name} (guest)`;
 
     await notifyNewOrder({
       orderId: order.id,
@@ -222,6 +240,65 @@ customerOrdersRouter.post(
         total: order.total.toFixed(2),
         placed_at: order.placed_at.toISOString(),
         item_count: order.items.length,
+        is_guest: userId == null,
+      },
+    });
+  }),
+);
+
+/** Logged-in customer's orders (includes guest orders claimed after verification). */
+customerOrdersRouter.get(
+  "/",
+  requireAuth,
+  requireRoles("customer"),
+  asyncHandler(async (req, res) => {
+    const parsed = customerOrdersQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: "Invalid query",
+        errors: parsed.error.flatten().fieldErrors,
+      });
+    }
+    const { page, limit } = parsed.data;
+    const where = { user_id: req.auth!.userId };
+
+    const [total, rows] = await Promise.all([
+      prisma.order.count({ where }),
+      prisma.order.findMany({
+        where,
+        include: { items: true },
+        orderBy: { placed_at: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+
+    return res.json({
+      orders: rows.map((order) => ({
+        id: order.id.toString(),
+        order_number: order.order_number,
+        status: order.status,
+        payment_status: order.payment_status,
+        payment_method: order.payment_method,
+        currency: order.currency,
+        total: order.total.toFixed(2),
+        placed_at: order.placed_at.toISOString(),
+        claimed_at: order.claimed_at?.toISOString() ?? null,
+        item_count: order.items.reduce((n, i) => n + i.quantity, 0),
+        items: order.items.map((item) => ({
+          id: item.id.toString(),
+          product_id: item.product_id?.toString() ?? null,
+          product_name: item.product_name,
+          unit_price: item.unit_price.toFixed(2),
+          quantity: item.quantity,
+          line_total: item.line_total.toFixed(2),
+        })),
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        total_pages: Math.max(1, Math.ceil(total / limit)),
       },
     });
   }),

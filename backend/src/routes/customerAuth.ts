@@ -1,10 +1,15 @@
 import { Router } from "express";
 import {
+  confirmEmailCode,
+  confirmPhoneCode,
   getMe,
+  getVerificationStatus,
   googleLogin,
   login,
   refresh,
   register,
+  sendEmailCode,
+  sendPhoneCode,
   updateMe,
   uploadAvatar,
 } from "../controllers/customerAuthController.js";
@@ -28,6 +33,34 @@ customerAuthRouter.patch(
   requireAuth,
   requireRoles("customer"),
   asyncHandler(updateMe),
+);
+
+const customerOnly = [requireAuth, requireRoles("customer")];
+
+customerAuthRouter.get(
+  "/me/verification",
+  ...customerOnly,
+  asyncHandler(getVerificationStatus),
+);
+customerAuthRouter.post(
+  "/me/verify/email/send",
+  ...customerOnly,
+  asyncHandler(sendEmailCode),
+);
+customerAuthRouter.post(
+  "/me/verify/email/confirm",
+  ...customerOnly,
+  asyncHandler(confirmEmailCode),
+);
+customerAuthRouter.post(
+  "/me/verify/phone/send",
+  ...customerOnly,
+  asyncHandler(sendPhoneCode),
+);
+customerAuthRouter.post(
+  "/me/verify/phone/confirm",
+  ...customerOnly,
+  asyncHandler(confirmPhoneCode),
 );
 
 customerAuthRouter.post(

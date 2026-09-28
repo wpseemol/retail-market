@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { withSafeInput } from "./customerAuth.js";
+import { phoneField, withSafeInput } from "./customerAuth.js";
 
 const safeStr = (min: number, max: number) =>
   withSafeInput(z.string().trim().min(min).max(max));
@@ -13,7 +13,7 @@ export const placeOrderItemSchema = z.object({
 
 export const placeOrderAddressSchema = z.object({
   full_name: safeStr(1, 150),
-  phone: safeStr(1, 30),
+  phone: phoneField,
   line1: safeStr(1, 255),
   line2: withSafeInput(z.string().trim().max(255)).optional().or(z.literal("")),
   city: safeStr(1, 100),
@@ -23,6 +23,8 @@ export const placeOrderAddressSchema = z.object({
 });
 
 export const placeOrderSchema = z.object({
+  /** Contact email — required for guest checkout; defaults to the account email when logged in. */
+  email: withSafeInput(z.string().trim().toLowerCase().email().max(255)).optional(),
   items: z.array(placeOrderItemSchema).min(1).max(50),
   billing: placeOrderAddressSchema,
   shipping: placeOrderAddressSchema.optional(),
@@ -39,6 +41,11 @@ export const placeOrderSchema = z.object({
 });
 
 export type PlaceOrderInput = z.infer<typeof placeOrderSchema>;
+
+export const customerOrdersQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(10),
+});
 
 export const listOrdersQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizePhone, PHONE_FORMAT_MESSAGE } from "../lib/phone.js";
 
 const HTML_TAG_RE = /<\s*\/?\s*[a-zA-Z!][^>]*>/;
 const SCRIPT_TAG_RE = /<\s*\/?\s*script\b/i;
@@ -51,7 +52,22 @@ export function withSafeInput<T extends z.ZodType<string>>(schema: T) {
 const safeTrimmed = (min: number, max: number) =>
   withSafeInput(z.string().trim().min(min).max(max));
 
-const safeOptionalPhone = withSafeInput(z.string().trim().max(30)).optional();
+/** Required phone → normalized E.164 (`+8801712345678`). */
+export const phoneField = withSafeInput(z.string().trim().min(1).max(30)).transform(
+  (value, ctx) => {
+    const normalized = normalizePhone(value);
+    if (!normalized) {
+      ctx.addIssue({ code: "custom", message: PHONE_FORMAT_MESSAGE });
+      return z.NEVER;
+    }
+    return normalized;
+  },
+);
+
+const safeOptionalPhone = z
+  .union([z.literal(""), phoneField])
+  .optional()
+  .transform((value) => value || undefined);
 
 export const registerSchema = z.object({
   first_name: safeTrimmed(1, 100),
@@ -105,14 +121,12 @@ export const updateProfileSchema = z
           ctx.addIssue({ code: "custom", message: reason });
           return z.NEVER;
         }
-        if (trimmed.length > 30) {
-          ctx.addIssue({
-            code: "custom",
-            message: "Phone must be at most 30 characters",
-          });
+        const normalized = normalizePhone(trimmed);
+        if (!normalized) {
+          ctx.addIssue({ code: "custom", message: PHONE_FORMAT_MESSAGE });
           return z.NEVER;
         }
-        return trimmed;
+        return normalized;
       }),
     gender: z
       .union([z.enum(["male", "female", "other"]), z.null(), z.literal("")])
@@ -155,6 +169,18 @@ export const updateProfileSchema = z
       data.date_of_birth !== undefined,
     { message: "At least one field is required" },
   );
+
+export const sendPhoneCodeSchema = z.object({
+  /** Optional: verify a new number (saved to the profile only after the code is confirmed). */
+  phone: phoneField.optional(),
+});
+
+export const confirmCodeSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, "Enter the 6-digit code"),
+});
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

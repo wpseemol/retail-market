@@ -19,11 +19,20 @@ import {
   finalizeAvatarUpload,
   sanitizeOriginalName,
 } from "../lib/avatarImage.js";
+import { claimGuestOrders, countPendingGuestOrders } from "../lib/guestOrders.js";
+import { maskEmail, maskPhone, normalizePhone } from "../lib/phone.js";
 import {
+  confirmVerificationCode,
+  sendVerificationCode,
+  VerificationError,
+} from "../lib/verification.js";
+import {
+  confirmCodeSchema,
   googleAuthSchema,
   loginSchema,
   refreshSchema,
   registerSchema,
+  sendPhoneCodeSchema,
   updateProfileSchema,
 } from "../validators/customerAuth.js";
 
@@ -74,6 +83,8 @@ async function markLoginAndIssueTokens(
     loginMethod,
   });
 
+  const claimedOrders = await claimGuestOrders(updated);
+
   return {
     status,
     body: {
@@ -81,6 +92,7 @@ async function markLoginAndIssueTokens(
       ...tokens,
       sessionId,
       user: toPublicUser(updated),
+      claimed_orders: claimedOrders,
     },
   };
 }
@@ -458,6 +470,9 @@ export async function updateMe(req: Request, res: Response) {
   }
 
   const data = parsed.data;
+  const currentPhone = normalizePhone(req.auth!.user.phone);
+  const phoneChanged =
+    data.phone !== undefined && (data.phone ?? null) !== currentPhone;
 
   if (data.phone) {
     const phoneTaken = await prisma.user.findFirst({
@@ -479,6 +494,7 @@ export async function updateMe(req: Request, res: Response) {
       first_name: data.first_name,
       last_name: data.last_name,
       phone: data.phone === undefined ? undefined : data.phone,
+      ...(phoneChanged ? { phone_verified_at: null } : {}),
       gender: data.gender === undefined ? undefined : data.gender,
       date_of_birth:
         data.date_of_birth === undefined
@@ -595,4 +611,181 @@ export async function uploadAvatar(req: Request, res: Response) {
     }
     throw err;
   }
+}
+
+// ─── Email / phone verification (unlocks guest-order merging) ───────────────
+
+function sendVerificationError(res: Response, err: unknown) {
+  if (err instanceof VerificationError) {
+    return res
+      .status(err.status)
+      .json({ message: err.message, code: err.code, ...err.extra });
+  }
+  throw err;
+}
+
+async function loadAuthUser(userId: bigint) {
+  return prisma.user.findFirstOrThrow({
+    where: { id: userId, deleted_at: null },
+    include: userWithAvatarInclude,
+  });
+}
+
+/** Verified flags + guest orders waiting for verification. */
+export async function getVerificationStatus(req: Request, res: Response) {
+  const user = await loadAuthUser(req.auth!.userId);
+  const pending = await countPendingGuestOrders(user);
+  return res.json({
+    email: user.email,
+    email_verified: Boolean(user.email_verified_at),
+    phone: user.phone,
+    phone_verified: Boolean(user.phone_verified_at),
+    pending_guest_orders: pending,
+  });
+}
+
+export async function sendEmailCode(req: Request, res: Response) {
+  const user = await loadAuthUser(req.auth!.userId);
+  if (user.email_verified_at) {
+    return res
+      .status(400)
+      .json({ message: "Email is already verified", code: "ALREADY_VERIFIED" });
+  }
+  try {
+    const result = await sendVerificationCode(user.id, "email", user.email);
+    return res.json({
+      message: `Code sent to ${maskEmail(user.email)}`,
+      expires_in: result.expiresInSeconds,
+      resend_in: result.resendInSeconds,
+    });
+  } catch (err) {
+    return sendVerificationError(res, err);
+  }
+}
+
+export async function confirmEmailCode(req: Request, res: Response) {
+  const parsed = confirmCodeSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: "Validation failed",
+      errors: parsed.error.flatten().fieldErrors,
+    });
+  }
+
+  const current = await loadAuthUser(req.auth!.userId);
+  try {
+    const target = await confirmVerificationCode(current.id, "email", parsed.data.code);
+    if (target !== current.email.toLowerCase()) {
+      return res.status(400).json({
+        message: "Your email changed since the code was sent. Request a new code.",
+        code: "TARGET_CHANGED",
+      });
+    }
+  } catch (err) {
+    return sendVerificationError(res, err);
+  }
+
+  const user = await prisma.user.update({
+    where: { id: current.id },
+    data: { email_verified_at: current.email_verified_at ?? new Date() },
+    include: userWithAvatarInclude,
+  });
+  const claimedOrders = await claimGuestOrders(user);
+
+  return res.json({
+    message: "Email verified",
+    user: toPublicUser(user),
+    claimed_orders: claimedOrders,
+  });
+}
+
+export async function sendPhoneCode(req: Request, res: Response) {
+  const parsed = sendPhoneCodeSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: "Validation failed",
+      errors: parsed.error.flatten().fieldErrors,
+    });
+  }
+
+  const user = await loadAuthUser(req.auth!.userId);
+  const target = parsed.data.phone ?? normalizePhone(user.phone);
+  if (!target) {
+    return res.status(400).json({
+      message: "Add a mobile number first",
+      code: "PHONE_REQUIRED",
+      errors: { phone: ["Mobile number is required"] },
+    });
+  }
+  if (user.phone_verified_at && normalizePhone(user.phone) === target) {
+    return res
+      .status(400)
+      .json({ message: "Phone is already verified", code: "ALREADY_VERIFIED" });
+  }
+
+  const taken = await prisma.user.findFirst({
+    where: { phone: target, deleted_at: null, NOT: { id: user.id } },
+    select: { id: true },
+  });
+  if (taken) {
+    return res.status(409).json({
+      message: "This number is linked to another account",
+      code: "PHONE_IN_USE",
+      errors: { phone: ["This number is linked to another account"] },
+    });
+  }
+
+  try {
+    const result = await sendVerificationCode(user.id, "sms", target);
+    return res.json({
+      message: `Code sent to ${maskPhone(target)}`,
+      phone: target,
+      expires_in: result.expiresInSeconds,
+      resend_in: result.resendInSeconds,
+    });
+  } catch (err) {
+    return sendVerificationError(res, err);
+  }
+}
+
+export async function confirmPhoneCode(req: Request, res: Response) {
+  const parsed = confirmCodeSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: "Validation failed",
+      errors: parsed.error.flatten().fieldErrors,
+    });
+  }
+
+  const userId = req.auth!.userId;
+  let target: string;
+  try {
+    target = await confirmVerificationCode(userId, "sms", parsed.data.code);
+  } catch (err) {
+    return sendVerificationError(res, err);
+  }
+
+  let user;
+  try {
+    user = await prisma.user.update({
+      where: { id: userId },
+      data: { phone: target, phone_verified_at: new Date() },
+      include: userWithAvatarInclude,
+    });
+  } catch (err) {
+    if ((err as { code?: string }).code === "P2002") {
+      return res.status(409).json({
+        message: "This number is linked to another account",
+        code: "PHONE_IN_USE",
+      });
+    }
+    throw err;
+  }
+  const claimedOrders = await claimGuestOrders(user);
+
+  return res.json({
+    message: "Phone verified",
+    user: toPublicUser(user),
+    claimed_orders: claimedOrders,
+  });
 }
