@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 import PromoAdSlider from "./PromoAdSlider";
 import AccountMenu from "./AccountMenu";
 import CategoryBrowseMenu from "./CategoryBrowseMenu";
+import HeaderSearch from "./HeaderSearch";
 import { useAppSelector } from "@/store/hooks";
 import { formatPrice } from "@/lib/money";
 import {
@@ -299,33 +300,7 @@ export default function Header({
 
             {/* ================= 2. Search on Tablets & Mobile ================= */}
             <div className="lg:hidden px-4 pb-3">
-                <form
-                    role="search"
-                    action="/search"
-                    method="GET"
-                    className="flex items-center border border-border-default rounded-full px-4 py-2 w-full bg-bg-surface"
-                >
-                    <input
-                        type="search"
-                        name="q"
-                        placeholder="Search products..."
-                        className="w-full bg-transparent outline-none text-[14px] text-text-primary placeholder:text-text-secondary"
-                    />
-                    <button
-                        type="submit"
-                        aria-label="Submit Search"
-                        className="ml-2 shrink-0 cursor-pointer"
-                    >
-                        <Image
-                            src="/icons/search.svg"
-                            alt=""
-                            width={16}
-                            height={16}
-                            aria-hidden="true"
-                            className="opacity-70 hover:opacity-100"
-                        />
-                    </button>
-                </form>
+                <HeaderSearch variant="mobile" />
             </div>
 
             {/* ================= 3. Desktop Navigation Menu Bar ================= */}
@@ -421,33 +396,7 @@ export default function Header({
                     </ul>
 
                     {/* Desktop Search Field */}
-                    <form
-                        role="search"
-                        action="/search"
-                        method="GET"
-                        className="flex items-center border border-border-default rounded-full px-3.5 py-1.5 w-48 xl:w-60 bg-bg-base transition-colors"
-                    >
-                        <input
-                            type="search"
-                            name="q"
-                            placeholder="Search..."
-                            className="w-full bg-transparent outline-none text-[13px] text-text-primary placeholder:text-text-secondary"
-                        />
-                        <button
-                            type="submit"
-                            aria-label="Submit Search"
-                            className="ml-1 cursor-pointer"
-                        >
-                            <Image
-                                src="/icons/search.svg"
-                                alt=""
-                                width={15}
-                                height={15}
-                                aria-hidden="true"
-                                className="opacity-70 hover:opacity-100"
-                            />
-                        </button>
-                    </form>
+                    <HeaderSearch variant="desktop" />
 
                     {/* Account menu — login CTA or avatar when signed in */}
                     <AccountMenu />

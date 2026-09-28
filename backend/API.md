@@ -73,6 +73,7 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/shops` | `routes/publicShops.ts` | Public |
 | `/api/products` | `routes/publicProducts.ts` | Public |
 | `/api/categories` | `routes/publicCategories.ts` | Public |
+| `/api/search` | `routes/publicSearch.ts` | Public |
 | `/api/home` | `routes/publicHome.ts` | Public |
 | `/api/dashboard/auth` | `routes/dashboardAuth.ts` | Staff |
 | `/api/dashboard/users` | `routes/dashboardUsers.ts` | `super_admin` |
@@ -204,6 +205,25 @@ Auth: Bearer **`super_admin`**. Drives **Settings → Home → Other home sectio
 **Welcome modal fields:** `badge_label`, `eyebrow`, `headline_before`, `discount_percent` (0–100), `headline_after`, `body`, `cta_label`, `cta_href`, `dismiss_label`, `countdown_seconds` (5–120), `product_image`, `bg_image`.
 
 Dashboard UI: **Settings → Home → Welcome modal** (shadcn Form + Zod · image preview + file upload).
+
+---
+
+## Public search — `/api/search`
+
+No auth. Powers the storefront header live search (debounced 300 ms on the client).
+
+`GET /api/search/suggest?q=&limit=`
+
+| Query | Rules |
+|-------|-------|
+| `q` | Required · 2–80 chars · safe-input guarded (rejects HTML/JS/PHP/SQL payloads) |
+| `limit` | Optional product count · 1–10 · default 6 |
+
+Matches products (name, SKU, brand), categories (name, slug), and active shops (name, slug).
+
+**200** → `{ q, products: [{ id, name, slug, price, thumbnail, category, shop }], product_total, categories: [{ id, name, slug, parent, products_count }], shops: [{ id, name, slug, logo, products_count }] }`
+
+**400** → `{ message, code: "INVALID_SEARCH" }`
 
 ---
 

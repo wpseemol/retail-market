@@ -29,6 +29,8 @@ type ShopPageContentProps = {
   brandsVisible?: number;
   seeAllLabel?: string;
   showLessLabel?: string;
+  initialSearch?: string;
+  initialCategory?: string | null;
 };
 
 function matchesSearch(product: ShopProduct, query: string) {
@@ -107,6 +109,8 @@ export default function ShopPageContent({
   brandsVisible = 6,
   seeAllLabel = "See all",
   showLessLabel = "Show less",
+  initialSearch = "",
+  initialCategory = null,
 }: ShopPageContentProps) {
   const rangeMin = Math.floor(priceRange.min || 0);
   const rangeMax = Math.max(
@@ -115,12 +119,12 @@ export default function ShopPageContent({
   );
   const perPage = Math.min(48, Math.max(4, productsPerPage || PRODUCTS_PER_PAGE));
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [priceMin, setPriceMin] = useState(rangeMin);
   const [priceMax, setPriceMax] = useState(rangeMax);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
-    null,
+    initialCategory,
   );
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);

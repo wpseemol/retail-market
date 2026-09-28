@@ -11,9 +11,26 @@ export const metadata: Metadata = createPageMetadata({
   path: "/shop",
 });
 
-export default async function ShopPage() {
+function firstParam(value: string | string[] | undefined): string {
+  return (Array.isArray(value) ? value[0] : value)?.trim().slice(0, 120) ?? "";
+}
+
+export default async function ShopPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const q = firstParam(params.q);
+  const category = firstParam(params.category);
+
   const [data, settings] = await Promise.all([
-    fetchProducts({ limit: 48, sort: "default" }),
+    fetchProducts({
+      limit: 48,
+      sort: "default",
+      q: q || undefined,
+      category: category || undefined,
+    }),
     getSiteSettings(),
   ]);
   const products = data.products.map(toShopProduct);
@@ -26,6 +43,9 @@ export default async function ShopPage() {
   return (
     <main>
       <ShopPageContent
+        key={`${q}|${category}`}
+        initialSearch={q}
+        initialCategory={category || null}
         products={products}
         categories={data.facets.categories}
         brands={data.facets.brands}
