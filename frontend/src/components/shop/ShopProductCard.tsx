@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -204,6 +204,118 @@ function CompareIcon() {
     );
 }
 
+function CartIcon() {
+    return (
+        <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+        >
+            <circle cx="9" cy="21" r="1" />
+            <circle cx="20" cy="21" r="1" />
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+        </svg>
+    );
+}
+
+function CheckIcon() {
+    return (
+        <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+        >
+            <polyline points="20 6 9 17 4 12" />
+        </svg>
+    );
+}
+
+function BoltIcon() {
+    return (
+        <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+        >
+            <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />
+        </svg>
+    );
+}
+
+function PurchaseButtons({
+    added,
+    onAddToCart,
+    onBuyNow,
+    compact = false,
+    className = "",
+}: {
+    added: boolean;
+    onAddToCart: () => void;
+    onBuyNow: () => void;
+    compact?: boolean;
+    className?: string;
+}) {
+    const base = `group/btn relative inline-flex flex-1 items-center justify-center gap-1.5 overflow-hidden rounded-lg font-semibold whitespace-nowrap cursor-pointer transition-all duration-150 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface ${
+        compact ? "h-9 px-2 text-[11.5px]" : "h-10 px-3 text-[13px]"
+    }`;
+
+    return (
+        <div className={`flex gap-2 ${className}`}>
+            <button
+                type="button"
+                aria-label={added ? "Added to cart" : "Add to cart"}
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onAddToCart();
+                }}
+                className={`${base} border ${
+                    added
+                        ? "border-brand-primary bg-brand-primary/15 text-brand-primary"
+                        : "border-brand-primary/50 bg-brand-primary/5 text-brand-primary hover:border-brand-primary hover:bg-brand-primary hover:text-white"
+                }`}
+            >
+                <span className="transition-transform duration-150 group-hover/btn:-translate-y-px group-hover/btn:scale-110">
+                    {added ? <CheckIcon /> : <CartIcon />}
+                </span>
+                <span>{added ? "Added" : "Add to Cart"}</span>
+            </button>
+            <button
+                type="button"
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onBuyNow();
+                }}
+                className={`${base} bg-brand-primary text-white shadow-[0_8px_18px_-8px_var(--color-brand-primary)] hover:bg-brand-hover hover:shadow-[0_10px_24px_-8px_var(--color-brand-primary)]`}
+            >
+                <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-y-0 -left-full w-1/2 -skew-x-12 bg-linear-to-r from-transparent via-white/30 to-transparent transition-[left] duration-500 ease-out group-hover/btn:left-[150%]"
+                />
+                <span className="transition-transform duration-150 group-hover/btn:scale-110">
+                    <BoltIcon />
+                </span>
+                <span>Buy Now</span>
+            </button>
+        </div>
+    );
+}
+
 function productDescription(product: ShopProduct) {
     return (
         product.description ??
@@ -224,8 +336,16 @@ export default function ShopProductCard({
 }: ShopProductCardProps) {
     const router = useRouter();
     const dispatch = useAppDispatch();
+    const [added, setAdded] = useState(false);
+    const addedTimer = useRef<number | null>(null);
 
-    const handleAddToCart = () => {
+    useEffect(() => {
+        return () => {
+            if (addedTimer.current) window.clearTimeout(addedTimer.current);
+        };
+    }, []);
+
+    const dispatchAdd = () => {
         dispatch(
             addToCart({
                 id: product.id,
@@ -236,6 +356,18 @@ export default function ShopProductCard({
                 quantity: 1,
             }),
         );
+    };
+
+    const handleAddToCart = () => {
+        dispatchAdd();
+        setAdded(true);
+        if (addedTimer.current) window.clearTimeout(addedTimer.current);
+        addedTimer.current = window.setTimeout(() => setAdded(false), 1600);
+    };
+
+    const handleBuyNow = () => {
+        dispatchAdd();
+        router.push("/checkout");
     };
 
     const handleExpandProduct = () => {
@@ -311,13 +443,12 @@ export default function ShopProductCard({
                         >
                             <ExpandIcon />
                         </ActionButton>
-                        <button
-                            type="button"
-                            onClick={handleAddToCart}
-                            className="ml-1 h-9 px-4 rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[13px] font-semibold transition-colors cursor-pointer"
-                        >
-                            Add to Cart
-                        </button>
+                        <PurchaseButtons
+                            added={added}
+                            onAddToCart={handleAddToCart}
+                            onBuyNow={handleBuyNow}
+                            className="ml-1 w-full max-w-xs"
+                        />
                     </div>
                 </div>
             </article>
@@ -329,8 +460,10 @@ export default function ShopProductCard({
 
     return (
         <article
-            className={`group relative flex flex-col bg-bg-surface border border-border-default rounded-lg transition-all duration-200 hover:border-brand-primary hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)] ${
-                isWide ? "sm:flex-row sm:items-stretch" : ""
+            className={`group relative flex flex-col bg-bg-surface border border-border-default rounded-lg hover:border-brand-primary ${
+                isWide
+                    ? "transition-[border-color,box-shadow] duration-300 sm:flex-row sm:items-stretch hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)]"
+                    : "[transition:border-color_200ms,box-shadow_200ms,transform_200ms_cubic-bezier(0.22,1,0.36,1),border-bottom-left-radius_0s_200ms,border-bottom-right-radius_0s_200ms,z-index_0s_200ms] hover:[transition:border-color_200ms,box-shadow_200ms,transform_200ms_cubic-bezier(0.22,1,0.36,1),border-bottom-left-radius_0s,border-bottom-right-radius_0s,z-index_0s] [@media(hover:hover)]:focus-within:[transition:border-color_200ms,box-shadow_200ms,transform_200ms_cubic-bezier(0.22,1,0.36,1),border-bottom-left-radius_0s,border-bottom-right-radius_0s,z-index_0s] after:pointer-events-auto after:absolute after:inset-x-0 after:top-full after:hidden after:h-2 after:content-[''] hover:after:block hover:z-30 hover:-translate-y-1 hover:rounded-b-none hover:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_28px_-12px_rgba(0,0,0,0.22)] dark:hover:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_12px_28px_-12px_rgba(0,0,0,0.7)] [@media(hover:hover)]:focus-within:z-30 [@media(hover:hover)]:focus-within:-translate-y-1 [@media(hover:hover)]:focus-within:rounded-b-none [@media(hover:hover)]:focus-within:border-brand-primary motion-reduce:hover:translate-y-0"
             }`}
         >
             <div
@@ -365,12 +498,12 @@ export default function ShopProductCard({
                                       ? "(max-width: 768px) 100vw, 40vw"
                                       : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                             }
-                            className="object-contain p-3 transition-transform duration-300 group-hover:scale-105"
+                            className="object-contain p-3 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
                         />
                     </Link>
                 </div>
 
-                <div className="absolute bottom-3 right-3 flex flex-col gap-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-20">
+                <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 group-focus-within:opacity-100 group-focus-within:translate-x-0 transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] z-20 motion-reduce:transition-none">
                     <ActionButton label="Add to Wishlist" tooltipSide="left">
                         <HeartIcon />
                     </ActionButton>
@@ -455,15 +588,39 @@ export default function ShopProductCard({
                 </p>
 
                 {isWide && (
-                    <button
-                        type="button"
-                        onClick={handleAddToCart}
-                        className="mt-2 w-fit h-10 px-5 rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[13px] font-semibold transition-colors cursor-pointer"
-                    >
-                        Add to Cart
-                    </button>
+                    <PurchaseButtons
+                        added={added}
+                        onAddToCart={handleAddToCart}
+                        onBuyNow={handleBuyNow}
+                        className="mt-2 w-full max-w-xs"
+                    />
                 )}
             </div>
+
+            {!isWide && (
+                <div className="absolute -inset-x-px top-full grid grid-rows-[0fr] invisible pointer-events-none rounded-b-lg border border-t-0 border-border-default bg-bg-surface shadow-[0_16px_28px_-14px_rgba(0,0,0,0.25)] dark:shadow-[0_16px_28px_-14px_rgba(0,0,0,0.7)] [clip-path:inset(0_-40px_-40px_-40px)] transition-[grid-template-rows,visibility,border-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:grid-rows-[1fr] group-hover:visible group-hover:pointer-events-auto group-hover:border-brand-primary [@media(hover:hover)]:group-focus-within:grid-rows-[1fr] [@media(hover:hover)]:group-focus-within:visible [@media(hover:hover)]:group-focus-within:pointer-events-auto [@media(hover:hover)]:group-focus-within:border-brand-primary [@media(hover:none)]:static [@media(hover:none)]:grid-rows-[1fr] [@media(hover:none)]:visible [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:border-0 [@media(hover:none)]:shadow-none motion-reduce:transition-none">
+                    <div className="min-h-0 overflow-hidden">
+                        <div
+                            className={`translate-y-1.5 opacity-0 transition-all duration-150 ease-out delay-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:duration-200 group-hover:delay-75 [@media(hover:hover)]:group-focus-within:translate-y-0 [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100 motion-reduce:transition-none ${
+                                isCompact ? "px-3 pb-3" : "px-4 pb-4"
+                            }`}
+                        >
+                            <div
+                                aria-hidden="true"
+                                className={`h-px bg-border-default/70 ${
+                                    isCompact ? "mb-2.5" : "mb-3"
+                                }`}
+                            />
+                            <PurchaseButtons
+                                added={added}
+                                onAddToCart={handleAddToCart}
+                                onBuyNow={handleBuyNow}
+                                compact={isCompact}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </article>
     );
 }
