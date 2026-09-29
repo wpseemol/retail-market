@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
+import "lenis/dist/lenis.css";
 import "./globals.css";
 import TopBar from "@/components/home/TopBar";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
@@ -9,6 +10,7 @@ import Footer from "@/components/home/Footer";
 import AuthHydrator from "@/components/providers/AuthHydrator";
 import WishlistHydrator from "@/components/providers/WishlistHydrator";
 import DisableMotion from "@/components/providers/DisableMotion";
+import SmoothScroll from "@/components/providers/SmoothScroll";
 import AuthSessionProvider from "@/components/providers/AuthSessionProvider";
 import { AnalyticsPixels } from "@/components/providers/AnalyticsPixels";
 import { VisitBeacon } from "@/components/providers/VisitBeacon";
@@ -148,6 +150,7 @@ export default async function RootLayout({
                 <AnalyticsPixels settings={settings} />
                 <VisitBeacon />
                 <DisableMotion />
+                <SmoothScroll />
                 <ThemeProvider>
                     <StoreProvider>
                         <AuthSessionProvider>
