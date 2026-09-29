@@ -136,11 +136,6 @@ export function makeSocialLoginFormSchema(
   });
 }
 
-export const revealSecretsFormSchema = z.object({
-  password: z.string().min(1, "Enter your password").max(200),
-});
-export type RevealSecretsFormValues = z.infer<typeof revealSecretsFormSchema>;
-
 export function toSocialLoginFormValues(
   providers: Record<SocialProvider, SocialProviderDto>,
   secrets?: SocialSecretsResponse["secrets"] | null,

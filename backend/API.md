@@ -622,6 +622,45 @@ Auth: Bearer **`super_admin`** only. Drives the main website title, SEO, Open Gr
 
 All credential fields (IDs and secrets): omit → keep stored value · `null` → remove · string → replace. Enabling without required credentials → 400 `SOCIAL_LOGIN_INCOMPLETE` with `errors["provider.field"]`. History logs "updated/removed" for every credential, never values.
 
+| Method | Path | Notes |
+|--------|------|--------|
+| GET | `/sms-gateway` | `{ active_provider, env_fallback, providers }` · per provider `is_active`, `has_api_key`, `has_sender_id`, `has_account_sid`, `ready` · values are **never** returned here |
+| PATCH | `/sms-gateway` | Body `{ active_provider?, bulksmsbd?, alpha_sms?, ssl_wireless?, twilio? }` — see below |
+| POST | `/sms-gateway/reveal` | Body `{ password }` · same re-auth + rate limit as social login (shared counter) · returns decrypted `api_key`, `sender_id`, `account_sid` · logged to history |
+| POST | `/sms-gateway/test` | Body `{ phone }` (BD `01…` or E.164) · sends one real SMS via the saved active gateway · 1 per 30 s → 429 `TEST_TOO_SOON` · gateway error → 502 `SMS_TEST_FAILED` |
+
+**SMS gateway** (table `sms_gateway_providers`, `api_key` AES-256-GCM encrypted with `SETTINGS_ENCRYPTION_KEY`). Used for phone verification codes. At most one active; `active_provider: null` → falls back to `SMS_PROVIDER` / `SMS_API_KEY` / `SMS_SENDER_ID` env, else console log (dev only — production throws).
+
+| Provider | Fields (required to activate in **bold**) |
+|----------|--------|
+| `ssl_wireless` | **`api_key`** (API token), **`sender_id`** (SID) — `POST smsplus.sslwireless.com/api/v3/send-sms` |
+| `alpha_sms` | **`api_key`**, `sender_id` (optional masking) — `POST api.sms.net.bd/sendsms` |
+| `bulksmsbd` | **`api_key`**, **`sender_id`** — `GET bulksmsbd.net/api/smsapi` |
+| `mim_sms` | **`account_sid`** (panel login email), **`api_key`**, **`sender_id`** (registered sender name) — `POST api.mimsms.com/api/SmsSending/SMS` |
+| `twilio` | **`account_sid`** (`AC` + 32 hex), **`api_key`** (auth token), **`sender_id`** (`+E.164` From or `MG…` Messaging Service SID) |
+
+Fields: omit → keep · `null` → remove · string → replace. Activating without required fields → 400 `SMS_GATEWAY_INCOMPLETE` with `errors["provider.field"]`. History action `sms_gateway_updated` logs "updated/removed", never values.
+
+| Method | Path | Notes |
+|--------|------|--------|
+| GET | `/email-provider` | `{ active_provider, env_fallback, providers }` · per provider `host`, `port`, `secure`, `username`, `from_email`, `from_name`, `has_password`, `ready` · password is **never** returned here |
+| PATCH | `/email-provider` | Body `{ active_provider?, gmail?, zoho?, sendgrid?, brevo?, mailgun?, smtp? }` — each `{ host?, port?, secure?, username?, password?, from_email?, from_name? }` |
+| POST | `/email-provider/reveal` | Body `{ password }` · shared re-auth + rate limit · returns decrypted `password` per provider · logged to history |
+| POST | `/email-provider/test` | Body `{ to }` · sends one real email via the saved active provider · 1 per 30 s → 429 `TEST_TOO_SOON` · SMTP error → 502 `EMAIL_TEST_FAILED` |
+
+**Email provider** (table `email_providers`, `password` AES-256-GCM encrypted). Every preset sends over SMTP (nodemailer). At most one active; `active_provider: null` → falls back to `SMTP_*` env, else console log (dev only — production throws).
+
+| Provider | Server | Required to activate |
+|----------|--------|--------|
+| `gmail` | `smtp.gmail.com:465` SSL | `username` (Gmail address, also the From), `password` (App password) |
+| `zoho` | `smtp.zoho.com:465` SSL | `username` (mailbox, also the From), `password` |
+| `sendgrid` | `smtp.sendgrid.net:587` · user `apikey` | `password` (API key), `from_email` (verified sender) |
+| `brevo` | `smtp-relay.brevo.com:587` | `username` (SMTP login), `password` (SMTP key), `from_email` |
+| `mailgun` | `smtp.mailgun.org:587` | `username`, `password`, `from_email` |
+| `smtp` | custom `host` / `port` / `secure` | `host`, `port`, `from_email` (username/password optional) |
+
+`host` / `port` / `secure` are stored for `smtp` only; `from_email` is ignored for Gmail/Zoho. `password`: omit → keep · `null` → remove · string → replace. Invalid/missing → 400 `EMAIL_PROVIDER_INCOMPLETE`. History action `email_provider_updated` logs plain fields and "updated/removed" for the password.
+
 **Identity media:** `og_image`, `favicon`, `login_logo`  
 **Chrome:** `topbar_email`, `topbar_phone`, `footer_blurb`, `footer_phone`, `footer_callout`, `social_*`  
 **Menus:** table `site_nav_items` (associative to `site_settings`)  

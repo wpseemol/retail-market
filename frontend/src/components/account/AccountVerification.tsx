@@ -22,6 +22,16 @@ type VerificationStatus = {
 
 type ConfirmResponse = { message: string; user: ApiUser; claimed_orders: number };
 
+const BD_PREFIX = "+88";
+const BD_LOCAL_MOBILE = /^01[3-9]\d{8}$/;
+
+/** `+8801712345678` → `01712345678` so the input only holds the local part. */
+function toLocalMobile(phone: string | null) {
+  if (!phone) return "";
+  const digits = phone.replace(/\D/g, "");
+  return digits.startsWith("88") ? digits.slice(2) : digits;
+}
+
 function errorMessage(err: unknown, fallback: string) {
   if (err instanceof ApiError) {
     const field = err.errors ? Object.values(err.errors).flat().find(Boolean) : undefined;
@@ -70,7 +80,7 @@ function VerifyRow({
   pendingOrders: number;
   onVerified: (res: ConfirmResponse) => Promise<void>;
 }) {
-  const [phoneInput, setPhoneInput] = useState(value ?? "");
+  const [phoneInput, setPhoneInput] = useState(toLocalMobile(value));
   const [codeSent, setCodeSent] = useState(false);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -78,19 +88,24 @@ function VerifyRow({
   const [info, setInfo] = useState<string | null>(null);
   const [resendIn, setResendIn] = useCountdown();
 
-  useEffect(() => setPhoneInput(value ?? ""), [value]);
+  useEffect(() => setPhoneInput(toLocalMobile(value)), [value]);
 
   const sendCode = async () => {
     setError(null);
     setInfo(null);
     let body: { phone?: string } | undefined;
     if (channel === "phone") {
-      const parsed = phoneSchema.safeParse(phoneInput);
+      if (!BD_LOCAL_MOBILE.test(phoneInput)) {
+        setError("Enter an 11-digit mobile number starting with 01 (e.g. 01712345678)");
+        return;
+      }
+      const full = `${BD_PREFIX}${phoneInput}`;
+      const parsed = phoneSchema.safeParse(full);
       if (!parsed.success) {
         setError(parsed.error.issues[0]?.message ?? "Invalid number");
         return;
       }
-      body = { phone: normalizePhone(phoneInput) ?? phoneInput };
+      body = { phone: normalizePhone(full) ?? full };
     }
 
     setBusy(true);
@@ -162,15 +177,25 @@ function VerifyRow({
           {channel === "phone" && !codeSent ? (
             <label className="flex flex-col gap-1.5">
               <span className="text-[13px] font-medium text-text-primary">Mobile number</span>
-              <input
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                value={phoneInput}
-                onChange={(e) => setPhoneInput(e.target.value)}
-                placeholder="01712345678"
-                className="h-11 rounded-md border border-border-default bg-bg-surface px-3.5 text-[14px] text-text-primary outline-none focus:border-brand-primary"
-              />
+              <div className="flex h-11 overflow-hidden rounded-md border border-border-default bg-bg-surface focus-within:border-brand-primary">
+                <span className="flex items-center border-r border-border-default bg-bg-base px-3 text-[14px] font-medium text-text-secondary select-none">
+                  {BD_PREFIX}
+                </span>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel-national"
+                  maxLength={11}
+                  value={phoneInput}
+                  onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, "").slice(0, 11))}
+                  placeholder="01712345678"
+                  aria-describedby="mobile-hint"
+                  className="min-w-0 flex-1 bg-transparent px-3.5 text-[14px] text-text-primary outline-none"
+                />
+              </div>
+              <span id="mobile-hint" className="text-[12px] text-text-secondary">
+                Bangladesh number, 11 digits starting with 01
+              </span>
             </label>
           ) : null}
 

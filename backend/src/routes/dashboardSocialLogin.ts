@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { env } from "../lib/env.js";
-import { verifyPassword } from "../lib/password.js";
+import { confirmActorPassword } from "../lib/revealGuard.js";
 import { decryptSecret, encryptSecret } from "../lib/secretBox.js";
 import {
   SOCIAL_PROVIDERS,
@@ -19,10 +19,6 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 export const dashboardSocialLoginRouter = Router();
 
 type Row = Awaited<ReturnType<typeof prisma.socialLoginProvider.findMany>>[number];
-
-const REVEAL_MAX_FAILS = 5;
-const REVEAL_WINDOW_MS = 15 * 60 * 1000;
-const revealFails = new Map<string, { count: number; resetAt: number }>();
 
 function toDashboardProvider(provider: SocialProvider, row: Row | undefined) {
   const hasSecret = Boolean(row?.client_secret_enc);
@@ -188,36 +184,8 @@ dashboardSocialLoginRouter.post(
     }
 
     const actorId = req.auth!.userId;
-    const key = actorId.toString();
-    const now = Date.now();
-    const fails = revealFails.get(key);
-    if (fails && fails.resetAt > now && fails.count >= REVEAL_MAX_FAILS) {
-      return res.status(429).json({
-        message: "Too many wrong passwords. Try again in a few minutes.",
-        code: "REVEAL_RATE_LIMITED",
-      });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: actorId },
-      select: { password: true },
-    });
-    const ok =
-      Boolean(user?.password) &&
-      (await verifyPassword(parsed.data.password, user!.password!));
-
-    if (!ok) {
-      const entry =
-        fails && fails.resetAt > now ? fails : { count: 0, resetAt: now + REVEAL_WINDOW_MS };
-      entry.count += 1;
-      revealFails.set(key, entry);
-      return res.status(401).json({
-        message: "Incorrect password",
-        code: "INVALID_PASSWORD",
-        errors: { password: ["Incorrect password"] },
-      });
-    }
-    revealFails.delete(key);
+    const guard = await confirmActorPassword(actorId, parsed.data.password);
+    if (!guard.ok) return res.status(guard.status).json(guard.body);
 
     const rows = await prisma.socialLoginProvider.findMany();
     const map = new Map(rows.map((r) => [r.provider, r]));

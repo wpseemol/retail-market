@@ -9,8 +9,10 @@ import {
     KeyRound,
     LayoutGrid,
     LayoutTemplate,
+    Mail,
     Megaphone,
     Menu,
+    MessageSquareText,
     PanelBottom,
     Share2,
     Upload,
@@ -32,6 +34,8 @@ import { HeroBannerSettingsPanel } from "@/components/settings/HeroBannerSetting
 import { HomeComponentsEditor } from "@/components/settings/HomeComponentsEditor";
 import { WelcomeModalSettingsPanel } from "@/components/settings/WelcomeModalSettingsPanel";
 import { SocialLoginSettingsPanel } from "@/components/settings/SocialLoginSettingsPanel";
+import { SmsGatewaySettingsPanel } from "@/components/settings/SmsGatewaySettingsPanel";
+import { EmailProviderSettingsPanel } from "@/components/settings/EmailProviderSettingsPanel";
 import {
     SHOP_FACET_VISIBLE_OPTIONS,
     SHOP_PER_PAGE_OPTIONS,
@@ -73,6 +77,8 @@ type SettingsTabId =
     | "shop"
     | "social"
     | "login"
+    | "sms"
+    | "email"
     | "analytics"
     | "pixels"
     | "history";
@@ -89,6 +95,8 @@ const SETTINGS_TABS: Array<{
     { id: "shop", label: "Shop", icon: LayoutGrid },
     { id: "social", label: "Social", icon: Share2 },
     { id: "login", label: "Social login", icon: KeyRound },
+    { id: "sms", label: "SMS gateway", icon: MessageSquareText },
+    { id: "email", label: "Email provider", icon: Mail },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "pixels", label: "Pixels", icon: Megaphone },
     { id: "history", label: "History", icon: History },
@@ -934,6 +942,22 @@ export function SiteSettingsPage() {
                     icon={KeyRound}
                 >
                     <SocialLoginSettingsPanel token={token} />
+                </SettingsSection>
+            ) : activeTab === "sms" && token ? (
+                <SettingsSection
+                    title="SMS gateway"
+                    description="Choose the SMS provider that sends phone verification (OTP) codes and store its credentials encrypted."
+                    icon={MessageSquareText}
+                >
+                    <SmsGatewaySettingsPanel token={token} />
+                </SettingsSection>
+            ) : activeTab === "email" && token ? (
+                <SettingsSection
+                    title="Email provider"
+                    description="Choose the email service that sends verification and account emails (Gmail, SendGrid, Brevo, SMTP…). Passwords are stored encrypted."
+                    icon={Mail}
+                >
+                    <EmailProviderSettingsPanel token={token} />
                 </SettingsSection>
             ) : activeTab === "footer" && settingsSnapshot && token ? (
                 <SettingsSection

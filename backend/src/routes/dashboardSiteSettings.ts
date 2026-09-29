@@ -14,6 +14,8 @@ import { toPublicUser, userWithAvatarInclude } from "../lib/user.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
 import { categoryImageUpload } from "../middleware/upload.js";
 import { dashboardSocialLoginRouter } from "./dashboardSocialLogin.js";
+import { dashboardSmsGatewayRouter } from "./dashboardSmsGateway.js";
+import { dashboardEmailProviderRouter } from "./dashboardEmailProvider.js";
 import {
   createSiteNavItemSchema,
   reorderHomeSectionsSchema,
@@ -38,6 +40,8 @@ export const dashboardSiteSettingsRouter = Router();
 
 dashboardSiteSettingsRouter.use(requireAuth, requireRoles("super_admin"));
 dashboardSiteSettingsRouter.use("/social-login", dashboardSocialLoginRouter);
+dashboardSiteSettingsRouter.use("/sms-gateway", dashboardSmsGatewayRouter);
+dashboardSiteSettingsRouter.use("/email-provider", dashboardEmailProviderRouter);
 
 type ChangeMap = Record<string, { from: unknown; to: unknown }>;
 

@@ -849,6 +849,45 @@ model SocialLoginProvider {
   @@map("social_login_providers")
 }
 
+/// SMS gateway credentials managed from Dashboard → Settings → SMS gateway (super_admin).
+/// At most one row is active; with none active, sending falls back to SMS_* env vars.
+model SmsGatewayProvider {
+  /// bulksmsbd | alpha_sms | ssl_wireless | mim_sms | twilio
+  provider    String   @id @db.VarChar(20)
+  is_active   Boolean  @default(false)
+  /// API key / API token / Twilio auth token (AES-256-GCM).
+  api_key_enc String?  @db.Text
+  /// Sender ID / SSL SID / MiM sender name / Twilio From number or Messaging Service SID.
+  sender_id   String?  @db.VarChar(40)
+  /// Twilio Account SID / MiM SMS panel login email.
+  account_sid String?  @db.VarChar(255)
+  updated_by  BigInt?  @db.UnsignedBigInt
+  updated_at  DateTime @updatedAt
+
+  @@map("sms_gateway_providers")
+}
+
+/// Outgoing email (verification codes etc.) managed from Dashboard → Settings → Email provider.
+/// Every preset sends over SMTP. With none active, sending falls back to SMTP_* env vars.
+model EmailProvider {
+  /// gmail | zoho | sendgrid | brevo | mailgun | smtp
+  provider     String   @id @db.VarChar(20)
+  is_active    Boolean  @default(false)
+  /// Custom SMTP only — presets use fixed hosts.
+  host         String?  @db.VarChar(255)
+  port         Int?
+  secure       Boolean?
+  username     String?  @db.VarChar(255)
+  /// SMTP password / app password / API key (AES-256-GCM).
+  password_enc String?  @db.Text
+  from_email   String?  @db.VarChar(255)
+  from_name    String?  @db.VarChar(100)
+  updated_by   BigInt?  @db.UnsignedBigInt
+  updated_at   DateTime @updatedAt
+
+  @@map("email_providers")
+}
+
 /// Header / footer menu links (ordered; drag-drop position in dashboard).
 model SiteNavItem {
   id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
