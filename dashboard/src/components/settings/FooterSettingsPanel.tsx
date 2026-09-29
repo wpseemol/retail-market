@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ApiError, apiFetch } from "@/lib/api";
@@ -9,6 +9,10 @@ import {
 } from "@/lib/validators/siteChrome";
 import type { SiteSettingsApiResponse } from "@/lib/validators/siteSettings";
 import { SiteNavMenuEditor } from "@/components/settings/SiteNavMenuEditor";
+import {
+  FormStatusMessage,
+  StickyFormActions,
+} from "@/components/dashboard/page-shell";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -25,6 +29,8 @@ import { Textarea } from "@/components/ui/textarea";
 type Props = {
   token: string;
   settings: SiteSettingsApiResponse["settings"];
+  error?: string | null;
+  success?: string | null;
   onUpdated: (settings: SiteSettingsApiResponse["settings"]) => void;
   onError: (message: string) => void;
   onSuccess: (message: string) => void;
@@ -33,10 +39,13 @@ type Props = {
 export function FooterSettingsPanel({
   token,
   settings,
+  error,
+  success,
   onUpdated,
   onError,
   onSuccess,
 }: Props) {
+  const formId = useId();
   const form = useForm<SiteChromeFormValues>({
     resolver: zodResolver(siteChromeFormSchema),
     defaultValues: {
@@ -89,10 +98,16 @@ export function FooterSettingsPanel({
     }
   }
 
+  const { isSubmitting, isDirty } = form.formState;
+
   return (
     <div className="space-y-6">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit((v) => void onSubmit(v))} className="space-y-4">
+        <form
+          id={formId}
+          onSubmit={form.handleSubmit((v) => void onSubmit(v))}
+          className="space-y-4"
+        >
           <FormField
             control={form.control}
             name="footer_blurb"
@@ -137,9 +152,6 @@ export function FooterSettingsPanel({
               )}
             />
           </div>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Saving…" : "Save footer contact"}
-          </Button>
         </form>
       </Form>
 
@@ -167,6 +179,28 @@ export function FooterSettingsPanel({
         onError={onError}
         onSuccess={onSuccess}
       />
+
+      <StickyFormActions
+        message={
+          <FormStatusMessage
+            error={error}
+            success={success}
+            idle={
+              isDirty
+                ? "Unsaved footer contact changes."
+                : "Link columns save instantly. Footer contact fields need Save."
+            }
+          />
+        }
+      >
+        <Button
+          type="submit"
+          form={formId}
+          disabled={isSubmitting || !isDirty}
+        >
+          {isSubmitting ? "Saving…" : "Save footer"}
+        </Button>
+      </StickyFormActions>
     </div>
   );
 }

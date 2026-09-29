@@ -104,6 +104,23 @@ export const googleAuthSchema = z
     message: "idToken or accessToken is required",
   });
 
+/** Facebook Login — user access token from the JS SDK popup. */
+export const facebookAuthSchema = z.object({
+  accessToken: z
+    .string()
+    .trim()
+    .min(20)
+    .max(4096)
+    .regex(/^[A-Za-z0-9_.|-]+$/, "Invalid Facebook token format"),
+});
+
+/** Sign in with Apple — `id_token` JWT; name only arrives on first consent. */
+export const appleAuthSchema = z.object({
+  idToken: jwtShape("Invalid Apple token format"),
+  firstName: safeTrimmed(1, 100).optional(),
+  lastName: safeTrimmed(1, 100).optional(),
+});
+
 export const updateProfileSchema = z
   .object({
     first_name: safeTrimmed(1, 100).optional(),

@@ -13,6 +13,7 @@ import { prisma } from "../lib/prisma.js";
 import { toPublicUser, userWithAvatarInclude } from "../lib/user.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
 import { categoryImageUpload } from "../middleware/upload.js";
+import { dashboardSocialLoginRouter } from "./dashboardSocialLogin.js";
 import {
   createSiteNavItemSchema,
   reorderHomeSectionsSchema,
@@ -36,6 +37,7 @@ import {
 export const dashboardSiteSettingsRouter = Router();
 
 dashboardSiteSettingsRouter.use(requireAuth, requireRoles("super_admin"));
+dashboardSiteSettingsRouter.use("/social-login", dashboardSocialLoginRouter);
 
 type ChangeMap = Record<string, { from: unknown; to: unknown }>;
 

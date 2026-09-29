@@ -190,6 +190,48 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       },
     }),
+    Credentials({
+      id: "facebook-backend",
+      name: "Facebook",
+      credentials: {
+        accessToken: {},
+      },
+      async authorize(credentials) {
+        try {
+          const data = await callBackendAuth("/api/auth/facebook", {
+            accessToken: String(credentials?.accessToken ?? ""),
+          });
+          return toAuthUser(data);
+        } catch (err) {
+          throwCredentialsError(err, "FACEBOOK_FAILED");
+        }
+      },
+    }),
+    Credentials({
+      id: "apple-backend",
+      name: "Apple",
+      credentials: {
+        idToken: {},
+        firstName: {},
+        lastName: {},
+      },
+      async authorize(credentials) {
+        try {
+          const data = await callBackendAuth("/api/auth/apple", {
+            idToken: String(credentials?.idToken ?? ""),
+            firstName: credentials?.firstName
+              ? String(credentials.firstName)
+              : undefined,
+            lastName: credentials?.lastName
+              ? String(credentials.lastName)
+              : undefined,
+          });
+          return toAuthUser(data);
+        } catch (err) {
+          throwCredentialsError(err, "APPLE_FAILED");
+        }
+      },
+    }),
   ],
   callbacks: {
     async jwt({ token, user, trigger, session }) {

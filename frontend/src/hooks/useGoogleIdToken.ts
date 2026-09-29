@@ -65,19 +65,25 @@ function loadGisScript(): Promise<void> {
  */
 export function useGoogleIdToken(
   onCredential: (payload: { accessToken: string }) => void,
+  /** From `GET /api/auth/social-providers`; falls back to the build-time env. */
+  clientIdOverride?: string | null,
 ) {
-  const clientId = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "").trim();
+  const clientId = (
+    clientIdOverride !== undefined
+      ? (clientIdOverride ?? "")
+      : (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "")
+  ).trim();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const callbackRef = useRef(onCredential);
-  callbackRef.current = onCredential;
   const tokenClientRef = useRef<GoogleTokenClient | null>(null);
 
   useEffect(() => {
-    if (!clientId) {
-      setError("Google Sign-In is not configured");
-      return;
-    }
+    callbackRef.current = onCredential;
+  }, [onCredential]);
+
+  useEffect(() => {
+    if (!clientId) return;
 
     let cancelled = false;
 
@@ -130,7 +136,7 @@ export function useGoogleIdToken(
 
   const promptGoogleSignIn = useCallback(() => {
     if (!clientId) {
-      setError("Set NEXT_PUBLIC_GOOGLE_CLIENT_ID to enable Google Sign-In");
+      setError("Google Sign-In is not configured");
       return;
     }
     if (!ready || !tokenClientRef.current) {

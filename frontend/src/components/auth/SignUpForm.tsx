@@ -8,7 +8,7 @@ import AuthInput from "./AuthInput";
 import OrDivider from "./OrDivider";
 import SocialAuthButtons from "./SocialAuthButtons";
 import { EnvelopeIcon, LockIcon, UserIcon } from "./icons";
-import { useGoogleIdToken } from "@/hooks/useGoogleIdToken";
+import { useSocialLogin } from "@/hooks/useSocialLogin";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/authSlice";
 import { messageForAuthCode } from "@/lib/authErrors";
@@ -39,7 +39,6 @@ export default function SignUpForm() {
   );
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [googleLoading, setGoogleLoading] = useState(false);
 
   const finishAuth = useCallback(
     (user: ApiUser) => {
@@ -53,39 +52,7 @@ export default function SignUpForm() {
     [dispatch, nextPath],
   );
 
-  const handleGoogleCredential = useCallback(
-    (payload: { accessToken: string }) => {
-      setError(null);
-      setGoogleLoading(true);
-      startTransition(async () => {
-        try {
-          const result = await signIn("google-backend", {
-            accessToken: payload.accessToken,
-            redirect: false,
-          });
-          if (result?.error) {
-            setError(
-              messageForAuthCode(result.code, "Google sign-in failed"),
-            );
-            return;
-          }
-          const session = await getSession();
-          if (!session?.backendUser) {
-            setError("Google sign-in failed");
-            return;
-          }
-          finishAuth(session.backendUser);
-        } catch {
-          setError("Google sign-in failed");
-        } finally {
-          setGoogleLoading(false);
-        }
-      });
-    },
-    [finishAuth],
-  );
-
-  const google = useGoogleIdToken(handleGoogleCredential);
+  const social = useSocialLogin(finishAuth);
 
   const setFieldValue = (field: RegisterField, value: string) => {
     if (field === "first_name") setFirstName(value);
@@ -193,8 +160,8 @@ export default function SignUpForm() {
     });
   };
 
-  const displayError = error ?? google.error;
-  const loading = isPending || googleLoading;
+  const displayError = error ?? social.error;
+  const loading = isPending || social.loadingProvider !== null;
 
   return (
     <section className="w-full" aria-labelledby="signup-heading">
@@ -208,16 +175,20 @@ export default function SignUpForm() {
         Create a shopper account to buy products and manage your profile.
       </p>
 
-      <SocialAuthButtons
-        onGoogleClick={() => {
-          setError(null);
-          google.clearError();
-          google.promptGoogleSignIn();
-        }}
-        googleLoading={googleLoading}
-        disabled={loading}
-      />
-      <OrDivider />
+      {social.hasAny ? (
+        <>
+          <SocialAuthButtons
+            enabled={social.enabled}
+            onSelect={(provider) => {
+              setError(null);
+              social.start(provider);
+            }}
+            loadingProvider={social.loadingProvider}
+            disabled={loading}
+          />
+          <OrDivider />
+        </>
+      ) : null}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

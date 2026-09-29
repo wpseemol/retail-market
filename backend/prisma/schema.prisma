@@ -56,6 +56,8 @@ enum DeviceType {
 enum LoginMethod {
   password
   google
+  facebook
+  apple
   refresh
 }
 
@@ -826,6 +828,25 @@ model SiteSettings {
   home_sections HomeSection[]
 
   @@map("site_settings")
+}
+
+/// Storefront social sign-in credentials. Secrets are AES-256-GCM encrypted
+/// (`lib/secretBox.ts`) and never returned without password re-auth.
+model SocialLoginProvider {
+  /// google | facebook | apple
+  provider          String   @id @db.VarChar(20)
+  is_enabled        Boolean  @default(false)
+  /// Google OAuth client ID / Facebook App ID / Apple Services ID.
+  client_id         String?  @db.VarChar(255)
+  client_secret_enc String?  @db.Text
+  /// Apple only.
+  team_id           String?  @db.VarChar(20)
+  key_id            String?  @db.VarChar(20)
+  private_key_enc   String?  @db.Text
+  updated_by        BigInt?  @db.UnsignedBigInt
+  updated_at        DateTime @updatedAt
+
+  @@map("social_login_providers")
 }
 
 /// Header / footer menu links (ordered; drag-drop position in dashboard).

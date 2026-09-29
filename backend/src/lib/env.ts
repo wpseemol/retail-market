@@ -16,6 +16,14 @@ export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   databaseUrl: process.env.DATABASE_URL ?? "",
   jwtSecret: process.env.JWT_SECRET ?? "dev-only-change-me",
+  /**
+   * Encrypts secrets stored in the DB (social login client secrets / keys).
+   * Falls back to JWT_SECRET; changing it makes stored secrets unreadable.
+   */
+  settingsEncryptionKey:
+    process.env.SETTINGS_ENCRYPTION_KEY?.trim() ||
+    process.env.JWT_SECRET ||
+    "dev-only-change-me",
   /** Short-lived access JWT (API Authorization header). Default / customers. */
   jwtAccessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? "1h",
   /** Long-lived refresh JWT — customers keep login ~1 year. */

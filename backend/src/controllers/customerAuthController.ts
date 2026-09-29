@@ -3,6 +3,17 @@ import fs from "node:fs";
 import path from "node:path";
 import { prisma } from "../lib/prisma.js";
 import { verifyGoogleCredential } from "../lib/googleAuth.js";
+import {
+  verifyFacebookAccessToken,
+  type SocialIdentity,
+} from "../lib/facebookAuth.js";
+import { verifyAppleIdToken } from "../lib/appleAuth.js";
+import {
+  getPublicSocialProviders,
+  getSocialProviderConfig,
+  isSocialProvider,
+  type SocialProvider,
+} from "../lib/socialLogin.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
 import { verifyRefreshToken } from "../lib/token.js";
 import { createUserSession, rotateUserSession } from "../lib/userSession.js";
@@ -27,7 +38,9 @@ import {
   VerificationError,
 } from "../lib/verification.js";
 import {
+  appleAuthSchema,
   confirmCodeSchema,
+  facebookAuthSchema,
   googleAuthSchema,
   loginSchema,
   refreshSchema,
@@ -37,7 +50,7 @@ import {
 } from "../validators/customerAuth.js";
 
 /** Mirrors Prisma `LoginMethod` — keeps TS working if client generate is stale. */
-type LoginMethod = "password" | "google" | "refresh";
+type LoginMethod = "password" | "google" | "facebook" | "apple" | "refresh";
 
 /**
  * Customer auth tokens (see `lib/token.ts`):
@@ -118,11 +131,11 @@ export async function register(req: Request, res: Response) {
   });
 
   if (existing) {
-    if (existing.provider_name === "google" && !existing.password) {
+    if (isSocialProvider(existing.provider_name) && !existing.password) {
+      const label = PROVIDER_LABEL[existing.provider_name];
       return res.status(409).json({
-        message:
-          "An account with this email already uses Google sign-in. Continue with Google instead.",
-        code: "USE_GOOGLE",
+        message: `An account with this email already uses ${label} sign-in. Continue with ${label} instead.`,
+        code: `USE_${existing.provider_name.toUpperCase()}`,
       });
     }
     return res.status(409).json({
@@ -174,13 +187,13 @@ export async function login(req: Request, res: Response) {
     return res.status(401).json({ message: "Invalid email or password" });
   }
 
-  // Google-only account (no local password) — guide user to Continue with Google.
+  // Social-only account (no local password) — guide user to the right button.
   if (!user.password) {
-    if (user.provider_name === "google") {
+    if (isSocialProvider(user.provider_name)) {
+      const label = PROVIDER_LABEL[user.provider_name];
       return res.status(401).json({
-        message:
-          "This account uses Google sign-in. Continue with Google instead of a password.",
-        code: "USE_GOOGLE",
+        message: `This account uses ${label} sign-in. Continue with ${label} instead of a password.`,
+        code: `USE_${user.provider_name.toUpperCase()}`,
       });
     }
     return res.status(401).json({ message: "Invalid email or password" });
@@ -212,20 +225,33 @@ export async function login(req: Request, res: Response) {
   return res.status(result.status).json(result.body);
 }
 
-/**
- * Google Sign-In (storefront customers only).
- *
- * Client sends Google Identity Services ID token (`credential`).
- * Professional account resolution:
- *
- * 1. Match `provider_name=google` + `provider_id` → sign in.
- * 2. Match email of an existing email/password customer → if Google email is
- *    verified, link Google to that account (keep password) and sign in.
- *    Both methods work afterward (standard trusted-provider linking).
- * 3. Email already linked to a different OAuth provider → reject.
- * 4. Staff email → reject (dashboard only).
- * 5. No account → create customer with Google (no password).
- */
+const PROVIDER_LABEL: Record<SocialProvider, string> = {
+  google: "Google",
+  facebook: "Facebook",
+  apple: "Apple",
+};
+
+function providerDisabled(res: Response, provider: SocialProvider) {
+  return res.status(403).json({
+    message: `${PROVIDER_LABEL[provider]} sign-in is currently disabled.`,
+    code: "PROVIDER_DISABLED",
+  });
+}
+
+function invalidToken(res: Response, provider: SocialProvider) {
+  return res.status(401).json({
+    message: `Invalid or expired ${PROVIDER_LABEL[provider]} sign-in token`,
+    code: `INVALID_${provider.toUpperCase()}_TOKEN`,
+  });
+}
+
+/** Public: which social buttons the storefront should render (no secrets). */
+export async function socialProviders(_req: Request, res: Response) {
+  res.setHeader("Cache-Control", "public, max-age=30");
+  return res.json({ providers: await getPublicSocialProviders() });
+}
+
+/** Google Sign-In — client ID comes from dashboard settings (env fallback). */
 export async function googleLogin(req: Request, res: Response) {
   const parsed = googleAuthSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -235,29 +261,109 @@ export async function googleLogin(req: Request, res: Response) {
     });
   }
 
-  let identity;
+  const config = await getSocialProviderConfig("google");
+  if (!config.enabled || !config.clientId) return providerDisabled(res, "google");
+
+  let identity: SocialIdentity;
   try {
-    identity = await verifyGoogleCredential(parsed.data);
+    identity = await verifyGoogleCredential(parsed.data, config.clientId);
   } catch {
-    return res.status(401).json({
-      message: "Invalid or expired Google sign-in token",
-      code: "INVALID_GOOGLE_TOKEN",
+    return invalidToken(res, "google");
+  }
+  return completeSocialLogin(req, res, "google", identity);
+}
+
+/** Facebook Login — verified with the App ID + App Secret from dashboard settings. */
+export async function facebookLogin(req: Request, res: Response) {
+  const parsed = facebookAuthSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: "Validation failed",
+      errors: parsed.error.flatten().fieldErrors,
+    });
+  }
+
+  const config = await getSocialProviderConfig("facebook");
+  if (!config.enabled || !config.clientId || !config.clientSecret) {
+    return providerDisabled(res, "facebook");
+  }
+
+  let identity: SocialIdentity;
+  try {
+    identity = await verifyFacebookAccessToken(
+      parsed.data.accessToken,
+      config.clientId,
+      config.clientSecret,
+    );
+  } catch {
+    return invalidToken(res, "facebook");
+  }
+  return completeSocialLogin(req, res, "facebook", identity);
+}
+
+/** Sign in with Apple — `id_token` audience must equal the Services ID. */
+export async function appleLogin(req: Request, res: Response) {
+  const parsed = appleAuthSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: "Validation failed",
+      errors: parsed.error.flatten().fieldErrors,
+    });
+  }
+
+  const config = await getSocialProviderConfig("apple");
+  if (!config.enabled || !config.clientId) return providerDisabled(res, "apple");
+
+  let identity: SocialIdentity;
+  try {
+    identity = await verifyAppleIdToken(parsed.data.idToken, config.clientId, {
+      firstName: parsed.data.firstName,
+      lastName: parsed.data.lastName,
+    });
+  } catch {
+    return invalidToken(res, "apple");
+  }
+  return completeSocialLogin(req, res, "apple", identity);
+}
+
+/**
+ * Shared social account resolution (storefront customers only):
+ *
+ * 1. Match `provider_name` + `provider_id` → sign in.
+ * 2. Match email of an existing email/password customer → if the provider email
+ *    is verified, link the provider to that account (keep password) and sign in.
+ * 3. Email already linked to a different OAuth provider → reject.
+ * 4. Staff email → reject (dashboard only).
+ * 5. No account → create customer with the provider (no password).
+ */
+async function completeSocialLogin(
+  req: Request,
+  res: Response,
+  provider: SocialProvider,
+  identity: SocialIdentity,
+) {
+  const label = PROVIDER_LABEL[provider];
+  const upper = provider.toUpperCase();
+
+  if (!identity.email) {
+    return res.status(403).json({
+      message: `${label} did not share an email address. Allow email access and try again.`,
+      code: `${upper}_EMAIL_REQUIRED`,
     });
   }
 
   if (!identity.emailVerified) {
     return res.status(403).json({
-      message:
-        "Google email is not verified. Verify the email with Google, then try again.",
-      code: "GOOGLE_EMAIL_UNVERIFIED",
+      message: `${label} email is not verified. Verify the email with ${label}, then try again.`,
+      code: `${upper}_EMAIL_UNVERIFIED`,
     });
   }
 
-  // 1) Already linked Google identity
+  // 1) Already linked identity
   let user = await prisma.user.findFirst({
     where: {
       deleted_at: null,
-      provider_name: "google",
+      provider_name: provider,
       provider_id: identity.sub,
     },
     include: userWithAvatarInclude,
@@ -278,9 +384,9 @@ export async function googleLogin(req: Request, res: Response) {
     const result = await markLoginAndIssueTokens(
       user,
       req,
-      "Logged in with Google",
+      `Logged in with ${label}`,
       200,
-      "google",
+      provider,
     );
     return res.status(result.status).json(result.body);
   }
@@ -305,19 +411,19 @@ export async function googleLogin(req: Request, res: Response) {
     }
 
     // Linked to a different social provider — do not silently take over.
-    if (byEmail.provider_name && byEmail.provider_name !== "google") {
+    if (byEmail.provider_name && byEmail.provider_name !== provider) {
       return res.status(409).json({
         message: `This email is already linked to ${byEmail.provider_name} sign-in.`,
         code: "LINKED_TO_OTHER_PROVIDER",
       });
     }
 
-    // Email/password account (or unlinked): link Google (trusted verified email).
+    // Email/password account (or unlinked): link provider (trusted verified email).
     // Keep the existing password so the user can still sign in either way.
     user = await prisma.user.update({
       where: { id: byEmail.id },
       data: {
-        provider_name: "google",
+        provider_name: provider,
         provider_id: identity.sub,
         email_verified_at: byEmail.email_verified_at ?? new Date(),
         first_name: byEmail.first_name || identity.givenName,
@@ -329,17 +435,17 @@ export async function googleLogin(req: Request, res: Response) {
     const result = await markLoginAndIssueTokens(
       user,
       req,
-      "Google linked to your existing account. You can sign in with Google or your password.",
+      `${label} linked to your existing account. You can sign in with ${label} or your password.`,
       200,
-      "google",
+      provider,
     );
     return res.status(result.status).json({
       ...result.body,
-      code: "GOOGLE_LINKED",
+      code: `${upper}_LINKED`,
     });
   }
 
-  // 3) New customer via Google
+  // 3) New customer via provider
   user = await prisma.user.create({
     data: {
       first_name: identity.givenName,
@@ -348,7 +454,7 @@ export async function googleLogin(req: Request, res: Response) {
       password: null,
       role: "customer",
       status: "active",
-      provider_name: "google",
+      provider_name: provider,
       provider_id: identity.sub,
       email_verified_at: new Date(),
     },
@@ -358,9 +464,9 @@ export async function googleLogin(req: Request, res: Response) {
   const result = await markLoginAndIssueTokens(
     user,
     req,
-    "Registered and logged in with Google",
+    `Registered and logged in with ${label}`,
     201,
-    "google",
+    provider,
   );
   return res.status(result.status).json(result.body);
 }

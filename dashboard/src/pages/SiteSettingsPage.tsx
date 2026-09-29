@@ -6,6 +6,7 @@ import {
     Globe,
     History,
     ImagePlus,
+    KeyRound,
     LayoutGrid,
     LayoutTemplate,
     Megaphone,
@@ -23,12 +24,14 @@ import {
     FALLBACK_LOGIN_LOGO,
 } from "@/lib/siteBranding";
 import { useAuthStore } from "@/store/auth";
+import { StickyFormActions } from "@/components/dashboard/page-shell";
 import { FooterSettingsPanel } from "@/components/settings/FooterSettingsPanel";
 import { HeaderSettingsPanel } from "@/components/settings/HeaderSettingsPanel";
 import { HomeSectionsPanel } from "@/components/settings/HomeSectionsPanel";
 import { HeroBannerSettingsPanel } from "@/components/settings/HeroBannerSettingsPanel";
 import { HomeComponentsEditor } from "@/components/settings/HomeComponentsEditor";
 import { WelcomeModalSettingsPanel } from "@/components/settings/WelcomeModalSettingsPanel";
+import { SocialLoginSettingsPanel } from "@/components/settings/SocialLoginSettingsPanel";
 import {
     SHOP_FACET_VISIBLE_OPTIONS,
     SHOP_PER_PAGE_OPTIONS,
@@ -69,6 +72,7 @@ type SettingsTabId =
     | "home"
     | "shop"
     | "social"
+    | "login"
     | "analytics"
     | "pixels"
     | "history";
@@ -84,6 +88,7 @@ const SETTINGS_TABS: Array<{
     { id: "home", label: "Home", icon: LayoutTemplate },
     { id: "shop", label: "Shop", icon: LayoutGrid },
     { id: "social", label: "Social", icon: Share2 },
+    { id: "login", label: "Social login", icon: KeyRound },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "pixels", label: "Pixels", icon: Megaphone },
     { id: "history", label: "History", icon: History },
@@ -129,7 +134,7 @@ function SettingsSection({
     const [open, setOpen] = useState(defaultOpen);
 
     return (
-        <section className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
+        <section className="overflow-clip rounded-2xl border border-border/80 bg-card shadow-sm">
             <div
                 className={cn(
                     "flex items-start gap-3 border-b border-border/70 bg-linear-to-r from-brand-tint/40 via-background to-background px-5 py-4",
@@ -373,27 +378,6 @@ function BrandingImageDropzone({
                               ? "Replace image"
                               : "Upload image"}
                     </Button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// ─── Sticky save bar ──────────────────────────────────────────────────────────
-
-function SettingsStickyActions({
-    children,
-    message,
-}: {
-    children: ReactNode;
-    message?: ReactNode;
-}) {
-    return (
-        <div className="sticky bottom-3 z-10 rounded-2xl border border-border/80 bg-background/95 p-3 shadow-lg backdrop-blur supports-backdrop-filter:bg-background/80">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="min-w-0 text-sm">{message}</div>
-                <div className="flex flex-wrap items-center gap-2">
-                    {children}
                 </div>
             </div>
         </div>
@@ -930,6 +914,8 @@ export function SiteSettingsPage() {
                     <HeaderSettingsPanel
                         token={token}
                         settings={settingsSnapshot}
+                        error={submitError}
+                        success={saveSuccess}
                         onUpdated={setSettingsSnapshot}
                         onError={(m) => {
                             setSubmitError(m);
@@ -940,18 +926,14 @@ export function SiteSettingsPage() {
                             setSubmitError(null);
                         }}
                     />
-                    {(submitError || saveSuccess) && (
-                        <p
-                            className={
-                                submitError
-                                    ? "text-sm text-destructive"
-                                    : "text-sm text-brand-primary"
-                            }
-                            role={submitError ? "alert" : "status"}
-                        >
-                            {submitError ?? saveSuccess}
-                        </p>
-                    )}
+                </SettingsSection>
+            ) : activeTab === "login" && token ? (
+                <SettingsSection
+                    title="Social login"
+                    description="Turn Google, Facebook, and Apple sign-in on or off for the storefront and store their credentials securely."
+                    icon={KeyRound}
+                >
+                    <SocialLoginSettingsPanel token={token} />
                 </SettingsSection>
             ) : activeTab === "footer" && settingsSnapshot && token ? (
                 <SettingsSection
@@ -962,6 +944,8 @@ export function SiteSettingsPage() {
                     <FooterSettingsPanel
                         token={token}
                         settings={settingsSnapshot}
+                        error={submitError}
+                        success={saveSuccess}
                         onUpdated={setSettingsSnapshot}
                         onError={(m) => {
                             setSubmitError(m);
@@ -972,18 +956,6 @@ export function SiteSettingsPage() {
                             setSubmitError(null);
                         }}
                     />
-                    {(submitError || saveSuccess) && (
-                        <p
-                            className={
-                                submitError
-                                    ? "text-sm text-destructive"
-                                    : "text-sm text-brand-primary"
-                            }
-                            role={submitError ? "alert" : "status"}
-                        >
-                            {submitError ?? saveSuccess}
-                        </p>
-                    )}
                 </SettingsSection>
             ) : activeTab === "home" && settingsSnapshot && token ? (
                 <div className="space-y-5">
@@ -1692,7 +1664,7 @@ export function SiteSettingsPage() {
                             </SettingsSection>
                         ) : null}
 
-                        <SettingsStickyActions
+                        <StickyFormActions
                             message={
                                 submitError ? (
                                     <p
@@ -1719,7 +1691,7 @@ export function SiteSettingsPage() {
                             <Button type="submit" disabled={isSubmitting}>
                                 {isSubmitting ? "Saving…" : "Save settings"}
                             </Button>
-                        </SettingsStickyActions>
+                        </StickyFormActions>
                     </form>
                 </Form>
             )}

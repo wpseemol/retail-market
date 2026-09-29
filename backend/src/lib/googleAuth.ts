@@ -1,5 +1,4 @@
 import { OAuth2Client } from "google-auth-library";
-import { env } from "./env.js";
 
 export type GoogleIdentity = {
   sub: string;
@@ -10,15 +9,14 @@ export type GoogleIdentity = {
   picture: string | null;
 };
 
-function getClient() {
-  if (!env.googleClientId) {
-    throw new Error("GOOGLE_CLIENT_ID is not configured");
+function getClient(clientId: string) {
+  if (!clientId) {
+    throw new Error("Google client ID is not configured");
   }
-  return new OAuth2Client(env.googleClientId);
+  return new OAuth2Client(clientId);
 }
 
-function assertAudience(aud: string | string[] | undefined) {
-  const expected = env.googleClientId;
+function assertAudience(aud: string | string[] | undefined, expected: string) {
   const audiences = Array.isArray(aud) ? aud : aud ? [aud] : [];
   if (!audiences.includes(expected)) {
     throw new Error(
@@ -32,11 +30,12 @@ function assertAudience(aud: string | string[] | undefined) {
  */
 export async function verifyGoogleIdToken(
   idToken: string,
+  clientId: string,
 ): Promise<GoogleIdentity> {
-  const client = getClient();
+  const client = getClient(clientId);
   const ticket = await client.verifyIdToken({
     idToken,
-    audience: env.googleClientId,
+    audience: clientId,
   });
 
   const payload = ticket.getPayload();
@@ -59,10 +58,11 @@ export async function verifyGoogleIdToken(
  */
 export async function verifyGoogleAccessToken(
   accessToken: string,
+  clientId: string,
 ): Promise<GoogleIdentity> {
-  const client = getClient();
+  const client = getClient(clientId);
   const info = await client.getTokenInfo(accessToken);
-  assertAudience(info.aud);
+  assertAudience(info.aud, clientId);
 
   if (!info.sub) {
     throw new Error("Google access token is missing subject");
@@ -105,15 +105,15 @@ export async function verifyGoogleAccessToken(
 }
 
 /** Accept either GIS ID token or OAuth access token from the frontend. */
-export async function verifyGoogleCredential(input: {
-  idToken?: string;
-  accessToken?: string;
-}): Promise<GoogleIdentity> {
+export async function verifyGoogleCredential(
+  input: { idToken?: string; accessToken?: string },
+  clientId: string,
+): Promise<GoogleIdentity> {
   if (input.idToken) {
-    return verifyGoogleIdToken(input.idToken);
+    return verifyGoogleIdToken(input.idToken, clientId);
   }
   if (input.accessToken) {
-    return verifyGoogleAccessToken(input.accessToken);
+    return verifyGoogleAccessToken(input.accessToken, clientId);
   }
   throw new Error("Missing Google credential");
 }

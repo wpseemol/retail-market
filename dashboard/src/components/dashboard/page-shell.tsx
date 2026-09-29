@@ -136,6 +136,32 @@ export function FormPageHeader({
   );
 }
 
+export function FormStatusMessage({
+  error,
+  success,
+  idle,
+}: {
+  error?: string | null;
+  success?: string | null;
+  idle?: ReactNode;
+}) {
+  if (error) {
+    return (
+      <p className="text-destructive" role="alert">
+        {error}
+      </p>
+    );
+  }
+  if (success) {
+    return (
+      <p className="text-brand-primary" role="status">
+        {success}
+      </p>
+    );
+  }
+  return idle ? <p className="text-muted-foreground">{idle}</p> : null;
+}
+
 export function StickyFormActions({
   children,
   message,

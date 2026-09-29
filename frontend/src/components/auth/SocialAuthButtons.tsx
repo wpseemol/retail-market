@@ -1,10 +1,13 @@
 "use client";
 
+import type { SocialProvider } from "@/hooks/useSocialLogin";
 import { AppleIcon, FacebookIcon, GoogleIcon } from "./icons";
 
 type SocialAuthButtonsProps = {
-  onGoogleClick?: () => void;
-  googleLoading?: boolean;
+  /** Enabled flags from Dashboard → Settings → Social login. */
+  enabled: Record<SocialProvider, boolean>;
+  onSelect: (provider: SocialProvider) => void;
+  loadingProvider?: SocialProvider | null;
   disabled?: boolean;
 };
 
@@ -15,7 +18,6 @@ const providers = [
     icon: <AppleIcon />,
     className:
       "bg-[#111111] text-white border-[#111111] hover:bg-black dark:bg-bg-subtle dark:text-text-primary dark:border-border-default dark:hover:bg-bg-surface",
-    enabled: false,
   },
   {
     id: "google",
@@ -23,7 +25,6 @@ const providers = [
     icon: <GoogleIcon />,
     className:
       "bg-bg-surface text-text-primary border-border-default hover:bg-bg-subtle",
-    enabled: true,
   },
   {
     id: "facebook",
@@ -31,42 +32,32 @@ const providers = [
     icon: <FacebookIcon />,
     className:
       "bg-bg-surface text-text-primary border-border-default hover:bg-bg-subtle",
-    enabled: false,
   },
-] as const;
+] as const satisfies ReadonlyArray<{ id: SocialProvider; label: string; icon: React.ReactNode; className: string }>;
 
 export default function SocialAuthButtons({
-  onGoogleClick,
-  googleLoading = false,
+  enabled,
+  onSelect,
+  loadingProvider = null,
   disabled = false,
 }: SocialAuthButtonsProps) {
+  const visible = providers.filter((p) => enabled[p.id]);
+  if (visible.length === 0) return null;
+
   return (
     <div className="flex flex-col gap-2.5">
-      {providers.map((provider) => {
-        const isGoogle = provider.id === "google";
-        const isDisabled =
-          disabled ||
-          !provider.enabled ||
-          (isGoogle && (googleLoading || !onGoogleClick));
-
-        return (
-          <button
-            key={provider.id}
-            type="button"
-            disabled={isDisabled}
-            onClick={isGoogle ? onGoogleClick : undefined}
-            title={
-              provider.enabled
-                ? undefined
-                : `${provider.label} coming soon`
-            }
-            className={`w-full h-11 inline-flex items-center justify-center gap-2.5 rounded border text-sm font-medium transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${provider.className}`}
-          >
-            {provider.icon}
-            {isGoogle && googleLoading ? "Connecting…" : provider.label}
-          </button>
-        );
-      })}
+      {visible.map((provider) => (
+        <button
+          key={provider.id}
+          type="button"
+          disabled={disabled || loadingProvider !== null}
+          onClick={() => onSelect(provider.id)}
+          className={`w-full h-11 inline-flex items-center justify-center gap-2.5 rounded border text-sm font-medium transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${provider.className}`}
+        >
+          {provider.icon}
+          {loadingProvider === provider.id ? "Connecting…" : provider.label}
+        </button>
+      ))}
     </div>
   );
 }

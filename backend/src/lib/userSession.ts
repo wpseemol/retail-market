@@ -6,7 +6,7 @@ import { prisma } from "./prisma.js";
 import { issueAuthTokens, tokenTtlsForRole } from "./token.js";
 
 /** Mirrors Prisma `LoginMethod` enum. */
-type LoginMethod = "password" | "google" | "refresh";
+type LoginMethod = "password" | "google" | "facebook" | "apple" | "refresh";
 
 export function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
