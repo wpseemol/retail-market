@@ -139,7 +139,7 @@ export default function Header({
     return (
         <header
             role="banner"
-            className={`sticky top-0 left-0 w-full border-b border-border-default bg-bg-base z-50 transition-shadow duration-300 ${
+            className={`sticky top-0 left-0 w-full border-b border-border-default bg-bg-base z-50 ${
                 isSticky
                     ? "shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
                     : ""
@@ -413,17 +413,13 @@ export default function Header({
 
             {/* ================= 4. Mobile & Tablet Slide-over Drawer ================= */}
             <div
-                className={`lg:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs transition-opacity duration-300 ${
-                    isMobileMenuOpen
-                        ? "opacity-100 visible"
-                        : "opacity-0 invisible"
+                className={`lg:hidden fixed inset-0 z-50 bg-black/50 ${
+                    isMobileMenuOpen ? "block" : "hidden"
                 }`}
                 onClick={() => setIsMobileMenuOpen(false)}
             >
                 <div
-                    className={`fixed top-0 left-0 bottom-0 w-70 sm:w-80 bg-bg-base border-r border-border-default p-5 flex flex-col justify-between overflow-y-auto transition-transform duration-300 ${
-                        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-                    }`}
+                    className={`fixed top-0 left-0 bottom-0 w-70 sm:w-80 bg-bg-base border-r border-border-default p-5 flex flex-col justify-between overflow-y-auto`}
                     onClick={(e) => e.stopPropagation()}
                 >
                     <div className="flex flex-col gap-6">

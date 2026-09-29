@@ -61,15 +61,19 @@ export default function PromoBannerSlider({
   return (
     <section
       aria-label="Promotional Showcase Banner"
-      className="w-full py-6 bg-bg-base transition-colors duration-200"
+      className="w-full py-6 bg-bg-base"
     >
       <div className="container mx-auto">
         <div
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
-          className="relative flex w-full min-h-77.5 items-center justify-between overflow-hidden rounded-2xl border border-border-default bg-bg-surface bg-cover bg-center p-6 pr-10 shadow-xs sm:p-10 sm:pr-12 md:min-h-85 lg:p-12 dark:bg-none dark:bg-blend-luminosity"
-          style={{ backgroundImage: `url('${bgImage}')` }}
+          className="relative flex w-full min-h-77.5 items-center justify-between overflow-hidden rounded-2xl border border-border-default bg-bg-surface p-6 pr-10 shadow-xs sm:p-10 sm:pr-12 md:min-h-85 lg:p-12"
         >
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-cover bg-center dark:mix-blend-screen dark:[filter:invert(1)_hue-rotate(180deg)_saturate(1.6)_brightness(1.8)]"
+            style={{ backgroundImage: `url('${bgImage}')` }}
+          />
           <AnimatePresence mode="wait" custom={direction} initial={false}>
             <motion.div
               key={current}

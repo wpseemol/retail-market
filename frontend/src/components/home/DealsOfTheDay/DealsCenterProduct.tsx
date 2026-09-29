@@ -80,25 +80,15 @@ const centerProducts: CenterProductItem[] = [
     },
 ];
 
-export default function DealsCenterProduct() {
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [isPaused, setIsPaused] = useState(false);
+const formatUnit = (num: number) => String(num).padStart(2, "0");
+
+function DealCountdown() {
     const [timeLeft, setTimeLeft] = useState({
         days: 11,
         hours: 13,
         mins: 45,
         secs: 0,
     });
-
-    useEffect(() => {
-        if (isPaused) return;
-
-        const autoSlide = setInterval(() => {
-            setCurrentIndex((prev) => (prev + 1) % centerProducts.length);
-        }, 4500);
-
-        return () => clearInterval(autoSlide);
-    }, [isPaused]);
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -127,8 +117,42 @@ export default function DealsCenterProduct() {
         return () => clearInterval(timer);
     }, []);
 
+    return (
+        <div className="flex items-center gap-2 sm:gap-3">
+            {[
+                { label: "Days", value: formatUnit(timeLeft.days) },
+                { label: "Hours", value: formatUnit(timeLeft.hours) },
+                { label: "Mins", value: formatUnit(timeLeft.mins) },
+                { label: "Sec", value: formatUnit(timeLeft.secs) },
+            ].map((unit) => (
+                <div key={unit.label} className="flex flex-col items-center">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full border border-border-default/80 flex items-center justify-center bg-bg-base text-text-primary font-bold text-sm shadow-2xs">
+                        {unit.value}
+                    </div>
+                    <span className="text-[11px] text-text-secondary mt-1 font-medium">
+                        {unit.label}
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+export default function DealsCenterProduct() {
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [isPaused, setIsPaused] = useState(false);
+
+    useEffect(() => {
+        if (isPaused) return;
+
+        const autoSlide = setInterval(() => {
+            setCurrentIndex((prev) => (prev + 1) % centerProducts.length);
+        }, 4500);
+
+        return () => clearInterval(autoSlide);
+    }, [isPaused]);
+
     const activeProduct = centerProducts[currentIndex];
-    const formatUnit = (num: number) => String(num).padStart(2, "0");
 
     return (
         <article
@@ -217,29 +241,7 @@ export default function DealsCenterProduct() {
                     <span className="text-text-primary text-xs font-bold uppercase tracking-wider mb-2.5 block">
                         Deals End To:
                     </span>
-                    <div className="flex items-center gap-2 sm:gap-3">
-                        {[
-                            { label: "Days", value: formatUnit(timeLeft.days) },
-                            {
-                                label: "Hours",
-                                value: formatUnit(timeLeft.hours),
-                            },
-                            { label: "Mins", value: formatUnit(timeLeft.mins) },
-                            { label: "Sec", value: formatUnit(timeLeft.secs) },
-                        ].map((unit, idx) => (
-                            <div
-                                key={idx}
-                                className="flex flex-col items-center"
-                            >
-                                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full border border-border-default/80 flex items-center justify-center bg-bg-base text-text-primary font-bold text-sm shadow-2xs">
-                                    {unit.value}
-                                </div>
-                                <span className="text-[11px] text-text-secondary mt-1 font-medium">
-                                    {unit.label}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
+                    <DealCountdown />
                 </div>
 
                 {/* Animated Main Image Column */}
