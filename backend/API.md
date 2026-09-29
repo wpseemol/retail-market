@@ -608,9 +608,9 @@ Auth: Bearer **`super_admin`** only. Drives the main website title, SEO, Open Gr
 | PUT | `/nav/reorder` | Body `{ menu, ordered_ids[] }` · drag-drop positions |
 | PATCH | `/home-sections/:id` | Enable/disable home section |
 | PUT | `/home-sections/reorder` | Body `{ ordered_ids[] }` |
-| GET | `/social-login` | Google / Facebook / Apple config · secrets **never** returned (only `has_client_secret`, `has_private_key`) |
+| GET | `/social-login` | Enabled flags + `has_client_id`, `has_client_secret`, `has_team_id`, `has_key_id`, `has_private_key` · credential values are **never** returned here |
 | PATCH | `/social-login` | Body `{ google?, facebook?, apple? }` — see below |
-| POST | `/social-login/reveal` | Body `{ password }` · current super admin's password · returns decrypted secrets · 5 wrong tries / 15 min → 429 `REVEAL_RATE_LIMITED` · logged to history |
+| POST | `/social-login/reveal` | Body `{ password }` · current super admin's password · returns every credential (`client_id`, `team_id`, `key_id`, decrypted `client_secret` / `private_key`) · 5 wrong tries / 15 min → 429 `REVEAL_RATE_LIMITED` · logged to history |
 
 **Social login** (table `social_login_providers`, secrets AES-256-GCM encrypted with `SETTINGS_ENCRYPTION_KEY`, falls back to `JWT_SECRET` — changing the key makes stored secrets unreadable):
 
@@ -620,7 +620,7 @@ Auth: Bearer **`super_admin`** only. Drives the main website title, SEO, Open Gr
 | `facebook` | `is_enabled`, `client_id` (App ID), `client_secret` (App Secret — **required** to enable) |
 | `apple` | `is_enabled`, `client_id` (Services ID), `team_id`, `key_id` (10 chars `A-Z0-9`), `private_key` (full `.p8` PEM) |
 
-Secret fields: omit → keep stored value · `null` → remove · string → replace. Enabling without required credentials → 400 `SOCIAL_LOGIN_INCOMPLETE` with `errors["provider.field"]`. History logs "updated/removed" for secrets, never values.
+All credential fields (IDs and secrets): omit → keep stored value · `null` → remove · string → replace. Enabling without required credentials → 400 `SOCIAL_LOGIN_INCOMPLETE` with `errors["provider.field"]`. History logs "updated/removed" for every credential, never values.
 
 **Identity media:** `og_image`, `favicon`, `login_logo`  
 **Chrome:** `topbar_email`, `topbar_phone`, `footer_blurb`, `footer_phone`, `footer_callout`, `social_*`  

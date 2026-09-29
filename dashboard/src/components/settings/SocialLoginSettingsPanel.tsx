@@ -4,7 +4,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, KeyRound, Loader2, Lock, Trash2 } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
 import {
+  CREDENTIAL_FIELDS,
+  SOCIAL_PROVIDERS,
   makeSocialLoginFormSchema,
+  type CredentialField,
   revealSecretsFormSchema,
   toSocialLoginFormValues,
   type RevealSecretsFormValues,
@@ -128,6 +131,8 @@ function SecretField({
   onUndoClear,
   multiline,
   placeholder,
+  maxLength,
+  uppercase,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -141,8 +146,11 @@ function SecretField({
   onUndoClear: () => void;
   multiline?: boolean;
   placeholder: string;
+  maxLength?: number;
+  uppercase?: boolean;
 }) {
   const [visible, setVisible] = useState(false);
+  const handleChange = (v: string) => onChange(uppercase ? v.toUpperCase() : v);
 
   useEffect(() => {
     if (!revealed) setVisible(false);
@@ -171,7 +179,7 @@ function SecretField({
           name={name}
           rows={visible ? 6 : 3}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => handleChange(e.target.value)}
           onBlur={onBlur}
           placeholder={storedPlaceholder}
           spellCheck={false}
@@ -186,9 +194,10 @@ function SecretField({
           name={name}
           type={visible ? "text" : "password"}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => handleChange(e.target.value)}
           onBlur={onBlur}
           placeholder={storedPlaceholder}
+          maxLength={maxLength}
           spellCheck={false}
           autoComplete="new-password"
           className="font-mono"
@@ -198,7 +207,7 @@ function SecretField({
         type="button"
         variant="outline"
         size="icon"
-        aria-label={visible ? "Hide secret" : "Show secret"}
+        aria-label={visible ? "Hide value" : "Show value"}
         title={
           canToggle
             ? visible
@@ -274,7 +283,7 @@ function RevealDialog({
             Confirm it&apos;s you
           </DialogTitle>
           <DialogDescription>
-            Enter your dashboard password to view saved secrets. They hide
+            Enter your dashboard password to view saved credentials. They hide
             again automatically after 60 seconds, and each view is logged in
             History.
           </DialogDescription>
@@ -314,7 +323,7 @@ function RevealDialog({
                 {form.formState.isSubmitting ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : null}
-                View secrets
+                View credentials
               </Button>
             </DialogFooter>
           </form>
@@ -382,50 +391,38 @@ export function SocialLoginSettingsPanel({ token }: Props) {
   function onRevealed(secrets: SocialSecretsResponse["secrets"]) {
     if (!providers) return;
     const current = form.getValues();
-    const withSecrets = toSocialLoginFormValues(providers, secrets);
-    // Keep unsaved edits to non-secret fields.
-    form.reset({
-      google: { ...current.google, client_secret: withSecrets.google.client_secret },
-      facebook: { ...current.facebook, client_secret: withSecrets.facebook.client_secret },
-      apple: { ...current.apple, private_key: withSecrets.apple.private_key },
-    }, { keepDirty: true, keepDefaultValues: false });
+    const dirty = form.formState.dirtyFields as Record<string, Record<string, boolean> | undefined>;
+    const next = toSocialLoginFormValues(providers, secrets);
+    // Revealed values become the new defaults; keep anything the admin already typed.
+    for (const p of SOCIAL_PROVIDERS) {
+      const target = next[p] as Record<string, unknown>;
+      const typed = current[p] as Record<string, unknown>;
+      for (const key of Object.keys(target)) {
+        if (dirty[p]?.[key]) target[key] = typed[key];
+      }
+    }
+    form.reset(next, { keepDirty: true });
     setRevealed(true);
     if (hideTimer.current) window.clearTimeout(hideTimer.current);
     hideTimer.current = window.setTimeout(() => hideSecrets(providers), AUTO_HIDE_MS);
   }
 
   async function onSubmit(values: SocialLoginFormValues) {
-    const dirty = form.formState.dirtyFields;
-    const secretPatch = (p: "google" | "facebook") =>
-      values[p].clear_client_secret
-        ? { client_secret: null }
-        : dirty[p]?.client_secret && values[p].client_secret
-          ? { client_secret: values[p].client_secret }
-          : {};
-
-    const body = {
-      google: {
-        is_enabled: values.google.is_enabled,
-        client_id: values.google.client_id,
-        ...secretPatch("google"),
-      },
-      facebook: {
-        is_enabled: values.facebook.is_enabled,
-        client_id: values.facebook.client_id,
-        ...secretPatch("facebook"),
-      },
-      apple: {
-        is_enabled: values.apple.is_enabled,
-        client_id: values.apple.client_id,
-        team_id: values.apple.team_id,
-        key_id: values.apple.key_id,
-        ...(values.apple.clear_private_key
-          ? { private_key: null }
-          : dirty.apple?.private_key && values.apple.private_key
-            ? { private_key: values.apple.private_key }
-            : {}),
-      },
-    };
+    const dirty = form.formState.dirtyFields as Record<string, Record<string, boolean> | undefined>;
+    // Credentials: removed → null · typed → value · untouched → omitted (server keeps it).
+    const body = Object.fromEntries(
+      SOCIAL_PROVIDERS.map((p) => {
+        const v = values[p] as Record<string, string | boolean>;
+        const patch: Record<string, string | boolean | null> = {
+          is_enabled: values[p].is_enabled,
+        };
+        for (const field of CREDENTIAL_FIELDS[p]) {
+          if (v[`clear_${field}`]) patch[field] = null;
+          else if (dirty[p]?.[field] && v[field]) patch[field] = v[field];
+        }
+        return [p, patch];
+      }),
+    );
 
     try {
       const data = await apiFetch<SocialLoginApiResponse>(
@@ -462,89 +459,81 @@ export function SocialLoginSettingsPanel({ token }: Props) {
 
   const { isSubmitting, isDirty } = form.formState;
 
-  const renderClientId = (p: SocialProvider) => (
-    <FormField
-      control={form.control}
-      name={`${p}.client_id` as FieldPath<SocialLoginFormValues>}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>{PROVIDER_META[p].clientIdLabel}</FormLabel>
-          <FormControl>
-            <Input
-              {...field}
-              value={String(field.value ?? "")}
-              spellCheck={false}
-              autoComplete="off"
-              className="font-mono"
-            />
-          </FormControl>
-          <FormDescription>{PROVIDER_META[p].clientIdHint}</FormDescription>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
-
-  const renderClientSecret = (p: "google" | "facebook") => (
-    <FormField
-      control={form.control}
-      name={`${p}.client_secret`}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>
-            {p === "facebook" ? "App secret" : "Client secret"}
-            {p === "google" ? (
-              <span className="ml-1 font-normal text-muted-foreground">(optional)</span>
-            ) : null}
-          </FormLabel>
-          <FormControl>
-            <SecretField
-              name={field.name}
-              value={field.value}
-              onChange={field.onChange}
-              onBlur={field.onBlur}
-              hasStored={providers[p].has_client_secret}
-              cleared={form.watch(`${p}.clear_client_secret`)}
-              revealed={revealed}
-              onRequestReveal={() => setRevealOpen(true)}
-              onClear={() => {
-                form.setValue(`${p}.clear_client_secret`, true, { shouldDirty: true });
-                form.setValue(`${p}.client_secret`, "", { shouldDirty: true });
-              }}
-              onUndoClear={() =>
-                form.setValue(`${p}.clear_client_secret`, false, { shouldDirty: true })
-              }
-              placeholder={p === "facebook" ? "32-character app secret" : "GOCSPX-…"}
-            />
-          </FormControl>
-          <FormDescription>
-            {p === "facebook"
-              ? "Used by the API to verify Facebook tokens. Never sent to the storefront."
-              : "Not needed for the popup sign-in flow; stored encrypted for server-side OAuth."}
-          </FormDescription>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
+  /** Every saved credential renders masked; viewing needs the password dialog. */
+  const renderCredential = (
+    p: SocialProvider,
+    key: CredentialField,
+    opts: {
+      label: string;
+      optional?: boolean;
+      description?: string;
+      placeholder: string;
+      multiline?: boolean;
+      maxLength?: number;
+      uppercase?: boolean;
+      className?: string;
+    },
+  ) => {
+    const name = `${p}.${key}` as FieldPath<SocialLoginFormValues>;
+    const clearName = `${p}.clear_${key}` as FieldPath<SocialLoginFormValues>;
+    const hasStored = providers[p][`has_${key}` as keyof SocialProviderDto] === true;
+    return (
+      <FormField
+        control={form.control}
+        name={name}
+        render={({ field }) => (
+          <FormItem className={opts.className}>
+            <FormLabel>
+              {opts.label}
+              {opts.optional ? (
+                <span className="ml-1 font-normal text-muted-foreground">(optional)</span>
+              ) : null}
+            </FormLabel>
+            <FormControl>
+              <SecretField
+                name={field.name}
+                value={String(field.value ?? "")}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                hasStored={hasStored}
+                cleared={form.watch(clearName) === true}
+                revealed={revealed}
+                onRequestReveal={() => setRevealOpen(true)}
+                onClear={() => {
+                  form.setValue(clearName, true, { shouldDirty: true });
+                  form.setValue(name, "", { shouldDirty: true });
+                }}
+                onUndoClear={() => form.setValue(clearName, false, { shouldDirty: true })}
+                placeholder={opts.placeholder}
+                multiline={opts.multiline}
+                maxLength={opts.maxLength}
+                uppercase={opts.uppercase}
+              />
+            </FormControl>
+            {opts.description ? <FormDescription>{opts.description}</FormDescription> : null}
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
+  };
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/80 bg-muted/30 px-4 py-3 text-sm">
         <p className="flex items-center gap-2 text-muted-foreground">
           <Lock className="size-4 shrink-0 text-brand-primary" />
-          Secrets are encrypted on the server and hidden. Viewing them needs
-          your password.
+          All saved credentials are hidden. Viewing them needs your password.
         </p>
         {revealed ? (
           <Button type="button" variant="outline" size="sm" onClick={() => hideSecrets(providers)}>
             <EyeOff className="size-4" />
-            Hide secrets
+            Hide credentials
           </Button>
         ) : (
           <Button type="button" variant="outline" size="sm" onClick={() => setRevealOpen(true)}>
             <Eye className="size-4" />
-            View saved secrets
+            View saved credentials
           </Button>
         )}
       </div>
@@ -601,79 +590,55 @@ export function SocialLoginSettingsPanel({ token }: Props) {
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
-                  {renderClientId(p)}
+                  {renderCredential(p, "client_id", {
+                    label: Meta.clientIdLabel,
+                    description: Meta.clientIdHint,
+                    placeholder:
+                      p === "google"
+                        ? "1234-abc.apps.googleusercontent.com"
+                        : p === "facebook"
+                          ? "123456789012345"
+                          : "com.example.web",
+                  })}
                   {p === "apple" ? (
                     <div className="grid grid-cols-2 gap-4">
-                      {(["team_id", "key_id"] as const).map((k) => (
-                        <FormField
-                          key={k}
-                          control={form.control}
-                          name={`apple.${k}`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{k === "team_id" ? "Team ID" : "Key ID"}</FormLabel>
-                              <FormControl>
-                                <Input
-                                  {...field}
-                                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                                  maxLength={10}
-                                  spellCheck={false}
-                                  autoComplete="off"
-                                  className="font-mono"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      ))}
+                      {renderCredential(p, "team_id", {
+                        label: "Team ID",
+                        placeholder: "ABCDE12345",
+                        maxLength: 10,
+                        uppercase: true,
+                      })}
+                      {renderCredential(p, "key_id", {
+                        label: "Key ID",
+                        placeholder: "ABCDE12345",
+                        maxLength: 10,
+                        uppercase: true,
+                      })}
                     </div>
                   ) : (
-                    renderClientSecret(p)
+                    renderCredential(p, "client_secret", {
+                      label: p === "facebook" ? "App secret" : "Client secret",
+                      optional: p === "google",
+                      placeholder: p === "facebook" ? "32-character app secret" : "GOCSPX-…",
+                      description:
+                        p === "facebook"
+                          ? "Used by the API to verify Facebook tokens. Never sent to the storefront."
+                          : "Not needed for the popup sign-in flow; stored encrypted for server-side OAuth.",
+                    })
                   )}
                 </div>
 
-                {p === "apple" ? (
-                  <FormField
-                    control={form.control}
-                    name="apple.private_key"
-                    render={({ field }) => (
-                      <FormItem className="mt-4">
-                        <FormLabel>
-                          Private key (.p8)
-                          <span className="ml-1 font-normal text-muted-foreground">(optional)</span>
-                        </FormLabel>
-                        <FormControl>
-                          <SecretField
-                            multiline
-                            name={field.name}
-                            value={field.value}
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
-                            hasStored={providers.apple.has_private_key}
-                            cleared={form.watch("apple.clear_private_key")}
-                            revealed={revealed}
-                            onRequestReveal={() => setRevealOpen(true)}
-                            onClear={() => {
-                              form.setValue("apple.clear_private_key", true, { shouldDirty: true });
-                              form.setValue("apple.private_key", "", { shouldDirty: true });
-                            }}
-                            onUndoClear={() =>
-                              form.setValue("apple.clear_private_key", false, { shouldDirty: true })
-                            }
-                            placeholder="-----BEGIN PRIVATE KEY-----"
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Sign in with Apple key (Keys → + → Sign in with Apple).
-                          Login itself only needs the Services ID; the key is
-                          stored encrypted for token revocation / server flows.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                ) : null}
+                {p === "apple"
+                  ? renderCredential(p, "private_key", {
+                      label: "Private key (.p8)",
+                      optional: true,
+                      multiline: true,
+                      className: "mt-4",
+                      placeholder: "-----BEGIN PRIVATE KEY-----",
+                      description:
+                        "Sign in with Apple key (Keys → + → Sign in with Apple). Login itself only needs the Services ID; the key is stored encrypted for token revocation / server flows.",
+                    })
+                  : null}
               </section>
             );
           })}

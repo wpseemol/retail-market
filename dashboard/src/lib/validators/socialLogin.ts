@@ -4,13 +4,14 @@ import { withSafeInput } from "@/lib/validators/safeInput";
 export const SOCIAL_PROVIDERS = ["google", "facebook", "apple"] as const;
 export type SocialProvider = (typeof SOCIAL_PROVIDERS)[number];
 
+/** Credential values are never in this DTO — only `has_*` flags. */
 export type SocialProviderDto = {
   provider: SocialProvider;
   is_enabled: boolean;
-  client_id: string | null;
+  has_client_id: boolean;
   has_client_secret: boolean;
-  team_id: string | null;
-  key_id: string | null;
+  has_team_id: boolean;
+  has_key_id: boolean;
   has_private_key: boolean;
   ready: boolean;
   env_fallback: boolean;
@@ -22,12 +23,26 @@ export type SocialLoginApiResponse = {
   providers: Record<SocialProvider, SocialProviderDto>;
 };
 
-export type SocialSecretsResponse = {
-  secrets: Record<
-    SocialProvider,
-    { client_secret: string | null; private_key: string | null }
-  >;
+export type SocialCredentialValues = {
+  client_id: string | null;
+  team_id: string | null;
+  key_id: string | null;
+  client_secret: string | null;
+  private_key: string | null;
 };
+
+export type SocialSecretsResponse = {
+  secrets: Record<SocialProvider, SocialCredentialValues>;
+};
+
+/** Every credential field: empty keeps the stored value, `clear_*` removes it. */
+export const CREDENTIAL_FIELDS = {
+  google: ["client_id", "client_secret"],
+  facebook: ["client_id", "client_secret"],
+  apple: ["client_id", "team_id", "key_id", "private_key"],
+} as const satisfies Record<SocialProvider, ReadonlyArray<keyof SocialCredentialValues>>;
+
+export type CredentialField = keyof SocialCredentialValues;
 
 const clientId = withSafeInput(
   z
@@ -37,7 +52,6 @@ const clientId = withSafeInput(
     .regex(/^[A-Za-z0-9._-]*$/, "Only letters, numbers, dot, dash and underscore"),
 );
 
-/** Empty = keep the stored secret. */
 const secret = z
   .string()
   .trim()
@@ -67,6 +81,7 @@ const privateKey = z
 const oauthProvider = z.object({
   is_enabled: z.boolean(),
   client_id: clientId,
+  clear_client_id: z.boolean(),
   client_secret: secret,
   clear_client_secret: z.boolean(),
 });
@@ -74,8 +89,11 @@ const oauthProvider = z.object({
 const appleProvider = z.object({
   is_enabled: z.boolean(),
   client_id: clientId,
+  clear_client_id: z.boolean(),
   team_id: appleId,
+  clear_team_id: z.boolean(),
   key_id: appleId,
+  clear_key_id: z.boolean(),
   private_key: privateKey,
   clear_private_key: z.boolean(),
 });
@@ -88,13 +106,16 @@ const baseSchema = z.object({
 
 export type SocialLoginFormValues = z.infer<typeof baseSchema>;
 
-/** Enabling needs credentials; "stored" state comes from the API. */
+/** Enabling needs credentials — typed now, or already stored and not being removed. */
 export function makeSocialLoginFormSchema(
   stored: Partial<Record<SocialProvider, SocialProviderDto>>,
 ) {
   return baseSchema.superRefine((v, ctx) => {
     for (const p of SOCIAL_PROVIDERS) {
-      if (v[p].is_enabled && !v[p].client_id) {
+      const hasId =
+        v[p].client_id !== "" ||
+        (Boolean(stored[p]?.has_client_id) && !v[p].clear_client_id);
+      if (v[p].is_enabled && !hasId) {
         ctx.addIssue({
           code: "custom",
           path: [p, "client_id"],
@@ -124,24 +145,24 @@ export function toSocialLoginFormValues(
   providers: Record<SocialProvider, SocialProviderDto>,
   secrets?: SocialSecretsResponse["secrets"] | null,
 ): SocialLoginFormValues {
+  const oauth = (p: "google" | "facebook") => ({
+    is_enabled: providers[p].is_enabled,
+    client_id: secrets?.[p].client_id ?? "",
+    clear_client_id: false,
+    client_secret: secrets?.[p].client_secret ?? "",
+    clear_client_secret: false,
+  });
   return {
-    google: {
-      is_enabled: providers.google.is_enabled,
-      client_id: providers.google.client_id ?? "",
-      client_secret: secrets?.google.client_secret ?? "",
-      clear_client_secret: false,
-    },
-    facebook: {
-      is_enabled: providers.facebook.is_enabled,
-      client_id: providers.facebook.client_id ?? "",
-      client_secret: secrets?.facebook.client_secret ?? "",
-      clear_client_secret: false,
-    },
+    google: oauth("google"),
+    facebook: oauth("facebook"),
     apple: {
       is_enabled: providers.apple.is_enabled,
-      client_id: providers.apple.client_id ?? "",
-      team_id: providers.apple.team_id ?? "",
-      key_id: providers.apple.key_id ?? "",
+      client_id: secrets?.apple.client_id ?? "",
+      clear_client_id: false,
+      team_id: secrets?.apple.team_id ?? "",
+      clear_team_id: false,
+      key_id: secrets?.apple.key_id ?? "",
+      clear_key_id: false,
       private_key: secrets?.apple.private_key ?? "",
       clear_private_key: false,
     },

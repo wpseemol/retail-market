@@ -31,13 +31,14 @@ function toDashboardProvider(provider: SocialProvider, row: Row | undefined) {
   const ready =
     provider === "facebook" ? Boolean(clientId && hasSecret) : Boolean(clientId);
 
+  // Credential values are only returned by POST /reveal (password re-auth).
   return {
     provider,
     is_enabled: row?.is_enabled ?? false,
-    client_id: clientId,
+    has_client_id: Boolean(clientId),
     has_client_secret: hasSecret,
-    team_id: row?.team_id ?? null,
-    key_id: row?.key_id ?? null,
+    has_team_id: Boolean(row?.team_id),
+    has_key_id: Boolean(row?.key_id),
     has_private_key: hasPrivateKey,
     ready,
     /** Google only: storefront still uses GOOGLE_CLIENT_ID until saved here. */
@@ -117,26 +118,21 @@ dashboardSocialLoginRouter.patch(
       if (next.is_enabled !== (row?.is_enabled ?? false)) {
         changes[label("is_enabled")] = { from: row?.is_enabled ?? false, to: next.is_enabled };
       }
-      if (next.client_id !== (row?.client_id ?? null)) {
-        changes[label("client_id")] = { from: row?.client_id ?? null, to: next.client_id };
-      }
-      for (const k of ["team_id", "key_id"] as const) {
-        if (next[k] !== (row?.[k] ?? null)) {
-          changes[label(k)] = { from: row?.[k] ?? null, to: next[k] };
+      // History is visible without re-auth, so never log credential values.
+      const tracked = [
+        ["client_id", row?.client_id ?? null, next.client_id],
+        ["team_id", row?.team_id ?? null, next.team_id],
+        ["key_id", row?.key_id ?? null, next.key_id],
+        ["client_secret", row?.client_secret_enc ?? null, next.client_secret_enc],
+        ["private_key", row?.private_key_enc ?? null, next.private_key_enc],
+      ] as const;
+      for (const [k, from, to] of tracked) {
+        if (from !== to) {
+          changes[label(k)] = {
+            from: from ? "set" : "empty",
+            to: to ? "updated" : "removed",
+          };
         }
-      }
-      // Never log secret values — only that they changed.
-      if (next.client_secret_enc !== (row?.client_secret_enc ?? null)) {
-        changes[label("client_secret")] = {
-          from: row?.client_secret_enc ? "set" : "empty",
-          to: next.client_secret_enc ? "updated" : "removed",
-        };
-      }
-      if (next.private_key_enc !== (row?.private_key_enc ?? null)) {
-        changes[label("private_key")] = {
-          from: row?.private_key_enc ? "set" : "empty",
-          to: next.private_key_enc ? "updated" : "removed",
-        };
       }
 
       writes.push({ provider, data: { provider, ...next, updated_by: actorId } });
@@ -231,6 +227,9 @@ dashboardSocialLoginRouter.post(
         return [
           p,
           {
+            client_id: row?.client_id ?? null,
+            team_id: row?.team_id ?? null,
+            key_id: row?.key_id ?? null,
             client_secret: decryptSecret(row?.client_secret_enc),
             private_key: decryptSecret(row?.private_key_enc),
           },
@@ -243,7 +242,7 @@ dashboardSocialLoginRouter.post(
         settings_id: 1,
         actor_id: actorId,
         action: "social_secrets_revealed",
-        note: "Social login secrets viewed after password confirmation",
+        note: "Social login credentials viewed after password confirmation",
       },
     });
 
