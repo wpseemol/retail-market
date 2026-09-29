@@ -27,6 +27,8 @@ import { apiFetch, ApiError } from "@/lib/api";
 import { formatPrice } from "@/lib/money";
 import { validateCheckoutContact } from "@/lib/validators/checkout";
 import { saveLastOnlineOrder } from "@/lib/payment";
+import { useShippingQuote } from "@/hooks/useShippingQuote";
+import { ShippingSummaryValue } from "@/components/cart/ShippingSummaryValue";
 
 type PaymentMethod = "sslcommerz" | "cod";
 
@@ -382,7 +384,9 @@ export default function CheckoutPageContent() {
     const items = useAppSelector(selectCartItems);
     const subtotal = useAppSelector(selectCartSubtotal);
     const discount = useAppSelector(selectCartDiscount);
-    const total = useAppSelector(selectCartTotal);
+    const cartTotal = useAppSelector(selectCartTotal);
+    const shippingQuote = useShippingQuote(items);
+    const total = cartTotal + shippingQuote.fee;
     const appliedCoupon = useAppSelector(selectCouponCode);
     const formId = useId();
 
@@ -497,7 +501,6 @@ export default function CheckoutPageContent() {
                     payment_method: PAYMENT_API_MAP[payment],
                     notes: orderNotes.trim(),
                     discount_amount: discount,
-                    shipping_fee: 0,
                 },
             });
             if (data.payment) {
@@ -920,13 +923,18 @@ export default function CheckoutPageContent() {
                                 </div>
                             ) : null}
 
-                            <div className="flex items-center justify-between py-3.5 border-b border-border-default">
-                                <span className="text-[14px] text-text-primary">
+                            <div className="flex items-start justify-between gap-4 py-3.5 border-b border-border-default">
+                                <span className="text-[14px] text-text-primary pt-0.5">
                                     Shipping
                                 </span>
-                                <span className="text-[14px] font-medium text-text-primary">
-                                    Free Shipping
-                                </span>
+                                <div className="text-right">
+                                    <ShippingSummaryValue
+                                        quote={shippingQuote.quote}
+                                        loading={shippingQuote.loading}
+                                        error={shippingQuote.error}
+                                        subtotal={subtotal}
+                                    />
+                                </div>
                             </div>
 
                             <div className="flex items-center justify-between py-4 border-b border-border-default">
@@ -1007,10 +1015,12 @@ export default function CheckoutPageContent() {
                             ) : null}
                             <button
                                 type="submit"
-                                disabled={placing}
+                                disabled={placing || shippingQuote.loading}
                                 className="w-full h-12 inline-flex items-center justify-center rounded-md bg-brand-primary hover:bg-brand-hover disabled:opacity-60 text-white text-[15px] font-semibold tracking-wide uppercase transition-colors cursor-pointer"
                             >
-                                {placing
+                                {shippingQuote.loading && !placing
+                                    ? "Calculating shipping…"
+                                    : placing
                                     ? payment === "sslcommerz"
                                         ? "Starting payment…"
                                         : "Placing…"

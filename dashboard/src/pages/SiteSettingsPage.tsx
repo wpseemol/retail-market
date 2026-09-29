@@ -15,6 +15,7 @@ import {
     MessageSquareText,
     PanelBottom,
     Share2,
+    Truck,
     Upload,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -36,6 +37,7 @@ import { WelcomeModalSettingsPanel } from "@/components/settings/WelcomeModalSet
 import { SocialLoginSettingsPanel } from "@/components/settings/SocialLoginSettingsPanel";
 import { SmsGatewaySettingsPanel } from "@/components/settings/SmsGatewaySettingsPanel";
 import { EmailProviderSettingsPanel } from "@/components/settings/EmailProviderSettingsPanel";
+import { ShippingSettingsPanel } from "@/components/settings/ShippingSettingsPanel";
 import {
     SHOP_FACET_VISIBLE_OPTIONS,
     SHOP_PER_PAGE_OPTIONS,
@@ -79,6 +81,7 @@ type SettingsTabId =
     | "login"
     | "sms"
     | "email"
+    | "shipping"
     | "analytics"
     | "pixels"
     | "history";
@@ -97,6 +100,7 @@ const SETTINGS_TABS: Array<{
     { id: "login", label: "Social login", icon: KeyRound },
     { id: "sms", label: "SMS gateway", icon: MessageSquareText },
     { id: "email", label: "Email provider", icon: Mail },
+    { id: "shipping", label: "Shipping", icon: Truck },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "pixels", label: "Pixels", icon: Megaphone },
     { id: "history", label: "History", icon: History },
@@ -958,6 +962,14 @@ export function SiteSettingsPage() {
                     icon={Mail}
                 >
                     <EmailProviderSettingsPanel token={token} />
+                </SettingsSection>
+            ) : activeTab === "shipping" && token ? (
+                <SettingsSection
+                    title="Shipping"
+                    description="Default delivery charge, free-shipping threshold, and whether store owners can set a different shipping cost per product."
+                    icon={Truck}
+                >
+                    <ShippingSettingsPanel token={token} />
                 </SettingsSection>
             ) : activeTab === "footer" && settingsSnapshot && token ? (
                 <SettingsSection

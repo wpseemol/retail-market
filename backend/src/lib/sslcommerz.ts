@@ -33,8 +33,13 @@ function newTranId(orderNumber: string) {
   return `${orderNumber}-${crypto.randomBytes(4).toString("hex")}`.slice(0, 30);
 }
 
+/** The gateway answers HTTP 500 with an empty body if any field contains `"` (e.g. `10.1"` screens). */
 const clip = (value: string | null | undefined, max: number) =>
-  (value ?? "").trim().slice(0, max);
+  (value ?? "")
+    .replace(/["\\<>`\u0000-\u001f\u007f]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, max);
 
 /** SSLCOMMERZ `cus_phone` is max 20 chars and expects local format for BD numbers. */
 function gatewayPhone(phone: string) {
@@ -122,8 +127,8 @@ export async function startSslcommerzCheckout(orderId: bigint) {
     cus_city: clip(billing.city, 50),
     cus_state: clip(billing.state, 50),
     cus_postcode: clip(billing.postal_code, 30),
-    cus_country: billing.country === "BD" ? "Bangladesh" : billing.country,
-    cus_phone: gatewayPhone(order.customer_phone ?? billing.phone),
+    cus_country: clip(billing.country === "BD" ? "Bangladesh" : billing.country, 50),
+    cus_phone: clip(gatewayPhone(order.customer_phone ?? billing.phone), 20),
     shipping_method: "Courier",
     num_of_item: String(order.items.reduce((n, i) => n + i.quantity, 0)),
     ship_name: clip(shipping.full_name, 50),
@@ -132,7 +137,7 @@ export async function startSslcommerzCheckout(orderId: bigint) {
     ship_city: clip(shipping.city, 50),
     ship_state: clip(shipping.state, 50),
     ship_postcode: clip(shipping.postal_code, 50),
-    ship_country: shipping.country === "BD" ? "Bangladesh" : shipping.country,
+    ship_country: clip(shipping.country === "BD" ? "Bangladesh" : shipping.country, 50),
     product_name: clip(order.items.map((i) => i.product_name).join(", "), 255),
     product_category: "General",
     product_profile: "physical-goods",
@@ -148,7 +153,15 @@ export async function startSslcommerzCheckout(orderId: bigint) {
       body: params.toString(),
       signal: AbortSignal.timeout(20_000),
     });
-    data = (await res.json()) as typeof data;
+    const text = await res.text();
+    try {
+      data = JSON.parse(text) as typeof data;
+    } catch {
+      data = {
+        status: "FAILED",
+        failedreason: `HTTP ${res.status}: ${text.slice(0, 200) || "empty response"}`,
+      };
+    }
   } catch (err) {
     data = { status: "FAILED", failedreason: err instanceof Error ? err.message : "Network error" };
   }

@@ -16,6 +16,7 @@ import { categoryImageUpload } from "../middleware/upload.js";
 import { dashboardSocialLoginRouter } from "./dashboardSocialLogin.js";
 import { dashboardSmsGatewayRouter } from "./dashboardSmsGateway.js";
 import { dashboardEmailProviderRouter } from "./dashboardEmailProvider.js";
+import { dashboardShippingRouter } from "./dashboardShipping.js";
 import {
   createSiteNavItemSchema,
   reorderHomeSectionsSchema,
@@ -42,6 +43,7 @@ dashboardSiteSettingsRouter.use(requireAuth, requireRoles("super_admin"));
 dashboardSiteSettingsRouter.use("/social-login", dashboardSocialLoginRouter);
 dashboardSiteSettingsRouter.use("/sms-gateway", dashboardSmsGatewayRouter);
 dashboardSiteSettingsRouter.use("/email-provider", dashboardEmailProviderRouter);
+dashboardSiteSettingsRouter.use("/shipping", dashboardShippingRouter);
 
 type ChangeMap = Record<string, { from: unknown; to: unknown }>;
 

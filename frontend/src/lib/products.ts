@@ -14,6 +14,8 @@ export type ApiProduct = {
   sku: string | null;
   price: number;
   compare_at_price: number | null;
+  /** null = site default shipping fee; 0 = free. */
+  shipping_fee?: number | null;
   stock_qty: number;
   short_description: string | null;
   description: string | null;

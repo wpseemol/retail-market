@@ -35,6 +35,7 @@ import {
   type LocalProductImage,
 } from "@/components/products/ProductImageGalleryField";
 import { RichTextEditor } from "@/components/products/RichTextEditor";
+import { ProductShippingField } from "@/components/products/ProductShippingField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -92,6 +93,7 @@ export function ProductEditPage() {
       status: "draft",
       price: 0,
       stock_qty: 0,
+      shipping_fee: null,
       options: [],
       variants: [],
     },
@@ -143,6 +145,7 @@ export function ProductEditPage() {
           status: p.status === "active" ? "active" : "draft",
           price: p.price ?? 0,
           stock_qty: p.stock_qty ?? 0,
+          shipping_fee: p.shipping_fee ?? null,
           options: (p.options ?? []).map((o) => ({
             name: o.name,
             valuesText: o.values.map((v) => v.value).join(", "),
@@ -697,6 +700,7 @@ export function ProductEditPage() {
                   />
                 </div>
               )}
+              <ProductShippingField />
             </ProductFormSection>
 
             {/* 04 Variants */}

@@ -32,10 +32,19 @@ export const placeOrderSchema = z.object({
   payment_method: z.enum(["cash_on_delivery", "sslcommerz"]),
   notes: withSafeInput(z.string().trim().max(2000)).optional().or(z.literal("")),
   discount_amount: z.coerce.number().finite().nonnegative().max(1_000_000).optional(),
+  /** Ignored — shipping is computed server-side. Kept so older clients still validate. */
   shipping_fee: z.coerce.number().finite().nonnegative().max(1_000_000).optional(),
 });
 
 export type PlaceOrderInput = z.infer<typeof placeOrderSchema>;
+
+export const shippingQuoteSchema = z.object({
+  items: z
+    .array(
+      placeOrderItemSchema.pick({ product_id: true, unit_price: true, quantity: true }),
+    )
+    .max(50),
+});
 
 export const customerOrdersQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),

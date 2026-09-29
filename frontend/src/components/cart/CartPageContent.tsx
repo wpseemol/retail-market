@@ -17,6 +17,8 @@ import {
     selectCouponCode,
 } from "@/store/cartSlice";
 import { formatPrice } from "@/lib/money";
+import { useShippingQuote } from "@/hooks/useShippingQuote";
+import { ShippingSummaryValue } from "@/components/cart/ShippingSummaryValue";
 
 function CartBreadcrumb() {
     return (
@@ -75,7 +77,9 @@ export default function CartPageContent() {
     const items = useAppSelector(selectCartItems);
     const subtotal = useAppSelector(selectCartSubtotal);
     const discount = useAppSelector(selectCartDiscount);
-    const total = useAppSelector(selectCartTotal);
+    const cartTotal = useAppSelector(selectCartTotal);
+    const shipping = useShippingQuote(items);
+    const total = cartTotal + shipping.fee;
     const appliedCoupon = useAppSelector(selectCouponCode);
     const [couponInput, setCouponInput] = useState(appliedCoupon ?? "");
     const [couponMessage, setCouponMessage] = useState<string | null>(null);
@@ -319,15 +323,12 @@ export default function CartPageContent() {
                                             Shipping
                                         </span>
                                         <div className="text-right">
-                                            <p className="text-[14px] font-medium text-text-primary m-0">
-                                                Free Shipping
-                                            </p>
-                                            <button
-                                                type="button"
-                                                className="mt-1 text-[13px] text-info hover:underline cursor-pointer bg-transparent border-0 p-0"
-                                            >
-                                                Calculate Shipping
-                                            </button>
+                                            <ShippingSummaryValue
+                                                quote={shipping.quote}
+                                                loading={shipping.loading}
+                                                error={shipping.error}
+                                                subtotal={subtotal}
+                                            />
                                         </div>
                                     </div>
 

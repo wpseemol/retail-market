@@ -424,10 +424,11 @@ Placing an order creates inbox notifications for `super_admin` / `admin` / `mode
   },
   "payment_method": "cash_on_delivery",
   "notes": "",
-  "discount_amount": 0,
-  "shipping_fee": 0
+  "discount_amount": 0
 }
 ```
+
+`shipping_fee` in the body is **ignored** — shipping is always calculated on the server (see shipping rule below).
 
 `payment_method`: `sslcommerz` (bKash, Nagad, Rocket, cards via SSLCOMMERZ) | `cash_on_delivery`. Anything else → `400`.
 
@@ -439,6 +440,18 @@ Placing an order creates inbox notifications for `super_admin` / `admin` / `mode
 - On success the response includes `payment: { gateway_url }` → redirect the browser there (SSLCOMMERZ hosted page: bKash, Nagad, Rocket, cards, net banking).
 - If the gateway session could not be opened, the order still exists (unpaid) and the response has `payment: { gateway_url: null, error, code }` → send the user to `/checkout/result?status=failed` where they can retry.
 - The order stays `payment_status: "unpaid"` until the payment is validated server-side (see [Payments](#payments--apipayments)).
+
+### `POST /api/customer/orders/shipping-quote` — no auth
+
+Body `{ items: [{ product_id, unit_price, quantity }] }` (max 50 items). Uses the same calculation as placing an order.
+
+**200** → `{ shipping_fee, free_shipping_applied, default_fee, free_threshold, vendor_override }`
+
+**Shipping rule**
+
+- Each product's fee is its own `shipping_fee`, or the site `default_fee` when the product's value is `null`. `0` = free for that product.
+- Items are grouped by store (`vendor_id`); each store charges the **highest** product fee in its group. The order fee is the sum across stores.
+- If `free_threshold` is set and the items subtotal (before discount) is at or above it, the whole order ships free.
 
 ### `GET /api/customer/orders` — Bearer customer
 
@@ -586,7 +599,7 @@ Multipart field **`avatar`** · max **5 MB** · JPEG/PNG/WebP/GIF. Clears `avata
 
 No auth. Used by the storefront for SEO / Open Graph and analytics pixels.
 
-`GET /api/site-settings` → `{ settings }` with `site_name`, `site_title`, `site_description`, `keywords`, OG/Twitter fields, `og_image`, `favicon`, `login_logo`, nested `shop` (`default_view`, `products_per_page`, `categories_visible`, `brands_visible`, `see_all_label`, `show_less_label`), nested `analytics` + `pixels` (`enabled` + `id`).
+`GET /api/site-settings` → `{ settings }` with `site_name`, `site_title`, `site_description`, `keywords`, OG/Twitter fields, `og_image`, `favicon`, `login_logo`, nested `shop` (`default_view`, `products_per_page`, `categories_visible`, `brands_visible`, `see_all_label`, `show_less_label`), nested `shipping` (`default_fee`, `free_threshold`), nested `analytics` + `pixels` (`enabled` + `id`).
 
 ---
 
@@ -660,6 +673,13 @@ Fields: omit → keep · `null` → remove · string → replace. Activating wit
 | `smtp` | custom `host` / `port` / `secure` | `host`, `port`, `from_email` (username/password optional) |
 
 `host` / `port` / `secure` are stored for `smtp` only; `from_email` is ignored for Gmail/Zoho. `password`: omit → keep · `null` → remove · string → replace. Invalid/missing → 400 `EMAIL_PROVIDER_INCOMPLETE`. History action `email_provider_updated` logs plain fields and "updated/removed" for the password.
+
+| Method | Path | Notes |
+|--------|------|--------|
+| GET | `/shipping` | `{ shipping: { default_fee, free_threshold, vendor_override } }` |
+| PATCH | `/shipping` | Body `{ default_fee?, free_threshold?, vendor_override? }` · `default_fee` 0–1,000,000 · `free_threshold` number or `null` (off) · history action `shipping_updated` |
+
+**Shipping** (columns on `site_settings`): `shipping_default_fee` (default `60`) is used for products without their own fee. `shipping_vendor_override` (default `true`) lets vendors set a per-product `shipping_fee`; when `false`, fees sent by vendors are ignored (admins can always set it). See the shipping rule under [Customer orders](#customer-orders--apicustomerorders).
 
 **Identity media:** `og_image`, `favicon`, `login_logo`  
 **Chrome:** `topbar_email`, `topbar_phone`, `footer_blurb`, `footer_phone`, `footer_callout`, `social_*`  
@@ -887,6 +907,7 @@ Auth: STAFF. Vendors are scoped to their own shop. Elevated may pass `vendor_id`
 |--------|------|--------|
 | GET | `/` | `q?`, `vendor_id?`, `category_id?`, `status?`, `page`, `limit` |
 | GET | `/slug-preview?name=` | `{ slug }` |
+| GET | `/shipping-defaults` | `{ shipping: { default_fee, free_threshold, vendor_override, can_edit } }` · `can_edit` = whether this user's `shipping_fee` will be saved |
 | GET | `/:id` | Includes `gallery` |
 
 ### Create / update
@@ -926,6 +947,7 @@ Auth: STAFF. Vendors are scoped to their own shop. Elevated may pass `vendor_id`
 | `description` | Safe HTML subset (no script/PHP) · ≤20_000 |
 | `short_description` | ≤500 plain text |
 | `options` / `variants` | Required for meaningful variable products |
+| `shipping_fee` | Optional · number 0–1,000,000 or `null` (use site default) · `0` = free · ignored for vendors when `shipping_vendor_override` is off |
 
 ### Images
 

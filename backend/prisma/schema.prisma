@@ -401,6 +401,8 @@ model Product {
   low_stock_threshold Int?        @db.UnsignedInt
   weight            Decimal?      @db.Decimal(10, 3)
   weight_unit       WeightUnit    @default(kg)
+  /// Per-product delivery charge (BDT). Null = site default, 0 = free shipping.
+  shipping_fee      Decimal?      @db.Decimal(12, 2)
   status            ProductStatus @default(draft)
   is_featured       Boolean       @default(false)
   is_taxable        Boolean       @default(true)
@@ -805,6 +807,13 @@ model SiteSettings {
   shop_see_all_label      String @default("See all") @db.VarChar(40)
   /// Sidebar collapse button label.
   shop_show_less_label    String @default("Show less") @db.VarChar(40)
+
+  /// Delivery charge (BDT) for products without their own shipping fee.
+  shipping_default_fee    Decimal  @default(60) @db.Decimal(12, 2)
+  /// Order subtotal at/above which the whole order ships free. Null = never.
+  shipping_free_threshold Decimal? @db.Decimal(12, 2)
+  /// Store owners (vendors) may set a per-product shipping fee.
+  shipping_vendor_override Boolean @default(true)
 
   /// Top bar + footer chrome (storefront header/footer).
   topbar_email     String? @db.VarChar(160)

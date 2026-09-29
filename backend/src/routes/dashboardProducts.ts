@@ -2,8 +2,9 @@ import { Router } from "express";
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import type { Prisma, ProductStatus, ProductType } from "@prisma/client";
+import { Prisma, type ProductStatus, type ProductType } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
+import { getShippingSettings, toPublicShippingSettings } from "../lib/shipping.js";
 import {
   productWithCatalogInclude,
   toPublicProduct,
@@ -106,6 +107,8 @@ const productBodySchema = z.object({
   status: z.enum(PRODUCT_STATUSES).default("draft"),
   price: z.coerce.number().min(0).max(99_999_999).optional(),
   compare_at_price: z.coerce.number().min(0).max(99_999_999).optional().nullable(),
+  /** Null = use the site default shipping fee; 0 = free shipping. */
+  shipping_fee: z.number().finite().min(0).max(1_000_000).optional().nullable(),
   stock_qty: z.coerce.number().int().min(0).max(10_000_000).optional(),
   sku: withSafeInput(z.string().trim().max(100)).optional().nullable(),
   options: z.array(optionSchema).max(5).optional(),
@@ -120,6 +123,16 @@ const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(30),
 });
+
+/**
+ * Value to write for `shipping_fee`, or undefined to leave it unchanged.
+ * Store owners are ignored when the super admin has turned vendor overrides off.
+ */
+async function resolveShippingFee(role: string, value: number | null | undefined) {
+  if (value === undefined) return undefined;
+  if (!isElevated(role) && !(await getShippingSettings()).vendorOverride) return undefined;
+  return value === null ? null : new Prisma.Decimal(value.toFixed(2));
+}
 
 async function slugTaken(slug: string, excludeId?: bigint) {
   const existing = await prisma.product.findFirst({
@@ -370,6 +383,17 @@ dashboardProductsRouter.get("/", async (req, res) => {
   });
 });
 
+/** Store default + whether this user may set a per-product shipping fee. */
+dashboardProductsRouter.get("/shipping-defaults", async (req, res) => {
+  const settings = toPublicShippingSettings(await getShippingSettings());
+  return res.json({
+    shipping: {
+      ...settings,
+      can_edit: isElevated(req.auth!.role) || settings.vendor_override,
+    },
+  });
+});
+
 dashboardProductsRouter.get("/slug-preview", async (req, res) => {
   const name = String(req.query.name ?? "").trim();
   if (name.length < 2) {
@@ -454,6 +478,7 @@ dashboardProductsRouter.post("/", async (req, res) => {
 
   const status = data.status as ProductStatus;
   const type = data.type as ProductType;
+  const shippingFee = await resolveShippingFee(req.auth!.role, data.shipping_fee);
 
   try {
     const product = await prisma.$transaction(async (tx) => {
@@ -472,6 +497,7 @@ dashboardProductsRouter.post("/", async (req, res) => {
           status,
           price,
           compare_at_price: data.compare_at_price ?? null,
+          shipping_fee: shippingFee ?? null,
           stock_qty: type === "simple" ? stock : 0,
           published_at: status === "active" ? new Date() : null,
         },
@@ -598,6 +624,7 @@ dashboardProductsRouter.patch("/:id", async (req, res) => {
     Number(existing.price) ??
     0;
   const stock = data.stock_qty ?? existing.stock_qty;
+  const shippingFee = await resolveShippingFee(req.auth!.role, data.shipping_fee);
 
   try {
     await prisma.product.update({
@@ -628,6 +655,7 @@ dashboardProductsRouter.patch("/:id", async (req, res) => {
           data.compare_at_price === undefined
             ? undefined
             : data.compare_at_price,
+        shipping_fee: shippingFee,
         stock_qty: nextType === "simple" ? stock : undefined,
         published_at:
           nextStatus === "active" && !existing.published_at

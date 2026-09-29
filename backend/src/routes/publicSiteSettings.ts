@@ -107,6 +107,11 @@ export function toPublicSiteSettings(
       see_all_label: row.shop_see_all_label,
       show_less_label: row.shop_show_less_label,
     },
+    shipping: {
+      default_fee: Number(row.shipping_default_fee),
+      free_threshold:
+        row.shipping_free_threshold === null ? null : Number(row.shipping_free_threshold),
+    },
     chrome: toPublicChrome(row),
     analytics: {
       google_analytics: {

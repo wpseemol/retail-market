@@ -47,6 +47,8 @@ export type Product = {
   type: ProductType;
   price: number;
   compare_at_price?: number | null;
+  /** Null = store default shipping fee; 0 = free shipping. */
+  shipping_fee?: number | null;
   stock_qty: number;
   status: ProductStatus;
   thumbnail?: ProductMedia | null;

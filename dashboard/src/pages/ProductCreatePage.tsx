@@ -33,6 +33,7 @@ import {
   type LocalProductImage,
 } from "@/components/products/ProductImageGalleryField";
 import { RichTextEditor } from "@/components/products/RichTextEditor";
+import { ProductShippingField } from "@/components/products/ProductShippingField";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -84,6 +85,7 @@ export function ProductCreatePage() {
       status: "draft",
       price: 0,
       stock_qty: 0,
+      shipping_fee: null,
       options: [{ name: "Size", valuesText: "S, M, L" }],
       variants: [],
     },
@@ -597,6 +599,7 @@ export function ProductCreatePage() {
                   />
                 </div>
               )}
+              <ProductShippingField />
             </ProductFormSection>
 
             {/* 04 Variants */}

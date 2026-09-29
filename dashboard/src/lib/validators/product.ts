@@ -78,6 +78,13 @@ export const productFormSchema = z
     status: z.enum(["draft", "active"]),
     price: z.number().min(0).max(99_999_999),
     stock_qty: z.number().int().min(0).max(10_000_000),
+    /** Null = use the store default shipping fee; 0 = free shipping. */
+    shipping_fee: z
+      .number({ message: "Enter a shipping fee" })
+      .finite()
+      .min(0, "Shipping fee cannot be negative")
+      .max(1_000_000)
+      .nullable(),
     options: z.array(optionDraftSchema).max(5),
     variants: z.array(variantDraftSchema).max(200),
   })
@@ -121,6 +128,7 @@ export function toProductApiBody(
     status: values.status,
     price: values.price,
     stock_qty: values.stock_qty,
+    shipping_fee: values.shipping_fee,
   };
 
   if (opts.includeVendor && values.vendor_id) {

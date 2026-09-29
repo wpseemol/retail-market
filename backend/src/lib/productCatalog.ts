@@ -126,6 +126,8 @@ export function toPublicProduct(row: ProductRow) {
     price: decimalToNumber(row.price) ?? 0,
     compare_at_price: decimalToNumber(row.compare_at_price),
     cost_price: decimalToNumber(row.cost_price),
+    /** Null = site default shipping fee; 0 = free shipping. */
+    shipping_fee: decimalToNumber(row.shipping_fee),
     stock_qty: row.stock_qty,
     status: row.status as ProductStatus,
     is_featured: row.is_featured,

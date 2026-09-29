@@ -11,9 +11,70 @@ import {
 } from "../lib/sslcommerz.js";
 import { optionalAuth, requireAuth, requireRoles } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { customerOrdersQuerySchema, placeOrderSchema } from "../validators/order.js";
+import {
+  calculateShipping,
+  getShippingSettings,
+  toPublicShippingSettings,
+} from "../lib/shipping.js";
+import {
+  customerOrdersQuerySchema,
+  placeOrderSchema,
+  shippingQuoteSchema,
+} from "../validators/order.js";
 
 export const customerOrdersRouter = Router();
+
+/** Shipping for a cart — same calculation the order endpoint uses (no auth). */
+customerOrdersRouter.post(
+  "/shipping-quote",
+  asyncHandler(async (req, res) => {
+    const parsed = shippingQuoteSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: "Validation failed",
+        errors: parsed.error.flatten().fieldErrors,
+      });
+    }
+
+    const ids = parsed.data.items
+      .map((i) => {
+        try {
+          return i.product_id != null && i.product_id !== "" ? BigInt(i.product_id) : null;
+        } catch {
+          return null;
+        }
+      })
+      .filter((id): id is bigint => id != null);
+    const [products, settings] = await Promise.all([
+      ids.length > 0
+        ? prisma.product.findMany({
+            where: { id: { in: ids }, deleted_at: null },
+            select: { id: true, vendor_id: true, shipping_fee: true },
+          })
+        : [],
+      getShippingSettings(),
+    ]);
+    const map = new Map(products.map((p) => [p.id.toString(), p]));
+
+    const result = calculateShipping(
+      parsed.data.items.map((i) => {
+        const p = i.product_id != null ? map.get(String(i.product_id)) : undefined;
+        return {
+          vendorId: p?.vendor_id ?? null,
+          productFee: p?.shipping_fee ?? null,
+          lineTotal: new Prisma.Decimal(i.unit_price.toFixed(2)).mul(i.quantity),
+        };
+      }),
+      settings,
+    );
+
+    return res.json({
+      shipping_fee: Number(result.fee),
+      free_shipping_applied: result.freeApplied,
+      ...toPublicShippingSettings(settings),
+    });
+  }),
+);
 
 function countryCode(value: string) {
   const trimmed = value.trim();
@@ -92,12 +153,14 @@ customerOrdersRouter.post(
               name: true,
               sku: true,
               price: true,
+              shipping_fee: true,
               vendor_id: true,
               vendor: { select: { user_id: true } },
             },
           })
         : [];
     const productMap = new Map(products.map((p) => [p.id.toString(), p]));
+    const shippingSettings = await getShippingSettings();
 
     const lineItems = input.items.map((item) => {
       const pid =
@@ -116,18 +179,22 @@ customerOrdersRouter.post(
         quantity: qty,
         line_total: lineTotal,
         vendor_user_id: product?.vendor?.user_id ?? null,
+        vendor_id: product?.vendor_id ?? null,
+        product_shipping_fee: product?.shipping_fee ?? null,
       };
     });
 
-    const subtotal = lineItems.reduce(
-      (sum, line) => sum.add(line.line_total),
-      new Prisma.Decimal(0),
-    );
     const discount = new Prisma.Decimal(
       (input.discount_amount ?? 0).toFixed(2),
     );
-    const shippingFee = new Prisma.Decimal(
-      (input.shipping_fee ?? 0).toFixed(2),
+    // Shipping is always computed server-side; any client `shipping_fee` is ignored.
+    const { fee: shippingFee, subtotal } = calculateShipping(
+      lineItems.map((l) => ({
+        vendorId: l.vendor_id,
+        productFee: l.product_shipping_fee,
+        lineTotal: l.line_total,
+      })),
+      shippingSettings,
     );
     const total = Prisma.Decimal.max(
       subtotal.sub(discount).add(shippingFee),
