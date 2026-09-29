@@ -7,6 +7,8 @@ import StoreProvider from "@/components/providers/StoreProvider";
 import Header from "@/components/home/Header";
 import Footer from "@/components/home/Footer";
 import AuthHydrator from "@/components/providers/AuthHydrator";
+import WishlistHydrator from "@/components/providers/WishlistHydrator";
+import DisableMotion from "@/components/providers/DisableMotion";
 import AuthSessionProvider from "@/components/providers/AuthSessionProvider";
 import { AnalyticsPixels } from "@/components/providers/AnalyticsPixels";
 import { VisitBeacon } from "@/components/providers/VisitBeacon";
@@ -145,10 +147,12 @@ export default async function RootLayout({
             >
                 <AnalyticsPixels settings={settings} />
                 <VisitBeacon />
+                <DisableMotion />
                 <ThemeProvider>
                     <StoreProvider>
                         <AuthSessionProvider>
                             <AuthHydrator />
+                            <WishlistHydrator />
                             <SiteChromeHydrator payload={chromePayload} />
                             <TopBar />
                             <Header categories={categories} />

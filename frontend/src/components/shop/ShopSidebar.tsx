@@ -243,7 +243,7 @@ export default function ShopSidebar({
                   aria-label={`Filter by ${color.label}`}
                   aria-pressed={isActive}
                   onClick={() => onColorChange(isActive ? null : color.id)}
-                  className={`h-7 w-7 rounded-full border-2 transition-transform hover:scale-110 cursor-pointer ${
+                  className={`h-7 w-7 rounded-full border-2 cursor-pointer ${
                     isActive
                       ? "border-brand-primary ring-2 ring-brand-primary/30"
                       : "border-transparent"

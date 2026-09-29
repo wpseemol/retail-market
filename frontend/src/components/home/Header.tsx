@@ -16,6 +16,7 @@ import {
     selectCartTotal,
 } from "@/store/cartSlice";
 import { selectHeaderNav } from "@/store/siteChromeSlice";
+import { selectWishlistCount } from "@/store/wishlistSlice";
 import { resolveStorefrontHref } from "@/lib/storefrontLinks";
 import type { PublicCategory } from "@/lib/categories";
 
@@ -91,6 +92,7 @@ export default function Header({
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const cartCount = useAppSelector(selectCartItemCount);
     const cartTotal = useAppSelector(selectCartTotal);
+    const wishlistCount = useAppSelector(selectWishlistCount);
     const configuredNav = useAppSelector(selectHeaderNav);
     const headerNav =
         configuredNav.length > 0 ? configuredNav : FALLBACK_HEADER_NAV;
@@ -208,7 +210,11 @@ export default function Header({
                         {/* Wishlist Link (Hidden on small phones, visible from tablet up) */}
                         <Link
                             href="/wishlist"
-                            aria-label="View Wishlist"
+                            aria-label={
+                                wishlistCount > 0
+                                    ? `View Wishlist, ${wishlistCount} items`
+                                    : "View Wishlist"
+                            }
                             className="hidden sm:inline-flex relative p-1.5 hover:opacity-80 transition-opacity"
                         >
                             <Image
@@ -220,12 +226,14 @@ export default function Header({
                                 style={{ width: 28, height: 28 }}
                                 aria-hidden="true"
                             />
-                            <span
-                                aria-label="2 items in wishlist"
-                                className="absolute -top-1 -right-1 bg-brand-hover text-white text-[10px] font-semibold h-4 min-w-4 px-1 rounded-full border border-white flex items-center justify-center"
-                            >
-                                2
-                            </span>
+                            {wishlistCount > 0 ? (
+                                <span
+                                    aria-hidden="true"
+                                    className="absolute -top-1 -right-1 bg-brand-hover text-white text-[10px] font-semibold h-4 min-w-4 px-1 rounded-full border border-white flex items-center justify-center"
+                                >
+                                    {wishlistCount > 99 ? "99+" : wishlistCount}
+                                </span>
+                            ) : null}
                         </Link>
 
                         <span
@@ -573,9 +581,11 @@ export default function Header({
                                 className="sm:hidden px-3 py-2 rounded-md text-text-primary hover:bg-bg-subtle flex items-center justify-between"
                             >
                                 <span>Wishlist</span>
-                                <span className="bg-brand-primary text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                                    2
-                                </span>
+                                {wishlistCount > 0 ? (
+                                    <span className="bg-brand-primary text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                                        {wishlistCount > 99 ? "99+" : wishlistCount}
+                                    </span>
+                                ) : null}
                             </Link>
                         </nav>
                     </div>

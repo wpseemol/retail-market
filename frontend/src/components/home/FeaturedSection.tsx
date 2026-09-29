@@ -21,7 +21,7 @@ export default function FeaturedSection({
             <li key={`${feature.title}-${index}`}>
               <RevealItem
                 index={index}
-                className="flex items-center gap-4 transition-transform duration-200 hover:-translate-y-0.5"
+                className="flex items-center gap-4"
               >
                 <div className="relative w-10 h-10 shrink-0 flex items-center justify-center">
                   <Image

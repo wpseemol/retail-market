@@ -237,7 +237,7 @@ export default function TopBar() {
                                     target="_blank"
                                     rel="noreferrer"
                                     aria-label={item.label}
-                                    className="opacity-80 hover:opacity-100 hover:scale-110 transition-transform"
+                                    className="opacity-80 hover:opacity-100"
                                 >
                                     <Image
                                         src={item.icon}

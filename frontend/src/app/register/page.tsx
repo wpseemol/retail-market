@@ -3,12 +3,12 @@ import AuthPage from "@/components/auth/AuthPage";
 import { createPageMetadata, siteConfig } from "@/config/site";
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Register",
-  description: `Create a ${siteConfig.name} account or log in.`,
+  title: "Create account",
+  description: `Create a free ${siteConfig.name} shopper account.`,
   path: "/register",
   noIndex: true,
 });
 
 export default function RegisterRoutePage() {
-  return <AuthPage />;
+  return <AuthPage mode="register" />;
 }

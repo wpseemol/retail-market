@@ -132,7 +132,7 @@ export default function TopBrandsSection({
                 <Link
                   href={brand.href || "/shop"}
                   aria-label={`View products by ${brand.name}`}
-                  className="group flex items-center justify-center py-2 px-3 transition-transform duration-200 hover:-translate-y-1 focus:outline-none"
+                  className="group flex items-center justify-center py-2 px-3 focus:outline-none"
                 >
                   {brand.image ? (
                     <div className="relative w-28 h-9 flex items-center justify-center dark:brightness-0 dark:invert transition-all">

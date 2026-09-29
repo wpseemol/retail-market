@@ -204,7 +204,7 @@ export default function ProductGroupsSection({
                                                 alt={item.alt}
                                                 fill
                                                 sizes="(max-width: 768px) 50vw, 150px"
-                                                className="object-contain p-1 transition-transform duration-300 group-hover:scale-105"
+                                                className="object-contain p-1"
                                             />
                                         </div>
                                         <span className="text-text-primary text-[12px] font-medium mt-1.5 leading-tight group-hover:text-brand-primary transition-colors">
@@ -243,7 +243,7 @@ export default function ProductGroupsSection({
                                                 alt={item.alt}
                                                 fill
                                                 sizes="(max-width: 768px) 50vw, 150px"
-                                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                                className="object-cover"
                                             />
                                         </div>
                                         <span className="text-text-primary text-[12px] font-medium mt-1.5 leading-tight group-hover:text-brand-primary transition-colors">
@@ -285,7 +285,7 @@ export default function ProductGroupsSection({
                                                     alt={largeItem.alt}
                                                     fill
                                                     sizes="(max-width: 768px) 60vw, 180px"
-                                                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                                    className="object-cover"
                                                 />
                                             </div>
                                             <span className="text-text-primary text-[12px] font-medium mt-1.5 leading-tight group-hover:text-brand-primary transition-colors">
@@ -310,7 +310,7 @@ export default function ProductGroupsSection({
                                                         alt={smallItem.alt}
                                                         fill
                                                         sizes="(max-width: 768px) 40vw, 120px"
-                                                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                                        className="object-cover"
                                                     />
                                                 </div>
                                                 <span className="text-text-primary text-[12px] font-medium mt-1 leading-tight group-hover:text-brand-primary transition-colors">

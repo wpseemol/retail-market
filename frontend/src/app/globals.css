@@ -112,6 +112,21 @@
   }
 }
 
+/* Site-wide: no motion. Loading spinners are kept as a status indicator. */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-spin {
+    animation: spin 1s linear infinite !important;
+  }
+}
+
 /* Dual range slider for shop price filter */
 .shop-range {
   height: 1.75rem;

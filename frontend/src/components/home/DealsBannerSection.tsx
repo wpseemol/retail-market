@@ -33,7 +33,7 @@ export default function DealsBannerSection({
                     <img
                       src={item.image}
                       alt={item.alt}
-                      className="absolute inset-0 size-full object-contain transition-transform duration-300 group-hover:scale-105"
+                      className="absolute inset-0 size-full object-contain"
                     />
                   ) : (
                     <Image
@@ -41,7 +41,7 @@ export default function DealsBannerSection({
                       alt={item.alt}
                       fill
                       sizes="(max-width: 640px) 105px, 115px"
-                      className="object-contain transition-transform duration-300 group-hover:scale-105"
+                      className="object-contain"
                     />
                   )}
                 </div>
@@ -71,7 +71,7 @@ export default function DealsBannerSection({
                     className="inline-flex items-center gap-1.5 text-text-primary text-[12px] sm:text-[13px] font-medium transition-colors group-hover:text-brand-primary"
                   >
                     <span>{item.cta_label || "Shop Now"}</span>
-                    <span className="w-4 h-4 rounded-full bg-brand-primary text-white flex items-center justify-center text-[9px] leading-none shrink-0 transition-transform duration-200 group-hover:translate-x-0.5">
+                    <span className="w-4 h-4 rounded-full bg-brand-primary text-white flex items-center justify-center text-[9px] leading-none shrink-0">
                       &#10148;
                     </span>
                   </Link>

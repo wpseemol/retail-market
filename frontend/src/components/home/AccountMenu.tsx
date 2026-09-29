@@ -88,23 +88,40 @@ export default function AccountMenu({
   if (!user) {
     if (variant === "mobile") {
       return (
-        <Link
-          href="/login"
-          onClick={onNavigate}
-          className="w-full text-center bg-brand-primary text-white text-sm font-semibold py-2.5 rounded hover:bg-brand-hover transition-colors"
-        >
-          Login / Sign Up
-        </Link>
+        <div className="grid grid-cols-2 gap-2">
+          <Link
+            href="/login"
+            onClick={onNavigate}
+            className="text-center border border-brand-primary text-brand-primary text-sm font-semibold py-2.5 rounded hover:bg-brand-primary hover:text-white transition-colors"
+          >
+            Login
+          </Link>
+          <Link
+            href="/register"
+            onClick={onNavigate}
+            className="text-center bg-brand-primary text-white text-sm font-semibold py-2.5 rounded hover:bg-brand-hover transition-colors"
+          >
+            Sign Up
+          </Link>
+        </div>
       );
     }
 
     return (
-      <Link
-        href="/login"
-        className="bg-brand-primary hover:bg-brand-hover text-white text-[13px] font-semibold px-4 py-2 rounded transition-colors whitespace-nowrap"
-      >
-        Login / Sign Up
-      </Link>
+      <div className="flex items-center gap-2">
+        <Link
+          href="/login"
+          className="text-text-primary hover:text-brand-primary text-[13px] font-semibold px-2 py-2 transition-colors whitespace-nowrap"
+        >
+          Login
+        </Link>
+        <Link
+          href="/register"
+          className="bg-brand-primary hover:bg-brand-hover text-white text-[13px] font-semibold px-4 py-2 rounded transition-colors whitespace-nowrap"
+        >
+          Sign Up
+        </Link>
+      </div>
     );
   }
 

@@ -389,9 +389,7 @@ export default function BestSellerSection({
                             >
                                 <span>SHOP NOW</span>
                                 <span
-                                    aria-hidden="true"
-                                    className="transition-transform group-hover:translate-x-1"
-                                >
+                                    aria-hidden="true"                                >
                                     &rarr;
                                 </span>
                             </Link>
@@ -511,7 +509,7 @@ export default function BestSellerSection({
                                                     alt={product.alt}
                                                     fill
                                                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                                                    className="object-contain p-2 transition-transform duration-300 hover:scale-105"
+                                                    className="object-contain p-2"
                                                 />
                                             </div>
 

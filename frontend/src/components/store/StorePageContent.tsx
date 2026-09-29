@@ -78,7 +78,7 @@ function StoreProductCard({
             <img
               src={product.thumbnail.path}
               alt={product.thumbnail.alt_text ?? product.name}
-              className={`size-full object-cover transition-transform duration-500 group-hover:scale-[1.03] ${
+              className={`size-full object-cover ${
                 banned ? "grayscale-[40%]" : ""
               }`}
             />

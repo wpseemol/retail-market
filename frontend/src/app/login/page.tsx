@@ -4,11 +4,11 @@ import { createPageMetadata, siteConfig } from "@/config/site";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Login",
-  description: `Sign up or log in to your ${siteConfig.name} account.`,
+  description: `Log in to your ${siteConfig.name} account.`,
   path: "/login",
   noIndex: true,
 });
 
 export default function LoginRoutePage() {
-  return <AuthPage />;
+  return <AuthPage mode="login" />;
 }

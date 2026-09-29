@@ -39,7 +39,7 @@ function StoreCard({ store }: { store: StorefrontStore }) {
   const count = store.products_count ?? 0;
 
   return (
-    <article className="group overflow-hidden rounded-lg border border-border-default bg-bg-surface transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:border-brand-primary hover:shadow-[0_8px_24px_rgba(0,178,7,0.08)]">
+    <article className="group overflow-hidden rounded-lg border border-border-default bg-bg-surface hover:border-brand-primary hover:shadow-[0_8px_24px_rgba(0,178,7,0.08)]">
       <Link href={`/stores/${store.slug}`} className="block">
         <div className="relative aspect-[16/10] bg-gradient-to-br from-bg-subtle to-brand-tint/40">
           {store.logo?.path ? (
@@ -47,7 +47,7 @@ function StoreCard({ store }: { store: StorefrontStore }) {
             <img
               src={store.logo.path}
               alt={store.logo.alt_text ?? store.shop_name}
-              className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              className="size-full object-cover"
             />
           ) : (
             <div className="flex size-full flex-col items-center justify-center gap-2 text-text-secondary">

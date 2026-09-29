@@ -2,6 +2,7 @@
 
 import { type FormEvent, useCallback, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { getSession, signIn } from "next-auth/react";
 import AuthInput from "./AuthInput";
 import OrDivider from "./OrDivider";
@@ -18,6 +19,7 @@ import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/authSlice";
 import { dashboardLoginUrl } from "@/config/site";
 import type { ApiUser } from "@/lib/api";
+import { authSwitchHref, safeNextPath } from "@/lib/authRedirect";
 
 const DASHBOARD_LOGIN_URL = dashboardLoginUrl();
 
@@ -30,17 +32,10 @@ const STAFF_ROLES = new Set([
 
 type FieldErrors = Partial<Record<LoginField, string>>;
 
-function safeNextPath(raw: string | null) {
-  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/account";
-  if (raw === "/login" || raw === "/register" || raw.startsWith("/auth/")) {
-    return "/account";
-  }
-  return raw;
-}
-
 export default function LoginForm() {
   const searchParams = useSearchParams();
-  const nextPath = safeNextPath(searchParams.get("next"));
+  const rawNext = searchParams.get("next");
+  const nextPath = safeNextPath(rawNext);
   const dispatch = useAppDispatch();
   const [rememberMe, setRememberMe] = useState(false);
   const [email, setEmail] = useState("");
@@ -188,12 +183,12 @@ export default function LoginForm() {
 
   return (
     <section className="w-full" aria-labelledby="login-heading">
-      <h2
+      <h1
         id="login-heading"
         className="text-[28px] sm:text-[32px] font-semibold text-text-primary leading-tight mb-2"
       >
         Customer login
-      </h2>
+      </h1>
       <p className="mb-5 text-sm text-text-secondary">
         For shoppers only. Super Admin, Admin, Moderator, and Vendor must use
         the{" "}
@@ -269,6 +264,16 @@ export default function LoginForm() {
           {loading ? "Logging in…" : "Login"}
         </button>
       </form>
+
+      <p className="mt-6 mb-0 text-center text-sm text-text-secondary">
+        New here?{" "}
+        <Link
+          href={authSwitchHref("/register", rawNext)}
+          className="font-semibold text-brand-primary hover:underline"
+        >
+          Create an account
+        </Link>
+      </p>
     </section>
   );
 }

@@ -2,6 +2,7 @@
 
 import { type FormEvent, useCallback, useState, useTransition } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { getSession, signIn } from "next-auth/react";
 import AuthInput from "./AuthInput";
 import OrDivider from "./OrDivider";
@@ -17,10 +18,14 @@ import {
   validateRegisterForm,
 } from "@/lib/validators/customerAuth";
 import type { ApiUser } from "@/lib/api";
+import { authSwitchHref, safeNextPath } from "@/lib/authRedirect";
 
 type FieldErrors = Partial<Record<RegisterField, string>>;
 
 export default function SignUpForm() {
+  const searchParams = useSearchParams();
+  const rawNext = searchParams.get("next");
+  const nextPath = safeNextPath(rawNext);
   const dispatch = useAppDispatch();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -43,9 +48,9 @@ export default function SignUpForm() {
         return;
       }
       dispatch(setCredentials({ user }));
-      window.location.assign("/account");
+      window.location.assign(nextPath);
     },
-    [dispatch],
+    [dispatch, nextPath],
   );
 
   const handleGoogleCredential = useCallback(
@@ -309,6 +314,16 @@ export default function SignUpForm() {
           {loading ? "Creating account…" : "Sign Up"}
         </button>
       </form>
+
+      <p className="mt-6 mb-0 text-center text-sm text-text-secondary">
+        Already have an account?{" "}
+        <Link
+          href={authSwitchHref("/login", rawNext)}
+          className="font-semibold text-brand-primary hover:underline"
+        >
+          Log in
+        </Link>
+      </p>
     </section>
   );
 }

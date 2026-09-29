@@ -68,6 +68,7 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/auth` | `routes/customerAuth.ts` | Customers |
 | `/api/customer/addresses` | `routes/customerAddresses.ts` | Customers |
 | `/api/customer/orders` | `routes/customerOrders.ts` | Guests (POST) + customers |
+| `/api/customer/wishlist` | `routes/customerWishlist.ts` | Customers only |
 | `/api/payments` | `routes/payments.ts` | SSLCOMMERZ callbacks (gateway) + retry (guest/customer) |
 | `/api/site-settings` | `routes/publicSiteSettings.ts` | Public |
 | `/api/analytics` | `routes/publicAnalytics.ts` | Public |
@@ -418,6 +419,21 @@ Placing an order creates inbox notifications for `super_admin` / `admin` / `mode
 Query: `page` (default 1), `limit` (1–50, default 10). Includes guest orders claimed after verification (`claimed_at` set).
 
 **200** → `{ orders: [{ id, order_number, status, payment_status, payment_method, currency, total, placed_at, claimed_at, item_count, items[] }], pagination }`
+
+---
+
+## Customer wishlist — `/api/customer/wishlist`
+
+Bearer **customer** only (guests get `401` → storefront sends them to `/login?next=…` and saves the product after sign-in). Only active products from active shops are listed / addable; products that later become hidden are skipped (not deleted). Max **200** items.
+
+| Method | Path | Body | Response |
+|--------|------|------|----------|
+| `GET` | `/` | — | `{ items: [{ added_at, product }], count }` — `product` = public product object, newest first |
+| `GET` | `/ids` | — | `{ product_ids: string[], count }` — for heart-button state |
+| `POST` | `/` | `{ "product_id": "24" }` | `201` (new) / `200` (already saved) → `{ message, product_ids, count }` |
+| `DELETE` | `/:productId` | — | `{ message, product_ids, count }` (idempotent) |
+
+Errors: `400` validation (`product_id` must be a numeric id), `404 PRODUCT_NOT_FOUND` (missing / inactive product), `400 WISHLIST_FULL`.
 
 ---
 
