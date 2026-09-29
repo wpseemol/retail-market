@@ -19,7 +19,23 @@ import { BrandCreatePage } from "./pages/BrandCreatePage";
 import { BrandEditPage } from "./pages/BrandEditPage";
 import { UserEditPage } from "./pages/UserEditPage";
 import { UsersPage } from "./pages/UsersPage";
-import { SiteSettingsPage } from "./pages/SiteSettingsPage";
+import {
+  AnalyticsSettingsPage,
+  EmailProviderSettingsPage,
+  FooterSettingsPage,
+  HeaderSettingsPage,
+  HistorySettingsPage,
+  HomeSettingsPage,
+  IdentitySettingsPage,
+  PaymentSettingsPage,
+  PixelsSettingsPage,
+  ShippingSettingsPage,
+  ShopSettingsPage,
+  SiteSettingsLayout,
+  SmsGatewaySettingsPage,
+  SocialLoginSettingsPage,
+  SocialShareSettingsPage,
+} from "./pages/settings";
 import { OrderDetailPage, OrdersPage } from "./pages/OrdersPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { useAuthStore } from "./store/auth";
@@ -76,7 +92,24 @@ export default function App() {
               path="super-admin"
               element={<RolePage role="Super Admin" />}
             />
-            <Route path="settings" element={<SiteSettingsPage />} />
+            <Route path="settings" element={<SiteSettingsLayout />}>
+              <Route index element={<Navigate to="identity" replace />} />
+              <Route path="identity" element={<IdentitySettingsPage />} />
+              <Route path="header" element={<HeaderSettingsPage />} />
+              <Route path="footer" element={<FooterSettingsPage />} />
+              <Route path="home" element={<HomeSettingsPage />} />
+              <Route path="shop" element={<ShopSettingsPage />} />
+              <Route path="social" element={<SocialShareSettingsPage />} />
+              <Route path="social-login" element={<SocialLoginSettingsPage />} />
+              <Route path="sms" element={<SmsGatewaySettingsPage />} />
+              <Route path="email" element={<EmailProviderSettingsPage />} />
+              <Route path="payment" element={<PaymentSettingsPage />} />
+              <Route path="shipping" element={<ShippingSettingsPage />} />
+              <Route path="analytics" element={<AnalyticsSettingsPage />} />
+              <Route path="pixels" element={<PixelsSettingsPage />} />
+              <Route path="history" element={<HistorySettingsPage />} />
+              <Route path="*" element={<Navigate to="identity" replace />} />
+            </Route>
           </Route>
 
           <Route element={<ProtectedRoute roles={["super_admin", "vendor"]} />}>

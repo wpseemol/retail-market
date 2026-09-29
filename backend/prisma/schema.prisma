@@ -876,6 +876,22 @@ model SmsGatewayProvider {
   @@map("sms_gateway_providers")
 }
 
+/// Online payment gateway credentials managed from dashboard settings.
+model PaymentGateway {
+  /// sslcommerz
+  provider           String   @id @db.VarChar(20)
+  is_enabled         Boolean  @default(false)
+  store_id           String?  @db.VarChar(100)
+  /// Store password / API secret (AES-256-GCM).
+  store_password_enc String?  @db.Text
+  /// false = sandbox.
+  is_live            Boolean  @default(false)
+  updated_by         BigInt?  @db.UnsignedBigInt
+  updated_at         DateTime @updatedAt
+
+  @@map("payment_gateways")
+}
+
 /// Outgoing email (verification codes etc.) managed from Dashboard → Settings → Email provider.
 /// Every preset sends over SMTP. With none active, sending falls back to SMTP_* env vars.
 model EmailProvider {

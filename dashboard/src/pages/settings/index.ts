@@ -1,0 +1,15 @@
+export { SiteSettingsLayout } from "./SiteSettingsLayout";
+export { IdentitySettingsPage } from "./IdentitySettingsPage";
+export { HeaderSettingsPage } from "./HeaderSettingsPage";
+export { FooterSettingsPage } from "./FooterSettingsPage";
+export { HomeSettingsPage } from "./HomeSettingsPage";
+export { ShopSettingsPage } from "./ShopSettingsPage";
+export { SocialShareSettingsPage } from "./SocialShareSettingsPage";
+export { SocialLoginSettingsPage } from "./SocialLoginSettingsPage";
+export { SmsGatewaySettingsPage } from "./SmsGatewaySettingsPage";
+export { EmailProviderSettingsPage } from "./EmailProviderSettingsPage";
+export { PaymentSettingsPage } from "./PaymentSettingsPage";
+export { ShippingSettingsPage } from "./ShippingSettingsPage";
+export { AnalyticsSettingsPage } from "./AnalyticsSettingsPage";
+export { PixelsSettingsPage } from "./PixelsSettingsPage";
+export { HistorySettingsPage } from "./HistorySettingsPage";

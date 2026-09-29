@@ -203,7 +203,7 @@ customerOrdersRouter.post(
 
     const payOnline = input.payment_method === "sslcommerz";
     if (payOnline) {
-      if (!isSslcommerzConfigured()) {
+      if (!(await isSslcommerzConfigured())) {
         return res.status(400).json({
           message: "Online payment is not available right now. Choose Cash on Delivery.",
           code: "GATEWAY_NOT_CONFIGURED",

@@ -2,21 +2,54 @@ import crypto from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import { env } from "./env.js";
 import { prisma } from "./prisma.js";
+import { getSslcommerzConfig, sslcommerzBaseUrl, type SslcommerzConfig } from "./paymentGateway.js";
 
 /** SSLCOMMERZ only accepts 10.00 – 500000.00 BDT per transaction. */
 export const SSLCZ_MIN_AMOUNT = 10;
 export const SSLCZ_MAX_AMOUNT = 500_000;
 
-const CALLBACK_BASE = "/api/payments/sslcommerz";
+export const SSLCZ_CALLBACK_BASE = "/api/payments/sslcommerz";
 
-function gatewayBase() {
-  return env.sslcommerz.isLive
-    ? "https://securepay.sslcommerz.com"
-    : "https://sandbox.sslcommerz.com";
+export async function isSslcommerzConfigured() {
+  return (await getSslcommerzConfig()) !== null;
 }
 
-export function isSslcommerzConfigured() {
-  return Boolean(env.sslcommerz.storeId && env.sslcommerz.storePassword);
+type InitResponse = {
+  status?: string;
+  failedreason?: string;
+  GatewayPageURL?: string;
+  sessionkey?: string;
+};
+
+/** POST the session-init form; never throws — failures come back as `status: "FAILED"`. */
+export async function initSslcommerzSession(
+  cfg: SslcommerzConfig,
+  fields: Record<string, string>,
+): Promise<InitResponse> {
+  const params = new URLSearchParams({
+    ...fields,
+    store_id: cfg.storeId,
+    store_passwd: cfg.storePassword,
+  });
+  try {
+    const res = await fetch(`${sslcommerzBaseUrl(cfg.isLive)}/gwprocess/v4/api.php`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString(),
+      signal: AbortSignal.timeout(20_000),
+    });
+    const text = await res.text();
+    try {
+      return JSON.parse(text) as InitResponse;
+    } catch {
+      return {
+        status: "FAILED",
+        failedreason: `HTTP ${res.status}: ${text.slice(0, 200) || "empty response"}`,
+      };
+    }
+  } catch (err) {
+    return { status: "FAILED", failedreason: err instanceof Error ? err.message : "Network error" };
+  }
 }
 
 export class SslcommerzError extends Error {
@@ -63,7 +96,8 @@ function asPayload(value: Prisma.JsonValue | null): PaymentPayload {
  * session. Each retry gets a fresh row so a late success on an old attempt still settles.
  */
 export async function startSslcommerzCheckout(orderId: bigint) {
-  if (!isSslcommerzConfigured()) {
+  const cfg = await getSslcommerzConfig();
+  if (!cfg) {
     throw new SslcommerzError(
       "GATEWAY_NOT_CONFIGURED",
       "Online payment is not available right now. Choose Cash on Delivery or try later.",
@@ -109,10 +143,8 @@ export async function startSslcommerzCheckout(orderId: bigint) {
     },
   });
 
-  const callback = (path: string) => `${env.publicBaseUrl}${CALLBACK_BASE}/${path}`;
-  const params = new URLSearchParams({
-    store_id: env.sslcommerz.storeId,
-    store_passwd: env.sslcommerz.storePassword,
+  const callback = (path: string) => `${env.publicBaseUrl}${SSLCZ_CALLBACK_BASE}/${path}`;
+  const data = await initSslcommerzSession(cfg, {
     total_amount: order.total.toFixed(2),
     currency: order.currency,
     tran_id: tranId,
@@ -144,27 +176,6 @@ export async function startSslcommerzCheckout(orderId: bigint) {
     value_a: order.id.toString(),
     value_b: order.order_number,
   });
-
-  let data: { status?: string; failedreason?: string; GatewayPageURL?: string; sessionkey?: string };
-  try {
-    const res = await fetch(`${gatewayBase()}/gwprocess/v4/api.php`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params.toString(),
-      signal: AbortSignal.timeout(20_000),
-    });
-    const text = await res.text();
-    try {
-      data = JSON.parse(text) as typeof data;
-    } catch {
-      data = {
-        status: "FAILED",
-        failedreason: `HTTP ${res.status}: ${text.slice(0, 200) || "empty response"}`,
-      };
-    }
-  } catch (err) {
-    data = { status: "FAILED", failedreason: err instanceof Error ? err.message : "Network error" };
-  }
 
   if (data.status !== "SUCCESS" || !data.GatewayPageURL) {
     await prisma.payment.update({
@@ -206,15 +217,17 @@ type ValidationResponse = {
 };
 
 async function validateWithGateway(valId: string): Promise<ValidationResponse> {
+  const cfg = await getSslcommerzConfig();
+  if (!cfg) throw new Error("SSLCOMMERZ is not configured");
   const params = new URLSearchParams({
     val_id: valId,
-    store_id: env.sslcommerz.storeId,
-    store_passwd: env.sslcommerz.storePassword,
+    store_id: cfg.storeId,
+    store_passwd: cfg.storePassword,
     v: "1",
     format: "json",
   });
   const res = await fetch(
-    `${gatewayBase()}/validator/api/validationserverAPI.php?${params.toString()}`,
+    `${sslcommerzBaseUrl(cfg.isLive)}/validator/api/validationserverAPI.php?${params.toString()}`,
     { signal: AbortSignal.timeout(20_000) },
   );
   return (await res.json()) as ValidationResponse;

@@ -676,6 +676,21 @@ Fields: omit → keep · `null` → remove · string → replace. Activating wit
 
 | Method | Path | Notes |
 |--------|------|--------|
+| GET | `/payment-gateway` | `{ sslcommerz: { saved, is_enabled, is_live, store_id, has_store_password, ready, active_source, active_mode, env_fallback, callback_urls, callbacks_public } }` · password is **never** returned here |
+| PATCH | `/payment-gateway/sslcommerz` | Body `{ is_enabled?, is_live?, store_id?, store_password? }` · `store_id` letters/digits/`-`/`_` ≤100 · `store_password` printable ASCII 4–255 · omit → keep · `null` → remove · enabling without both → 400 `PAYMENT_GATEWAY_INCOMPLETE` · history `payment_gateway_updated` |
+| POST | `/payment-gateway/reveal` | Body `{ password }` · shared re-auth + rate limit · returns decrypted `store_password` · logged to history |
+| POST | `/payment-gateway/sslcommerz/test` | Opens a ৳10 session with the saved credentials (even while disabled; `.env` if none saved) · nothing charged, no order created · 1 per 30 s → 429 `TEST_TOO_SOON` · rejected → 502 `PAYMENT_TEST_FAILED` |
+
+**Online payment** (table `payment_gateways`, `store_password` AES-256-GCM encrypted). Which credentials checkout uses:
+
+- No saved row → `SSLCZ_STORE_ID` / `SSLCZ_STORE_PASSWORD` / `SSLCZ_IS_LIVE` from `.env`.
+- Saved and enabled → the dashboard values (`.env` is ignored).
+- Saved and disabled → online payment is **off**; placing an `sslcommerz` order returns 400 `GATEWAY_NOT_CONFIGURED`.
+
+Callback URLs are built from `PUBLIC_API_URL` (not editable in the dashboard). While it points at localhost, SSLCOMMERZ cannot deliver IPN.
+
+| Method | Path | Notes |
+|--------|------|--------|
 | GET | `/shipping` | `{ shipping: { default_fee, free_threshold, vendor_override } }` |
 | PATCH | `/shipping` | Body `{ default_fee?, free_threshold?, vendor_override? }` · `default_fee` 0–1,000,000 · `free_threshold` number or `null` (off) · history action `shipping_updated` |
 
@@ -689,7 +704,7 @@ Fields: omit → keep · `null` → remove · string → replace. Activating wit
 **Analytics IDs:** Google Analytics (`G-…`), GTM (`GTM-…`), Hotjar, Plerdy
 **Pixels:** Google Ads (`AW-…`), TikTok, LinkedIn, Twitter/X, Meta (Facebook)
 
-Dashboard UI: `/settings` (shadcn Form + Zod). Tabs include **Header**, **Footer**, **Home** (hero banner editor + section order).
+Dashboard UI: `/settings/:tab` (shadcn Form + Zod), one page per tab — `identity`, `header`, `footer`, `home`, `shop`, `social`, `social-login`, `sms`, `email`, `payment`, `shipping`, `analytics`, `pixels`, `history`. `/settings` redirects to `identity`.
 
 ---
 

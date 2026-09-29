@@ -17,6 +17,7 @@ import { dashboardSocialLoginRouter } from "./dashboardSocialLogin.js";
 import { dashboardSmsGatewayRouter } from "./dashboardSmsGateway.js";
 import { dashboardEmailProviderRouter } from "./dashboardEmailProvider.js";
 import { dashboardShippingRouter } from "./dashboardShipping.js";
+import { dashboardPaymentGatewayRouter } from "./dashboardPaymentGateway.js";
 import {
   createSiteNavItemSchema,
   reorderHomeSectionsSchema,
@@ -44,6 +45,7 @@ dashboardSiteSettingsRouter.use("/social-login", dashboardSocialLoginRouter);
 dashboardSiteSettingsRouter.use("/sms-gateway", dashboardSmsGatewayRouter);
 dashboardSiteSettingsRouter.use("/email-provider", dashboardEmailProviderRouter);
 dashboardSiteSettingsRouter.use("/shipping", dashboardShippingRouter);
+dashboardSiteSettingsRouter.use("/payment-gateway", dashboardPaymentGatewayRouter);
 
 type ChangeMap = Record<string, { from: unknown; to: unknown }>;
 
