@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useCallback, useState, useTransition } from "react";
+import { type FormEvent, useState, useTransition } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { getSession, signIn } from "next-auth/react";
@@ -40,17 +40,14 @@ export default function SignUpForm() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const finishAuth = useCallback(
-    (user: ApiUser) => {
-      if (user.role !== "customer") {
-        setError("Storefront registration creates customer accounts only.");
-        return;
-      }
-      dispatch(setCredentials({ user }));
-      window.location.assign(nextPath);
-    },
-    [dispatch, nextPath],
-  );
+  const finishAuth = (user: ApiUser) => {
+    if (user.role !== "customer") {
+      setError("Storefront registration creates customer accounts only.");
+      return;
+    }
+    dispatch(setCredentials({ user }));
+    window.location.assign(nextPath);
+  };
 
   const social = useSocialLogin(finishAuth);
 

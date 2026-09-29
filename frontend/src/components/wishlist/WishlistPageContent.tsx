@@ -19,6 +19,24 @@ type WishlistResponse = {
 
 type WishlistRow = { addedAt: string; product: ShopProduct; comparePrice: number | null };
 
+/** Rows on success, or an error message. */
+async function fetchWishlistRows(): Promise<WishlistRow[] | string> {
+    try {
+        const data = await apiFetch<WishlistResponse>("/api/customer/wishlist");
+        return data.items.map((item) => ({
+            addedAt: item.added_at,
+            product: toShopProduct(item.product),
+            comparePrice:
+                item.product.compare_at_price &&
+                Number(item.product.compare_at_price) > Number(item.product.price)
+                    ? Number(item.product.compare_at_price)
+                    : null,
+        }));
+    } catch (err) {
+        return err instanceof ApiError ? err.message : "Could not load your wishlist.";
+    }
+}
+
 function Breadcrumb() {
     return (
         <nav aria-label="Breadcrumb" className="w-full border-b border-border-default bg-bg-subtle/60">
@@ -59,30 +77,29 @@ export default function WishlistPageContent() {
     const [loadError, setLoadError] = useState<string | null>(null);
     const [addedId, setAddedId] = useState<number | null>(null);
 
-    const load = useCallback(async () => {
-        setLoadError(null);
-        try {
-            const data = await apiFetch<WishlistResponse>("/api/customer/wishlist");
-            setRows(
-                data.items.map((item) => ({
-                    addedAt: item.added_at,
-                    product: toShopProduct(item.product),
-                    comparePrice:
-                        item.product.compare_at_price &&
-                        Number(item.product.compare_at_price) > Number(item.product.price)
-                            ? Number(item.product.compare_at_price)
-                            : null,
-                })),
-            );
-        } catch (err) {
-            setLoadError(err instanceof ApiError ? err.message : "Could not load your wishlist.");
+    const applyResult = useCallback((result: WishlistRow[] | string) => {
+        if (typeof result === "string") {
+            setLoadError(result);
             setRows([]);
+        } else {
+            setLoadError(null);
+            setRows(result);
         }
     }, []);
 
+    const load = useCallback(async () => {
+        applyResult(await fetchWishlistRows());
+    }, [applyResult]);
+
     useEffect(() => {
-        void load();
-    }, [load]);
+        let cancelled = false;
+        void fetchWishlistRows().then((result) => {
+            if (!cancelled) applyResult(result);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [applyResult]);
 
     const visibleRows =
         rows && wishlistLoaded

@@ -52,6 +52,16 @@ function formatAddress(a: CustomerAddress) {
     .join(", ");
 }
 
+/** Addresses on success, or an error message. */
+async function fetchAddressList(): Promise<CustomerAddress[] | string> {
+  try {
+    const data = await apiFetch<{ addresses: CustomerAddress[] }>("/api/customer/addresses");
+    return data.addresses ?? [];
+  } catch (err) {
+    return err instanceof ApiError ? err.message : "Failed to load addresses";
+  }
+}
+
 export default function AddressesPage() {
   const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -65,24 +75,27 @@ export default function AddressesPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const applyAddresses = useCallback((result: CustomerAddress[] | string) => {
+    if (typeof result === "string") setError(result);
+    else setAddresses(result);
+    setLoadingList(false);
+  }, []);
+
   const loadAddresses = useCallback(async () => {
     setLoadingList(true);
     setError(null);
-    try {
-      const data = await apiFetch<{ addresses: CustomerAddress[] }>(
-        "/api/customer/addresses",
-      );
-      setAddresses(data.addresses ?? []);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to load addresses");
-    } finally {
-      setLoadingList(false);
-    }
-  }, []);
+    applyAddresses(await fetchAddressList());
+  }, [applyAddresses]);
 
   useEffect(() => {
-    void loadAddresses();
-  }, [loadAddresses]);
+    let cancelled = false;
+    void fetchAddressList().then((result) => {
+      if (!cancelled) applyAddresses(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [applyAddresses]);
 
   const openCreate = () => {
     setEditingId(null);

@@ -293,13 +293,11 @@ function StarRating({ rating }: { rating: number }) {
     );
 }
 
-export default function BestSellerSection({
-  content: _content,
-}: {
+export default function BestSellerSection(_props: {
   content?: import("@/lib/homeBlockDefaults").BestSellersContent;
 } = {}) {
     const [activeTab, setActiveTab] = useState<TabCategory>("Fuel Tank");
-    const [currentIndex, setCurrentIndex] = useState(0);
+    const [rawIndex, setCurrentIndex] = useState(0);
     const [itemsPerView, setItemsPerView] = useState(4);
 
     useEffect(() => {
@@ -320,10 +318,7 @@ export default function BestSellerSection({
     const maxIndex = Math.max(0, products.length - itemsPerView);
     const canSlide = products.length > itemsPerView;
     const slidePercent = 100 / itemsPerView;
-
-    useEffect(() => {
-        setCurrentIndex((prev) => Math.min(prev, maxIndex));
-    }, [maxIndex]);
+    const currentIndex = Math.min(rawIndex, maxIndex);
 
     const handleTabChange = (tab: TabCategory) => {
         setActiveTab(tab);
@@ -331,7 +326,7 @@ export default function BestSellerSection({
     };
 
     const handlePrev = () => {
-        setCurrentIndex((prev) => Math.max(0, prev - 1));
+        setCurrentIndex((prev) => Math.max(0, Math.min(prev, maxIndex) - 1));
     };
 
     const handleNext = () => {

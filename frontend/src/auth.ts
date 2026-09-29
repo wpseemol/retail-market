@@ -1,9 +1,8 @@
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import type { ApiUser, AuthTokenResponse } from "@/lib/api";
+import { SERVER_API_URL, type ApiUser, type AuthTokenResponse } from "@/lib/api";
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8001";
+const BACKEND_URL = SERVER_API_URL;
 
 /** Access JWT lifetime buffer before refresh (backend default access ≈ 1h). */
 const ACCESS_TOKEN_TTL_MS = 55 * 60 * 1000;

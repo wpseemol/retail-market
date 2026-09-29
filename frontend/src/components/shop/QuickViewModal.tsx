@@ -167,11 +167,6 @@ export default function QuickViewModal({
         };
     }, [onClose]);
 
-    useEffect(() => {
-        setActiveImage(gallery[0]);
-        setQuantity(1);
-    }, [product.id, gallery]);
-
     return (
         <div
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"

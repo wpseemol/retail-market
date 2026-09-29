@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { createElement, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -63,13 +63,15 @@ function CategoryGlyph({ category }: { category: PublicCategory }) {
     );
   }
 
-  const Icon = resolveCategoryLucideIcon(category.icon);
   return (
     <span
       aria-hidden
       className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-primary/10 text-brand-primary ring-1 ring-brand-primary/15"
     >
-      <Icon className="size-5" strokeWidth={1.75} />
+      {createElement(resolveCategoryLucideIcon(category.icon), {
+        className: "size-5",
+        strokeWidth: 1.75,
+      })}
     </span>
   );
 }

@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [toPattern(apiUrl), ...(mediaUrl ? [toPattern(mediaUrl)] : [])],
     // Next 16 refuses to optimize images from private IPs (localhost) unless allowed.
     dangerouslyAllowLocalIP: process.env.NODE_ENV !== "production",
+    // The optimizer fetches upload URLs from inside the server; in Docker a
+    // localhost API URL is unreachable there, so browsers load them directly.
+    unoptimized: process.env.NEXT_IMAGE_UNOPTIMIZED === "1",
   },
 };
 

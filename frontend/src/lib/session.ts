@@ -12,7 +12,11 @@ import {
   SESSION_MAX_AGE_SEC,
   type AuthSession,
 } from "@/lib/sessionCrypto";
-import type { AuthTokenResponse, ApiUser } from "@/lib/api";
+import {
+  SERVER_API_URL,
+  type AuthTokenResponse,
+  type ApiUser,
+} from "@/lib/api";
 
 export {
   sealSession,
@@ -76,8 +80,7 @@ export async function readSessionFromCookies(): Promise<AuthSession | null> {
   return unsealSession(jar.get(SESSION_COOKIE)?.value);
 }
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8001";
+const BACKEND_URL = SERVER_API_URL;
 
 export async function backendFetch(
   path: string,

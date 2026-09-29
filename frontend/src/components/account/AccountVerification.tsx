@@ -81,14 +81,17 @@ function VerifyRow({
   onVerified: (res: ConfirmResponse) => Promise<void>;
 }) {
   const [phoneInput, setPhoneInput] = useState(toLocalMobile(value));
+  const [prevValue, setPrevValue] = useState(value);
+  if (prevValue !== value) {
+    setPrevValue(value);
+    setPhoneInput(toLocalMobile(value));
+  }
   const [codeSent, setCodeSent] = useState(false);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [resendIn, setResendIn] = useCountdown();
-
-  useEffect(() => setPhoneInput(toLocalMobile(value)), [value]);
 
   const sendCode = async () => {
     setError(null);
@@ -286,8 +289,18 @@ export default function AccountVerification({
   }, []);
 
   useEffect(() => {
-    void load();
-  }, [load, user.email, user.phone]);
+    let cancelled = false;
+    apiFetch<VerificationStatus>("/api/auth/me/verification")
+      .then((next) => {
+        if (!cancelled) setStatus(next);
+      })
+      .catch(() => {
+        if (!cancelled) setStatus(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user.email, user.phone]);
 
   const handleVerified = async (res: ConfirmResponse) => {
     await onUserChange(res.user);

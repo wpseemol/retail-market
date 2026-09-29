@@ -165,5 +165,16 @@ export async function fetchHealth() {
   }>("/api/health");
 }
 
-export const API_URL =
+export const PUBLIC_API_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8001";
+
+/**
+ * Backend base URL for server-side code. In Docker the public URL (localhost)
+ * points at the frontend container itself, so `INTERNAL_API_URL` (e.g.
+ * `http://backend:8001`) is read at runtime on the server.
+ */
+export const SERVER_API_URL =
+  process.env.INTERNAL_API_URL?.replace(/\/$/, "") || PUBLIC_API_URL;
+
+export const API_URL =
+  typeof window === "undefined" ? SERVER_API_URL : PUBLIC_API_URL;

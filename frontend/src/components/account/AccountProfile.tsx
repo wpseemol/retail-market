@@ -53,6 +53,11 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [user, setLocalUser] = useState(initialUser);
+  const [prevInitialUser, setPrevInitialUser] = useState(initialUser);
+  if (prevInitialUser !== initialUser) {
+    setPrevInitialUser(initialUser);
+    setLocalUser(initialUser);
+  }
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -67,10 +72,6 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
   useEffect(() => {
     dispatch(setSessionUser(initialUser));
   }, [dispatch, initialUser]);
-
-  useEffect(() => {
-    setLocalUser(initialUser);
-  }, [initialUser]);
 
   const applyUser = (next: ApiUser) => {
     setLocalUser(next);

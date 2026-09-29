@@ -41,8 +41,8 @@ async function loadState() {
       saved: Boolean(row),
       is_enabled: row?.is_enabled ?? false,
       is_live: row?.is_live ?? false,
-      // Store ID is not secret (it appears in the hosted checkout URL); the password is.
-      store_id: row?.store_id ?? null,
+      // Both credentials are only returned by POST /reveal after password confirmation.
+      has_store_id: Boolean(row?.store_id),
       has_store_password: Boolean(row?.store_password_enc),
       ready: Boolean(row?.store_id && decryptSecret(row?.store_password_enc)),
       updated_at: row?.updated_at.toISOString() ?? null,
@@ -108,15 +108,20 @@ dashboardPaymentGatewayRouter.patch(
       }
     }
 
-    // History is visible without re-auth, so never log the password.
+    // History is visible without re-auth, so never log credential values.
     const changes: Record<string, { from: unknown; to: unknown }> = {};
     const before = {
       is_enabled: row?.is_enabled ?? false,
       is_live: row?.is_live ?? false,
-      store_id: row?.store_id ?? null,
     };
-    for (const key of ["is_enabled", "is_live", "store_id"] as const) {
+    for (const key of ["is_enabled", "is_live"] as const) {
       if (before[key] !== next[key]) changes[`sslcommerz.${key}`] = { from: before[key], to: next[key] };
+    }
+    if ((row?.store_id ?? null) !== next.store_id) {
+      changes["sslcommerz.store_id"] = {
+        from: row?.store_id ? "set" : "empty",
+        to: next.store_id ? "updated" : "removed",
+      };
     }
     if ((row?.store_password_enc ?? null) !== next.store_password_enc) {
       changes["sslcommerz.store_password"] = {
@@ -147,7 +152,7 @@ dashboardPaymentGatewayRouter.patch(
   }),
 );
 
-/** Decrypted store password — requires the signed-in super admin's password. */
+/** Store ID + decrypted store password — requires the signed-in super admin's password. */
 dashboardPaymentGatewayRouter.post(
   "/reveal",
   asyncHandler(async (req, res) => {

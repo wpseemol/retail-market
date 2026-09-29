@@ -42,7 +42,6 @@ export default function OrdersPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     apiFetch<OrdersResponse>(`/api/customer/orders?page=${page}&limit=10`)
       .then((res) => {
         if (!cancelled) {
@@ -158,7 +157,10 @@ export default function OrdersPage() {
               <button
                 type="button"
                 disabled={page <= 1 || loading}
-                onClick={() => setPage((p) => p - 1)}
+                onClick={() => {
+                  setLoading(true);
+                  setPage((p) => p - 1);
+                }}
                 className="h-9 rounded-md border border-border-default px-4 font-medium text-text-primary disabled:opacity-50 cursor-pointer"
               >
                 Previous
@@ -169,7 +171,10 @@ export default function OrdersPage() {
               <button
                 type="button"
                 disabled={page >= data.pagination.total_pages || loading}
-                onClick={() => setPage((p) => p + 1)}
+                onClick={() => {
+                  setLoading(true);
+                  setPage((p) => p + 1);
+                }}
                 className="h-9 rounded-md border border-border-default px-4 font-medium text-text-primary disabled:opacity-50 cursor-pointer"
               >
                 Next

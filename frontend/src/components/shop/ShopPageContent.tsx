@@ -355,6 +355,7 @@ export default function ShopPageContent({
 
       {quickViewProduct && (
         <QuickViewModal
+          key={quickViewProduct.id}
           product={quickViewProduct}
           onClose={() => setQuickViewProduct(null)}
         />

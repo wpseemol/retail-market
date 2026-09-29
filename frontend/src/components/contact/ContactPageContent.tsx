@@ -261,6 +261,8 @@ export default function ContactPageContent() {
             const saved = JSON.parse(raw) as Partial<FormState> & {
                 saveDetails?: boolean;
             };
+            // localStorage is only readable after hydration.
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setForm((prev) => ({
                 ...prev,
                 firstName: saved.firstName ?? "",

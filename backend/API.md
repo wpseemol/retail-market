@@ -676,9 +676,9 @@ Fields: omit → keep · `null` → remove · string → replace. Activating wit
 
 | Method | Path | Notes |
 |--------|------|--------|
-| GET | `/payment-gateway` | `{ sslcommerz: { saved, is_enabled, is_live, store_id, has_store_password, ready, active_source, active_mode, env_fallback, callback_urls, callbacks_public } }` · password is **never** returned here |
+| GET | `/payment-gateway` | `{ sslcommerz: { saved, is_enabled, is_live, has_store_id, has_store_password, ready, active_source, active_mode, env_fallback, callback_urls, callbacks_public } }` · store ID and password are **never** returned here (use `/reveal`) · history logs them only as `set`/`updated`/`removed` |
 | PATCH | `/payment-gateway/sslcommerz` | Body `{ is_enabled?, is_live?, store_id?, store_password? }` · `store_id` letters/digits/`-`/`_` ≤100 · `store_password` printable ASCII 4–255 · omit → keep · `null` → remove · enabling without both → 400 `PAYMENT_GATEWAY_INCOMPLETE` · history `payment_gateway_updated` |
-| POST | `/payment-gateway/reveal` | Body `{ password }` · shared re-auth + rate limit · returns decrypted `store_password` · logged to history |
+| POST | `/payment-gateway/reveal` | Body `{ password }` · shared re-auth + rate limit · returns `{ secrets: { sslcommerz: { store_id, store_password } } }` (password decrypted) · logged to history |
 | POST | `/payment-gateway/sslcommerz/test` | Opens a ৳10 session with the saved credentials (even while disabled; `.env` if none saved) · nothing charged, no order created · 1 per 30 s → 429 `TEST_TOO_SOON` · rejected → 502 `PAYMENT_TEST_FAILED` |
 
 **Online payment** (table `payment_gateways`, `store_password` AES-256-GCM encrypted). Which credentials checkout uses:

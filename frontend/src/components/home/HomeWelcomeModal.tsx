@@ -51,13 +51,14 @@ export default function HomeWelcomeModal({
     const interval = window.setInterval(() => {
       setSecondsLeft((prev) => Math.max(prev - 1, 0));
     }, 1000);
-    return () => window.clearInterval(interval);
-  }, [isOpen, isPaused]);
-
-  useEffect(() => {
-    if (!isOpen || secondsLeft > 0) return;
-    closeModal();
-  }, [isOpen, secondsLeft, closeModal]);
+    const closeAt = window.setTimeout(closeModal, secondsLeft * 1000);
+    return () => {
+      window.clearInterval(interval);
+      window.clearTimeout(closeAt);
+    };
+    // secondsLeft is read only when (re)starting after open/resume.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, isPaused, closeModal]);
 
   useEffect(() => {
     if (!isOpen) return;

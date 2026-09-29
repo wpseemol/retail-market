@@ -5,7 +5,7 @@ export type SslcommerzSettingsDto = {
   saved: boolean;
   is_enabled: boolean;
   is_live: boolean;
-  store_id: string | null;
+  has_store_id: boolean;
   has_store_password: boolean;
   ready: boolean;
   updated_at: string | null;
@@ -25,13 +25,16 @@ export type PaymentSecretsDto = {
 export const sslcommerzFormSchema = z.object({
   is_enabled: z.boolean(),
   is_live: z.boolean(),
+  /** Empty = keep the saved store ID. */
   store_id: withSafeInput(
     z
       .string()
       .trim()
       .max(100)
-      .regex(/^[A-Za-z0-9_-]*$/, "Only letters, numbers, dash and underscore"),
+      .regex(/^[A-Za-z0-9_-]*$/, "Only letters, numbers, dash and underscore")
+      .refine((v) => v === "" || v.length >= 3, "Store ID looks too short"),
   ),
+  clear_store_id: z.boolean(),
   /** Empty = keep the saved password. */
   store_password: z
     .string()
@@ -48,17 +51,19 @@ export function toSslcommerzFormValues(s: SslcommerzSettingsDto): SslcommerzForm
   return {
     is_enabled: s.is_enabled,
     is_live: s.is_live,
-    store_id: s.store_id ?? "",
+    store_id: "",
+    clear_store_id: false,
     store_password: "",
     clear_password: false,
   };
 }
 
 export function toSslcommerzApiBody(v: SslcommerzFormValues) {
+  const storeId = v.store_id.trim();
   return {
     is_enabled: v.is_enabled,
     is_live: v.is_live,
-    store_id: v.store_id.trim() || null,
+    ...(v.clear_store_id ? { store_id: null } : storeId ? { store_id: storeId } : {}),
     ...(v.clear_password
       ? { store_password: null }
       : v.store_password

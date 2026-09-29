@@ -89,6 +89,8 @@ export default function CheckoutResultContent() {
         const stored = readLastOnlineOrder();
         if (!stored) return;
         if (!orderParam || stored.order_number === orderParam) {
+            // localStorage is only readable after hydration.
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setOrderNumber(stored.order_number);
             setEmail(stored.email);
             setEmailFromStorage(true);

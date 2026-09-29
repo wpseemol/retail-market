@@ -265,9 +265,7 @@ function StarRating({ rating }: { rating: number }) {
     );
 }
 
-export default function LatestProductsSection({
-  content: _content,
-}: {
+export default function LatestProductsSection(_props: {
   content?: import("@/lib/homeBlockDefaults").LatestProductsContent;
 } = {}) {
     const [activeTab, setActiveTab] = useState<TabOption>("New Arrivals");

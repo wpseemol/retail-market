@@ -454,6 +454,8 @@ export default function CheckoutPageContent() {
     const sessionUser = session?.backendUser;
     useEffect(() => {
         if (!sessionUser) return;
+        // The session loads after mount; prefill only fields the customer left empty.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setBilling((prev) => ({
             ...prev,
             firstName: prev.firstName || sessionUser.first_name || "",

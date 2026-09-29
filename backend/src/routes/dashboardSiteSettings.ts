@@ -273,6 +273,22 @@ function trackChange(
   changes[key] = { from: a, to: b };
 }
 
+/** History is readable without re-auth, so gateway credentials never appear in it (older rows logged the store ID). */
+const REDACTED_HISTORY_KEYS = new Set(["sslcommerz.store_id"]);
+
+function redactHistoryChanges(changes: Prisma.JsonValue): Prisma.JsonValue {
+  if (!changes || typeof changes !== "object" || Array.isArray(changes)) return changes;
+  const out = { ...changes } as Record<string, Prisma.JsonValue>;
+  for (const key of Object.keys(out)) {
+    if (!REDACTED_HISTORY_KEYS.has(key)) continue;
+    const entry = out[key] as { from?: unknown; to?: unknown } | null;
+    const had = entry?.from != null && entry.from !== "" && entry.from !== "empty";
+    const has = entry?.to != null && entry.to !== "" && entry.to !== "removed";
+    out[key] = { from: had ? "set" : "empty", to: has ? "updated" : "removed" };
+  }
+  return out;
+}
+
 function toPublicHistoryRow(row: {
   id: bigint;
   action: string;
@@ -284,7 +300,7 @@ function toPublicHistoryRow(row: {
   return {
     id: row.id.toString(),
     action: row.action,
-    changes: row.changes,
+    changes: redactHistoryChanges(row.changes),
     note: row.note,
     created_at: row.created_at.toISOString(),
     actor: row.actor ? toPublicUser(row.actor) : null,

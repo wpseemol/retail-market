@@ -32,7 +32,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 
@@ -85,6 +84,8 @@ export function PaymentGatewaySettingsPanel({ token }: { token: string }) {
   const [revealed, setRevealed] = useState(false);
   const [testing, setTesting] = useState(false);
   const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Values filled in by a reveal — unchanged ones are not re-sent on save. */
+  const revealedValues = useRef<{ store_id?: string; store_password?: string }>({});
 
   const form = useForm<SslcommerzFormValues>({
     resolver: zodResolver(sslcommerzFormSchema),
@@ -92,6 +93,7 @@ export function PaymentGatewaySettingsPanel({ token }: { token: string }) {
       is_enabled: false,
       is_live: false,
       store_id: "",
+      clear_store_id: false,
       store_password: "",
       clear_password: false,
     },
@@ -124,13 +126,25 @@ export function PaymentGatewaySettingsPanel({ token }: { token: string }) {
 
   function hideRevealed() {
     setRevealed(false);
-    form.resetField("store_password", { defaultValue: "" });
+    for (const key of ["store_id", "store_password"] as const) {
+      const shown = revealedValues.current[key];
+      if (shown && form.getValues(key) === shown) form.resetField(key, { defaultValue: "" });
+    }
+    revealedValues.current = {};
   }
 
   function onRevealed(data: PaymentSecretsDto) {
-    const secret = data.secrets.sslcommerz.store_password;
-    if (!secret) return;
-    form.setValue("store_password", secret, { shouldDirty: false });
+    const { store_id, store_password } = data.secrets.sslcommerz;
+    if (!store_id && !store_password) return;
+    // Only fill fields the user hasn't started replacing.
+    if (store_id && !form.getValues("store_id")) {
+      form.resetField("store_id", { defaultValue: store_id });
+      revealedValues.current.store_id = store_id;
+    }
+    if (store_password && !form.getValues("store_password")) {
+      form.resetField("store_password", { defaultValue: store_password });
+      revealedValues.current.store_password = store_password;
+    }
     setRevealed(true);
     if (revealTimer.current) clearTimeout(revealTimer.current);
     revealTimer.current = setTimeout(hideRevealed, REVEAL_MS);
@@ -141,7 +155,9 @@ export function PaymentGatewaySettingsPanel({ token }: { token: string }) {
     setSuccess(null);
     if (values.is_enabled) {
       let blocked = false;
-      if (!values.store_id.trim()) {
+      const willHaveStoreId =
+        !values.clear_store_id && (values.store_id.trim() !== "" || state?.has_store_id);
+      if (!willHaveStoreId) {
         form.setError("store_id", { message: "Required before turning on online payment" });
         blocked = true;
       }
@@ -154,13 +170,22 @@ export function PaymentGatewaySettingsPanel({ token }: { token: string }) {
       if (blocked) return;
     }
 
+    const shown = revealedValues.current;
+    const changed: SslcommerzFormValues = {
+      ...values,
+      store_id: values.store_id === shown.store_id ? "" : values.store_id,
+      store_password: values.store_password === shown.store_password ? "" : values.store_password,
+    };
+
     try {
       const data = await apiFetch<PaymentGatewayStateDto & { message: string }>(
         `${ENDPOINT}/sslcommerz`,
-        { method: "PATCH", token, body: toSslcommerzApiBody(values) },
+        { method: "PATCH", token, body: toSslcommerzApiBody(changed) },
       );
       setState(data.sslcommerz);
       setRevealed(false);
+      revealedValues.current = {};
+      if (revealTimer.current) clearTimeout(revealTimer.current);
       form.reset(toSslcommerzFormValues(data.sslcommerz));
       setSuccess(data.message);
     } catch (err) {
@@ -194,6 +219,7 @@ export function PaymentGatewaySettingsPanel({ token }: { token: string }) {
 
   const { isSubmitting, isDirty } = form.formState;
   const clearPassword = form.watch("clear_password");
+  const clearStoreId = form.watch("clear_store_id");
   const isLive = form.watch("is_live");
 
   return (
@@ -279,15 +305,28 @@ export function PaymentGatewaySettingsPanel({ token }: { token: string }) {
                     <FormItem>
                       <FormLabel>Store ID</FormLabel>
                       <FormControl>
-                        <Input
+                        <SecretField
+                          name={field.name}
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          hasStored={state.has_store_id}
+                          cleared={clearStoreId}
+                          revealed={revealed}
+                          onRequestReveal={() => setRevealOpen(true)}
+                          onClear={() => {
+                            form.setValue("clear_store_id", true, { shouldDirty: true });
+                            form.setValue("store_id", "");
+                          }}
+                          onUndoClear={() => form.setValue("clear_store_id", false, { shouldDirty: true })}
                           placeholder="yourstore6abb022b347dd"
-                          autoComplete="off"
-                          spellCheck={false}
-                          className="font-mono"
-                          {...field}
+                          maxLength={100}
                         />
                       </FormControl>
-                      <FormDescription>From the SSLCOMMERZ merchant panel or registration email.</FormDescription>
+                      <FormDescription>
+                        From the SSLCOMMERZ merchant panel. Hidden — confirm your password to view. Leave blank to keep
+                        the saved ID.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

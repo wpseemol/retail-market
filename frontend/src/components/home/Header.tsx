@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useSyncExternalStore } from "react";
+
+const noopSubscribe = () => () => {};
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -86,7 +88,11 @@ export default function Header({
 }) {
     const pathname = usePathname();
     const { theme, setTheme } = useTheme();
-    const [mounted, setMounted] = useState(false);
+    const mounted = useSyncExternalStore(
+        noopSubscribe,
+        () => true,
+        () => false,
+    );
     const [isSticky, setIsSticky] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -105,7 +111,6 @@ export default function Header({
     const isCart = linkActive("/cart");
 
     useEffect(() => {
-        setMounted(true);
         const handleScroll = () => {
             setIsSticky(window.scrollY > 48);
         };

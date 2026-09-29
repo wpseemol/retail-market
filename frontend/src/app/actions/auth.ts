@@ -2,7 +2,7 @@
 
 import { signOut } from "@/auth";
 import { auth } from "@/auth";
-import type { ApiUser } from "@/lib/api";
+import { SERVER_API_URL, type ApiUser } from "@/lib/api";
 
 export type AuthActionResult =
   | {
@@ -41,11 +41,7 @@ export async function syncSessionUserAction(): Promise<AuthActionResult> {
     return { ok: false, message: "Not authenticated", status: 401 };
   }
 
-  const backendUrl =
-    process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
-    "http://localhost:8001";
-
-  const upstream = await fetch(`${backendUrl}/api/auth/me`, {
+  const upstream = await fetch(`${SERVER_API_URL}/api/auth/me`, {
     headers: {
       Accept: "application/json",
       Authorization: `Bearer ${session.accessToken}`,
