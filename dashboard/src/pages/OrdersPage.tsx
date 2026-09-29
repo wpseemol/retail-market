@@ -287,7 +287,9 @@ export function OrderDetailPage() {
                     {order.payment_status}
                   </Badge>
                   <Badge variant="outline" className="capitalize">
-                    {order.payment_method.replaceAll("_", " ")}
+                    {order.payment_method === "sslcommerz"
+                      ? "SSLCOMMERZ"
+                      : order.payment_method.replaceAll("_", " ")}
                   </Badge>
                 </div>
               </CardContent>

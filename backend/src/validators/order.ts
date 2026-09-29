@@ -34,6 +34,7 @@ export const placeOrderSchema = z.object({
     "mobile_banking",
     "bank_transfer",
     "wallet",
+    "sslcommerz",
   ]),
   notes: withSafeInput(z.string().trim().max(2000)).optional().or(z.literal("")),
   discount_amount: z.coerce.number().finite().nonnegative().max(1_000_000).optional(),

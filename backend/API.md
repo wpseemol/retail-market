@@ -68,6 +68,7 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/auth` | `routes/customerAuth.ts` | Customers |
 | `/api/customer/addresses` | `routes/customerAddresses.ts` | Customers |
 | `/api/customer/orders` | `routes/customerOrders.ts` | Guests (POST) + customers |
+| `/api/payments` | `routes/payments.ts` | SSLCOMMERZ callbacks (gateway) + retry (guest/customer) |
 | `/api/site-settings` | `routes/publicSiteSettings.ts` | Public |
 | `/api/analytics` | `routes/publicAnalytics.ts` | Public |
 | `/api/shops` | `routes/publicShops.ts` | Public |
@@ -401,13 +402,52 @@ Placing an order creates inbox notifications for `super_admin` / `admin` / `mode
 }
 ```
 
-**201** → `{ message, order: { id, order_number, total, …, is_guest } }`
+`payment_method`: `sslcommerz` | `cash_on_delivery` | `card` | `bank_transfer` | `wallet`.
+
+**201** → `{ message, order: { id, order_number, total, …, is_guest }, payment? }`
+
+**Online payment (`payment_method: "sslcommerz"`)**
+
+- Rejected **before** the order is created with `400 GATEWAY_NOT_CONFIGURED` (no `SSLCZ_STORE_ID`) or `400 AMOUNT_OUT_OF_RANGE` (total must be ৳10 – ৳500,000).
+- On success the response includes `payment: { gateway_url }` → redirect the browser there (SSLCOMMERZ hosted page: bKash, Nagad, Rocket, cards, net banking).
+- If the gateway session could not be opened, the order still exists (unpaid) and the response has `payment: { gateway_url: null, error, code }` → send the user to `/checkout/result?status=failed` where they can retry.
+- The order stays `payment_status: "unpaid"` until the payment is validated server-side (see [Payments](#payments--apipayments)).
 
 ### `GET /api/customer/orders` — Bearer customer
 
 Query: `page` (default 1), `limit` (1–50, default 10). Includes guest orders claimed after verification (`claimed_at` set).
 
 **200** → `{ orders: [{ id, order_number, status, payment_status, payment_method, currency, total, placed_at, claimed_at, item_count, items[] }], pagination }`
+
+---
+
+## Payments — `/api/payments`
+
+SSLCOMMERZ hosted checkout (`lib/sslcommerz.ts`). Env: `SSLCZ_STORE_ID`, `SSLCZ_STORE_PASSWORD`, `SSLCZ_IS_LIVE` (`true` → `securepay.sslcommerz.com`, else sandbox), `PUBLIC_API_URL` (callback base, must be publicly reachable for IPN), `FRONTEND_URL` (result redirect).
+
+Every attempt creates a new `payments` row (`provider: "sslcommerz"`, `transaction_id` = `{order_number}-{8 hex}`, max 30 chars). A payment is **only** marked paid after the server calls the SSLCOMMERZ validation API and checks `status ∈ {VALID, VALIDATED}`, matching `tran_id`, `currency_amount` and `currency_type` (BDT). `risk_level = 1` → payment `under_review`, order stays unpaid for manual review. Settling is idempotent (callback + IPN may both arrive). Paid → order `payment_status: "paid"`, `status: pending → confirmed`.
+
+The callback routes are called by the **gateway / customer browser**, not by your frontend code. Body: `application/x-www-form-urlencoded` (`tran_id`, `val_id`, `status`, `error`, … — extra fields ignored).
+
+| Method | Path | Behaviour |
+|--------|------|-----------|
+| `POST` | `/sslcommerz/success` | Validates + settles, then `303` → `{FRONTEND_URL}/checkout/result?status=success\|review\|failed&order=…` |
+| `POST` | `/sslcommerz/fail` | Marks attempt failed → `303 …?status=failed&order=…` |
+| `POST` | `/sslcommerz/cancel` | Marks attempt failed → `303 …?status=cancelled&order=…` |
+| `POST` | `/sslcommerz/ipn` | Server-to-server; validates + settles (or marks unpaid). Responds `200 OK` (`400 INVALID` on malformed body). |
+
+### `POST /api/payments/sslcommerz/retry` — guest **or** Bearer customer
+
+Start a new payment attempt for an unpaid online order (after fail / cancel).
+
+```json
+{ "order_number": "NIY-20260929-4821", "email": "ada@example.com" }
+```
+
+- `email` is required for guests (must equal the order's `customer_email`); logged-in owners may omit it.
+- **200** → `{ gateway_url, order_number }`
+- **404 `ORDER_NOT_FOUND`** — no match (same response for "wrong email" to avoid leaking orders).
+- **400** `ALREADY_PAID` | `ORDER_CLOSED` | `AMOUNT_OUT_OF_RANGE` | `ADDRESS_MISSING` | `GATEWAY_NOT_CONFIGURED`; **502** `GATEWAY_INIT_FAILED`.
 
 ---
 

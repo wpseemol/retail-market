@@ -26,13 +26,15 @@ import {
 import { apiFetch, ApiError } from "@/lib/api";
 import { formatPrice } from "@/lib/money";
 import { validateCheckoutContact } from "@/lib/validators/checkout";
+import { saveLastOnlineOrder } from "@/lib/payment";
 
-type PaymentMethod = "bank" | "check" | "cod" | "paypal";
+type PaymentMethod = "sslcommerz" | "bank" | "check" | "cod" | "paypal";
 
 const PAYMENT_API_MAP: Record<
     PaymentMethod,
-    "cash_on_delivery" | "card" | "bank_transfer" | "wallet"
+    "sslcommerz" | "cash_on_delivery" | "card" | "bank_transfer" | "wallet"
 > = {
+    sslcommerz: "sslcommerz",
     bank: "bank_transfer",
     check: "bank_transfer",
     cod: "cash_on_delivery",
@@ -55,6 +57,12 @@ const PAYMENT_OPTIONS: {
     label: string;
     description?: string;
 }[] = [
+    {
+        id: "sslcommerz",
+        label: "Pay Online (SSLCOMMERZ)",
+        description:
+            "Pay securely with bKash, Nagad, Rocket, Upay, Visa, Mastercard, Amex or internet banking. You’ll be redirected to the SSLCOMMERZ payment page and brought back here after paying.",
+    },
     {
         id: "bank",
         label: "Direct Bank Transfer",
@@ -419,10 +427,11 @@ export default function CheckoutPageContent() {
     const [accountPassword, setAccountPassword] = useState("");
     const [shipDifferent, setShipDifferent] = useState(false);
     const [orderNotes, setOrderNotes] = useState("");
-    const [payment, setPayment] = useState<PaymentMethod>("check");
+    const [payment, setPayment] = useState<PaymentMethod>("sslcommerz");
     const [orderPlaced, setOrderPlaced] = useState(false);
     const [orderNumber, setOrderNumber] = useState<string | null>(null);
     const [placedAsGuest, setPlacedAsGuest] = useState(false);
+    const [redirecting, setRedirecting] = useState(false);
     const [placing, setPlacing] = useState(false);
     const [placeError, setPlaceError] = useState<string | null>(null);
     const [billing, setBilling] = useState(emptyAddress);
@@ -503,6 +512,7 @@ export default function CheckoutPageContent() {
         try {
             const data = await apiFetch<{
                 order: { order_number: string; is_guest?: boolean };
+                payment?: { gateway_url: string | null; error?: string };
             }>("/api/customer/orders", {
                 method: "POST",
                 body: {
@@ -523,6 +533,23 @@ export default function CheckoutPageContent() {
                     shipping_fee: 0,
                 },
             });
+            if (data.payment) {
+                const orderRef = data.order.order_number;
+                saveLastOnlineOrder({
+                    order_number: orderRef,
+                    email: billing.email.trim().toLowerCase(),
+                });
+                setRedirecting(true);
+                dispatch(clearCart());
+                if (data.payment.gateway_url) {
+                    window.location.assign(data.payment.gateway_url);
+                    return;
+                }
+                router.push(
+                    `/checkout/result?status=failed&order=${encodeURIComponent(orderRef)}`,
+                );
+                return;
+            }
             setOrderNumber(data.order.order_number);
             setPlacedAsGuest(Boolean(data.order.is_guest));
             setOrderPlaced(true);
@@ -542,6 +569,30 @@ export default function CheckoutPageContent() {
             setPlacing(false);
         }
     };
+
+    if (redirecting) {
+        return (
+            <div className="w-full bg-bg-base">
+                <CheckoutBreadcrumb />
+                <div
+                    className="container mx-auto px-4 sm:px-6 py-24 flex flex-col items-center justify-center gap-4 text-center"
+                    aria-live="polite"
+                >
+                    <span
+                        className="size-10 rounded-full border-[3px] border-brand-primary/25 border-t-brand-primary animate-spin"
+                        aria-hidden
+                    />
+                    <p className="text-[18px] font-semibold text-text-primary m-0">
+                        Redirecting to secure payment…
+                    </p>
+                    <p className="text-[14px] text-text-secondary m-0 max-w-md">
+                        Please don’t close this tab. You’ll be taken to SSLCOMMERZ
+                        to complete your payment.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     if (items.length === 0 && !orderPlaced) {
         return (
@@ -941,6 +992,18 @@ export default function CheckoutPageContent() {
                                                 />
                                                 <span className="text-[14px] text-text-primary font-medium inline-flex items-center flex-wrap">
                                                     {option.label}
+                                                    {option.id === "sslcommerz" ? (
+                                                        <span className="ml-2 inline-flex flex-wrap items-center gap-1">
+                                                            {["bKash", "Nagad", "Rocket", "Card"].map((m) => (
+                                                                <span
+                                                                    key={m}
+                                                                    className="rounded-[3px] border border-border-default bg-bg-base px-1.5 py-0.5 text-[10px] font-semibold text-text-secondary"
+                                                                >
+                                                                    {m}
+                                                                </span>
+                                                            ))}
+                                                        </span>
+                                                    ) : null}
                                                     {option.id === "paypal" ? (
                                                         <>
                                                             <CardLogos />
@@ -996,7 +1059,13 @@ export default function CheckoutPageContent() {
                                 disabled={placing}
                                 className="w-full h-12 inline-flex items-center justify-center rounded-md bg-brand-primary hover:bg-brand-hover disabled:opacity-60 text-white text-[15px] font-semibold tracking-wide uppercase transition-colors cursor-pointer"
                             >
-                                {placing ? "Placing…" : "Place Order"}
+                                {placing
+                                    ? payment === "sslcommerz"
+                                        ? "Starting payment…"
+                                        : "Placing…"
+                                    : payment === "sslcommerz"
+                                      ? `Pay ${formatPrice(total)} securely`
+                                      : "Place Order"}
                             </button>
                         </div>
                     </aside>

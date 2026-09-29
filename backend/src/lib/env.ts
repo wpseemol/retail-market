@@ -45,6 +45,14 @@ export const env = {
     process.env.PUBLIC_API_URL ??
     `http://localhost:${Number(process.env.PORT) || 8001}`
   ).replace(/\/$/, ""),
+  /** Storefront origin — payment gateways redirect customers back here. */
+  frontendUrl: (process.env.FRONTEND_URL ?? "http://localhost:3000").replace(/\/$/, ""),
+  /** SSLCOMMERZ hosted checkout. Sandbox unless SSLCZ_IS_LIVE=true. */
+  sslcommerz: {
+    storeId: process.env.SSLCZ_STORE_ID ?? "",
+    storePassword: process.env.SSLCZ_STORE_PASSWORD ?? "",
+    isLive: process.env.SSLCZ_IS_LIVE === "true",
+  },
   /** Brand name shown in verification emails / SMS. */
   appName: process.env.APP_NAME ?? "Niyenin",
   /** SMTP for verification emails. Empty host → codes are logged to the console (dev). */

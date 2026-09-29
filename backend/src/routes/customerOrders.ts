@@ -2,6 +2,13 @@ import { Router } from "express";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { notifyNewOrder } from "../lib/notifications.js";
+import {
+  isSslcommerzConfigured,
+  SslcommerzError,
+  SSLCZ_MAX_AMOUNT,
+  SSLCZ_MIN_AMOUNT,
+  startSslcommerzCheckout,
+} from "../lib/sslcommerz.js";
 import { optionalAuth, requireAuth, requireRoles } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { customerOrdersQuerySchema, placeOrderSchema } from "../validators/order.js";
@@ -127,6 +134,23 @@ customerOrdersRouter.post(
       new Prisma.Decimal(0),
     );
 
+    const payOnline = input.payment_method === "sslcommerz";
+    if (payOnline) {
+      if (!isSslcommerzConfigured()) {
+        return res.status(400).json({
+          message: "Online payment is not available right now. Choose Cash on Delivery.",
+          code: "GATEWAY_NOT_CONFIGURED",
+        });
+      }
+      const amount = Number(total.toFixed(2));
+      if (amount < SSLCZ_MIN_AMOUNT || amount > SSLCZ_MAX_AMOUNT) {
+        return res.status(400).json({
+          message: `Online payment supports orders between ৳${SSLCZ_MIN_AMOUNT} and ৳${SSLCZ_MAX_AMOUNT.toLocaleString("en-US")}.`,
+          code: "AMOUNT_OUT_OF_RANGE",
+        });
+      }
+    }
+
     const shipping = input.shipping ?? input.billing;
     let number = orderNumber();
     for (let attempt = 0; attempt < 5; attempt++) {
@@ -191,14 +215,19 @@ customerOrdersRouter.post(
               },
             ],
           },
-          payments: {
-            create: {
-              method: input.payment_method,
-              status: "pending",
-              amount: total,
-              currency: "BDT",
-            },
-          },
+          // Online payments get their own attempt row in startSslcommerzCheckout.
+          ...(payOnline
+            ? {}
+            : {
+                payments: {
+                  create: {
+                    method: input.payment_method,
+                    status: "pending" as const,
+                    amount: total,
+                    currency: "BDT",
+                  },
+                },
+              }),
         },
         include: {
           items: true,
@@ -225,7 +254,20 @@ customerOrdersRouter.post(
       vendorUserIds,
     });
 
+    let payment: { gateway_url: string | null; error?: string; code?: string } | undefined;
+    if (payOnline) {
+      try {
+        const started = await startSslcommerzCheckout(order.id);
+        payment = { gateway_url: started.gatewayUrl };
+      } catch (err) {
+        if (!(err instanceof SslcommerzError)) throw err;
+        // Order is saved; the customer can retry payment from the result page.
+        payment = { gateway_url: null, error: err.message, code: err.code };
+      }
+    }
+
     return res.status(201).json({
+      ...(payment ? { payment } : {}),
       message: "Order placed",
       order: {
         id: order.id.toString(),

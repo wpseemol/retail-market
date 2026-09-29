@@ -35,6 +35,20 @@ export function validateCheckoutContact(data: { email: string; phone: string }) 
   return { success: false as const, errors };
 }
 
+export const retryPaymentSchema = z.object({
+  order_number: safe(
+    z
+      .string()
+      .trim()
+      .min(1, "Order number is missing")
+      .max(40)
+      .regex(/^[A-Za-z0-9-]+$/, "Invalid order number"),
+  ),
+  email: safe(
+    z.string().trim().toLowerCase().email("Enter the email used at checkout").max(255),
+  ).optional(),
+});
+
 export const verificationCodeSchema = z.object({
   code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit code"),
 });

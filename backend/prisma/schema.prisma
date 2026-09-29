@@ -103,6 +103,8 @@ enum PaymentMethod {
   mobile_banking
   bank_transfer
   wallet
+  /// SSLCOMMERZ hosted checkout (bKash, Nagad, Rocket, cards, net banking).
+  sslcommerz
 }
 
 enum OrderAddressType {
