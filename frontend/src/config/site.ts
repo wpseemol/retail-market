@@ -58,8 +58,9 @@ export const siteConfig = {
 
 export type SiteConfig = typeof siteConfig;
 
-/** Absolute URL helper from a site-relative path. */
+/** Absolute URL helper from a site-relative path (absolute URLs pass through). */
 export function absoluteUrl(path = "/"): string {
+    if (/^https?:\/\//i.test(path)) return path;
     const base = siteConfig.url.replace(/\/$/, "");
     const normalized = path.startsWith("/") ? path : `/${path}`;
     return `${base}${normalized}`;
@@ -83,8 +84,27 @@ type PageMetaInput = {
     description?: string;
     path?: string;
     image?: string;
+    /** Extra share images after `image` (e.g. product gallery). */
+    images?: string[];
+    imageAlt?: string;
+    keywords?: string[];
+    /** Extra `<meta property>` tags, e.g. `product:price:amount`. */
+    other?: Record<string, string | number>;
     noIndex?: boolean;
 };
+
+/** Plain-text meta description: strips HTML, collapses whitespace, trims to ~160 chars. */
+export function toMetaDescription(text: string, max = 160): string {
+    const plain = text
+        .replace(/<[^>]*>/g, " ")
+        .replace(/&nbsp;/gi, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    if (plain.length <= max) return plain;
+    const cut = plain.slice(0, max - 1);
+    const lastSpace = cut.lastIndexOf(" ");
+    return `${(lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[\s,.;:–-]+$/, "")}…`;
+}
 
 /** Build Next.js Metadata from the shared site config. */
 export function createPageMetadata({
@@ -92,6 +112,10 @@ export function createPageMetadata({
     description = siteConfig.description,
     path = "/",
     image = siteConfig.logo.og,
+    images = [],
+    imageAlt,
+    keywords = [],
+    other,
     noIndex = false,
 }: PageMetaInput = {}): Metadata {
     const pageTitle = title
@@ -99,11 +123,28 @@ export function createPageMetadata({
         : siteConfig.title;
     const url = absoluteUrl(path);
     const ogImage = absoluteUrl(image);
+    const isLogo = image === siteConfig.logo.og;
+    const ogImages = [
+        isLogo
+            ? {
+                  url: ogImage,
+                  width: siteConfig.logo.width,
+                  height: siteConfig.logo.height,
+                  alt: siteConfig.logo.alt,
+              }
+            : { url: ogImage, alt: imageAlt ?? title ?? siteConfig.name },
+        ...images
+            .filter((src) => src && src !== image)
+            .map((src) => ({
+                url: absoluteUrl(src),
+                alt: imageAlt ?? title ?? siteConfig.name,
+            })),
+    ];
 
     return {
         title,
         description,
-        keywords: [...siteConfig.keywords],
+        keywords: [...new Set([...keywords, ...siteConfig.keywords])],
         authors: [...siteConfig.authors],
         creator: siteConfig.creator,
         publisher: siteConfig.publisher,
@@ -118,22 +159,16 @@ export function createPageMetadata({
             siteName: siteConfig.name,
             title: pageTitle,
             description,
-            images: [
-                {
-                    url: ogImage,
-                    width: siteConfig.logo.width,
-                    height: siteConfig.logo.height,
-                    alt: siteConfig.logo.alt,
-                },
-            ],
+            images: ogImages,
         },
         twitter: {
             card: "summary_large_image",
             title: pageTitle,
             description,
-            images: [ogImage],
+            images: [{ url: ogImage, alt: ogImages[0].alt }],
             creator: siteConfig.social.twitter,
         },
+        ...(other ? { other } : {}),
         robots: noIndex
             ? { index: false, follow: false }
             : {

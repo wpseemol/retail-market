@@ -1,14 +1,38 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import ProductPageContent from "@/components/shop/ProductPageContent";
-import { createPageMetadata, siteConfig } from "@/config/site";
+import {
+  absoluteUrl,
+  createPageMetadata,
+  siteConfig,
+  toMetaDescription,
+} from "@/config/site";
+import { CURRENCY_CODE } from "@/lib/money";
 import {
   fetchProductByIdOrSlug,
   toShopProduct,
+  type ApiProduct,
 } from "@/lib/products";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
+}
+
+function productImages(product: ApiProduct): string[] {
+  const paths = [
+    product.thumbnail?.path,
+    ...(product.gallery ?? []).map((g) => g.path),
+  ].filter((p): p is string => Boolean(p));
+  return [...new Set(paths)];
+}
+
+function productDescription(product: ApiProduct): string {
+  const brand = product.brand_name || product.brand?.name;
+  return toMetaDescription(
+    product.short_description ||
+      product.description ||
+      `Buy ${product.name}${brand ? ` by ${brand}` : ""} online at ${siteConfig.name}. Best price in Bangladesh with fast delivery.`,
+  );
 }
 
 export async function generateMetadata({
@@ -26,20 +50,93 @@ export async function generateMetadata({
   }
 
   const product = data.product;
-  const image =
-    product.thumbnail?.path ||
-    product.gallery?.[0]?.path ||
-    siteConfig.logo.og;
+  const images = productImages(product);
+  const brand = product.brand_name || product.brand?.name;
+  const price = Number(product.price) || 0;
 
   return createPageMetadata({
     title: product.name,
-    description:
-      product.short_description ||
-      product.description ||
-      `Buy ${product.name} at ${siteConfig.name}.`,
+    description: productDescription(product),
     path: `/shop/${product.slug}`,
-    image,
+    image: images[0] ?? siteConfig.logo.og,
+    images: images.slice(1, 4),
+    imageAlt: product.thumbnail?.alt_text || product.name,
+    keywords: [
+      product.name,
+      brand,
+      product.category?.name,
+      product.vendor?.shop_name,
+    ].filter((k): k is string => Boolean(k)),
+    other: {
+      "product:price:amount": price.toFixed(2),
+      "product:price:currency": CURRENCY_CODE,
+      "product:availability": product.stock_qty > 0 ? "in stock" : "out of stock",
+      "product:condition": "new",
+      ...(brand ? { "product:brand": brand } : {}),
+      ...(product.sku ? { "product:retailer_item_id": product.sku } : {}),
+    },
   });
+}
+
+function productJsonLd(product: ApiProduct) {
+  const url = absoluteUrl(`/shop/${product.slug}`);
+  const images = productImages(product).map((src) => absoluteUrl(src));
+  const brand = product.brand_name || product.brand?.name;
+  const price = Number(product.price) || 0;
+
+  const breadcrumbs = [
+    { name: "Home", url: absoluteUrl("/") },
+    { name: "Shop", url: absoluteUrl("/shop") },
+    ...(product.vendor
+      ? [
+          {
+            name: product.vendor.shop_name,
+            url: absoluteUrl(`/stores/${product.vendor.slug}`),
+          },
+        ]
+      : []),
+    { name: product.name, url },
+  ];
+
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "@id": `${url}#product`,
+      name: product.name,
+      description: productDescription(product),
+      url,
+      image: images.length > 0 ? images : [absoluteUrl(siteConfig.logo.og)],
+      ...(product.sku ? { sku: product.sku, mpn: product.sku } : {}),
+      ...(brand ? { brand: { "@type": "Brand", name: brand } } : {}),
+      ...(product.category ? { category: product.category.name } : {}),
+      offers: {
+        "@type": "Offer",
+        url,
+        price: price.toFixed(2),
+        priceCurrency: CURRENCY_CODE,
+        itemCondition: "https://schema.org/NewCondition",
+        availability:
+          product.stock_qty > 0
+            ? "https://schema.org/InStock"
+            : "https://schema.org/OutOfStock",
+        seller: {
+          "@type": "Organization",
+          name: product.vendor?.shop_name ?? siteConfig.name,
+        },
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: breadcrumbs.map((crumb, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: crumb.name,
+        item: crumb.url,
+      })),
+    },
+  ];
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
@@ -67,10 +164,23 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <main>
+      <script
+        type="application/ld+json"
+        // `<` is escaped so product text can never close the script tag.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(productJsonLd(data.product)).replace(
+            /</g,
+            "\\u003c",
+          ),
+        }}
+      />
       <ProductPageContent
+        key={product.id}
         product={product}
         relatedProducts={related}
         store={store}
+        shareUrl={absoluteUrl(`/shop/${product.slug}`)}
+        inStock={data.product.stock_qty > 0}
       />
     </main>
   );
