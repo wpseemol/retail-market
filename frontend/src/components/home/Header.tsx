@@ -419,6 +419,7 @@ export default function Header({
                 onClick={() => setIsMobileMenuOpen(false)}
             >
                 <div
+                    data-lenis-prevent
                     className={`fixed top-0 left-0 bottom-0 w-70 sm:w-80 bg-bg-base border-r border-border-default p-5 flex flex-col justify-between overflow-y-auto`}
                     onClick={(e) => e.stopPropagation()}
                 >

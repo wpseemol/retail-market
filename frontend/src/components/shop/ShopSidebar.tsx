@@ -129,6 +129,7 @@ export default function ShopSidebar({
   return (
     <aside
       aria-label="Shop filters"
+      data-lenis-prevent
       className="w-full lg:w-[280px] xl:w-[300px] shrink-0 flex flex-col gap-7 lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-1 scrollbar-thin"
     >
       <section>

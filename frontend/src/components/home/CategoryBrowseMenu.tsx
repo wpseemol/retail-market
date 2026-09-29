@@ -193,7 +193,7 @@ export default function CategoryBrowseMenu({
                     Categories will appear here once they are published.
                   </p>
                 ) : (
-                  <ul className="grid max-h-[min(70vh,480px)] grid-cols-1 gap-1.5 overflow-y-auto p-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <ul data-lenis-prevent className="grid max-h-[min(70vh,480px)] grid-cols-1 gap-1.5 overflow-y-auto p-3 sm:grid-cols-2 lg:grid-cols-3">
                     {safeCategories.map((category, index) => {
                       const children = Array.isArray(category.children)
                         ? category.children

@@ -188,6 +188,7 @@ export default function QuickViewModal({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}
+                data-lenis-prevent
                 className="relative z-10 w-full max-w-[1156px] max-h-[min(90vh,720px)] overflow-y-auto rounded-[2px] bg-bg-surface border border-border-default shadow-[0_24px_64px_rgba(0,0,0,0.28)]"
             >
                 <button

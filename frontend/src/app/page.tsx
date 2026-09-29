@@ -147,11 +147,17 @@ function AnimatedSection({
   }
 
   const isHero = sectionKey === "hero";
+  const aboveFold = isHero || index <= 2;
 
   return (
     <RevealOnScroll
       distance={isHero ? 36 : 64}
       delay={isHero ? 0.08 : Math.min(index * 0.06, 0.28)}
+      className={
+        aboveFold
+          ? undefined
+          : "[content-visibility:auto] [contain-intrinsic-size:auto_600px]"
+      }
     >
       <HomeSection sectionKey={sectionKey} />
     </RevealOnScroll>

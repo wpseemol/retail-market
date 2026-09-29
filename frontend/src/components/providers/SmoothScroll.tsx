@@ -2,20 +2,25 @@
 
 import { useEffect } from "react";
 import Lenis from "lenis";
-import gsap from "gsap";
 
 export default function SmoothScroll() {
     useEffect(() => {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            return;
+        }
+
+        // Nested scrollables opt out with `data-lenis-prevent`; `allowNestedScroll`
+        // walks the DOM + computed styles on every wheel event and causes jank.
         const lenis = new Lenis({
-            lerp: 0.1,
-            allowNestedScroll: true,
+            autoRaf: true,
+            duration: 1.1,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            smoothWheel: true,
+            wheelMultiplier: 1,
+            touchMultiplier: 1.2,
             anchors: true,
             stopInertiaOnNavigate: true,
         });
-
-        const update = (time: number) => lenis.raf(time * 1000);
-        gsap.ticker.add(update);
-        gsap.ticker.lagSmoothing(0);
 
         // Modals and the mobile drawer lock scroll via inline `overflow: hidden`.
         const syncScrollLock = () => {
@@ -38,7 +43,6 @@ export default function SmoothScroll() {
 
         return () => {
             observer.disconnect();
-            gsap.ticker.remove(update);
             lenis.destroy();
         };
     }, []);

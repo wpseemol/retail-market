@@ -232,6 +232,7 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
         <div
           id={listboxId}
           role="listbox"
+          data-lenis-prevent
           className={`absolute top-full z-60 mt-2 max-h-[70vh] overflow-y-auto rounded-xl border border-border-default bg-bg-base shadow-[0_12px_32px_rgba(0,0,0,0.14)] ${
             isDesktop ? "right-0 w-[26rem]" : "left-0 right-0"
           }`}
