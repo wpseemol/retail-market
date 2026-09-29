@@ -402,7 +402,7 @@ Placing an order creates inbox notifications for `super_admin` / `admin` / `mode
 }
 ```
 
-`payment_method`: `sslcommerz` | `cash_on_delivery` | `card` | `bank_transfer` | `wallet`.
+`payment_method`: `sslcommerz` (bKash, Nagad, Rocket, cards via SSLCOMMERZ) | `cash_on_delivery`. Anything else → `400`.
 
 **201** → `{ message, order: { id, order_number, total, …, is_guest }, payment? }`
 

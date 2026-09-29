@@ -28,17 +28,11 @@ import { formatPrice } from "@/lib/money";
 import { validateCheckoutContact } from "@/lib/validators/checkout";
 import { saveLastOnlineOrder } from "@/lib/payment";
 
-type PaymentMethod = "sslcommerz" | "bank" | "check" | "cod" | "paypal";
+type PaymentMethod = "sslcommerz" | "cod";
 
-const PAYMENT_API_MAP: Record<
-    PaymentMethod,
-    "sslcommerz" | "cash_on_delivery" | "card" | "bank_transfer" | "wallet"
-> = {
+const PAYMENT_API_MAP: Record<PaymentMethod, "sslcommerz" | "cash_on_delivery"> = {
     sslcommerz: "sslcommerz",
-    bank: "bank_transfer",
-    check: "bank_transfer",
     cod: "cash_on_delivery",
-    paypal: "wallet",
 };
 
 const COUNTRIES = [
@@ -59,34 +53,23 @@ const PAYMENT_OPTIONS: {
 }[] = [
     {
         id: "sslcommerz",
-        label: "Pay Online (SSLCOMMERZ)",
+        label: "Pay Online — bKash, Nagad, Rocket & Card",
         description:
-            "Pay securely with bKash, Nagad, Rocket, Upay, Visa, Mastercard, Amex or internet banking. You’ll be redirected to the SSLCOMMERZ payment page and brought back here after paying.",
-    },
-    {
-        id: "bank",
-        label: "Direct Bank Transfer",
-        description:
-            "Make your payment directly into our bank account. Please use your Order ID as the payment reference. Your order will not be shipped until the funds have cleared in our account.",
-    },
-    {
-        id: "check",
-        label: "Check Payments",
-        description:
-            "Please send a check to Store Name, Store Street, Store Town, Store State / County, Store Postcode.",
+            "Pay securely with bKash, Nagad, Rocket, Upay, Visa, Mastercard or internet banking through SSLCOMMERZ. You’ll be redirected to the secure payment page and brought back here after paying.",
     },
     {
         id: "cod",
         label: "Cash on Delivery",
-        description: "Pay with cash upon delivery.",
-    },
-    {
-        id: "paypal",
-        label: "PayPal",
-        description:
-            "Pay via PayPal; you can pay with your credit card if you don’t have a PayPal account.",
+        description: "Pay with cash when your order is delivered to your door.",
     },
 ];
+
+const MOBILE_WALLETS = [
+    { name: "bKash", className: "bg-[#E2136E] text-white" },
+    { name: "Nagad", className: "bg-[#F6921E] text-white" },
+    { name: "Rocket", className: "bg-[#8C3494] text-white" },
+    { name: "Card", className: "bg-[#1A1F71] text-white" },
+] as const;
 
 function CheckoutBreadcrumb() {
     return (
@@ -376,22 +359,6 @@ function NoticeBar({
                 </div>
             ) : null}
         </div>
-    );
-}
-
-function CardLogos() {
-    return (
-        <span className="inline-flex items-center gap-1.5 ml-1.5" aria-hidden="true">
-            <span className="h-5 w-8 rounded-[3px] bg-[#1A1F71] text-white text-[8px] font-bold inline-flex items-center justify-center tracking-tight">
-                VISA
-            </span>
-            <span className="h-5 w-8 rounded-[3px] bg-[#EB001B]/80 text-white text-[7px] font-bold inline-flex items-center justify-center">
-                MC
-            </span>
-            <span className="h-5 w-8 rounded-[3px] bg-[#003087] text-white text-[7px] font-bold inline-flex items-center justify-center">
-                PP
-            </span>
-        </span>
     );
 }
 
@@ -993,32 +960,16 @@ export default function CheckoutPageContent() {
                                                 <span className="text-[14px] text-text-primary font-medium inline-flex items-center flex-wrap">
                                                     {option.label}
                                                     {option.id === "sslcommerz" ? (
-                                                        <span className="ml-2 inline-flex flex-wrap items-center gap-1">
-                                                            {["bKash", "Nagad", "Rocket", "Card"].map((m) => (
+                                                        <span className="mt-1.5 flex w-full flex-wrap items-center gap-1" aria-hidden="true">
+                                                            {MOBILE_WALLETS.map((w) => (
                                                                 <span
-                                                                    key={m}
-                                                                    className="rounded-[3px] border border-border-default bg-bg-base px-1.5 py-0.5 text-[10px] font-semibold text-text-secondary"
+                                                                    key={w.name}
+                                                                    className={`rounded-[3px] px-1.5 py-0.5 text-[10px] font-bold tracking-tight ${w.className}`}
                                                                 >
-                                                                    {m}
+                                                                    {w.name}
                                                                 </span>
                                                             ))}
                                                         </span>
-                                                    ) : null}
-                                                    {option.id === "paypal" ? (
-                                                        <>
-                                                            <CardLogos />
-                                                            <a
-                                                                href="https://www.paypal.com"
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="ml-2 text-[12px] font-normal text-info hover:underline"
-                                                                onClick={(e) =>
-                                                                    e.stopPropagation()
-                                                                }
-                                                            >
-                                                                What is PayPal?
-                                                            </a>
-                                                        </>
                                                     ) : null}
                                                 </span>
                                             </label>

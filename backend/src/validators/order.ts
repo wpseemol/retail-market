@@ -28,14 +28,8 @@ export const placeOrderSchema = z.object({
   items: z.array(placeOrderItemSchema).min(1).max(50),
   billing: placeOrderAddressSchema,
   shipping: placeOrderAddressSchema.optional(),
-  payment_method: z.enum([
-    "cash_on_delivery",
-    "card",
-    "mobile_banking",
-    "bank_transfer",
-    "wallet",
-    "sslcommerz",
-  ]),
+  /** Storefront accepts only COD and SSLCOMMERZ (bKash / Nagad / Rocket / cards). */
+  payment_method: z.enum(["cash_on_delivery", "sslcommerz"]),
   notes: withSafeInput(z.string().trim().max(2000)).optional().or(z.literal("")),
   discount_amount: z.coerce.number().finite().nonnegative().max(1_000_000).optional(),
   shipping_fee: z.coerce.number().finite().nonnegative().max(1_000_000).optional(),
