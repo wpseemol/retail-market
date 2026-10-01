@@ -19,8 +19,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { GeneralSettingsForm } from "./GeneralSettingsForm";
-import { useSiteSettings } from "./settingsContext";
+import { GeneralSettingsForm } from "../GeneralSettingsForm";
+import { useSiteSettings } from "../settingsContext";
 
 type TextField = keyof Pick<
     SiteSettingsFormValues,

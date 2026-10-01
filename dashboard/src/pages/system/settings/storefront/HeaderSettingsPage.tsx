@@ -1,19 +1,19 @@
-import { PanelBottom } from "lucide-react";
-import { FooterSettingsPanel } from "@/components/settings/FooterSettingsPanel";
+import { Menu } from "lucide-react";
+import { HeaderSettingsPanel } from "@/components/settings/HeaderSettingsPanel";
 import { SettingsSection } from "@/components/settings/SettingsSection";
-import { useSiteSettings } from "./settingsContext";
+import { useSiteSettings } from "../settingsContext";
 
-export function FooterSettingsPage() {
+export function HeaderSettingsPage() {
     const { token, settings, setSettings, error, success, showError, showSuccess } =
         useSiteSettings();
 
     return (
         <SettingsSection
-            title="Footer"
-            description="Support blurb, phone, and footer link columns (drag to reorder)."
-            icon={PanelBottom}
+            title="Header & top bar"
+            description="Contact details, social links, and primary navigation (drag to reorder)."
+            icon={Menu}
         >
-            <FooterSettingsPanel
+            <HeaderSettingsPanel
                 token={token}
                 settings={settings}
                 error={error}

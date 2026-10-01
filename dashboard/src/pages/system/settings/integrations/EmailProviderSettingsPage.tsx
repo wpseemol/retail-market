@@ -1,7 +1,7 @@
 import { Mail } from "lucide-react";
 import { EmailProviderSettingsPanel } from "@/components/settings/EmailProviderSettingsPanel";
 import { SettingsSection } from "@/components/settings/SettingsSection";
-import { useSiteSettings } from "./settingsContext";
+import { useSiteSettings } from "../settingsContext";
 
 export function EmailProviderSettingsPage() {
     const { token } = useSiteSettings();

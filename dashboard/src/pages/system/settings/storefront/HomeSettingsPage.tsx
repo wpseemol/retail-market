@@ -7,7 +7,7 @@ import {
     SettingsStatusLine,
 } from "@/components/settings/SettingsSection";
 import { WelcomeModalSettingsPanel } from "@/components/settings/WelcomeModalSettingsPanel";
-import { useSiteSettings } from "./settingsContext";
+import { useSiteSettings } from "../settingsContext";
 
 export function HomeSettingsPage() {
     const { token, settings, setSettings, error, success, showError, showSuccess } =

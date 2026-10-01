@@ -5,7 +5,7 @@ import { ApiError, apiFetch } from "@/lib/api";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useSiteSettings } from "./settingsContext";
+import { useSiteSettings } from "../settingsContext";
 
 const ENDPOINT = "/api/dashboard/site-settings/history";
 

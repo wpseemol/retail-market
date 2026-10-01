@@ -1,7 +1,7 @@
 import { KeyRound } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { SocialLoginSettingsPanel } from "@/components/settings/SocialLoginSettingsPanel";
-import { useSiteSettings } from "./settingsContext";
+import { useSiteSettings } from "../settingsContext";
 
 export function SocialLoginSettingsPage() {
     const { token } = useSiteSettings();

@@ -1,7 +1,7 @@
 import { MessageSquareText } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { SmsGatewaySettingsPanel } from "@/components/settings/SmsGatewaySettingsPanel";
-import { useSiteSettings } from "./settingsContext";
+import { useSiteSettings } from "../settingsContext";
 
 export function SmsGatewaySettingsPage() {
     const { token } = useSiteSettings();

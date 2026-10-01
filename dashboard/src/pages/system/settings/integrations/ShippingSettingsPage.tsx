@@ -1,7 +1,7 @@
 import { Truck } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { ShippingSettingsPanel } from "@/components/settings/ShippingSettingsPanel";
-import { useSiteSettings } from "./settingsContext";
+import { useSiteSettings } from "../settingsContext";
 
 export function ShippingSettingsPage() {
     const { token } = useSiteSettings();

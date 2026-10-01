@@ -1,7 +1,7 @@
 import { CreditCard } from "lucide-react";
 import { PaymentGatewaySettingsPanel } from "@/components/settings/PaymentGatewaySettingsPanel";
 import { SettingsSection } from "@/components/settings/SettingsSection";
-import { useSiteSettings } from "./settingsContext";
+import { useSiteSettings } from "../settingsContext";
 
 export function PaymentSettingsPage() {
     const { token } = useSiteSettings();

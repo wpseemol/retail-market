@@ -11,7 +11,7 @@ const ROLE_HOME: Record<StaffRole, string> = {
 };
 
 type ProtectedRouteProps = {
-  roles?: StaffRole[];
+  roles?: readonly StaffRole[];
 };
 
 export function ProtectedRoute({ roles }: ProtectedRouteProps) {

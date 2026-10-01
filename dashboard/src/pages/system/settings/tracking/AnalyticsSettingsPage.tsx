@@ -1,8 +1,8 @@
 import { BarChart3 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { TrackerRow } from "@/components/settings/TrackerRow";
-import { GeneralSettingsForm } from "./GeneralSettingsForm";
-import { useSiteSettings } from "./settingsContext";
+import { GeneralSettingsForm } from "../GeneralSettingsForm";
+import { useSiteSettings } from "../settingsContext";
 
 export function AnalyticsSettingsPage() {
     const { form } = useSiteSettings();

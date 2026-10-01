@@ -22,8 +22,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { GeneralSettingsForm } from "./GeneralSettingsForm";
-import { useSiteSettings } from "./settingsContext";
+import { GeneralSettingsForm } from "../GeneralSettingsForm";
+import { useSiteSettings } from "../settingsContext";
 
 type NumberField =
     | "shop_products_per_page"
