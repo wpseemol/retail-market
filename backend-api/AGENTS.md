@@ -39,7 +39,8 @@ backend-api/
     ├── validators/          # Zod schemas per domain (order.ts, cart.ts, ...)
     ├── lib/                 # env, prisma, cart, sslcommerz, image helpers, productReviews,
     │                        # reviewImage, rateLimit (in-memory per-IP), showcase (store/brand page
-    │                        # JSON), showcaseMedia (banner / share image finalize), revalidate
+    │                        # JSON), showcaseMedia (banner / share image finalize), revalidate,
+    │                        # contentPages (FAQ / Terms defaults + public shaping)
     ├── utils/
     └── data/
 ```
@@ -51,7 +52,8 @@ backend-api/
 - **Auth:** protected routes require `Authorization: Bearer <token>`. Dashboard catalog mutations require `super_admin | admin | moderator`; order deletion is `super_admin | admin` only.
 - **Reviews:** `ProductReview` (`product_reviews`) is the purchase-verified review model; the older `Review` model is unused legacy. Review eligibility = a `delivered` + `paid` order matching the email/phone/user that contains the product. Vendors are scoped to their own shop's products.
 - **Showcase & SEO:** store (`Vendor`) and brand pages store their design in the `showcase` JSON column — always read it through `normalizeShowcase()` in `src/lib/showcase.ts`. Global SEO lives on `SiteSettings` and is edited only via `/api/dashboard/seo` (super_admin + admin). A brand's `vendor_id` (set by super_admin/admin) lets that store's vendor edit the brand page, never its name/slug/active state. Admins may override any store's page design but cannot create, delete or re-configure stores.
-- **Storefront cache:** after any write that changes public pages, call `revalidateFrontend([...tags])` from `src/lib/revalidate.ts` (needs `REVALIDATE_SECRET` + `FRONTEND_URL`; silently skipped when unset). Tags: `stores`, `store:<slug>`, `brands`, `brand:<slug>`, `reviews`, `site-settings`.
+- **Content pages (FAQ, Terms):** one `ContentPage` row per `page_key` with JSON `content`, validated per key by `contentSchemaByKey` in `src/validators/contentPage.ts`. No row = built-in defaults from `src/lib/contentPages.ts`; `DELETE /api/dashboard/pages/:key` resets by removing the row. Editing is super_admin + admin. Add a new page by extending `CONTENT_PAGE_KEYS`, its schema, and its defaults. Default copy must pass `withSafeInput` (avoid phrases like "delete from" or "select … from").
+- **Storefront cache:** after any write that changes public pages, call `revalidateFrontend([...tags])` from `src/lib/revalidate.ts` (needs `REVALIDATE_SECRET` + `FRONTEND_URL`; silently skipped when unset). Tags: `stores`, `store:<slug>`, `brands`, `brand:<slug>`, `reviews`, `site-settings`, `pages`, `page:<key>`.
 - **Uploads:** sniff MIME by magic bytes, enforce multer size limit, always resize with sharp, re-check size after resize, sanitize original filenames. Document field names and limits in `API.md`.
 - **Migrations:** add a new folder under `prisma/migrations/` (never edit an applied one). Backfill data in the same SQL when adding non-null columns.
 - **Concurrency:** guard state-changing writes with the expected current state in the `where` clause (`updateMany` / `deleteMany`) and return 409 when nothing matched.

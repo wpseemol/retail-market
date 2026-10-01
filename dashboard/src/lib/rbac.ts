@@ -41,6 +41,8 @@ export const STORE_DELETE_ROLES: readonly StaffRole[] = ["super_admin"];
 
 /** Global storefront SEO (`/api/dashboard/seo`). */
 export const SEO_ROLES: readonly StaffRole[] = ["super_admin", "admin"];
+/** Storefront content pages (FAQ, Terms) — mirrors `/api/dashboard/pages`. */
+export const CONTENT_PAGE_ROLES: readonly StaffRole[] = ["super_admin", "admin"];
 
 /**
  * Brand showcase pages: admins edit any brand; vendors only brands linked to their

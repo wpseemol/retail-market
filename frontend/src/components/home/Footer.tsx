@@ -341,6 +341,14 @@ export default function Footer() {
                             {chrome.siteName}
                         </strong>
                         . {t.footer.rights}
+                        <span aria-hidden="true" className="mx-2 text-border-default">|</span>
+                        <Link href="/terms" className="hover:text-brand-primary">
+                            {t.footer.links.terms}
+                        </Link>
+                        <span aria-hidden="true" className="mx-2 text-border-default">|</span>
+                        <Link href="/faq" className="hover:text-brand-primary">
+                            {t.footer.links.faq}
+                        </Link>
                     </p>
 
                     {/* Social Icons */}

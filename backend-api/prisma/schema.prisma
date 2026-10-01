@@ -1137,6 +1137,25 @@ model SiteSettingsHistory {
   @@map("site_settings_histories")
 }
 
+/// Editable storefront content pages (`/faq`, `/terms`). One row per `page_key`;
+/// a missing row means the built-in defaults from `src/lib/contentPages.ts` are shown.
+model ContentPage {
+  id              BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  /// `faq` | `terms`
+  page_key        String   @unique @db.VarChar(40)
+  is_published    Boolean  @default(true)
+  seo_title       String?  @db.VarChar(70)
+  seo_description String?  @db.VarChar(170)
+  noindex         Boolean  @default(false)
+  /// Page body — shape depends on `page_key` (see `src/validators/contentPage.ts`).
+  content         Json
+  updated_by_id   BigInt?  @db.UnsignedBigInt
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@map("content_pages")
+}
+
 /// Anonymous storefront page hits for visitor-by-country analytics.
 model PageVisit {
   id          BigInt     @id @default(autoincrement()) @db.UnsignedBigInt

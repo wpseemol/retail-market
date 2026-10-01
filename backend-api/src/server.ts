@@ -35,6 +35,8 @@ import { dashboardReviewsRouter } from "./routes/dashboardReviews.js";
 import { publicBrandsRouter } from "./routes/publicBrands.js";
 import { publicSitemapRouter } from "./routes/publicSitemap.js";
 import { dashboardSeoRouter } from "./routes/dashboardSeo.js";
+import { publicPagesRouter } from "./routes/publicPages.js";
+import { dashboardPagesRouter } from "./routes/dashboardPages.js";
 
 const app = express();
 
@@ -69,6 +71,7 @@ app.use("/api/analytics", publicAnalyticsRouter);
 app.use("/api/shops", publicShopsRouter);
 app.use("/api/brands", publicBrandsRouter);
 app.use("/api/sitemap-entries", publicSitemapRouter);
+app.use("/api/pages", publicPagesRouter);
 app.use("/api/products/:idOrSlug/reviews", productReviewsRouter);
 app.use("/api/products", publicProductsRouter);
 app.use("/api/categories", publicCategoriesRouter);
@@ -89,6 +92,7 @@ app.use("/api/dashboard/notifications", dashboardNotificationsRouter);
 app.use("/api/dashboard/orders", dashboardOrdersRouter);
 app.use("/api/dashboard/reviews", dashboardReviewsRouter);
 app.use("/api/dashboard/seo", dashboardSeoRouter);
+app.use("/api/dashboard/pages", dashboardPagesRouter);
 
 app.use(
   (

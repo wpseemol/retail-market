@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { siteConfig } from "@/config/site";
 import { API_URL } from "@/lib/api";
+import { fetchContentPage } from "@/lib/contentPages";
 import { getSiteSettings } from "@/lib/siteSettings";
 
 type Entry = { slug: string; updated_at: string };
@@ -31,7 +32,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     const base = siteConfig.url.replace(/\/$/, "");
     const now = new Date();
-    const entries = await fetchEntries();
+    const [entries, faq, terms] = await Promise.all([
+        fetchEntries(),
+        fetchContentPage("faq"),
+        fetchContentPage("terms"),
+    ]);
+    const contentRoutes: MetadataRoute.Sitemap = [
+        { path: "/faq", page: faq },
+        { path: "/terms", page: terms },
+    ]
+        .filter(({ page }) => page && !page.noindex)
+        .map(({ path, page }) => ({
+            url: `${base}${path}`,
+            lastModified: page!.updated_at ? new Date(page!.updated_at) : now,
+            changeFrequency: "monthly" as const,
+            priority: 0.4,
+        }));
 
     const staticRoutes: MetadataRoute.Sitemap = [
         { path: "", priority: 1, changeFrequency: "daily" as const },
@@ -62,6 +78,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     return [
         ...staticRoutes,
+        ...contentRoutes,
         ...map(entries.stores, "/stores/", 0.7, "weekly"),
         ...map(entries.brands, "/brands/", 0.7, "weekly"),
         ...map(entries.categories, "/shop?category=", 0.6, "weekly"),

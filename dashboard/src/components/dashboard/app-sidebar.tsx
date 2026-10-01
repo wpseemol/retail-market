@@ -1,11 +1,13 @@
 import type { ComponentProps } from "react";
 import {
+  CircleHelp,
   ClipboardList,
   FolderTree,
   LayoutDashboard,
   MessageSquareText,
   Package,
   Palette,
+  ScrollText,
   SearchCheck,
   Shield,
   ShieldCheck,
@@ -33,7 +35,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import type { StaffRole } from "@/lib/api";
-import { REVIEW_ROLES, SEO_ROLES, STORE_ROLES } from "@/lib/rbac";
+import { CONTENT_PAGE_ROLES, REVIEW_ROLES, SEO_ROLES, STORE_ROLES } from "@/lib/rbac";
 import { useAuthStore } from "@/store/auth";
 
 const ROLE_HOME: Record<StaffRole, string> = {
@@ -132,6 +134,18 @@ const marketingLinks: Array<{
     label: "Search & SEO",
     icon: SearchCheck,
     roles: SEO_ROLES,
+  },
+  {
+    to: "/content/faq",
+    label: "FAQ page",
+    icon: CircleHelp,
+    roles: CONTENT_PAGE_ROLES,
+  },
+  {
+    to: "/content/terms",
+    label: "Terms page",
+    icon: ScrollText,
+    roles: CONTENT_PAGE_ROLES,
   },
   {
     to: "/stores",
@@ -331,7 +345,7 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
 
         {seoLinks.length > 0 ? (
           <SidebarGroup>
-            <SidebarGroupLabel>Marketing &amp; SEO</SidebarGroupLabel>
+            <SidebarGroupLabel>Marketing &amp; content</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {seoLinks.map((link) => {

@@ -5,6 +5,15 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-01
 
+### FAQ & Terms pages
+
+- `src/app/faq/page.tsx`: help centre with green hero, overlapping search, sticky topic nav, accordion or card grid, help box; FAQPage + Breadcrumb JSON-LD.
+- `src/app/terms/page.tsx`: terms page with effective / updated / read-time pills, print button, sticky table of contents, numbered sections, back-to-top, help box; WebPage JSON-LD.
+- `src/components/content/`: `ContentHero`, `FaqExplorer` (client search / filter), `HelpCta`, `PlainRichText` (paragraphs + `- ` bullets, never HTML), `PrintButton`.
+- `src/lib/contentPages.ts`: `fetchContentPage()` (tags `pages`, `page:<key>`). `src/lib/seo.ts`: `faqPageJsonLd`, `webPageJsonLd`.
+- `src/i18n/dictionaries/en.ts` / `bn.ts`: `contentPages` strings + `footer.links.terms`.
+- `Footer.tsx`: FAQ + Terms links in the bottom bar. `app/sitemap.ts`: lists `/faq` and `/terms` when published and indexable.
+
 ### SEO overhaul + brand / store showcase pages
 - New `src/lib/seo.ts` (`buildMetadata`, canonical URLs, title template, JSON-LD builders) and `src/components/seo/` (`JsonLd`). `src/app/layout.tsx` emits Organization + WebSite (with SearchAction) JSON-LD and verification meta from the dashboard SEO settings; `src/lib/siteSettings.ts` reads the nested `seo` block.
 - `src/app/sitemap.ts` (static pages + stores, brands, products, categories from the API), `src/app/robots.ts` (honours site-wide noindex), new `src/app/manifest.ts`.

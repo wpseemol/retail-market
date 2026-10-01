@@ -5,6 +5,14 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-01
 
+### FAQ & Terms page editors
+
+- `src/pages/content/FaqPageEditor.tsx` (`/content/faq`): hero, layout (accordion / grid, search, topic nav, open first), categories with nested questions (add, reorder, hide, delete with confirm), help box, SEO + publish.
+- `src/pages/content/TermsPageEditor.tsx` (`/content/terms`): hero, effective date, intro, TOC / numbering switches, sections (add, reorder, hide, delete with confirm), help box, SEO + publish.
+- `src/components/content/`: shared `ContentPageSections` (hero, help box, SEO, status aside with search preview, row actions) and `useContentPage` hook. "Reset to default" asks for confirmation.
+- `src/lib/contentPages.ts`, `src/lib/validators/contentPage.ts`: types, limits and Zod schemas mirroring the API.
+- `src/lib/rbac.ts`: `CONTENT_PAGE_ROLES` (super_admin, admin). `App.tsx`: routes. `app-sidebar.tsx`: "FAQ page" / "Terms page" links; group renamed "Marketing & content".
+
 ### SEO settings page + store / brand page designer
 - New `src/pages/marketing/SeoSettingsPage.tsx` at `/seo` (super_admin + admin): title template, per-page defaults (home, shop, stores, brands), social sharing image (removal confirmed), Google / Bing verification, site-wide noindex (warning confirm), live Google + share previews (`src/components/seo/SeoPreview.tsx`). New `src/lib/seo.ts`, `src/lib/validators/seo.ts`.
 - SEO fields moved off **Settings → Identity / Social sharing**: those tabs now show `SeoMovedNotice` linking to `/seo`; `validators/siteSettings.ts`, `settingsContext.ts`, `GeneralSettingsForm.tsx` no longer send them.

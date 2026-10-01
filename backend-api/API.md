@@ -77,6 +77,7 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/shops` | `routes/publicShops.ts` | Public |
 | `/api/brands` | `routes/publicBrands.ts` | Public |
 | `/api/sitemap-entries` | `routes/publicSitemap.ts` | Public |
+| `/api/pages` | `routes/publicPages.ts` | Public (FAQ, Terms) |
 | `/api/products/:idOrSlug/reviews` | `routes/productReviews.ts` | Public (verified buyers submit) |
 | `/api/products` | `routes/publicProducts.ts` | Public |
 | `/api/categories` | `routes/publicCategories.ts` | Public |
@@ -93,6 +94,7 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/dashboard/home-blocks` | `routes/dashboardHomeBlocks.ts` | `super_admin` |
 | `/api/dashboard/shops` | `routes/dashboardVendors.ts` | `super_admin`, `admin` (read + design), `vendor` (own) |
 | `/api/dashboard/seo` | `routes/dashboardSeo.ts` | `super_admin`, `admin` |
+| `/api/dashboard/pages` | `routes/dashboardPages.ts` | `super_admin`, `admin` |
 | `/api/dashboard/categories` | `routes/dashboardCategories.ts` | Staff |
 | `/api/dashboard/brands` | `routes/dashboardBrands.ts` | Staff (showcase: `super_admin`, `admin`, linked vendor) |
 | `/api/dashboard/products` | `routes/dashboardProducts.ts` | Staff |
@@ -201,6 +203,23 @@ No auth. Active brands only.
 No auth. `GET /` → `{ products, categories, stores, brands }`, each `[{ slug, updated_at }]`. Only active rows; stores and brands with `noindex` are left out. Used by the storefront `sitemap.xml`.
 
 ---
+
+## Public content pages — `/api/pages`
+
+No auth. `GET /:key` with `key` = `faq` | `terms` → `{ page }`:
+
+```ts
+page: {
+  key: "faq" | "terms";
+  is_published: boolean; noindex: boolean;
+  seo_title: string | null; seo_description: string | null;
+  content: FaqContent | TermsContent;   // see "Dashboard content pages"
+  is_default: boolean;                  // true = no edits saved yet, built-in text
+  updated_at: string | null;
+}
+```
+
+Hidden categories, questions and sections (`enabled: false`) are removed; FAQ categories with no visible questions are dropped too. **404** for an unknown key or an unpublished page. Storefront cache tags: `pages`, `page:<key>`.
 
 ---
 
@@ -903,6 +922,26 @@ Auth: Bearer **`super_admin`** or **`admin`** (vendors / moderators → 403). On
 | GET | `/history` | Last 50 SEO-related history rows |
 | POST | `/og-image` | Default share image · multipart field **`image`** · max **1 MB** · always resized on the server to fit 1200×630 |
 | DELETE | `/og-image` | Remove the default share image (file + media row) |
+
+---
+
+## Dashboard content pages — `/api/dashboard/pages`
+
+Auth: Bearer **`super_admin`** or **`admin`** (others → 403). Edits the storefront `/faq` and `/terms` pages. Until the first save, the built-in default content is returned (`is_default: true`). Saves are logged to `site_settings_histories` (`page_faq_updated`, `page_terms_reset`, …) and refresh the storefront cache (`pages`, `page:<key>`). Validator: `src/validators/contentPage.ts`; safe-input guards on every string (HTML, script, PHP, JS and SQL-like text such as “select … from” on one line are rejected).
+
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/:key` | `key` = `faq` \| `terms` → `{ page }` (same shape as the public one, but hidden items are included) |
+| PATCH | `/:key` | Any of `is_published`, `noindex`, `seo_title` (≤70), `seo_description` (≤170), `content` (the **whole** body, validated per page). Omitted → unchanged; `""`/`null` clears SEO text. → `{ message, page }`. 400 includes `issues[] { path, message }` (e.g. `content.categories.0.items.2.answer`) |
+| DELETE | `/:key` | **Reset to defaults** — deletes the saved row so the built-in content shows again. Cannot be undone. → `{ message, page }` |
+
+**Shared blocks:** `hero { eyebrow ≤40, title 2–120, subtitle ≤300 }` · `contact_cta { enabled, title ≤80 (required when enabled), text ≤240, button_label ≤40, button_href }` — `button_href` is a site path (`/contact`), `https://` URL, `mailto:` or `tel:`. List `id`s are client-generated, `^[a-z0-9][a-z0-9-]{0,39}$`, unique within their list.
+
+**`faq` content:** `hero`, `layout` (`accordion` | `grid`), `show_search`, `show_category_nav`, `expand_first`, `categories[]` (1–20) `{ id, title 2–80, description ≤200, enabled, items[] (≤50) { id, question 3–200, answer 1–3000, enabled } }`, `contact_cta`.
+
+**`terms` content:** `hero`, `effective_date` (`YYYY-MM-DD` or `""`), `intro` ≤3000, `show_toc`, `numbered`, `sections[]` (1–50) `{ id, title 2–120, body 1–10000, enabled }`, `contact_cta`.
+
+**Text formatting** (answers, intro, section bodies): plain text only. A blank line starts a new paragraph; lines starting with `- ` become a bullet list.
 
 ---
 

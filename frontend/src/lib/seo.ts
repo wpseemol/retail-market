@@ -243,3 +243,38 @@ export function brandJsonLd(brand: {
         ...aggregateRating(brand.rating),
     };
 }
+
+export function faqPageJsonLd(path: string, items: { question: string; answer: string }[]): JsonLdObject {
+    return {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "@id": absoluteUrl(`${path}#faq`),
+        url: absoluteUrl(path),
+        mainEntity: items.map((item) => ({
+            "@type": "Question",
+            name: item.question,
+            acceptedAnswer: { "@type": "Answer", text: item.answer },
+        })),
+    };
+}
+
+export function webPageJsonLd(page: {
+    path: string;
+    name: string;
+    description?: string | null;
+    dateModified?: string | null;
+    inLanguage: string;
+}): JsonLdObject {
+    return {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "@id": absoluteUrl(`${page.path}#webpage`),
+        url: absoluteUrl(page.path),
+        name: page.name,
+        inLanguage: page.inLanguage,
+        isPartOf: { "@id": SITE_ID },
+        publisher: { "@id": ORG_ID },
+        ...(page.description ? { description: page.description } : {}),
+        ...(page.dateModified ? { dateModified: page.dateModified } : {}),
+    };
+}

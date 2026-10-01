@@ -30,15 +30,16 @@ Next 16.3.5, React, next-auth 5 (beta), Redux Toolkit, framer-motion, Tailwind.
 ```
 frontend/src/
 ├── app/            # (auth), about, account, actions, api (incl. api/revalidate), auth, brands,
-│                   # cart, checkout, contact, shop, stores, wishlist, sitemap.ts, robots.ts, manifest.ts
-├── components/     # auth/, cart/, layout, product UI, reviews/ (PDP reviews + write dialog),
+│                   # cart, checkout, contact, faq, shop, stores, terms, wishlist, sitemap.ts, robots.ts, manifest.ts
+├── components/     # auth/, cart/, content/ (FAQ / Terms hero, FaqExplorer, HelpCta, PlainRichText),
+│                   # layout, product UI, reviews/ (PDP reviews + write dialog),
 │                   # seo/ (JsonLd), showcase/ (store + brand page sections, theme, hero, directory),
 │                   # ui/ (shadcn form, label, dialog, tooltip)
 ├── config/
 ├── hooks/
 ├── i18n/           # config.ts (en | bn, cookie), dictionaries/{en,bn}.ts, server.ts (getLocale)
 ├── lib/            # api.ts, cart.ts, guestCartCookie.ts, cartTypes.ts, reviews.ts, utils.ts (cn), validators/,
-│                   # seo.ts (buildMetadata, JSON-LD), showcase.ts, stores.ts, brands.ts
+│                   # seo.ts (buildMetadata, JSON-LD), showcase.ts, stores.ts, brands.ts, contentPages.ts
 ├── store/          # Redux slices: cart, wishlist, auth, siteChrome
 ├── types/
 ├── auth.ts         # next-auth config
@@ -56,6 +57,7 @@ frontend/src/
 - **SEO:** every page builds metadata with `buildMetadata()` from `src/lib/seo.ts` (canonical, OG, robots) and adds JSON-LD through `components/seo/JsonLd`. `generateMetadata` and the page must request the exact same API URL (share a `pageQuery()` helper) so Next dedupes the fetch. Filtered / sorted / search variants are `noindex`. Next 16 streams metadata to normal browsers — check `<head>` with a `Googlebot` user agent.
 - **Cache tags:** API fetches use tags like `stores`, `store:<slug>`, `brands`, `brand:<slug>`, `reviews`. The API calls `POST /api/revalidate` (header `x-revalidate-secret` = `REVALIDATE_SECRET`, same value in both apps) after dashboard edits.
 - **Showcase pages:** store and brand pages share `components/showcase/`. Wrap them in `ShowcaseTheme` and use the `sc-accent*` tokens for vendor colours, never raw hex.
+- **Content pages:** `/faq` and `/terms` are edited in the dashboard and fetched with `fetchContentPage(key)` (tags `pages`, `page:<key>`). Render admin text with `PlainRichText` (blank line = paragraph, `- ` = bullet), never as HTML. Return `notFound()` when the page is unpublished.
 - Read `node_modules/next/dist/docs/` before using Next APIs (see block above).
 
 ## Workspace rules

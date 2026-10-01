@@ -21,6 +21,7 @@ import { StoreCreatePage, StoreDesignPage, StoreEditPage, StoresPage } from "./p
 import { UserEditPage, UsersPage } from "./pages/access";
 import { ReviewsModerationPage } from "./pages/support";
 import { SeoSettingsPage } from "./pages/marketing";
+import { FaqPageEditor, TermsPageEditor } from "./pages/content";
 import {
   AnalyticsSettingsPage,
   EmailProviderSettingsPage,
@@ -42,6 +43,7 @@ import { useAuthStore } from "./store/auth";
 import type { StaffRole } from "./lib/api";
 import {
   BRAND_SHOWCASE_ROLES,
+  CONTENT_PAGE_ROLES,
   NOTIFICATION_ROLES,
   ORDER_ROLES,
   OVERVIEW_ROLES,
@@ -105,6 +107,11 @@ export default function App() {
 
           <Route element={<ProtectedRoute roles={SEO_ROLES} />}>
             <Route path="seo" element={<SeoSettingsPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={CONTENT_PAGE_ROLES} />}>
+            <Route path="content/faq" element={<FaqPageEditor />} />
+            <Route path="content/terms" element={<TermsPageEditor />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={STAFF_MANAGEMENT_ROLES} />}>

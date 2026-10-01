@@ -5,6 +5,15 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-01
 
+### FAQ & Terms content pages
+
+- `prisma/schema.prisma` + migration `20261001120000_content_pages`: new `ContentPage` model (`content_pages`, one row per `page_key`, JSON `content`, SEO fields, publish / noindex flags).
+- `src/validators/contentPage.ts`: Zod schemas for FAQ (hero, layout, categories → items, help box) and Terms (hero, effective date, intro, sections, help box); unique slug ids, safe-input on every string.
+- `src/lib/contentPages.ts`: built-in default FAQ and Terms copy (served while no row exists), `toContentPage()` / `toPublicContentPage()` (hides disabled items).
+- `src/routes/publicPages.ts`: `GET /api/pages/:key` (404 when unpublished).
+- `src/routes/dashboardPages.ts`: `GET` / `PATCH` / `DELETE` (reset to default) `/api/dashboard/pages/:key` for super_admin + admin; history logged, frontend revalidated with `pages` / `page:<key>` tags.
+- `src/server.ts`: mounted both routers. `API.md`: documented the endpoints.
+
 ### SEO overhaul + brand / store showcase pages
 - `prisma/schema.prisma` + migration `20261001100000_showcase_seo`: `Vendor` and `Brand` gain `tagline`, `accent_color`, `seo_title`, `seo_description`, `seo_keywords`, `noindex`, `og_image_id`, `showcase` (JSON). `Brand` also gets `vendor_id` (linked store) and `banner_id`. `SiteSettings` gets `seo_title_template`, `seo_noindex_site`, `google_site_verification`, `bing_site_verification`, `seo_pages` (JSON). New media collections for share images and brand banners.
 - New `src/validators/showcase.ts` (hero style, ordered sections, about, contact, social with per-network host checks, policies, announcement; safe-input on every string) and `src/validators/seo.ts`. `src/validators/brand.ts`: `mine` list filter + owner body. `src/validators/siteSettings.ts`: SEO keys no longer accepted on the general settings PATCH.
