@@ -59,6 +59,7 @@ export function FaqPageEditor() {
   const [resetting, setResetting] = useState(false);
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState("");
+  const [hydrated, setHydrated] = useState(false);
 
   const form = useForm<FaqForm>({ resolver: zodResolver(faqPageFormSchema), mode: "onBlur" });
   const categories = useFieldArray({ control: form.control, name: "content.categories", keyName: "_key" });
@@ -67,6 +68,7 @@ export function FaqPageEditor() {
     if (!page) return;
     form.reset(toPageFormValues(page));
     setOpen(new Set(page.content.categories[0] ? [page.content.categories[0].id] : []));
+    setHydrated(true);
   }, [page, form]);
 
   const toggle = (id: string, force?: boolean) =>
@@ -131,8 +133,11 @@ export function FaqPageEditor() {
   const values = form.watch();
   const allCats = values.content?.categories ?? [];
   const stats = useMemo(() => {
-    const questions = allCats.reduce((n, c) => n + c.items.length, 0);
-    const hidden = allCats.reduce((n, c) => n + (c.enabled ? c.items.filter((i) => !i.enabled).length : c.items.length), 0);
+    const questions = allCats.reduce((n, c) => n + (c.items?.length ?? 0), 0);
+    const hidden = allCats.reduce(
+      (n, c) => n + (c.enabled ? (c.items ?? []).filter((i) => !i.enabled).length : (c.items?.length ?? 0)),
+      0,
+    );
     return [
       { label: "Categories", value: allCats.length },
       { label: "Questions", value: questions },
@@ -169,7 +174,7 @@ export function FaqPageEditor() {
         }
       />
 
-      {!page || !values.content ? (
+      {!page || !hydrated || !values.content?.hero ? (
         <div className="h-96 animate-pulse rounded-2xl bg-muted/60" />
       ) : (
         <Form {...form}>
@@ -335,13 +340,17 @@ function CategoryCard({
   const form = useFormContext<FaqForm>();
   const confirm = useConfirm();
   const items = useFieldArray({ control: form.control, name: `content.categories.${index}.items`, keyName: "_key" });
-  const cat = form.watch(`content.categories.${index}`);
+  const watched = form.watch(`content.categories.${index}`);
+  const cat = { ...watched, title: watched?.title ?? "", items: watched?.items ?? [] };
   const catErrors = form.formState.errors.content?.categories?.[index];
   const isOpen = open.has(cat.id) || Boolean(filter);
 
   const matches = (item: { question: string; answer: string }) =>
-    !filter || item.question.toLowerCase().includes(filter) || item.answer.toLowerCase().includes(filter);
+    !filter ||
+    (item.question ?? "").toLowerCase().includes(filter) ||
+    (item.answer ?? "").toLowerCase().includes(filter);
   const visibleCount = cat.items.filter(matches).length;
+  if (!watched) return null;
   if (filter && visibleCount === 0 && !cat.title.toLowerCase().includes(filter)) return null;
 
   async function removeItem(i: number) {
@@ -485,7 +494,7 @@ function CategoryCard({
                           <FormItem>
                             <div className="flex items-center justify-between">
                               <FormLabel>Answer</FormLabel>
-                              <span className="text-[11px] tabular-nums text-muted-foreground">{field.value.length}/3000</span>
+                              <span className="text-[11px] tabular-nums text-muted-foreground">{(field.value ?? "").length}/3000</span>
                             </div>
                             <FormControl>
                               <Textarea rows={4} {...field} />

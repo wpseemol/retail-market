@@ -25,6 +25,9 @@ const PAGE_TITLES: Record<string, string> = {
   "/admin": "Admin",
   "/moderator": "Moderator",
   "/vendor": "Vendor",
+  "/seo": "Search & SEO",
+  "/content/faq": "FAQ page",
+  "/content/terms": "Terms page",
 };
 
 export function SiteHeader() {

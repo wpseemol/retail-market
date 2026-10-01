@@ -101,7 +101,7 @@ export function HeroFields({ step, children }: { step: string; children?: ReactN
           <FormItem>
             <div className="flex items-center justify-between">
               <FormLabel>Subtitle</FormLabel>
-              <span className="text-[11px] tabular-nums text-muted-foreground">{field.value.length}/300</span>
+              <span className="text-[11px] tabular-nums text-muted-foreground">{(field.value ?? "").length}/300</span>
             </div>
             <FormControl>
               <Textarea rows={2} {...field} />

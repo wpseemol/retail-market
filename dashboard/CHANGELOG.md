@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-01
 
+### Fix: FAQ / Terms editors crashed on load
+
+- `src/pages/content/FaqPageEditor.tsx`, `TermsPageEditor.tsx`: `useFieldArray` seeds an empty `content` object before the loaded page is reset into the form, so the form rendered early and `hero.subtitle.length` threw (blank screen). The form now waits for a `hydrated` flag set after `form.reset()`; list / counter reads tolerate missing values.
+- `src/components/content/ContentPageSections.tsx`: subtitle counter guards `undefined`.
+- `src/components/dashboard/site-header.tsx`: breadcrumb titles for `/seo`, `/content/faq`, `/content/terms` (were showing "Dashboard").
+
 ### FAQ & Terms page editors
 
 - `src/pages/content/FaqPageEditor.tsx` (`/content/faq`): hero, layout (accordion / grid, search, topic nav, open first), categories with nested questions (add, reorder, hide, delete with confirm), help box, SEO + publish.

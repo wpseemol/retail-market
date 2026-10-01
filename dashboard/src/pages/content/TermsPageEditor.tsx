@@ -44,6 +44,7 @@ export function TermsPageEditor() {
   const [success, setSuccess] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
   const [open, setOpen] = useState<Set<string>>(new Set());
+  const [hydrated, setHydrated] = useState(false);
 
   const form = useForm<TermsForm>({ resolver: zodResolver(termsPageFormSchema), mode: "onBlur" });
   const sections = useFieldArray({ control: form.control, name: "content.sections", keyName: "_key" });
@@ -52,6 +53,7 @@ export function TermsPageEditor() {
     if (!page) return;
     form.reset(toPageFormValues(page));
     setOpen(new Set());
+    setHydrated(true);
   }, [page, form]);
 
   const toggle = (id: string, force?: boolean) =>
@@ -117,7 +119,7 @@ export function TermsPageEditor() {
   const values = form.watch();
   const list = values.content?.sections ?? [];
   const stats = useMemo(() => {
-    const words = list.reduce((n, s) => n + s.body.split(/\s+/).filter(Boolean).length, 0);
+    const words = list.reduce((n, s) => n + (s.body ?? "").split(/\s+/).filter(Boolean).length, 0);
     return [
       { label: "Sections", value: list.length },
       { label: "Hidden", value: list.filter((s) => !s.enabled).length },
@@ -154,7 +156,7 @@ export function TermsPageEditor() {
         }
       />
 
-      {!page || !values.content ? (
+      {!page || !hydrated || !values.content?.hero ? (
         <div className="h-96 animate-pulse rounded-2xl bg-muted/60" />
       ) : (
         <Form {...form}>
@@ -301,7 +303,7 @@ export function TermsPageEditor() {
                                   <div className="flex items-center justify-between">
                                     <FormLabel>Text</FormLabel>
                                     <span className="text-[11px] tabular-nums text-muted-foreground">
-                                      {f.value.length.toLocaleString()}/10,000
+                                      {(f.value ?? "").length.toLocaleString()}/10,000
                                     </span>
                                   </div>
                                   <FormControl>
