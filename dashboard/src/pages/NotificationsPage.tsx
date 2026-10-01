@@ -8,6 +8,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
+import { useConfirm } from "@/components/providers/ConfirmProvider";
 import { useAuthStore } from "@/store/auth";
 import type { DashboardNotification } from "@/components/dashboard/notifications-menu";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +45,7 @@ function typeLabel(type: string) {
 export function NotificationsPage() {
   const token = useAuthStore((s) => s.token);
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const [notifications, setNotifications] = useState<DashboardNotification[]>(
     [],
   );
@@ -95,6 +97,12 @@ export function NotificationsPage() {
 
   const removeOne = async (id: string, wasUnread: boolean) => {
     if (!token) return;
+    const ok = await confirm({
+      title: "Delete this notification?",
+      description: "It will be removed from your notifications list.",
+      confirmLabel: "Delete",
+    });
+    if (!ok) return;
     try {
       await apiFetch(`/api/dashboard/notifications/${id}`, {
         method: "DELETE",

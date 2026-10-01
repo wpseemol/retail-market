@@ -120,6 +120,19 @@ export const NEXT_STATUSES: Record<OrderStatus, OrderStatus[]> = {
   refunded: [],
 };
 
+export const ORDER_DELETE_ROLES = new Set(["super_admin", "admin"]);
+
+/** Mirrors the API: only pending / cancelled orders with no money taken can be deleted. */
+export function orderDeleteBlockReason(order: { status: OrderStatus; payment_status: string }): string | null {
+  if (["paid", "partially_refunded", "refunded"].includes(order.payment_status)) {
+    return "Paid or refunded orders can't be deleted";
+  }
+  if (order.status !== "pending" && order.status !== "cancelled") {
+    return "Only pending or cancelled orders can be deleted";
+  }
+  return null;
+}
+
 export const STATUS_META: Record<
   OrderStatus,
   { label: string; pill: string; dot: string }

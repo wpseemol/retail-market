@@ -590,6 +590,10 @@ Auth: Bearer **staff**. Vendors only see orders that include their products and 
 | PATCH | `/:id/status` | `{ status, courier_name?, tracking_number? }` → `{ message, order, next_statuses }` · 409 `STATUS_UNCHANGED` / `INVALID_STATUS_TRANSITION` / `ORDER_CHANGED` |
 | PATCH | `/:id/tracking` | `{ courier_name?, tracking_number? }` (max 80 chars each, `""`/`null` clears) |
 | POST | `/bulk-status` | `{ ids: string[1..100], status }` → `{ message, updated: id[], skipped: [{ id, order_number, reason }] }` — each order follows the same transition rules |
+| DELETE | `/:id` | **super_admin / admin only.** Permanently deletes the order with its items, addresses and payments → `{ message, id }` · 409 `ORDER_NOT_DELETABLE` (paid / refunded, or status not `pending` / `cancelled`) / `ORDER_CHANGED` |
+| POST | `/bulk-delete` | **super_admin / admin only.** `{ ids: string[1..100] }` → `{ message, deleted: id[], skipped: [{ id, order_number, reason }] }` — same rules as `DELETE /:id` |
+
+Deletion is meant for test / abandoned orders. The dashboard always asks for confirmation in a modal first.
 
 Query filters:
 

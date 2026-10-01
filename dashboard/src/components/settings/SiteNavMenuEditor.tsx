@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
+import { useConfirm } from "@/components/providers/ConfirmProvider";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ApiError, apiFetch } from "@/lib/api";
@@ -40,6 +41,7 @@ export function SiteNavMenuEditor({
   onError,
   onSuccess,
 }: Props) {
+  const confirm = useConfirm();
   const [dragId, setDragId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -140,7 +142,12 @@ export function SiteNavMenuEditor({
   }
 
   async function onDelete(item: SiteNavItemDto) {
-    if (!window.confirm(`Delete “${item.label}”?`)) return;
+    const ok = await confirm({
+      title: `Delete “${item.label}”?`,
+      description: "The link is removed from this menu on the storefront.",
+      confirmLabel: "Delete link",
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const data = await apiFetch<SiteSettingsApiResponse>(

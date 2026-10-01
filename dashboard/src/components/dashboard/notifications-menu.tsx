@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Bell, CheckCheck, Loader2, Package, Trash2, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { ApiError, apiFetch } from "@/lib/api";
+import { useConfirm } from "@/components/providers/ConfirmProvider";
 import { useAuthStore } from "@/store/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ function timeAgo(iso: string) {
 export function NotificationsMenu() {
   const token = useAuthStore((s) => s.token);
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState<DashboardNotification[]>(
@@ -106,6 +108,12 @@ export function NotificationsMenu() {
 
   const removeOne = async (id: string, wasUnread: boolean) => {
     if (!token) return;
+    const ok = await confirm({
+      title: "Delete this notification?",
+      description: "It will be removed from your notifications list.",
+      confirmLabel: "Delete",
+    });
+    if (!ok) return;
     try {
       await apiFetch(`/api/dashboard/notifications/${id}`, {
         method: "DELETE",

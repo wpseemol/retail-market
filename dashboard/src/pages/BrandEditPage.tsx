@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Trash2 } from "lucide-react";
+import { useConfirm } from "@/components/providers/ConfirmProvider";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { slugifyClient, type Brand } from "@/lib/brands";
 import {
@@ -43,6 +44,7 @@ import { Textarea } from "@/components/ui/textarea";
 export function BrandEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const { token } = useAuthStore();
 
   const [brand, setBrand] = useState<Brand | null>(null);
@@ -162,7 +164,12 @@ export function BrandEditPage() {
 
   async function onDelete() {
     if (!token || !id) return;
-    if (!window.confirm("Delete this brand? Products keep their data.")) return;
+    const ok = await confirm({
+      title: "Delete this brand?",
+      description: "The brand is removed from the catalog. Products keep their data.",
+      confirmLabel: "Delete brand",
+    });
+    if (!ok) return;
     setDeleting(true);
     setSubmitError(null);
     try {

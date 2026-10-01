@@ -5,6 +5,7 @@ import { toPublicMedia } from "../lib/user.js";
 import { requireAuth, requireRoles, STAFF_ROLES } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {
+  bulkOrderDeleteSchema,
   bulkOrderStatusSchema,
   exportOrdersQuerySchema,
   listOrdersQuerySchema,
@@ -21,6 +22,21 @@ dashboardOrdersRouter.use(requireAuth, requireRoles(...STAFF_ROLES));
 
 /** Vendors can read orders that contain their products but never change them (orders can span stores). */
 const requireOrderManager = requireRoles("super_admin", "admin", "moderator");
+const requireOrderDeleter = requireRoles("super_admin", "admin");
+
+/** Orders with money attached (paid / refunded) or already in fulfilment are kept for accounting. */
+const DELETABLE_STATUSES: OrderStatus[] = ["pending", "cancelled"];
+const NON_DELETABLE_PAYMENT = ["paid", "partially_refunded", "refunded"];
+
+function deleteBlockReason(order: { status: OrderStatus; payment_status: string }): string | null {
+  if (NON_DELETABLE_PAYMENT.includes(order.payment_status)) {
+    return "Paid or refunded orders can't be deleted — cancel or refund them instead";
+  }
+  if (!DELETABLE_STATUSES.includes(order.status)) {
+    return "Only pending or cancelled orders can be deleted";
+  }
+  return null;
+}
 
 const EXPORT_MAX_ROWS = 5000;
 
@@ -460,6 +476,79 @@ dashboardOrdersRouter.post(
       updated,
       skipped,
     });
+  }),
+);
+
+dashboardOrdersRouter.post(
+  "/bulk-delete",
+  requireOrderDeleter,
+  asyncHandler(async (req, res) => {
+    const parsed = bulkOrderDeleteSchema.safeParse(req.body);
+    if (!parsed.success) return validationError(res, parsed.error);
+
+    const ids = [...new Set(parsed.data.ids)].map((id) => BigInt(id));
+    const orders = await prisma.order.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, order_number: true, status: true, payment_status: true },
+    });
+
+    const deleted: string[] = [];
+    const skipped: Array<{ id: string; order_number: string | null; reason: string }> = [];
+    for (const id of ids) {
+      const order = orders.find((o) => o.id === id);
+      if (!order) {
+        skipped.push({ id: id.toString(), order_number: null, reason: "Order not found" });
+        continue;
+      }
+      const reason = deleteBlockReason(order);
+      if (reason) {
+        skipped.push({ id: id.toString(), order_number: order.order_number, reason });
+        continue;
+      }
+      const result = await prisma.order.deleteMany({
+        where: { id, status: order.status, payment_status: order.payment_status },
+      });
+      if (result.count === 1) deleted.push(id.toString());
+      else skipped.push({ id: id.toString(), order_number: order.order_number, reason: "Changed by someone else — reload and retry" });
+    }
+
+    return res.json({
+      message:
+        skipped.length === 0
+          ? `${deleted.length} order(s) deleted`
+          : `${deleted.length} deleted, ${skipped.length} skipped`,
+      deleted,
+      skipped,
+    });
+  }),
+);
+
+dashboardOrdersRouter.delete(
+  "/:id",
+  requireOrderDeleter,
+  asyncHandler(async (req, res) => {
+    const id = parseOrderId(req);
+    if (id === null) return res.status(404).json({ message: "Order not found" });
+
+    const order = await prisma.order.findUnique({
+      where: { id },
+      select: { id: true, order_number: true, status: true, payment_status: true },
+    });
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    const reason = deleteBlockReason(order);
+    if (reason) return res.status(409).json({ message: reason, code: "ORDER_NOT_DELETABLE" });
+
+    const result = await prisma.order.deleteMany({
+      where: { id, status: order.status, payment_status: order.payment_status },
+    });
+    if (result.count === 0) {
+      return res.status(409).json({
+        message: "This order was changed by someone else. Reload and try again.",
+        code: "ORDER_CHANGED",
+      });
+    }
+    return res.json({ message: `Order ${order.order_number} deleted`, id: id.toString() });
   }),
 );
 

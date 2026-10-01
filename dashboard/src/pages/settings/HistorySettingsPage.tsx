@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { History } from "lucide-react";
+import { useConfirm } from "@/components/providers/ConfirmProvider";
 import { ApiError, apiFetch } from "@/lib/api";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ function formatHistoryValue(value: unknown) {
 
 export function HistorySettingsPage() {
     const { token } = useSiteSettings();
+    const confirm = useConfirm();
     const [history, setHistory] = useState<SettingsHistoryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -56,9 +58,11 @@ export function HistorySettingsPage() {
     }, [token]);
 
     async function onClear() {
-        const ok = window.confirm(
-            "Clear all site settings history? This permanently deletes history rows from the database.",
-        );
+        const ok = await confirm({
+            title: "Clear all site settings history?",
+            description: "History rows are permanently deleted from the database. This cannot be undone.",
+            confirmLabel: "Clear history",
+        });
         if (!ok) return;
         setClearing(true);
         setError(null);

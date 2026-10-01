@@ -1,0 +1,42 @@
+---
+description: Every delete / destructive action in the dashboard or frontend must ask for confirmation in a modal
+alwaysApply: true
+---
+
+# Confirm before delete (always)
+
+Whenever you add or edit **any delete, remove, clear, purge, or other irreversible action** (single row, bulk selection, drawer button, dropdown item, image removal, history clear, notification delete, etc.), the user **must confirm in a popup modal first**.
+
+## Dashboard (`dashboard/`)
+
+- Use the shared promise-based hook — never `window.confirm` / `alert`:
+
+```tsx
+import { useConfirm } from "@/components/providers/ConfirmProvider";
+
+const confirm = useConfirm();
+
+async function onDelete() {
+  const ok = await confirm({
+    title: `Delete “${item.name}”?`,
+    description: "What gets removed and whether it can be undone.",
+    confirmLabel: "Delete item",
+  });
+  if (!ok) return;
+  // …call the API
+}
+```
+
+- `ConfirmProvider` is mounted in `dashboard/src/main.tsx`; `tone` defaults to `"destructive"` (red button + trash icon). Use `tone: "warning"` for non-delete risky actions.
+- Title names the exact thing (e.g. `Delete order #NIY-…?`); description says what is removed and that it **cannot be undone** when that's true.
+- Bulk deletes: say how many items, and warn about items the API will skip.
+- Show a loading state on the trigger while the request runs and report success / error afterwards.
+
+## Frontend (`frontend/`)
+
+- Same rule: use a shadcn `Dialog` / alert-dialog style modal for deletes (cart item removal may stay instant only if an **Undo** is offered).
+
+## API side
+
+- Deletes stay behind elevated roles and server-side guards (e.g. don't hard-delete paid orders); the modal is UX, not security.
+- Document new delete endpoints in `backend/API.md`.

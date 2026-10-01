@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { History, Trash2 } from "lucide-react";
+import { useConfirm } from "@/components/providers/ConfirmProvider";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { imageUploadHint } from "@/lib/imagePresets";
 import {
@@ -54,6 +55,7 @@ function formatChangeValue(value: unknown) {
 export function StoreEditPage() {
   const { slug: routeSlug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const { token, user } = useAuthStore();
   const isSuper = user?.role === "super_admin";
   const fileRef = useRef<HTMLInputElement>(null);
@@ -253,9 +255,11 @@ export function StoreEditPage() {
 
   async function onDelete() {
     if (!token || !routeSlug || !isSuper) return;
-    const ok = window.confirm(
-      `Delete store “${shop?.shop_name}”? This soft-deletes the store and is logged in history.`,
-    );
+    const ok = await confirm({
+      title: `Delete store “${shop?.shop_name ?? "this store"}”?`,
+      description: "The store is soft-deleted and hidden from the storefront. The action is logged in history.",
+      confirmLabel: "Delete store",
+    });
     if (!ok) return;
 
     setDeleting(true);
@@ -278,9 +282,11 @@ export function StoreEditPage() {
 
   async function onClearHistory() {
     if (!token || !routeSlug) return;
-    const ok = window.confirm(
-      "Clear all change history for this store? This permanently deletes history rows from the database.",
-    );
+    const ok = await confirm({
+      title: "Clear all change history for this store?",
+      description: "History rows are permanently deleted from the database. This cannot be undone.",
+      confirmLabel: "Clear history",
+    });
     if (!ok) return;
     setClearingHistory(true);
     setSaveError(null);

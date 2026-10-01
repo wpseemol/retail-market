@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Trash2 } from "lucide-react";
+import { useConfirm } from "@/components/providers/ConfirmProvider";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { slugifyClient, type Category } from "@/lib/categories";
 import { getCategoryLucideIcon } from "@/lib/icons";
@@ -34,6 +35,7 @@ import { Textarea } from "@/components/ui/textarea";
 export function CategoryEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const { token } = useAuthStore();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -189,9 +191,12 @@ export function CategoryEditPage() {
 
   async function onDelete() {
     if (!token || !id) return;
-    if (!window.confirm("Delete this category? Stores keep their products.")) {
-      return;
-    }
+    const ok = await confirm({
+      title: "Delete this category?",
+      description: "The category is removed from the catalog. Stores keep their products.",
+      confirmLabel: "Delete category",
+    });
+    if (!ok) return;
     setDeleting(true);
     setSaveError(null);
     try {

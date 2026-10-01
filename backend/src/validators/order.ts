@@ -119,10 +119,14 @@ export const updateOrderTrackingSchema = z.object({
   tracking_number: optionalShipText(80),
 });
 
+const orderIdList = z
+  .array(z.string().trim().regex(/^\d{1,19}$/, "Invalid order id"))
+  .min(1, "Select at least one order")
+  .max(100, "Update at most 100 orders at a time");
+
 export const bulkOrderStatusSchema = z.object({
-  ids: z
-    .array(z.string().trim().regex(/^\d{1,19}$/, "Invalid order id"))
-    .min(1, "Select at least one order")
-    .max(100, "Update at most 100 orders at a time"),
+  ids: orderIdList,
   status: z.enum(ORDER_STATUSES),
 });
+
+export const bulkOrderDeleteSchema = z.object({ ids: orderIdList });

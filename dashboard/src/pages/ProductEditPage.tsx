@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
+import { useConfirm } from "@/components/providers/ConfirmProvider";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import type { Category } from "@/lib/categories";
 import type { Brand } from "@/lib/brands";
@@ -60,6 +61,7 @@ import { Textarea } from "@/components/ui/textarea";
 export function ProductEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const { token, user } = useAuthStore();
   const isElevated =
     user?.role === "super_admin" ||
@@ -279,6 +281,12 @@ export function ProductEditPage() {
 
   async function onRemoveRemoteImage(mediaId: string) {
     if (!token || !id) return;
+    const ok = await confirm({
+      title: "Delete this image?",
+      description: "The image is removed from the product gallery right away. This cannot be undone.",
+      confirmLabel: "Delete image",
+    });
+    if (!ok) return;
     setMediaUpdating(true);
     setSubmitError(null);
     setSaveSuccess(null);
@@ -321,7 +329,12 @@ export function ProductEditPage() {
 
   async function onDelete() {
     if (!token || !id) return;
-    if (!window.confirm("Delete this product? This cannot be undone.")) return;
+    const ok = await confirm({
+      title: "Delete this product?",
+      description: "The product and its images are removed from the store. This cannot be undone.",
+      confirmLabel: "Delete product",
+    });
+    if (!ok) return;
     setDeleting(true);
     setSubmitError(null);
     try {

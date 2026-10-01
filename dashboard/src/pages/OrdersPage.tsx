@@ -18,9 +18,11 @@ import {
   Printer,
   RefreshCw,
   Search,
+  Trash2,
   Truck,
   X,
 } from "lucide-react";
+import { useConfirm } from "@/components/providers/ConfirmProvider";
 import { ApiError, apiDownload, apiFetch } from "@/lib/api";
 import {
   formatBdPhone,
@@ -28,6 +30,8 @@ import {
   formatPlacedAt,
   initials,
   NEXT_STATUSES,
+  ORDER_DELETE_ROLES,
+  orderDeleteBlockReason,
   STATUS_META,
   type OrderDetail,
   type OrderDetailResponse,
@@ -287,6 +291,7 @@ function RowActions({
   onTracking,
   onPrint,
   onCopy,
+  onDelete,
 }: {
   order: OrderRow;
   canManage: boolean;
@@ -295,8 +300,10 @@ function RowActions({
   onTracking: () => void;
   onPrint: () => void;
   onCopy: () => void;
+  onDelete?: () => void;
 }) {
   const next = NEXT_STATUSES[order.status];
+  const deleteBlocked = onDelete ? orderDeleteBlockReason(order) : null;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -341,6 +348,18 @@ function RowActions({
             <ExternalLink /> Open full page
           </Link>
         </DropdownMenuItem>
+        {onDelete ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" disabled={deleteBlocked !== null} onSelect={onDelete}>
+              <Trash2 />
+              <span className="flex flex-col">
+                Delete order
+                {deleteBlocked ? <span className="text-[11px] text-muted-foreground">{deleteBlocked}</span> : null}
+              </span>
+            </DropdownMenuItem>
+          </>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -466,6 +485,8 @@ export function OrdersPage() {
   const token = useAuthStore((s) => s.token);
   const role = useAuthStore((s) => s.user?.role);
   const canManage = MANAGER_ROLES.has(role ?? "");
+  const canDelete = ORDER_DELETE_ROLES.has(role ?? "");
+  const confirm = useConfirm();
 
   const [data, setData] = useState<OrdersListResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -482,7 +503,8 @@ export function OrdersPage() {
   const [limit, setLimit] = useState<number>(10);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [bulkBusy, setBulkBusy] = useState<OrderStatus | null>(null);
+  const [bulkBusy, setBulkBusy] = useState<OrderStatus | "delete" | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [notice, setNotice] = useNotice();
 
@@ -620,6 +642,74 @@ export function OrdersPage() {
     }
   }
 
+  async function deleteOrder(order: OrderRow | OrderDetail) {
+    const ok = await confirm({
+      title: `Delete order #${order.order_number}?`,
+      description: `The order, its ${order.item_count} item${order.item_count === 1 ? "" : "s"}, addresses and payment attempts will be permanently removed. This cannot be undone.`,
+      confirmLabel: "Delete order",
+    });
+    if (!ok) return;
+    setDeletingId(order.id);
+    try {
+      const res = await apiFetch<{ message: string }>(`/api/dashboard/orders/${order.id}`, { method: "DELETE", token });
+      setNotice({ tone: "success", text: res.message });
+      setSelected((prev) => {
+        const next = new Set(prev);
+        next.delete(order.id);
+        return next;
+      });
+      if (drawerId === order.id) setDrawerId(null);
+      refresh();
+    } catch (err) {
+      setNotice({ tone: "error", text: err instanceof ApiError ? err.message : "Could not delete the order" });
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  async function deleteSelected() {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    const blocked = selectedRows.filter((o) => orderDeleteBlockReason(o) !== null).length;
+    const ok = await confirm({
+      title: `Delete ${ids.length} order${ids.length === 1 ? "" : "s"}?`,
+      description: (
+        <>
+          Selected orders will be permanently removed with their items, addresses and payment attempts. This cannot be undone.
+          {blocked > 0 ? (
+            <span className="mt-2 block font-medium text-amber-600 dark:text-amber-400">
+              {blocked} paid / in-progress order{blocked === 1 ? "" : "s"} will be skipped.
+            </span>
+          ) : null}
+        </>
+      ),
+      confirmLabel: `Delete ${ids.length === 1 ? "order" : "orders"}`,
+    });
+    if (!ok) return;
+    setBulkBusy("delete");
+    try {
+      const res = await apiFetch<{
+        message: string;
+        deleted: string[];
+        skipped: Array<{ order_number: string | null; reason: string }>;
+      }>("/api/dashboard/orders/bulk-delete", { method: "POST", token, body: { ids } });
+      const skippedText = res.skipped
+        .slice(0, 3)
+        .map((s) => `#${s.order_number ?? "?"}: ${s.reason}`)
+        .join(" · ");
+      setNotice({
+        tone: res.deleted.length === 0 ? "error" : "success",
+        text: skippedText ? `${res.message}. ${skippedText}${res.skipped.length > 3 ? " …" : ""}` : res.message,
+      });
+      setSelected(new Set());
+      refresh();
+    } catch (err) {
+      setNotice({ tone: "error", text: err instanceof ApiError ? err.message : "Bulk delete failed" });
+    } finally {
+      setBulkBusy(null);
+    }
+  }
+
   function printRows(rows: Array<OrderRow | OrderDetail>) {
     if (!printInvoices(rows)) {
       setNotice({ tone: "error", text: "Your browser blocked the print window. Allow pop-ups for the dashboard and try again." });
@@ -674,6 +764,7 @@ export function OrdersPage() {
     onTracking: () => actions.editTracking(order),
     onPrint: () => printRows([order]),
     onCopy: () => void copyOrderNumber(order),
+    onDelete: canDelete ? () => void deleteOrder(order) : undefined,
   });
 
   return (
@@ -843,6 +934,12 @@ export function OrdersPage() {
                   <Printer />
                   Print Selected Invoices
                 </Button>
+                {canDelete ? (
+                  <Button size="sm" variant="destructive" disabled={bulkBusy !== null} onClick={() => void deleteSelected()}>
+                    {bulkBusy === "delete" ? <Loader2 className="animate-spin" /> : <Trash2 />}
+                    Delete Selected
+                  </Button>
+                ) : null}
                 <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
                   Clear
                 </Button>
@@ -1054,6 +1151,8 @@ export function OrdersPage() {
                 onChangeStatus={(s) => void actions.requestStatus(drawer.order, s)}
                 onEditTracking={() => actions.editTracking(drawer.order)}
                 onPrint={() => printRows([drawer.order])}
+                onDelete={canDelete ? () => void deleteOrder(drawer.order) : undefined}
+                deleting={deletingId === drawer.order.id}
               />
             ) : null}
           </div>
@@ -1071,6 +1170,9 @@ export function OrderDetailPage() {
   const token = useAuthStore((s) => s.token);
   const role = useAuthStore((s) => s.user?.role);
   const canManage = MANAGER_ROLES.has(role ?? "");
+  const canDelete = ORDER_DELETE_ROLES.has(role ?? "");
+  const confirm = useConfirm();
+  const [deleting, setDeleting] = useState(false);
   const [detail, setDetail] = useState<OrderDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1101,6 +1203,23 @@ export function OrderDetailPage() {
   const actions = useOrderActions({ token, onUpdated, onError: onActionError });
 
   const order = detail?.order;
+
+  async function deleteThisOrder(target: OrderDetail) {
+    const ok = await confirm({
+      title: `Delete order #${target.order_number}?`,
+      description: "The order, its items, addresses and payment attempts will be permanently removed. This cannot be undone.",
+      confirmLabel: "Delete order",
+    });
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      await apiFetch(`/api/dashboard/orders/${target.id}`, { method: "DELETE", token });
+      navigate("/orders", { replace: true });
+    } catch (err) {
+      setNotice({ tone: "error", text: err instanceof ApiError ? err.message : "Could not delete the order" });
+      setDeleting(false);
+    }
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
@@ -1145,6 +1264,8 @@ export function OrderDetailPage() {
                 setNotice({ tone: "error", text: "Your browser blocked the print window. Allow pop-ups and try again." });
               }
             }}
+            onDelete={canDelete ? () => void deleteThisOrder(order) : undefined}
+            deleting={deleting}
           />
         </FadeUp>
       ) : null}

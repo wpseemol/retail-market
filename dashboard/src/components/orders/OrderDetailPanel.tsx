@@ -4,11 +4,13 @@ import {
   CheckCircle2,
   CircleDot,
   ImageIcon,
+  Loader2,
   MapPin,
   Package,
   Pencil,
   Printer,
   Store,
+  Trash2,
   Truck,
   UserRound,
   Wallet,
@@ -18,6 +20,7 @@ import {
   formatAddress,
   formatBdPhone,
   formatBdt,
+  orderDeleteBlockReason,
   PAYMENT_STATUS_META,
   paymentMethodLabel,
   STATUS_META,
@@ -130,6 +133,8 @@ export function OrderDetailPanel({
   onChangeStatus,
   onEditTracking,
   onPrint,
+  onDelete,
+  deleting = false,
 }: {
   order: OrderDetail;
   nextStatuses: OrderStatus[];
@@ -137,7 +142,11 @@ export function OrderDetailPanel({
   onChangeStatus: (status: OrderStatus) => void;
   onEditTracking: () => void;
   onPrint: () => void;
+  /** Shown only when provided (role check is the caller's job). */
+  onDelete?: () => void;
+  deleting?: boolean;
 }) {
+  const deleteBlocked = onDelete ? orderDeleteBlockReason(order) : null;
   const shipping = order.addresses.find((a) => a.type === "shipping") ?? order.billing;
   const billing = order.addresses.find((a) => a.type === "billing");
   const sameAddress =
@@ -180,6 +189,19 @@ export function OrderDetailPanel({
           <Printer />
           Print invoice
         </Button>
+        {onDelete ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={onDelete}
+            disabled={deleting || deleteBlocked !== null}
+            title={deleteBlocked ?? "Delete this order"}
+          >
+            {deleting ? <Loader2 className="animate-spin" /> : <Trash2 />}
+            Delete
+          </Button>
+        ) : null}
       </div>
 
       <Section icon={CalendarClock} title="Progress">
