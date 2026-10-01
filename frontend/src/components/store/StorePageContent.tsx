@@ -72,13 +72,15 @@ function StoreProductCard({
       } ${muted ? "bg-bg-subtle/40" : ""}`}
     >
       <Link href={href} className="block">
-        <div className="relative aspect-[4/3] bg-bg-subtle">
+        <div className="relative aspect-square bg-bg-subtle">
           {product.thumbnail?.path ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={product.thumbnail.path}
               alt={product.thumbnail.alt_text ?? product.name}
-              className={`size-full object-cover ${
+              loading="lazy"
+              decoding="async"
+              className={`size-full object-contain p-3 ${
                 banned ? "grayscale-[40%]" : ""
               }`}
             />

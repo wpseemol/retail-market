@@ -1296,7 +1296,7 @@ function SimpleChromeForm<T extends Record<string, unknown>>({
           {imageFields.length > 0 ? (
             <EditorCard
               title="Images"
-              hint="Preview · change with file upload · resized on the server."
+              hint="Preview · change with file upload · each field shows its recommended size · always resized & optimized to WebP on the server."
             >
               <div className="grid gap-4 sm:grid-cols-2">
                 {imageFields.map((f) => (

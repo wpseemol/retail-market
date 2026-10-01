@@ -7,6 +7,7 @@ import {
   PRODUCT_IMAGES_RELATIVE,
   sanitizeOriginalName,
 } from "../lib/categoryImage.js";
+import type { ImagePresetKey } from "../lib/imageOptimize.js";
 import { PRODUCT_IMAGES_DIR } from "../lib/productImage.js";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
@@ -31,6 +32,13 @@ const HERO_MEDIA_INCLUDE = {
   side_product_image: true,
   side_bg_image: true,
 } as const;
+
+const SLOT_PRESET: Record<HomeHeroImageSlot, ImagePresetKey> = {
+  main_product: "heroMainProduct",
+  main_bg: "heroMainBg",
+  side_product: "heroSideProduct",
+  side_bg: "heroSideBg",
+};
 
 const SLOT_FIELD: Record<
   HomeHeroImageSlot,
@@ -210,6 +218,7 @@ dashboardHomeHeroRouter.post(
     const finalized = await finalizeCategoryImageUpload(
       file.path,
       file.mimetype,
+      SLOT_PRESET[slot],
     );
     if (!finalized.ok) {
       return res.status(400).json({

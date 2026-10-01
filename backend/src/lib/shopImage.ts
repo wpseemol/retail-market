@@ -1,10 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
+  AVATAR_MAX_BYTES,
   finalizeAvatarUpload,
   sanitizeOriginalName,
   type FinalizedAvatarResult,
 } from "./avatarImage.js";
+import { optimizeStoredUpload, type ImagePresetKey } from "./imageOptimize.js";
 
 /** Disk folder for shop logos / store images. */
 export const SHOP_IMAGES_DIR = path.resolve(
@@ -18,11 +20,15 @@ export const SHOP_IMAGES_RELATIVE = "shops";
 
 fs.mkdirSync(SHOP_IMAGES_DIR, { recursive: true });
 
-export function finalizeShopImageUpload(
+/** Validates, resizes into the `shopLogo` / `shopBanner` box, and stores under uploads/shops/. */
+export async function finalizeShopImageUpload(
   tempPath: string,
-  declaredMime?: string | null,
-): FinalizedAvatarResult {
-  const result = finalizeAvatarUpload(tempPath, declaredMime);
+  declaredMime: string | null | undefined,
+  preset: Extract<ImagePresetKey, "shopLogo" | "shopBanner">,
+): Promise<FinalizedAvatarResult> {
+  const validated = finalizeAvatarUpload(tempPath, declaredMime);
+  if (!validated.ok) return validated;
+  const result = await optimizeStoredUpload(validated, preset, AVATAR_MAX_BYTES);
   if (!result.ok) return result;
 
   const targetPath = path.join(SHOP_IMAGES_DIR, result.fileName);

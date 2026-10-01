@@ -222,7 +222,7 @@ dashboardPaymentGatewayRouter.post(
 
     lastTestAt.set(key, now);
     const callback = (path: string) => `${env.publicBaseUrl}${SSLCZ_CALLBACK_BASE}/${path}`;
-    const result = await initSslcommerzSession(cfg, {
+    const fields = {
       total_amount: "10.00",
       currency: "BDT",
       tran_id: `TEST-${Date.now()}`,
@@ -241,10 +241,25 @@ dashboardPaymentGatewayRouter.post(
       product_name: "Connection test",
       product_category: "General",
       product_profile: "general",
-    });
+    };
+    const result = await initSslcommerzSession(cfg, fields);
 
     const mode = cfg.isLive ? "live" : "sandbox";
     if (result.status !== "SUCCESS" || !result.GatewayPageURL) {
+      // Sandbox and live store IDs are separate accounts; the gateway only says
+      // "Store Credential Error", so check whether the other mode accepts them.
+      const otherMode = cfg.isLive ? "sandbox" : "live";
+      const other = await initSslcommerzSession(
+        { ...cfg, isLive: !cfg.isLive },
+        { ...fields, tran_id: `TEST-${Date.now()}-x` },
+      );
+      if (other.status === "SUCCESS" && other.GatewayPageURL) {
+        return res.status(502).json({
+          message: `These are SSLCOMMERZ ${otherMode} credentials, but Live mode is ${cfg.isLive ? "on" : "off"}. Turn Live mode ${cfg.isLive ? "off" : "on"} (or enter your ${mode} store ID and password) and save.`,
+          code: "PAYMENT_MODE_MISMATCH",
+          detected_mode: otherMode,
+        });
+      }
       return res.status(502).json({
         message: `SSLCOMMERZ (${mode}) rejected the credentials: ${result.failedreason || "unknown error"}`,
         code: "PAYMENT_TEST_FAILED",

@@ -282,7 +282,7 @@ export function ProductCreatePage() {
             <ProductFormSection
               step="01"
               title="Media"
-              description="Add multiple product photos. The primary image appears in catalog listings. JPEG, PNG, WebP, or GIF · max 5 MB · always resized on the server."
+              description="Add multiple product photos. The primary image appears in catalog listings. Square photos look best in every listing."
             >
               <ProductImageGalleryField
                 localImages={localImages}

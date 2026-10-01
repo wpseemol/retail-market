@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Share2 } from "lucide-react";
 import { ApiError, apiUpload } from "@/lib/api";
+import { imageUploadHint } from "@/lib/imagePresets";
 import {
     validateOgImageFile,
     type SiteSettingsApiResponse,
@@ -101,7 +102,9 @@ export function SocialShareSettingsPage() {
                 <BrandingImageDropzone
                     title="Open Graph image"
                     emptyLabel="OG Image"
-                    description="Optional. JPEG, PNG, WebP, or GIF · max 1 MB · always resized on the server."
+                    description={imageUploadHint("ogImage", 1, {
+                        prefix: "Optional. Preview card on Facebook, X, WhatsApp",
+                    })}
                     previewUrl={settings.og_image?.path ?? null}
                     previewClassName="h-24 w-40"
                     uploading={uploading}

@@ -683,7 +683,7 @@ dashboardVendorsRouter.post(
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 
-    const finalized = finalizeShopImageUpload(file.path, file.mimetype);
+    const finalized = await finalizeShopImageUpload(file.path, file.mimetype, "shopLogo");
     if (!finalized.ok) {
       return res.status(400).json({
         message: finalized.message,
@@ -804,7 +804,7 @@ dashboardVendorsRouter.post(
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 
-    const finalized = finalizeShopImageUpload(file.path, file.mimetype);
+    const finalized = await finalizeShopImageUpload(file.path, file.mimetype, "shopBanner");
     if (!finalized.ok) {
       return res.status(400).json({
         message: finalized.message,

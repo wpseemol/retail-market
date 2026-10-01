@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { History, Trash2 } from "lucide-react";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
+import { imageUploadHint } from "@/lib/imagePresets";
 import {
   slugifyClient,
   shopStatusLabel,
@@ -350,7 +351,7 @@ export function StoreEditPage() {
             <StoreImageDropzone
               variant="logo"
               label="Store logo"
-              hint="Square brand mark · JPEG, PNG, WebP, or GIF · max 5 MB · always resized on the server"
+              hint={imageUploadHint("shopLogo", 5, { prefix: "Square brand mark" })}
               previewUrl={shop.logo?.path}
               uploading={logoUploading}
               disabled={saving}
@@ -361,7 +362,9 @@ export function StoreEditPage() {
             <StoreImageDropzone
               variant="banner"
               label="Store banner"
-              hint={`Wide hero on /stores/${shop.slug} · JPEG, PNG, WebP, or GIF · max 5 MB · always resized on the server`}
+              hint={imageUploadHint("shopBanner", 5, {
+                prefix: `Wide hero on /stores/${shop.slug}`,
+              })}
               previewUrl={shop.banner?.path}
               uploading={bannerUploading}
               disabled={saving}

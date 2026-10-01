@@ -1,20 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import sharp from "sharp";
 import {
   detectAvatarImageType,
   sanitizeOriginalName,
-  type AvatarMime,
   type FinalizedAvatarOk,
   type FinalizedAvatarResult,
 } from "./avatarImage.js";
+import { optimizeImageWithin, type ImagePresetKey } from "./imageOptimize.js";
 import { PRODUCT_IMAGES_DIR, PRODUCT_IMAGES_RELATIVE } from "./productImage.js";
 
 /** Category cover images — max 1 MB before/after processing. */
 export const CATEGORY_IMAGE_MAX_BYTES = 1 * 1024 * 1024;
 export const CATEGORY_IMAGE_MIN_BYTES = 32;
-export const CATEGORY_IMAGE_MAX_EDGE = 1200;
 export const CATEGORY_IMAGE_ALLOWED_MIMES = [
   "image/jpeg",
   "image/png",
@@ -88,12 +86,13 @@ function validateCategoryBuffer(
 }
 
 /**
- * Validate (≤1 MB), resize to max edge, re-encode as JPEG/WebP/PNG, store under uploads/products/.
- * Animated GIFs are converted to a still WebP frame for safety/size.
+ * Validate (≤1 MB), resize into the preset box, re-encode (WebP), store under uploads/products/.
+ * Shared by categories, brands, site identity, home hero and home blocks.
  */
 export async function finalizeCategoryImageUpload(
   tempPath: string,
   declaredMime?: string | null,
+  preset: ImagePresetKey = "category",
 ): Promise<FinalizedAvatarResult> {
   let buffer: Buffer;
   try {
@@ -117,76 +116,8 @@ export async function finalizeCategoryImageUpload(
   }
 
   try {
-    const pipeline = sharp(buffer, { failOn: "error", animated: false }).rotate();
-    const meta = await pipeline.metadata();
-    const width = meta.width ?? CATEGORY_IMAGE_MAX_EDGE;
-    const height = meta.height ?? CATEGORY_IMAGE_MAX_EDGE;
-    const needsResize =
-      width > CATEGORY_IMAGE_MAX_EDGE || height > CATEGORY_IMAGE_MAX_EDGE;
-
-    let output: Buffer;
-    let mime: AvatarMime;
-    let ext: ".jpg" | ".png" | ".webp";
-
-    // Prefer WebP for size; keep PNG if source had alpha and is PNG.
-    const hasAlpha = Boolean(meta.hasAlpha);
-    if (validated.detected.mime === "image/png" && hasAlpha) {
-      let img = pipeline;
-      if (needsResize) {
-        img = img.resize({
-          width: CATEGORY_IMAGE_MAX_EDGE,
-          height: CATEGORY_IMAGE_MAX_EDGE,
-          fit: "inside",
-          withoutEnlargement: true,
-        });
-      }
-      output = await img.png({ compressionLevel: 8 }).toBuffer();
-      mime = "image/png";
-      ext = ".png";
-    } else if (validated.detected.mime === "image/webp" || validated.detected.mime === "image/gif") {
-      let img = pipeline;
-      if (needsResize) {
-        img = img.resize({
-          width: CATEGORY_IMAGE_MAX_EDGE,
-          height: CATEGORY_IMAGE_MAX_EDGE,
-          fit: "inside",
-          withoutEnlargement: true,
-        });
-      }
-      output = await img.webp({ quality: 82 }).toBuffer();
-      mime = "image/webp";
-      ext = ".webp";
-    } else {
-      let img = pipeline;
-      if (needsResize) {
-        img = img.resize({
-          width: CATEGORY_IMAGE_MAX_EDGE,
-          height: CATEGORY_IMAGE_MAX_EDGE,
-          fit: "inside",
-          withoutEnlargement: true,
-        });
-      }
-      output = await img.jpeg({ quality: 85, mozjpeg: true }).toBuffer();
-      mime = "image/jpeg";
-      ext = ".jpg";
-    }
-
-    if (output.length > CATEGORY_IMAGE_MAX_BYTES) {
-      // Second pass: stronger compression as JPEG.
-      output = await sharp(output)
-        .resize({
-          width: 1000,
-          height: 1000,
-          fit: "inside",
-          withoutEnlargement: true,
-        })
-        .jpeg({ quality: 72, mozjpeg: true })
-        .toBuffer();
-      mime = "image/jpeg";
-      ext = ".jpg";
-    }
-
-    if (output.length > CATEGORY_IMAGE_MAX_BYTES) {
+    const optimized = await optimizeImageWithin(buffer, preset, CATEGORY_IMAGE_MAX_BYTES);
+    if (!optimized) {
       try {
         fs.unlinkSync(tempPath);
       } catch {
@@ -198,6 +129,7 @@ export async function finalizeCategoryImageUpload(
         code: "CATEGORY_IMAGE_TOO_LARGE",
       };
     }
+    const { output, mime, ext } = optimized;
 
     const fileName = `${randomUUID()}${ext}`;
     const absolutePath = path.join(PRODUCT_IMAGES_DIR, fileName);

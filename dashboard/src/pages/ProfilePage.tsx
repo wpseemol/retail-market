@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Upload, UserRound } from "lucide-react";
 import { ApiError, apiFetch, apiUpload, type StaffUser } from "@/lib/api";
+import { imageUploadHint } from "@/lib/imagePresets";
 import { useAuthStore } from "@/store/auth";
 import {
   passwordFormSchema,
@@ -170,8 +171,7 @@ function PhotoSection({
             <div>
               <p className="text-sm font-medium">Profile photo</p>
               <p className="text-xs text-muted-foreground">
-                JPEG, PNG, WebP, or GIF · max 5 MB · always resized on the
-                server
+                {imageUploadHint("avatar", 5)}
               </p>
             </div>
             <input

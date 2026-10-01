@@ -27,9 +27,11 @@ import {
   USER_PHOTOS_RELATIVE,
 } from "../middleware/upload.js";
 import {
+  AVATAR_MAX_BYTES,
   finalizeAvatarUpload,
   sanitizeOriginalName,
 } from "../lib/avatarImage.js";
+import { optimizeStoredUpload } from "../lib/imageOptimize.js";
 import { claimGuestOrders, countPendingGuestOrders } from "../lib/guestOrders.js";
 import { maskEmail, maskPhone, normalizePhone } from "../lib/phone.js";
 import {
@@ -623,7 +625,8 @@ export async function updateMe(req: Request, res: Response) {
  * Files are stored under `uploads/users/photos/` and linked via `medias` + `users.avatar_id`.
  * Multipart field name: `avatar`.
  *
- * Security: multer size/MIME filter + magic-byte sniff + rename to UUID+real ext.
+ * Security: multer size/MIME filter + magic-byte sniff + rename to UUID+real ext,
+ * then resized into the `avatar` preset box and re-encoded as WebP.
  */
 export async function uploadAvatar(req: Request, res: Response) {
   const file = req.file;
@@ -635,7 +638,10 @@ export async function uploadAvatar(req: Request, res: Response) {
   }
 
   const tempPath = file.path;
-  const finalized = finalizeAvatarUpload(tempPath, file.mimetype);
+  const validated = finalizeAvatarUpload(tempPath, file.mimetype);
+  const finalized = validated.ok
+    ? await optimizeStoredUpload(validated, "avatar", AVATAR_MAX_BYTES)
+    : validated;
   if (!finalized.ok) {
     return res.status(400).json({
       message: finalized.message,

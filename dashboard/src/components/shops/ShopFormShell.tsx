@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { imageUploadHint } from "@/lib/imagePresets";
 import type { ShopCreateStatus } from "@/lib/shops";
 
 export function StoreFormSection({
@@ -94,10 +95,12 @@ export function StoreImageDropzone({
   inputRef,
   onFile,
   label = "Store logo",
-  hint = "JPEG, PNG, WebP, or GIF · max 5 MB · always resized on the server",
+  hint: hintProp,
   variant = "logo",
 }: ImageDropzoneProps) {
   const isBanner = variant === "banner";
+  const hint =
+    hintProp ?? imageUploadHint(isBanner ? "shopBanner" : "shopLogo", 5);
 
   return (
     <div className="overflow-hidden rounded-xl border border-dashed border-border bg-gradient-to-br from-muted/40 via-background to-brand-tint/20">

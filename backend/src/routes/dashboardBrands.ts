@@ -258,6 +258,7 @@ dashboardBrandsRouter.post(
     const finalized = await finalizeCategoryImageUpload(
       file.path,
       file.mimetype,
+      "brand",
     );
     if (!finalized.ok) {
       return res.status(400).json({

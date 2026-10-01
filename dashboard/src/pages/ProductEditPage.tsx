@@ -385,7 +385,7 @@ export function ProductEditPage() {
             <ProductFormSection
               step="01"
               title="Media"
-              description="Manage gallery photos and choose the primary listing image. JPEG, PNG, WebP, or GIF · max 5 MB · always resized on the server."
+              description="Manage gallery photos and choose the primary listing image. Square photos look best in every listing."
             >
               <ProductImageGalleryField
                 images={product.gallery ?? []}

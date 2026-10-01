@@ -15,6 +15,7 @@ import {
   PRODUCT_IMAGES_RELATIVE,
   sanitizeOriginalName,
 } from "../lib/categoryImage.js";
+import { homeBlockImagePreset } from "../lib/imageOptimize.js";
 import { PRODUCT_IMAGES_DIR } from "../lib/productImage.js";
 import { toPublicMedia } from "../lib/user.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
@@ -248,6 +249,7 @@ dashboardHomeBlocksRouter.post(
     const finalized = await finalizeCategoryImageUpload(
       file.path,
       file.mimetype,
+      homeBlockImagePreset(key, fieldPath),
     );
     if (!finalized.ok) {
       return res.status(400).json({

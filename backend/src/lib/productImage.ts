@@ -1,14 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import sharp from "sharp";
 import {
   detectAvatarImageType,
   sanitizeOriginalName,
-  type AvatarMime,
   type FinalizedAvatarOk,
   type FinalizedAvatarResult,
 } from "./avatarImage.js";
+import { IMAGE_PRESETS, optimizeImageWithin } from "./imageOptimize.js";
 
 /** Disk folder for all product / variant / category catalog images. */
 export const PRODUCT_IMAGES_DIR = path.resolve(
@@ -23,7 +22,7 @@ export const PRODUCT_IMAGES_RELATIVE = "products";
 /** Product gallery / thumbnail — max 5 MB before/after processing. */
 export const PRODUCT_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 export const PRODUCT_IMAGE_MIN_BYTES = 32;
-export const PRODUCT_IMAGE_MAX_EDGE = 1600;
+export const PRODUCT_IMAGE_MAX_EDGE = IMAGE_PRESETS.product.width;
 export const PRODUCT_IMAGE_ALLOWED_MIMES = [
   "image/jpeg",
   "image/png",
@@ -131,94 +130,8 @@ export async function finalizeProductImageUpload(
   }
 
   try {
-    const pipeline = sharp(buffer, {
-      failOn: "error",
-      animated: false,
-    }).rotate();
-    const meta = await pipeline.metadata();
-    const width = meta.width ?? PRODUCT_IMAGE_MAX_EDGE;
-    const height = meta.height ?? PRODUCT_IMAGE_MAX_EDGE;
-    const needsResize =
-      width > PRODUCT_IMAGE_MAX_EDGE || height > PRODUCT_IMAGE_MAX_EDGE;
-
-    let output: Buffer;
-    let mime: AvatarMime;
-    let ext: ".jpg" | ".png" | ".webp";
-
-    const hasAlpha = Boolean(meta.hasAlpha);
-    if (validated.detected.mime === "image/png" && hasAlpha) {
-      let img = pipeline;
-      if (needsResize) {
-        img = img.resize({
-          width: PRODUCT_IMAGE_MAX_EDGE,
-          height: PRODUCT_IMAGE_MAX_EDGE,
-          fit: "inside",
-          withoutEnlargement: true,
-        });
-      }
-      output = await img.png({ compressionLevel: 8 }).toBuffer();
-      mime = "image/png";
-      ext = ".png";
-    } else if (
-      validated.detected.mime === "image/webp" ||
-      validated.detected.mime === "image/gif"
-    ) {
-      let img = pipeline;
-      if (needsResize) {
-        img = img.resize({
-          width: PRODUCT_IMAGE_MAX_EDGE,
-          height: PRODUCT_IMAGE_MAX_EDGE,
-          fit: "inside",
-          withoutEnlargement: true,
-        });
-      }
-      output = await img.webp({ quality: 82 }).toBuffer();
-      mime = "image/webp";
-      ext = ".webp";
-    } else {
-      let img = pipeline;
-      if (needsResize) {
-        img = img.resize({
-          width: PRODUCT_IMAGE_MAX_EDGE,
-          height: PRODUCT_IMAGE_MAX_EDGE,
-          fit: "inside",
-          withoutEnlargement: true,
-        });
-      }
-      output = await img.jpeg({ quality: 85, mozjpeg: true }).toBuffer();
-      mime = "image/jpeg";
-      ext = ".jpg";
-    }
-
-    // Always re-encode at least once so every upload is processed.
-    if (
-      output.length === buffer.length &&
-      !needsResize &&
-      validated.detected.mime === "image/jpeg"
-    ) {
-      output = await sharp(buffer)
-        .rotate()
-        .jpeg({ quality: 85, mozjpeg: true })
-        .toBuffer();
-      mime = "image/jpeg";
-      ext = ".jpg";
-    }
-
-    if (output.length > PRODUCT_IMAGE_MAX_BYTES) {
-      output = await sharp(output)
-        .resize({
-          width: 1200,
-          height: 1200,
-          fit: "inside",
-          withoutEnlargement: true,
-        })
-        .jpeg({ quality: 72, mozjpeg: true })
-        .toBuffer();
-      mime = "image/jpeg";
-      ext = ".jpg";
-    }
-
-    if (output.length > PRODUCT_IMAGE_MAX_BYTES) {
+    const optimized = await optimizeImageWithin(buffer, "product", PRODUCT_IMAGE_MAX_BYTES);
+    if (!optimized) {
       try {
         fs.unlinkSync(tempPath);
       } catch {
@@ -230,6 +143,7 @@ export async function finalizeProductImageUpload(
         code: "PRODUCT_IMAGE_TOO_LARGE",
       };
     }
+    const { output, mime, ext } = optimized;
 
     const fileName = `${randomUUID()}${ext}`;
     const absolutePath = path.join(PRODUCT_IMAGES_DIR, fileName);

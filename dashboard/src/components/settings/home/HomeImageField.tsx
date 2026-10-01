@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ImagePlus, Upload } from "lucide-react";
 import { ApiError, API_URL, apiUpload } from "@/lib/api";
+import { homeBlockImagePreset, imageUploadHint } from "@/lib/imagePresets";
 import {
   HOME_BLOCK_IMAGE_MAX_BYTES,
   validateHomeBlockImageFile,
@@ -144,9 +145,10 @@ export function HomeImageField({
             </p>
           ) : null}
           <p className="mt-1 text-[10px] font-medium text-muted-foreground">
-            JPEG, PNG, WebP, or GIF · max{" "}
-            {Math.floor(HOME_BLOCK_IMAGE_MAX_BYTES / (1024 * 1024))} MB · always
-            resized on the server
+            {imageUploadHint(
+              homeBlockImagePreset(blockKey, fieldPath),
+              Math.floor(HOME_BLOCK_IMAGE_MAX_BYTES / (1024 * 1024)),
+            )}
           </p>
         </div>
         <input

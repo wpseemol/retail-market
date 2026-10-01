@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { imageUploadHint } from "@/lib/imagePresets";
 
 export function BrandFormSection({
   step,
@@ -107,8 +108,7 @@ export function BrandImageDropzone({
           <div>
             <p className="text-sm font-medium">Brand image</p>
             <p className="text-xs text-muted-foreground">
-              Optional. JPEG, PNG, WebP, or GIF · max 1 MB · always resized on
-              the server.
+              {imageUploadHint("brand", 1, { prefix: "Optional" })}
             </p>
           </div>
           <input

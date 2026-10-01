@@ -3,6 +3,7 @@ import { ImagePlus, Star, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { imageUploadHint, recommendedSize } from "@/lib/imagePresets";
 import type { ProductMedia } from "@/lib/products";
 import {
   PRODUCT_IMAGE_MAX_BYTES,
@@ -114,8 +115,8 @@ export function ProductImageGalleryField({
         <div>
           <Label>Product images</Label>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            JPEG, PNG, WebP, or GIF · max {maxMb} MB each · up to {maxImages}{" "}
-            files · always resized on the server
+            {imageUploadHint("product", maxMb, { each: true })} · up to{" "}
+            {maxImages} files
           </p>
         </div>
         <span className="text-xs tabular-nums text-muted-foreground">
@@ -148,7 +149,7 @@ export function ProductImageGalleryField({
               Drag & drop product photos
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Max {maxMb} MB · always resized on the server
+              Best at {recommendedSize("product")} · max {maxMb} MB · auto-optimized
             </p>
           </div>
           <input

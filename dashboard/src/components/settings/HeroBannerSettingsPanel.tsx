@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { imageUploadHint, type ImagePresetKey } from "@/lib/imagePresets";
 import { WhereItShows } from "@/components/settings/home/HomeEditorChrome";
 import { resolveHomeImagePreview } from "@/components/settings/home/HomeImageField";
 
@@ -110,6 +111,13 @@ function PercentField({
   );
 }
 
+const HERO_SLOT_PRESET: Record<HomeHeroImageSlot, ImagePresetKey> = {
+  main_product: "heroMainProduct",
+  main_bg: "heroMainBg",
+  side_product: "heroSideProduct",
+  side_bg: "heroSideBg",
+};
+
 function HeroImageSlot({
   slot,
   hero,
@@ -174,7 +182,7 @@ function HeroImageSlot({
               : "Showing the built-in image shoppers see now. Upload to replace it."}
           </p>
           <p className="mt-1 text-[11px] font-medium text-muted-foreground">
-            JPEG, PNG, WebP, or GIF · max 1 MB · always resized on the server
+            {imageUploadHint(HERO_SLOT_PRESET[slot], 1)}
           </p>
         </div>
         <input

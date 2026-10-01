@@ -14,6 +14,7 @@ import { getCategoryLucideIcon } from "@/lib/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { imageUploadHint } from "@/lib/imagePresets";
 
 type CategoryFormSectionProps = {
   step: string;
@@ -257,8 +258,7 @@ export function CategoryCoverDropzone({
           <div>
             <p className="text-sm font-medium">Cover photo</p>
             <p className="text-xs text-muted-foreground">
-              Optional. JPEG, PNG, WebP, or GIF · max 1 MB · always resized on
-              the server.
+              {imageUploadHint("category", 1, { prefix: "Optional" })}
             </p>
           </div>
           <input

@@ -18,6 +18,7 @@ pnpm-debug.log*
 
 # User-uploaded media
 uploads/
+uploads.backup-*/
 
 # Operating system and editor files
 .DS_Store

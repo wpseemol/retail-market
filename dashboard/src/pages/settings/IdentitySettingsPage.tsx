@@ -1,6 +1,7 @@
 import { useRef, useState, type RefObject } from "react";
 import { Globe } from "lucide-react";
 import { ApiError, apiUpload } from "@/lib/api";
+import { imageUploadHint } from "@/lib/imagePresets";
 import {
     applyFaviconHref,
     FALLBACK_FAVICON,
@@ -147,7 +148,9 @@ export function IdentitySettingsPage() {
                     <BrandingImageDropzone
                         title="Login logo"
                         emptyLabel="Login"
-                        description="Shown on the dashboard sign-in screen. JPEG, PNG, WebP, or GIF · max 1 MB · always resized on the server."
+                        description={imageUploadHint("loginLogo", 1, {
+                            prefix: "Shown on the dashboard sign-in screen",
+                        })}
                         previewUrl={settings.login_logo?.path ?? null}
                         fallbackUrl={FALLBACK_LOGIN_LOGO}
                         previewClassName="h-16 w-56 bg-brand-primary"
@@ -160,7 +163,9 @@ export function IdentitySettingsPage() {
                     <BrandingImageDropzone
                         title="Favicon"
                         emptyLabel="Favicon"
-                        description="Browser tab icon for the dashboard and storefront. JPEG, PNG, WebP, or GIF · max 1 MB · always resized on the server."
+                        description={imageUploadHint("favicon", 1, {
+                            prefix: "Browser tab icon for the dashboard and storefront",
+                        })}
                         previewUrl={settings.favicon?.path ?? null}
                         fallbackUrl={FALLBACK_FAVICON}
                         previewClassName="size-16 bg-muted/40"

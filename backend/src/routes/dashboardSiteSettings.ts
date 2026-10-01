@@ -8,6 +8,7 @@ import {
   PRODUCT_IMAGES_RELATIVE,
   sanitizeOriginalName,
 } from "../lib/categoryImage.js";
+import type { ImagePresetKey } from "../lib/imageOptimize.js";
 import { PRODUCT_IMAGES_DIR } from "../lib/productImage.js";
 import { prisma } from "../lib/prisma.js";
 import { toPublicUser, userWithAvatarInclude } from "../lib/user.js";
@@ -158,6 +159,7 @@ async function handleSiteImageUpload(input: {
   successMessage: string;
   field: SiteMediaField;
   relation: SiteMediaRelation;
+  preset: ImagePresetKey;
 }) {
   const file = input.req.file;
   if (!file) {
@@ -170,6 +172,7 @@ async function handleSiteImageUpload(input: {
   const finalized = await finalizeCategoryImageUpload(
     file.path,
     file.mimetype,
+    input.preset,
   );
   if (!finalized.ok) {
     return input.res.status(400).json({
@@ -621,6 +624,7 @@ dashboardSiteSettingsRouter.post(
       successMessage: "Open Graph image updated",
       field: "og_image_id",
       relation: "og_image",
+      preset: "ogImage",
     });
   },
 );
@@ -639,6 +643,7 @@ dashboardSiteSettingsRouter.post(
       successMessage: "Favicon updated",
       field: "favicon_id",
       relation: "favicon",
+      preset: "favicon",
     });
   },
 );
@@ -657,6 +662,7 @@ dashboardSiteSettingsRouter.post(
       successMessage: "Login logo updated",
       field: "login_logo_id",
       relation: "login_logo",
+      preset: "loginLogo",
     });
   },
 );

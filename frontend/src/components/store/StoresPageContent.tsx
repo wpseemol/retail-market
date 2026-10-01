@@ -47,7 +47,9 @@ function StoreCard({ store }: { store: StorefrontStore }) {
             <img
               src={store.logo.path}
               alt={store.logo.alt_text ?? store.shop_name}
-              className="size-full object-cover"
+              loading="lazy"
+              decoding="async"
+              className="size-full object-contain p-6"
             />
           ) : (
             <div className="flex size-full flex-col items-center justify-center gap-2 text-text-secondary">
