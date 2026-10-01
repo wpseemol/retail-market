@@ -5,6 +5,17 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-01
 
+### SEO overhaul + brand / store showcase pages
+- New `src/lib/seo.ts` (`buildMetadata`, canonical URLs, title template, JSON-LD builders) and `src/components/seo/` (`JsonLd`). `src/app/layout.tsx` emits Organization + WebSite (with SearchAction) JSON-LD and verification meta from the dashboard SEO settings; `src/lib/siteSettings.ts` reads the nested `seo` block.
+- `src/app/sitemap.ts` (static pages + stores, brands, products, categories from the API), `src/app/robots.ts` (honours site-wide noindex), new `src/app/manifest.ts`.
+- New `src/app/api/revalidate/route.ts`: `POST` with header `x-revalidate-secret` (must equal `REVALIDATE_SECRET`) purges the given cache tags, so dashboard edits show up immediately. Add `REVALIDATE_SECRET` to `.env.local` (same value as the API).
+- New `src/components/showcase/` shared by store and brand pages: `ShowcaseTheme` (per-page accent colour → `sc-*` tokens in `globals.css`, readable text colour picked automatically), `AnnouncementBar`, `ShowcaseHero` (banner / split / minimal), `ProductSections` (featured + sortable paginated grid), `InfoSections` (about, contact & social, policies), `ShowcaseReviews`, `ShowcaseSections` (vendor-chosen order), `ShowcaseBreadcrumb`, `DirectoryPage`.
+- `src/app/stores/[slug]/page.tsx` rebuilt on the showcase components with per-store metadata (OG image falls back share image → logo → banner; `?sort` pages are noindex), Store + Breadcrumb + ItemList JSON-LD and a "Brands from this store" strip. Removed `src/components/store/StorePageContent.tsx`.
+- `src/app/stores/page.tsx` + `StoresPageContent.tsx`: directory layout with pagination; search results are noindex.
+- New `src/app/brands/page.tsx` (A–Z directory) and `src/app/brands/[slug]/page.tsx` (brand showcase, "Sold by" store link, Brand JSON-LD). New `src/lib/brands.ts`, `src/lib/showcase.ts`; `src/lib/stores.ts` types extended.
+- `src/app/shop/page.tsx` + `ShopPageContent.tsx`: `?brand=` filter for "Shop all" links. `src/config/site.ts`: SEO defaults.
+- `src/i18n/dictionaries/en.ts` + `bn.ts`: `showcase` strings (EN / BN).
+
 ### Edit / delete your own review
 - `src/components/reviews/WriteReviewDialog.tsx`: if the buyer already reviewed the product, the dialog shows their review with its status and **Edit review** / **Delete review** buttons instead of a dead-end message. Edit reuses the form (name, stars, comment, existing photos can be removed, new ones added, max 4). Delete asks in a confirmation modal first.
 - Guests still prove ownership with their checkout email or phone. Signed-in customers skip that step: opening the dialog checks their account automatically.

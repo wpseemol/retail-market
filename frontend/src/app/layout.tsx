@@ -22,6 +22,8 @@ import { getCategories } from "@/lib/categories";
 import { LocaleProvider } from "@/components/providers/LocaleProvider";
 import { getLocale } from "@/i18n/server";
 import { LOCALE_TAGS } from "@/i18n/config";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { getSeoDefaults, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 
 const poppins = Poppins({
     variable: "--font-poppins",
@@ -57,13 +59,22 @@ export async function generateMetadata(): Promise<Metadata> {
         : [...siteConfig.keywords];
     const twitterHandle =
         settings.twitter_handle || siteConfig.social.twitter;
+    const { seo } = settings;
+    const homeTitle = seo.pages.home.title || title;
+    const homeDescription = seo.pages.home.description || description;
 
     return {
         title: {
-            default: title,
-            template: `%s | ${name}`,
+            default: homeTitle,
+            template: seo.title_template || `%s | ${name}`,
         },
-        description,
+        description: homeDescription,
+        verification: {
+            ...(seo.google_site_verification ? { google: seo.google_site_verification } : {}),
+            ...(seo.bing_site_verification
+                ? { other: { "msvalidate.01": seo.bing_site_verification } }
+                : {}),
+        },
         keywords,
         authors: [{ name }],
         creator: name,
@@ -101,17 +112,19 @@ export async function generateMetadata(): Promise<Metadata> {
             icon: settings.favicon?.path || siteConfig.logo.dark,
             apple: settings.favicon?.path || siteConfig.logo.dark,
         },
-        robots: {
-            index: true,
-            follow: true,
-            googleBot: {
-                index: true,
-                follow: true,
-                "max-image-preview": "large",
-                "max-snippet": -1,
-                "max-video-preview": -1,
-            },
-        },
+        robots: seo.noindex_site
+            ? { index: false, follow: false, googleBot: { index: false, follow: false } }
+            : {
+                  index: true,
+                  follow: true,
+                  googleBot: {
+                      index: true,
+                      follow: true,
+                      "max-image-preview": "large",
+                      "max-snippet": -1,
+                      "max-video-preview": -1,
+                  },
+              },
     };
 }
 
@@ -135,6 +148,7 @@ export default async function RootLayout({
     const settings = await getSiteSettings();
     const categories = await getCategories();
     const locale = await getLocale();
+    const seoDefaults = await getSeoDefaults();
     const chromePayload = {
         siteName: settings.site_name,
         topbarEmail: settings.chrome?.topbar_email ?? null,
@@ -161,6 +175,13 @@ export default async function RootLayout({
             <body
                 className="min-h-full flex flex-col font-sans"
             >
+                <JsonLd
+                    id="site-jsonld"
+                    data={[
+                        organizationJsonLd(seoDefaults),
+                        websiteJsonLd(seoDefaults, LOCALE_TAGS[locale].intl),
+                    ]}
+                />
                 <AnalyticsPixels settings={settings} />
                 <VisitBeacon />
                 <DisableMotion />

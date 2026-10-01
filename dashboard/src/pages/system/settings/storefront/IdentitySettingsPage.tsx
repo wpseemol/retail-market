@@ -24,8 +24,8 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { GeneralSettingsForm } from "../GeneralSettingsForm";
+import { SeoMovedNotice } from "./SeoMovedNotice";
 import { useSiteSettings } from "../settingsContext";
 
 type UploadKind = "favicon" | "login-logo";
@@ -79,71 +79,24 @@ export function IdentitySettingsPage() {
         <GeneralSettingsForm>
             <SettingsSection
                 title="Website identity"
-                description="Site name, page title, meta description, keywords, login logo, and favicon."
+                description="Site name, login logo, and favicon."
                 icon={Globe}
             >
-                <div className="grid gap-4 sm:grid-cols-2">
-                    <FormField
-                        control={form.control}
-                        name="site_name"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Site name</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Niyenin" {...field} />
-                                </FormControl>
-                                <FormDescription>Short brand name.</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="site_title"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Page title</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Niyenin | Retail Market" {...field} />
-                                </FormControl>
-                                <FormDescription>
-                                    Shown in the browser tab and search results.
-                                </FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
                 <FormField
                     control={form.control}
-                    name="site_description"
+                    name="site_name"
                     render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Meta description</FormLabel>
+                        <FormItem className="max-w-md">
+                            <FormLabel>Site name</FormLabel>
                             <FormControl>
-                                <Textarea rows={3} {...field} />
+                                <Input placeholder="Niyenin" {...field} />
                             </FormControl>
-                            <FormDescription>
-                                10–500 characters. Shown in search engine snippets.
-                            </FormDescription>
+                            <FormDescription>Short brand name.</FormDescription>
                             <FormMessage />
                         </FormItem>
                     )}
                 />
-                <FormField
-                    control={form.control}
-                    name="keywords"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Keywords</FormLabel>
-                            <FormControl>
-                                <Input placeholder="retail, electronics, gadgets, …" {...field} />
-                            </FormControl>
-                            <FormDescription>Optional comma-separated keywords.</FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                <SeoMovedNotice what="Page title, meta description and keywords" />
                 <div className="grid gap-4 lg:grid-cols-2">
                     <BrandingImageDropzone
                         title="Login logo"

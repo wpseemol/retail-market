@@ -222,11 +222,60 @@ export function toDashboardReview(review: DashboardReviewRow, media: Map<string,
   };
 }
 
+/**
+ * Approved reviews across many products (store / brand pages), newest or by rating,
+ * each tagged with the product it belongs to.
+ */
+export async function listScopedReviews(
+  productScope: Prisma.ProductWhereInput,
+  options: { page: number; limit: number; sort: "newest" | "highest" | "lowest" },
+) {
+  const scope: Prisma.ProductReviewWhereInput = { product: productScope };
+  const where: Prisma.ProductReviewWhereInput = { ...scope, status: "approved", deleted_at: null };
+  const orderBy: Prisma.ProductReviewOrderByWithRelationInput[] =
+    options.sort === "highest"
+      ? [{ rating: "desc" }, { created_at: "desc" }]
+      : options.sort === "lowest"
+        ? [{ rating: "asc" }, { created_at: "desc" }]
+        : [{ created_at: "desc" }];
+
+  const [summary, rows] = await Promise.all([
+    reviewSummaryFor(scope),
+    prisma.productReview.findMany({
+      where,
+      orderBy,
+      skip: (options.page - 1) * options.limit,
+      take: options.limit,
+      include: { product: { select: { name: true, slug: true } } },
+    }),
+  ]);
+  const media = await loadReviewMedia(rows);
+
+  return {
+    summary,
+    reviews: rows.map((row) => ({
+      ...toPublicReview(row, media),
+      product: { name: row.product.name, slug: row.product.slug },
+    })),
+    pagination: {
+      page: options.page,
+      limit: options.limit,
+      total: summary.count,
+      total_pages: Math.max(1, Math.ceil(summary.count / options.limit)),
+    },
+  };
+}
+
 /** Average + 1–5 star counts over approved reviews. */
 export async function reviewSummary(productId: bigint) {
+  return reviewSummaryFor({ product_id: productId });
+}
+
+/** Same summary over any set of products (store or brand pages). */
+export async function reviewSummaryFor(scope: Prisma.ProductReviewWhereInput) {
   const groups = await prisma.productReview.groupBy({
     by: ["rating"],
-    where: { product_id: productId, status: "approved", deleted_at: null },
+    where: { ...scope, status: "approved", deleted_at: null },
     _count: { _all: true },
   });
 

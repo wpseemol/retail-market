@@ -24,7 +24,7 @@ fs.mkdirSync(SHOP_IMAGES_DIR, { recursive: true });
 export async function finalizeShopImageUpload(
   tempPath: string,
   declaredMime: string | null | undefined,
-  preset: Extract<ImagePresetKey, "shopLogo" | "shopBanner">,
+  preset: Extract<ImagePresetKey, "shopLogo" | "shopBanner" | "brandBanner">,
 ): Promise<FinalizedAvatarResult> {
   const validated = finalizeAvatarUpload(tempPath, declaredMime);
   if (!validated.ok) return validated;

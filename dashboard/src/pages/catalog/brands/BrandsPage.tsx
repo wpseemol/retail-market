@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { Layers, Package, Pencil, Plus, Search, Tag } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { Layers, Package, Palette, Pencil, Plus, Search, Store, Tag } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
 import type { Brand } from "@/lib/brands";
+import { BRAND_OWNER_ROLES } from "@/lib/rbac";
+import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,12 @@ export function BrandsPage() {
   const { token, user } = useAuthStore();
   const canManage =
     !!user && (MANAGE_ROLES as readonly string[]).includes(user.role);
+  /** super_admin / admin can design any brand page; vendors only brands linked to their store. */
+  const isBrandAdmin = !!user && BRAND_OWNER_ROLES.includes(user.role);
+  const isVendor = user?.role === "vendor";
+  const [searchParams, setSearchParams] = useSearchParams();
+  const mine = isVendor && searchParams.get("mine") === "1";
+  const canCustomize = isBrandAdmin || mine;
 
   const [brands, setBrands] = useState<Brand[]>([]);
   const [total, setTotal] = useState(0);
@@ -41,6 +49,7 @@ export function BrandsPage() {
       setError(null);
       try {
         const params = new URLSearchParams({ limit: "100" });
+        if (mine) params.set("mine", "1");
         if (q.trim()) params.set("q", q.trim());
         if (statusFilter === "active") params.set("active", "true");
         if (statusFilter === "inactive") params.set("active", "false");
@@ -66,7 +75,7 @@ export function BrandsPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, q, statusFilter]);
+  }, [token, q, statusFilter, mine]);
 
   const activeCount = brands.filter((b) => b.is_active).length;
   const productLinks = brands.reduce(
@@ -78,10 +87,38 @@ export function BrandsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Brands</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {mine ? "My brands" : "Brands"}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Shared product brands. Create them first, then assign on products.
+            {mine
+              ? "Brands an admin linked to your store. You can customize their public pages."
+              : "Shared product brands. Create them first, then assign on products."}
           </p>
+          {isVendor ? (
+            <div className="mt-3 inline-flex rounded-lg border border-border bg-muted/40 p-0.5">
+              {(
+                [
+                  [false, "All brands"],
+                  [true, "My brands"],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => setSearchParams(value ? { mine: "1" } : {})}
+                  className={cn(
+                    "rounded-md px-3 py-1.5 text-xs font-medium",
+                    mine === value
+                      ? "bg-background shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
         {canManage ? (
           <Button asChild>
@@ -199,7 +236,11 @@ export function BrandsPage() {
             </p>
           ) : brands.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
-              <p className="text-sm text-muted-foreground">No brands yet.</p>
+              <p className="text-sm text-muted-foreground">
+                {mine
+                  ? "No brands are linked to your store yet. Ask an admin to link the brands you own."
+                  : "No brands yet."}
+              </p>
               {canManage ? (
                 <Button asChild className="mt-4" size="sm">
                   <Link to="/brands/new">
@@ -271,7 +312,29 @@ export function BrandsPage() {
                         {brand.sort_order}
                       </span>
                     </span>
-                    <div className="ml-auto">
+                    {brand.vendor && !mine ? (
+                      <>
+                        <span className="text-border">·</span>
+                        <span className="inline-flex items-center gap-1 truncate">
+                          <Store className="size-3" />
+                          {brand.vendor.shop_name}
+                        </span>
+                      </>
+                    ) : null}
+                    <div className="ml-auto flex items-center gap-1">
+                      {canCustomize ? (
+                        <Button
+                          asChild
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2"
+                        >
+                          <Link to={`/brands/${brand.id}/showcase`}>
+                            <Palette className="size-3.5" />
+                            Customize page
+                          </Link>
+                        </Button>
+                      ) : null}
                       {canManage ? (
                         <Button
                           asChild

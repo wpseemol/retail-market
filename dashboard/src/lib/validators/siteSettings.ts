@@ -3,19 +3,6 @@ import { findUnsafeInputReason, validateSafeImageFile, withSafeInput } from "./s
 
 export const OG_IMAGE_MAX_BYTES = 1 * 1024 * 1024;
 
-/** Optional string field: safe-input guarded, valid when empty. */
-function optionalSafe(max: number) {
-  return z
-    .string()
-    .trim()
-    .max(max)
-    .superRefine((val, ctx) => {
-      if (!val) return;
-      const reason = findUnsafeInputReason(val);
-      if (reason) ctx.addIssue({ code: "custom", message: reason });
-    });
-}
-
 /** Optional tracker/pixel ID: safe-input + format pattern, valid when empty. */
 function optionalTrackerId(pattern: RegExp, msg: string, max = 80) {
   return z
@@ -37,41 +24,11 @@ function optionalTrackerId(pattern: RegExp, msg: string, max = 80) {
 
 export const siteSettingsFormSchema = z.object({
   // ── Website identity ──────────────────────────────────────────────────────
+  // Titles, meta description, keywords and share cards live on Marketing & SEO
+  // (`/api/dashboard/seo`); this form must not send them.
   site_name: withSafeInput(
     z.string().trim().min(2, "Site name must be at least 2 characters").max(120),
   ),
-  site_title: withSafeInput(
-    z.string().trim().min(2, "Site title must be at least 2 characters").max(160),
-  ),
-  site_description: withSafeInput(
-    z
-      .string()
-      .trim()
-      .min(10, "Description must be at least 10 characters")
-      .max(500),
-  ),
-  keywords: optionalSafe(500),
-
-  // ── Social share (Open Graph & Twitter) ──────────────────────────────────
-  og_title: optionalSafe(160),
-  og_description: optionalSafe(500),
-  twitter_title: optionalSafe(160),
-  twitter_description: optionalSafe(500),
-  twitter_handle: z
-    .string()
-    .trim()
-    .max(80)
-    .superRefine((val, ctx) => {
-      if (!val) return;
-      const reason = findUnsafeInputReason(val);
-      if (reason) {
-        ctx.addIssue({ code: "custom", message: reason });
-        return;
-      }
-      if (!/^@?[A-Za-z0-9_]{1,50}$/.test(val)) {
-        ctx.addIssue({ code: "custom", message: "Invalid Twitter/X handle" });
-      }
-    }),
 
   // ── Analytics ─────────────────────────────────────────────────────────────
   google_analytics_id: optionalTrackerId(

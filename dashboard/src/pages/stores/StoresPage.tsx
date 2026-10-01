@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowUpRight, Pencil, Plus, Search, Store, Users } from "lucide-react";
+import { ArrowUpRight, Palette, Pencil, Plus, Search, Store, Users } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
+import { STORE_MANAGE_ROLES } from "@/lib/rbac";
 import type { Shop } from "@/lib/shops";
 import { shopStatusLabel } from "@/lib/shops";
 import { useAuthStore } from "@/store/auth";
@@ -16,6 +17,9 @@ export function StoresPage() {
     const { token, user } = useAuthStore();
     const isSuper = user?.role === "super_admin";
     const isVendor = user?.role === "vendor";
+    const isAdmin = user?.role === "admin";
+    const canManage = Boolean(user && STORE_MANAGE_ROLES.includes(user.role));
+    const seesAll = isSuper || isAdmin;
 
     const [stores, setStores] = useState<Shop[]>([]);
     const [total, setTotal] = useState(0);
@@ -89,19 +93,23 @@ export function StoresPage() {
                         <p className="mt-2 text-sm leading-relaxed text-white/80">
                             {isSuper
                                 ? "Partner storefronts — name, slug, logo, status, and owner."
-                                : "Your store profile on the Niyenin marketplace."}
+                                : isAdmin
+                                  ? "Partner storefronts. As admin you can customize any store's public page."
+                                  : "Your store profile and public store page on the Niyenin marketplace."}
                         </p>
                     </div>
-                    <Button
-                        asChild
-                        size="sm"
-                        className="bg-white text-brand-deep hover:bg-white/90"
-                    >
-                        <Link to="/stores/new">
-                            <Plus className="size-3.5" />
-                            Create store
-                        </Link>
-                    </Button>
+                    {canManage ? (
+                        <Button
+                            asChild
+                            size="sm"
+                            className="bg-white text-brand-deep hover:bg-white/90"
+                        >
+                            <Link to="/stores/new">
+                                <Plus className="size-3.5" />
+                                Create store
+                            </Link>
+                        </Button>
+                    ) : null}
                 </div>
             </section>
 
@@ -158,12 +166,13 @@ export function StoresPage() {
                                 All stores
                             </h2>
                             <p className="mt-0.5 text-xs text-muted-foreground">
-                                Open a card to edit identity, media, and
-                                storefront layout
+                                {canManage
+                                    ? "Edit the store profile, or customize its public page design"
+                                    : "Customize a store's public page design (admin override)"}
                             </p>
                         </div>
                     </div>
-                    {isSuper ? (
+                    {seesAll ? (
                         <form
                             className="flex w-full gap-2 sm:max-w-sm"
                             onSubmit={(e) => {
@@ -210,24 +219,28 @@ export function StoresPage() {
                                 No stores yet
                             </p>
                             <p className="mt-1 text-xs text-muted-foreground">
-                                Create a store to sell on the marketplace.
+                                {canManage
+                                    ? "Create a store to sell on the marketplace."
+                                    : "Stores appear here once vendors create them."}
                             </p>
-                            <Button asChild size="sm" className="mt-4">
-                                <Link to="/stores/new">
-                                    <Plus className="size-3.5" />
-                                    Create store
-                                </Link>
-                            </Button>
+                            {canManage ? (
+                                <Button asChild size="sm" className="mt-4">
+                                    <Link to="/stores/new">
+                                        <Plus className="size-3.5" />
+                                        Create store
+                                    </Link>
+                                </Button>
+                            ) : null}
                         </div>
                     ) : (
                         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                             {stores.map((store) => (
                                 <li key={store.id}>
-                                    <Link
-                                        to={`/stores/${store.slug}`}
-                                        className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-linear-to-br from-background to-muted/20 transition-all hover:border-brand-primary/30 hover:shadow-md"
-                                    >
-                                        <div className="relative aspect-video bg-linear-to-br from-brand-deep/90 via-[#0a4a10] to-brand-primary">
+                                    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-linear-to-br from-background to-muted/20 transition-all hover:border-brand-primary/30 hover:shadow-md">
+                                        <Link
+                                            to={canManage ? `/stores/${store.slug}` : `/stores/${store.slug}/design`}
+                                            className="relative block aspect-video bg-linear-to-br from-brand-deep/90 via-[#0a4a10] to-brand-primary"
+                                        >
                                             {store.banner?.path ? (
                                                 <img
                                                     src={store.banner.path}
@@ -258,7 +271,7 @@ export function StoresPage() {
                                             >
                                                 {shopStatusLabel(store.status)}
                                             </Badge>
-                                        </div>
+                                        </Link>
                                         <div className="flex flex-1 flex-col gap-3 p-4">
                                             <div className="min-w-0">
                                                 <p className="truncate text-sm font-semibold tracking-tight">
@@ -268,22 +281,31 @@ export function StoresPage() {
                                                     /stores/{store.slug}
                                                 </p>
                                             </div>
-                                            {isSuper && store.user ? (
+                                            {seesAll && store.user ? (
                                                 <p className="truncate text-[11px] text-muted-foreground">
                                                     Owner ·{" "}
                                                     {store.user.first_name}{" "}
                                                     {store.user.last_name}
                                                 </p>
                                             ) : null}
-                                            <div className="mt-auto flex items-center justify-between gap-2 pt-1">
-                                                <span className="inline-flex items-center gap-1 text-xs font-medium text-brand-primary">
-                                                    <Pencil className="size-3" />
-                                                    Edit store
-                                                </span>
-                                                <ArrowUpRight className="size-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                                            <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
+                                                {canManage ? (
+                                                    <Button asChild size="sm" variant="outline">
+                                                        <Link to={`/stores/${store.slug}`}>
+                                                            <Pencil className="size-3" />
+                                                            Edit store
+                                                        </Link>
+                                                    </Button>
+                                                ) : null}
+                                                <Button asChild size="sm" variant={canManage ? "ghost" : "outline"}>
+                                                    <Link to={`/stores/${store.slug}/design`}>
+                                                        <Palette className="size-3" />
+                                                        Customize page
+                                                    </Link>
+                                                </Button>
                                             </div>
                                         </div>
-                                    </Link>
+                                    </div>
                                 </li>
                             ))}
                         </ul>

@@ -18,6 +18,7 @@ export const IMAGE_PRESETS = {
   brand: { width: 600, height: 300, ratio: "2:1" },
   shopLogo: { width: 512, height: 512, ratio: "1:1" },
   shopBanner: { width: 1920, height: 640, ratio: "3:1" },
+  brandBanner: { width: 1920, height: 640, ratio: "3:1" },
   avatar: { width: 400, height: 400, ratio: "1:1" },
   loginLogo: { width: 480, height: 120, ratio: "4:1" },
   favicon: { width: 512, height: 512, ratio: "1:1", format: "PNG" },

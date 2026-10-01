@@ -5,6 +5,17 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-01
 
+### SEO settings page + store / brand page designer
+- New `src/pages/marketing/SeoSettingsPage.tsx` at `/seo` (super_admin + admin): title template, per-page defaults (home, shop, stores, brands), social sharing image (removal confirmed), Google / Bing verification, site-wide noindex (warning confirm), live Google + share previews (`src/components/seo/SeoPreview.tsx`). New `src/lib/seo.ts`, `src/lib/validators/seo.ts`.
+- SEO fields moved off **Settings → Identity / Social sharing**: those tabs now show `SeoMovedNotice` linking to `/seo`; `validators/siteSettings.ts`, `settingsContext.ts`, `GeneralSettingsForm.tsx` no longer send them.
+- New `src/components/showcase/ShowcaseEditor.tsx` (tabs: Branding, Layout, About & contact, Policies, Announcement, SEO; jumps to the tab with the first error; accent contrast warning; section reorder/toggle; noindex warning confirm), `ShowcasePreview.tsx`, `ShowcaseImageField.tsx` (upload / replace / remove with confirm; copy says images are always resized on the server). New `src/lib/showcase.ts`, `src/lib/validators/showcase.ts` (shadcn Form + Zod + safe-input).
+- New `src/pages/stores/StoreDesignPage.tsx` at `/stores/:slug/design` (vendor for own store, super_admin/admin for any; "Admin override" badge) and `src/pages/catalog/brands/BrandShowcasePage.tsx` at `/brands/:id/showcase` (super_admin/admin, or the vendor of the linked store).
+- New `src/components/brands/BrandLinkedStoreCard.tsx` on `BrandEditPage`: super_admin/admin link a brand to one store; moving or unlinking asks through a warning `useConfirm()`. `BrandEditPage` also shows "Customize brand page" when `permissions.showcase`.
+- `BrandsPage.tsx`: vendor "All brands / My brands" toggle (`/brands?mine=1`), "Customize page" action, linked store shown on cards. `src/lib/brands.ts`: `vendor`, `banner`, `tagline`, `BrandPermissions`; `validators/brand.ts`: `brandOwnerSchema`.
+- `StoresPage.tsx`: "Customize page" on every card; create / edit only for super_admin + vendor (admins go to the design page). `StoreEditPage.tsx`: "Customize store page" button.
+- `src/lib/rbac.ts`: `STORE_MANAGE_ROLES`, `STORE_DELETE_ROLES`, `SEO_ROLES`, `BRAND_SHOWCASE_ROLES`, `BRAND_OWNER_ROLES`; `STORE_ROLES` now includes admin. `src/App.tsx` routes split accordingly. `src/lib/imagePresets.ts`: `brandBanner`.
+- `app-sidebar.tsx`: "Marketing & SEO" group (Search & SEO; vendor-only "My store page" and "My brands").
+
 ### Product review moderation (Support & Quality)
 - New `src/pages/support/ReviewsModerationPage.tsx` (+ `index.ts`) at `/support/reviews` (`/reviews` redirects): tabs All / Pending / Approved / Hidden with counts, flagged-only toggle, search, rating filter, desktop table and mobile cards (product thumb + title, stars, customer name/email/phone, Verified Purchase pill, status badge).
 - Row actions: view, open on storefront, approve, hide/show, reject (admins), flag/clear flag, vendor reply, delete. Delete asks through `useConfirm()` and is disabled with a tooltip for moderators; vendors don't see it.

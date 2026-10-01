@@ -9,3 +9,4 @@ export { CategoryEditPage } from "./categories/CategoryEditPage";
 export { BrandsPage } from "./brands/BrandsPage";
 export { BrandCreatePage } from "./brands/BrandCreatePage";
 export { BrandEditPage } from "./brands/BrandEditPage";
+export { BrandShowcasePage } from "./brands/BrandShowcasePage";

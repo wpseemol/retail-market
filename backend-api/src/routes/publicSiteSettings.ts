@@ -7,6 +7,7 @@ import {
   toPublicNavItem,
 } from "../lib/siteChrome.js";
 import { toPublicMedia } from "../lib/user.js";
+import { normalizeSeoPages } from "../validators/seo.js";
 
 export const publicSiteSettingsRouter = Router();
 
@@ -99,6 +100,13 @@ export function toPublicSiteSettings(
     twitter_title: row.twitter_title,
     twitter_description: row.twitter_description,
     twitter_handle: row.twitter_handle,
+    seo: {
+      title_template: row.seo_title_template,
+      noindex_site: row.seo_noindex_site,
+      google_site_verification: row.google_site_verification,
+      bing_site_verification: row.bing_site_verification,
+      pages: normalizeSeoPages(row.seo_pages),
+    },
     shop: {
       default_view: row.shop_default_view,
       products_per_page: row.shop_products_per_page,

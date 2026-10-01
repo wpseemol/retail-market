@@ -34,6 +34,8 @@ type ShopPageContentProps = {
   showLessLabel?: string;
   initialSearch?: string;
   initialCategory?: string | null;
+  /** Brand slug from `?brand=`; preselects that brand filter. */
+  initialBrand?: string | null;
 };
 
 function matchesSearch(product: ShopProduct, query: string) {
@@ -115,6 +117,7 @@ export default function ShopPageContent({
   showLessLabel = "Show less",
   initialSearch = "",
   initialCategory = null,
+  initialBrand = null,
 }: ShopPageContentProps) {
   const rangeMin = Math.floor(priceRange.min || 0);
   const rangeMax = Math.max(
@@ -134,7 +137,13 @@ export default function ShopPageContent({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
     initialCategory,
   );
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>(() => {
+    if (!initialBrand) return [];
+    const facet = brands.find(
+      (b) => b.id.toLowerCase() === initialBrand || b.label.toLowerCase() === initialBrand,
+    );
+    return [facet?.id ?? initialBrand];
+  });
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ShopViewMode>(defaultViewMode);
   const [sortBy, setSortBy] = useState<ShopSortOption>("default");

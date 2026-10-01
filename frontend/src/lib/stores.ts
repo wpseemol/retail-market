@@ -1,11 +1,7 @@
 import { API_URL } from "@/lib/api";
+import type { ShowcaseMedia, ShowcasePayload, StorefrontSort } from "@/lib/showcase";
 
-export type StoreMedia = {
-  id: string;
-  path: string;
-  file_name?: string;
-  alt_text?: string | null;
-} | null;
+export type StoreMedia = ShowcaseMedia;
 
 export type StorefrontTheme = "classic" | "marketplace" | "showcase";
 
@@ -14,6 +10,8 @@ export type StorefrontStore = {
   shop_name: string;
   slug: string;
   description: string | null;
+  tagline?: string | null;
+  accent_color?: string | null;
   logo: StoreMedia;
   banner?: StoreMedia;
   storefront_theme?: StorefrontTheme;
@@ -22,7 +20,15 @@ export type StorefrontStore = {
   show_banned_brands?: boolean;
   product_sort?: string;
   products_count?: number;
+  created_at?: string;
+  updated_at?: string;
 };
+
+/** `GET /api/shops/:slug` store: profile + page design + linked brands. */
+export type StoreDetail = StorefrontStore &
+  ShowcasePayload & {
+    brands: { id: string; name: string; slug: string; image: StoreMedia }[];
+  };
 
 export type StorefrontProduct = {
   id: string;
@@ -45,9 +51,10 @@ export type StorefrontProduct = {
 };
 
 export type StorePagePayload = {
-  store: StorefrontStore;
+  store: StoreDetail;
   products: StorefrontProduct[];
   featured_products?: StorefrontProduct[];
+  sort?: StorefrontSort;
   pagination: {
     page: number;
     limit: number;
@@ -99,17 +106,18 @@ export async function fetchStores(options?: {
 
 export async function fetchStoreBySlug(
   slug: string,
-  options?: { page?: number; limit?: number },
+  options?: { page?: number; limit?: number; sort?: StorefrontSort },
 ): Promise<StorePagePayload | null> {
   const params = new URLSearchParams();
   if (options?.page) params.set("page", String(options.page));
   if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.sort) params.set("sort", options.sort);
   const qs = params.toString();
   const url = `${API_URL}/api/shops/${encodeURIComponent(slug)}${qs ? `?${qs}` : ""}`;
 
   try {
     const res = await fetch(url, {
-      next: { revalidate: 60, tags: [`store:${slug}`] },
+      next: { revalidate: 60, tags: ["stores", `store:${slug}`] },
     });
     if (res.status === 404) return null;
     if (!res.ok) return null;

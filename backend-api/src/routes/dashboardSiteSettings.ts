@@ -12,6 +12,7 @@ import type { ImagePresetKey } from "../lib/imageOptimize.js";
 import { PRODUCT_IMAGES_DIR } from "../lib/productImage.js";
 import { prisma } from "../lib/prisma.js";
 import { toPublicUser, userWithAvatarInclude } from "../lib/user.js";
+import { revalidateFrontend } from "../lib/revalidate.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
 import { categoryImageUpload } from "../middleware/upload.js";
 import { dashboardSocialLoginRouter } from "./dashboardSocialLogin.js";
@@ -354,39 +355,18 @@ dashboardSiteSettingsRouter.patch("/", async (req, res) => {
 
   const changes: ChangeMap = {};
   trackChange(changes, "site_name", before.site_name, data.site_name);
-  trackChange(changes, "site_title", before.site_title, data.site_title);
-  trackChange(
-    changes,
+  if (data.site_title !== undefined) trackChange(changes, "site_title", before.site_title, data.site_title);
+  for (const key of [
     "site_description",
-    before.site_description,
-    data.site_description,
-  );
-  trackChange(changes, "keywords", before.keywords, data.keywords ?? null);
-  trackChange(changes, "og_title", before.og_title, data.og_title ?? null);
-  trackChange(
-    changes,
+    "keywords",
+    "og_title",
     "og_description",
-    before.og_description,
-    data.og_description ?? null,
-  );
-  trackChange(
-    changes,
     "twitter_title",
-    before.twitter_title,
-    data.twitter_title ?? null,
-  );
-  trackChange(
-    changes,
     "twitter_description",
-    before.twitter_description,
-    data.twitter_description ?? null,
-  );
-  trackChange(
-    changes,
     "twitter_handle",
-    before.twitter_handle,
-    data.twitter_handle ?? null,
-  );
+  ] as const) {
+    if (data[key] !== undefined) trackChange(changes, key, before[key], data[key]);
+  }
   trackChange(
     changes,
     "google_analytics_id",
@@ -550,12 +530,12 @@ dashboardSiteSettingsRouter.patch("/", async (req, res) => {
       site_name: data.site_name,
       site_title: data.site_title,
       site_description: data.site_description,
-      keywords: data.keywords ?? null,
-      og_title: data.og_title ?? null,
-      og_description: data.og_description ?? null,
-      twitter_title: data.twitter_title ?? null,
-      twitter_description: data.twitter_description ?? null,
-      twitter_handle: data.twitter_handle ?? null,
+      keywords: data.keywords,
+      og_title: data.og_title,
+      og_description: data.og_description,
+      twitter_title: data.twitter_title,
+      twitter_description: data.twitter_description,
+      twitter_handle: data.twitter_handle,
       google_analytics_id: data.google_analytics_id ?? null,
       google_analytics_enabled: data.google_analytics_enabled ?? false,
       google_tag_manager_id: data.google_tag_manager_id ?? null,
@@ -604,6 +584,7 @@ dashboardSiteSettingsRouter.patch("/", async (req, res) => {
     });
   }
 
+  revalidateFrontend(["site-settings"]);
   return res.json({
     message: "Site settings saved",
     settings: await toDashboardSettings(row),

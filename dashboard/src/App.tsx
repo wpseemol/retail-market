@@ -8,6 +8,7 @@ import { OrderDetailPage, OrdersPage } from "./pages/orders";
 import {
   BrandCreatePage,
   BrandEditPage,
+  BrandShowcasePage,
   BrandsPage,
   CategoriesPage,
   CategoryCreatePage,
@@ -16,9 +17,10 @@ import {
   ProductEditPage,
   ProductsPage,
 } from "./pages/catalog";
-import { StoreCreatePage, StoreEditPage, StoresPage } from "./pages/stores";
+import { StoreCreatePage, StoreDesignPage, StoreEditPage, StoresPage } from "./pages/stores";
 import { UserEditPage, UsersPage } from "./pages/access";
 import { ReviewsModerationPage } from "./pages/support";
+import { SeoSettingsPage } from "./pages/marketing";
 import {
   AnalyticsSettingsPage,
   EmailProviderSettingsPage,
@@ -39,12 +41,15 @@ import {
 import { useAuthStore } from "./store/auth";
 import type { StaffRole } from "./lib/api";
 import {
+  BRAND_SHOWCASE_ROLES,
   NOTIFICATION_ROLES,
   ORDER_ROLES,
   OVERVIEW_ROLES,
   PRODUCT_ROLES,
   REVIEW_ROLES,
+  SEO_ROLES,
   STAFF_MANAGEMENT_ROLES,
+  STORE_MANAGE_ROLES,
   STORE_ROLES,
   SYSTEM_SETTINGS_ROLES,
   TAXONOMY_MANAGE_ROLES,
@@ -98,6 +103,10 @@ export default function App() {
             <Route path="reviews" element={<Navigate to="/support/reviews" replace />} />
           </Route>
 
+          <Route element={<ProtectedRoute roles={SEO_ROLES} />}>
+            <Route path="seo" element={<SeoSettingsPage />} />
+          </Route>
+
           <Route element={<ProtectedRoute roles={STAFF_MANAGEMENT_ROLES} />}>
             <Route path="users" element={<UsersPage />} />
             <Route path="users/:id" element={<UserEditPage />} />
@@ -126,11 +135,19 @@ export default function App() {
 
           <Route element={<ProtectedRoute roles={STORE_ROLES} />}>
             <Route path="stores" element={<StoresPage />} />
+            <Route path="stores/:slug/design" element={<StoreDesignPage />} />
+            <Route path="shops" element={<StoresPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={STORE_MANAGE_ROLES} />}>
             <Route path="stores/new" element={<StoreCreatePage />} />
             <Route path="stores/:slug" element={<StoreEditPage />} />
-            <Route path="shops" element={<StoresPage />} />
             <Route path="shops/new" element={<StoreCreatePage />} />
             <Route path="shops/:slug" element={<StoreEditPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={BRAND_SHOWCASE_ROLES} />}>
+            <Route path="brands/:id/showcase" element={<BrandShowcasePage />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={PRODUCT_ROLES} />}>

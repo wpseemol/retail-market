@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { useSiteSettings } from "./settingsContext";
 
-/** Identity, Shop, Social, Analytics and Pixels share this form and its single PATCH. */
+/** Identity, Shop, Analytics and Pixels share this form and its single PATCH. */
 export function GeneralSettingsForm({ children }: { children: ReactNode }) {
     const { token, form, setSettings, error, success, showError, showSuccess } =
         useSiteSettings();
@@ -43,7 +43,7 @@ export function GeneralSettingsForm({ children }: { children: ReactNode }) {
                             success={success}
                             idle={
                                 isDirty
-                                    ? "Unsaved changes — Save also keeps edits made on the Identity, Shop, Social, Analytics and Pixels tabs."
+                                    ? "Unsaved changes — Save also keeps edits made on the Identity, Shop, Analytics and Pixels tabs."
                                     : "Saving updates the live storefront."
                             }
                         />

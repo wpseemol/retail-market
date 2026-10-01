@@ -6,6 +6,8 @@ export const brandListQuerySchema = z.object({
   active: z.enum(["true", "false", "all"]).optional().default("all"),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(50),
+  /** Vendor only: brands linked to the caller's store (any active state). */
+  mine: z.enum(["1"]).optional(),
 });
 
 export const createBrandSchema = z.object({

@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Trash2 } from "lucide-react";
+import { Palette, Trash2 } from "lucide-react";
 import { useConfirm } from "@/components/providers/ConfirmProvider";
+import { BrandLinkedStoreCard } from "@/components/brands/BrandLinkedStoreCard";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
-import { slugifyClient, type Brand } from "@/lib/brands";
+import { slugifyClient, type Brand, type BrandPermissions } from "@/lib/brands";
 import {
   brandFormSchema,
   toBrandApiBody,
@@ -48,6 +49,7 @@ export function BrandEditPage() {
   const { token } = useAuthStore();
 
   const [brand, setBrand] = useState<Brand | null>(null);
+  const [permissions, setPermissions] = useState<BrandPermissions | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -75,12 +77,13 @@ export function BrandEditPage() {
       setLoading(true);
       setLoadError(null);
       try {
-        const data = await apiFetch<{ brand: Brand }>(
+        const data = await apiFetch<{ brand: Brand; permissions?: BrandPermissions }>(
           `/api/dashboard/brands/${id}`,
           { token },
         );
         if (cancelled) return;
         setBrand(data.brand);
+        setPermissions(data.permissions ?? null);
         form.reset({
           name: data.brand.name,
           slug: data.brand.slug,
@@ -216,16 +219,26 @@ export function BrandEditPage() {
         title={brand.name}
         subtitle={`Update logo and brand details · /${brand.slug}`}
         badge={
-          <Badge
-            variant="outline"
-            className={
-              brand.is_active
-                ? "border-brand-primary/30 bg-brand-tint/60 capitalize text-brand-deep"
-                : "capitalize"
-            }
-          >
-            {brand.is_active ? "active" : "inactive"}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge
+              variant="outline"
+              className={
+                brand.is_active
+                  ? "border-brand-primary/30 bg-brand-tint/60 capitalize text-brand-deep"
+                  : "capitalize"
+              }
+            >
+              {brand.is_active ? "active" : "inactive"}
+            </Badge>
+            {permissions?.showcase ? (
+              <Button asChild type="button" size="sm" variant="outline" className="h-7 gap-1.5">
+                <Link to={`/brands/${brand.id}/showcase`}>
+                  <Palette className="size-3.5" />
+                  Customize brand page
+                </Link>
+              </Button>
+            ) : null}
+          </div>
         }
       />
 
@@ -353,6 +366,15 @@ export function BrandEditPage() {
                 />
               </div>
             </BrandFormSection>
+
+            {permissions?.assign_owner && token ? (
+              <BrandLinkedStoreCard
+                brand={brand}
+                token={token}
+                step="03"
+                onChange={(next) => setBrand((prev) => (prev ? { ...prev, ...next } : next))}
+              />
+            ) : null}
 
             <BrandStickyActions
               message={

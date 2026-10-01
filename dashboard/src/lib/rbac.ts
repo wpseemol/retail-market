@@ -30,8 +30,24 @@ export const PRODUCT_ROLES: readonly StaffRole[] = ALL_STAFF;
 export const TAXONOMY_VIEW_ROLES: readonly StaffRole[] = ALL_STAFF;
 export const TAXONOMY_MANAGE_ROLES: readonly StaffRole[] = ["super_admin", "admin", "moderator"];
 
-/** Vendor store profiles — vendors manage their own. */
-export const STORE_ROLES: readonly StaffRole[] = ["super_admin", "vendor"];
+/**
+ * Vendor store profiles — vendors manage their own; admins can open any store to
+ * override its page design (logo, banner, showcase) but not create or delete stores.
+ */
+export const STORE_ROLES: readonly StaffRole[] = ["super_admin", "admin", "vendor"];
+/** Create a store / edit its profile and storefront settings. */
+export const STORE_MANAGE_ROLES: readonly StaffRole[] = ["super_admin", "vendor"];
+export const STORE_DELETE_ROLES: readonly StaffRole[] = ["super_admin"];
+
+/** Global storefront SEO (`/api/dashboard/seo`). */
+export const SEO_ROLES: readonly StaffRole[] = ["super_admin", "admin"];
+
+/**
+ * Brand showcase pages: admins edit any brand; vendors only brands linked to their
+ * store (the API checks ownership). Linking a brand to a store is admin-only.
+ */
+export const BRAND_SHOWCASE_ROLES: readonly StaffRole[] = ["super_admin", "admin", "vendor"];
+export const BRAND_OWNER_ROLES: readonly StaffRole[] = ["super_admin", "admin"];
 
 export const NOTIFICATION_ROLES: readonly StaffRole[] = ALL_STAFF;
 

@@ -29,8 +29,9 @@ dashboard/
     │   ├── overview/               # HomePage (KPIs), RolePage (role workspaces)
     │   ├── account/                # ProfilePage, NotificationsPage
     │   ├── orders/                 # OrdersPage, OrderDetailPage
-    │   ├── catalog/                # products/, categories/, brands/ (list + create + edit)
-    │   ├── stores/                 # StoresPage, StoreCreatePage, StoreEditPage
+    │   ├── catalog/                # products/, categories/, brands/ (list + create + edit + BrandShowcasePage)
+    │   ├── stores/                 # StoresPage, StoreCreatePage, StoreEditPage, StoreDesignPage
+    │   ├── marketing/              # SeoSettingsPage (/seo, super_admin + admin)
     │   ├── access/                 # UsersPage, UserEditPage (staff management)
     │   ├── support/                # ReviewsModerationPage (Support & Quality, all staff, role-limited actions)
     │   └── system/settings/        # super_admin only: SiteSettingsLayout + context/tabs, then
@@ -45,11 +46,16 @@ dashboard/
     │   ├── motion.tsx              # LazyMotion `m` + useMotionSafe
     │   ├── providers/ConfirmProvider.tsx  # useConfirm()
     │   ├── orders/                 # order badges, drawer, status dialog, invoices
-    │   └── reviews/                # review stars, status/verified badges, vendor reply dialog
+    │   ├── reviews/                # review stars, status/verified badges, vendor reply dialog
+    │   ├── seo/                    # SeoPreview (Google snippet, share card, char counter)
+    │   ├── showcase/               # ShowcaseEditor (store + brand page designer), preview, image slot
+    │   └── brands/                 # brand form shell, BrandLinkedStoreCard
     ├── lib/
     │   ├── api.ts                  # apiFetch / apiDownload (Bearer)
     │   ├── orders.ts               # order labels, roles, delete rules
     │   ├── reviews.ts              # review types, status meta, per-role status rules (mirror the API)
+    │   ├── seo.ts                  # SEO page keys, limits, title template helper
+    │   ├── showcase.ts             # showcase sections, hero styles, social hosts, contrast helpers
     │   ├── rbac.ts                 # route role lists named after the TARGET_REQUIREMENTS.md RBAC matrix
     │   ├── imagePresets.ts         # image ratio / size hints per upload type
     │   ├── siteBranding.ts         # cached branding + getPrintBranding()
@@ -65,6 +71,7 @@ dashboard/
 - **Destructive actions:** always `const confirm = useConfirm()` and `await confirm({ title, description, tone: "destructive" })`. Never `window.confirm`.
 - **Layout & motion:** pages use `PageHero`, `FormSection`, `StickyFormActions`. Animate with LazyMotion `m` via `useMotionSafe`; no layout animations or `AnimatePresence` on large tables.
 - **Roles:** catalog mutations are for `super_admin | admin | moderator`; hide or disable actions the current role cannot perform and show why (title tooltip).
+- **Stores, brands & SEO:** `STORE_ROLES` (list + page design: super_admin, admin, vendor), `STORE_MANAGE_ROLES` (create / settings: super_admin, vendor), `STORE_DELETE_ROLES` (super_admin), `SEO_ROLES` (global SEO: super_admin, admin), `BRAND_SHOWCASE_ROLES` (brand page: super_admin, admin, linked vendor — the API checks the link), `BRAND_OWNER_ROLES` (link a brand to a store: super_admin, admin). Brand detail returns `permissions { manage, assign_owner, showcase }`; use it instead of guessing from the role.
 - **Pages & routes:** put new pages in the matching domain folder under `src/pages/`, export them from that folder's `index.ts`, and import from the barrel in `App.tsx`. Guard routes with the role lists from `src/lib/rbac.ts` instead of inline arrays, and keep those lists in sync with the backend's `requireRoles(...)`. Anything that edits global config or stores credentials goes under `pages/system/` (super_admin only); secrets-bearing settings go in `system/settings/integrations/`.
 - **Printing:** `window.open` must happen synchronously in the click handler, so branding comes from the synchronous `getPrintBranding()`.
 

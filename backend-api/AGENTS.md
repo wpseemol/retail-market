@@ -38,7 +38,8 @@ backend-api/
     ├── middleware/          # auth (Bearer), requireRoles, upload (multer)
     ├── validators/          # Zod schemas per domain (order.ts, cart.ts, ...)
     ├── lib/                 # env, prisma, cart, sslcommerz, image helpers, productReviews,
-    │                        # reviewImage, rateLimit (in-memory per-IP)
+    │                        # reviewImage, rateLimit (in-memory per-IP), showcase (store/brand page
+    │                        # JSON), showcaseMedia (banner / share image finalize), revalidate
     ├── utils/
     └── data/
 ```
@@ -49,6 +50,8 @@ backend-api/
 - **Errors:** respond `{ message, code?, errors? }`. Use 409 with a stable `code` for state conflicts (e.g. `ORDER_NOT_DELETABLE`, `ORDER_CHANGED`).
 - **Auth:** protected routes require `Authorization: Bearer <token>`. Dashboard catalog mutations require `super_admin | admin | moderator`; order deletion is `super_admin | admin` only.
 - **Reviews:** `ProductReview` (`product_reviews`) is the purchase-verified review model; the older `Review` model is unused legacy. Review eligibility = a `delivered` + `paid` order matching the email/phone/user that contains the product. Vendors are scoped to their own shop's products.
+- **Showcase & SEO:** store (`Vendor`) and brand pages store their design in the `showcase` JSON column — always read it through `normalizeShowcase()` in `src/lib/showcase.ts`. Global SEO lives on `SiteSettings` and is edited only via `/api/dashboard/seo` (super_admin + admin). A brand's `vendor_id` (set by super_admin/admin) lets that store's vendor edit the brand page, never its name/slug/active state. Admins may override any store's page design but cannot create, delete or re-configure stores.
+- **Storefront cache:** after any write that changes public pages, call `revalidateFrontend([...tags])` from `src/lib/revalidate.ts` (needs `REVALIDATE_SECRET` + `FRONTEND_URL`; silently skipped when unset). Tags: `stores`, `store:<slug>`, `brands`, `brand:<slug>`, `reviews`, `site-settings`.
 - **Uploads:** sniff MIME by magic bytes, enforce multer size limit, always resize with sharp, re-check size after resize, sanitize original filenames. Document field names and limits in `API.md`.
 - **Migrations:** add a new folder under `prisma/migrations/` (never edit an applied one). Backfill data in the same SQL when adding non-null columns.
 - **Concurrency:** guard state-changing writes with the expected current state in the `where` clause (`updateMany` / `deleteMany`) and return 409 when nothing matched.

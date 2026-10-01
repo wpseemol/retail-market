@@ -46,6 +46,13 @@ export function toBrandApiBody(values: BrandFormValues) {
   };
 }
 
+/** `""` = not linked to any store. */
+export const brandOwnerSchema = z.object({
+  vendor_id: z.union([z.literal(""), z.string().regex(/^\d{1,20}$/, "Pick a store from the list")]),
+});
+
+export type BrandOwnerValues = z.infer<typeof brandOwnerSchema>;
+
 export function validateBrandForm(input: unknown) {
   return brandFormSchema.safeParse(input);
 }

@@ -75,6 +75,8 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/site-settings` | `routes/publicSiteSettings.ts` | Public |
 | `/api/analytics` | `routes/publicAnalytics.ts` | Public |
 | `/api/shops` | `routes/publicShops.ts` | Public |
+| `/api/brands` | `routes/publicBrands.ts` | Public |
+| `/api/sitemap-entries` | `routes/publicSitemap.ts` | Public |
 | `/api/products/:idOrSlug/reviews` | `routes/productReviews.ts` | Public (verified buyers submit) |
 | `/api/products` | `routes/publicProducts.ts` | Public |
 | `/api/categories` | `routes/publicCategories.ts` | Public |
@@ -89,9 +91,10 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/dashboard/site-settings` | `routes/dashboardSiteSettings.ts` | `super_admin` |
 | `/api/dashboard/home-hero` | `routes/dashboardHomeHero.ts` | `super_admin` |
 | `/api/dashboard/home-blocks` | `routes/dashboardHomeBlocks.ts` | `super_admin` |
-| `/api/dashboard/shops` | `routes/dashboardVendors.ts` | `super_admin`, `vendor` |
+| `/api/dashboard/shops` | `routes/dashboardVendors.ts` | `super_admin`, `admin` (read + design), `vendor` (own) |
+| `/api/dashboard/seo` | `routes/dashboardSeo.ts` | `super_admin`, `admin` |
 | `/api/dashboard/categories` | `routes/dashboardCategories.ts` | Staff |
-| `/api/dashboard/brands` | `routes/dashboardBrands.ts` | Staff |
+| `/api/dashboard/brands` | `routes/dashboardBrands.ts` | Staff (showcase: `super_admin`, `admin`, linked vendor) |
 | `/api/dashboard/products` | `routes/dashboardProducts.ts` | Staff |
 
 Static files: `GET /uploads/*`
@@ -140,17 +143,62 @@ Query: `page` (default 1), `limit` (default 24, max 48), `q?` (search name/slug/
 
 ### `GET /api/shops/:slug`
 
-Query: `page` (default 1), `limit?` (falls back to store `products_per_page`, max 48).
+Query: `page` (default 1), `limit?` (falls back to store `products_per_page`, max 48), `sort?` (`featured_first`|`newest`|`price_asc`|`price_desc`, default the store's `product_sort`).
 
-**200** → `{ store, products, featured_products, pagination }`
+**200** → `{ store, products, featured_products, sort, pagination }`
 
-`store` includes: `logo`, `banner`, `storefront_theme` (`classic`|`marketplace`|`showcase`), `products_per_page`, `featured_products_count`, `show_banned_brands`, `product_sort`  
+`store` includes: `logo`, `banner`, `tagline`, `accent_color`, `storefront_theme` (`classic`|`marketplace`|`showcase`), `products_per_page`, `featured_products_count`, `show_banned_brands`, `product_sort`, plus the [showcase payload](#showcase-payload), `brands[]` (active brands linked to this store: `id`, `name`, `slug`, `image`) and `review_summary` (`average`, `count`, `breakdown`).  
 `products[]` include `brand_banned` when linked brand is inactive  
-`featured_products`: featured slice for showcase layouts
+`featured_products`: up to `featured_products_count` featured products
 
 **404** if slug missing or store not active.
 
-Dashboard customize: `PATCH /api/dashboard/shops/:idOrSlug` + `POST /:idOrSlug/banner` (multipart field **`banner`** · max **5 MB** · resized). Id or **slug** accepted.
+### `GET /api/shops/:slug/reviews`
+
+Query: `page`, `limit` (≤20), `sort` (`newest`|`highest`|`lowest`). Approved reviews across the store's active products → `{ summary, reviews[] (each with product { name, slug }), pagination }`.
+
+Dashboard customize: `PATCH /api/dashboard/shops/:idOrSlug` + `POST /:idOrSlug/banner` (multipart field **`banner`** · max **5 MB** · resized) + `PATCH /:idOrSlug/showcase`. Id or **slug** accepted.
+
+### Showcase payload
+
+Shared by stores and brands on the public endpoints:
+
+```ts
+{
+  tagline: string | null;
+  accent_color: string | null;           // "#RRGGBB"
+  seo: { title, description, keywords, noindex: boolean, og_image: PublicMedia | null };
+  showcase: {
+    hero_style: "banner" | "split" | "minimal";
+    sections: ("featured" | "products" | "about" | "reviews" | "contact" | "policies")[]; // enabled, in order
+    about: string | null;
+    contact: { phone, email, address, hours };
+    social: { facebook, instagram, youtube, tiktok, x, website };   // https URLs or null
+    policies: { shipping, returns };
+    announcement: { enabled: true, text, link, tone: "brand" | "info" | "success" | "warning" } | null;
+  };
+}
+```
+
+---
+
+## Public brands — `/api/brands`
+
+No auth. Active brands only.
+
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/` | `q?` (safe text), `page`, `limit` (≤200, default 60) → `{ brands[] (id, name, slug, description, tagline, image, products_count, updated_at), pagination }`, A–Z |
+| GET | `/:slug` | `page`, `limit` (4–48, default 12), `sort?` → `{ brand, products, featured_products, sort, pagination }`. `brand` has `image` (logo), `banner`, the [showcase payload](#showcase-payload), `store` (linked active store or `null`), `review_summary`, `products_count` |
+| GET | `/:slug/reviews` | Same query/response as `/api/shops/:slug/reviews`, over the brand's products |
+
+**404** if the brand is missing or inactive.
+
+---
+
+## Sitemap entries — `/api/sitemap-entries`
+
+No auth. `GET /` → `{ products, categories, stores, brands }`, each `[{ slug, updated_at }]`. Only active rows; stores and brands with `noindex` are left out. Used by the storefront `sitemap.xml`.
 
 ---
 
@@ -735,7 +783,7 @@ Multipart field **`avatar`** · max **5 MB** · JPEG/PNG/WebP/GIF. Clears `avata
 
 No auth. Used by the storefront for SEO / Open Graph and analytics pixels.
 
-`GET /api/site-settings` → `{ settings }` with `site_name`, `site_title`, `site_description`, `keywords`, OG/Twitter fields, `og_image`, `favicon`, `login_logo`, nested `shop` (`default_view`, `products_per_page`, `categories_visible`, `brands_visible`, `see_all_label`, `show_less_label`), nested `shipping` (`default_fee`, `free_threshold`), nested `analytics` + `pixels` (`enabled` + `id`).
+`GET /api/site-settings` → `{ settings }` with `site_name`, `site_title`, `site_description`, `keywords`, OG/Twitter fields, `og_image`, `favicon`, `login_logo`, nested `seo` (`title_template`, `noindex_site`, `google_site_verification`, `bing_site_verification`, `pages.{home,shop,stores,brands}.{title,description}`), nested `shop` (`default_view`, `products_per_page`, `categories_visible`, `brands_visible`, `see_all_label`, `show_less_label`), nested `shipping` (`default_fee`, `free_threshold`), nested `analytics` + `pixels` (`enabled` + `id`).
 
 ---
 
@@ -746,7 +794,7 @@ Auth: Bearer **`super_admin`** only. Drives the main website title, SEO, Open Gr
 | Method | Path | Notes |
 |--------|------|--------|
 | GET | `/` | Full settings + flat tracker IDs for the form |
-| PATCH | `/` | Zod body · SQL/PHP/JS-safe strings · tracker ID formats · `shop_default_view` · `shop_products_per_page` (4–48) |
+| PATCH | `/` | Zod body · SQL/PHP/JS-safe strings · tracker ID formats · `shop_default_view` · `shop_products_per_page` (4–48). SEO keys (`site_title`, `site_description`, `keywords`, `og_*`, `twitter_*`) are optional here: omitted → unchanged. They are edited on [`/api/dashboard/seo`](#dashboard-seo--apidashboardseo) |
 | POST | `/og-image` | Multipart field **`image`** · max **1 MB** · always resized |
 | POST | `/favicon` | Multipart field **`image`** · max **1 MB** · always resized |
 | POST | `/login-logo` | Multipart field **`image`** · max **1 MB** · always resized |
@@ -844,6 +892,20 @@ Dashboard UI: `/settings/:tab` (shadcn Form + Zod), one page per tab — `identi
 
 ---
 
+## Dashboard SEO — `/api/dashboard/seo`
+
+Auth: Bearer **`super_admin`** or **`admin`** (vendors / moderators → 403). One place for the storefront's global SEO. Every save is logged to `site_settings_histories` and refreshes the storefront cache (`site-settings` tag).
+
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/` | `{ seo }`: `site_name`, `site_title`, `site_description`, `keywords`, `seo_title_template`, `og_title`, `og_description`, `og_image`, `favicon`, `twitter_title`, `twitter_description`, `twitter_handle`, `google_site_verification`, `bing_site_verification`, `seo_noindex_site`, `seo_pages` |
+| PATCH | `/` | Any subset of the fields above (not `og_image`/`favicon`/`site_name`). Omitted → unchanged; `""`/`null` → cleared. `seo_title_template` must contain `%s` · verification accepts the bare code or the whole `<meta>` tag (only the `content` is stored) · `seo_pages.{home,shop,stores,brands}.{title ≤70, description ≤170}` merge per page · `seo_noindex_site: true` blocks indexing of the whole storefront |
+| GET | `/history` | Last 50 SEO-related history rows |
+| POST | `/og-image` | Default share image · multipart field **`image`** · max **1 MB** · always resized on the server to fit 1200×630 |
+| DELETE | `/og-image` | Remove the default share image (file + media row) |
+
+---
+
 ## Dashboard users — `/api/dashboard/users`
 
 Auth: Bearer **`super_admin`** only.
@@ -862,21 +924,33 @@ List response: `{ users, pagination: { page, limit, total, totalPages } }`
 
 ## Dashboard shops — `/api/dashboard/shops`
 
-Auth: Bearer **`super_admin`** or **`vendor`**. Vendors only see/manage their own shop. Soft-delete is **super_admin** only.
+Auth: Bearer **`super_admin`**, **`admin`** or **`vendor`**.
+
+- **vendor:** only their own store (`vendors.user_id`).
+- **admin:** reads every store and can override its page design (showcase, logo, banner, share image). Cannot create, delete, change status/owner, edit settings (`PATCH /:idOrSlug`) or clear history.
+- **super_admin:** everything. Soft-delete is **super_admin** only.
 
 | Method | Path | Purpose |
 |--------|------|---------|
 | GET | `/slug-preview?name=` | `{ slug, base }` · `exclude_id?` |
-| GET | `/` | List shops |
+| GET | `/` | List shops (admin/super: all) |
 | GET | `/me` | Current vendor shop (or `null`) |
 | GET | `/:idOrSlug` | Detail (numeric id **or** slug) |
 | GET | `/:idOrSlug/history` | Audit log |
-| DELETE | `/:idOrSlug/history` | Clear audit log (DB delete) |
-| POST | `/` | Create (`shop_name`, `slug?`, `description?`, `user_id?` required for super, `status?`) |
-| PATCH | `/:idOrSlug` | Update |
+| DELETE | `/:idOrSlug/history` | Clear audit log (DB delete) · super or owner |
+| POST | `/` | Create (`shop_name`, `slug?`, `description?`, `user_id?` required for super, `status?`) · admin → 403 |
+| PATCH | `/:idOrSlug` | Update settings · super or owner |
 | POST | `/:idOrSlug/logo` | Multipart **`logo`** · max **5 MB** · always resized |
 | POST | `/:idOrSlug/banner` | Multipart **`banner`** · max **5 MB** · always resized |
+| GET | `/:idOrSlug/showcase` | Page design for the editor: `shop_name`, `logo`, `banner`, `tagline`, `accent_color`, `seo_*`, `noindex`, `og_image`, full `showcase` (incl. disabled sections), `owned_by_actor` |
+| PATCH | `/:idOrSlug/showcase` | Body: any of `tagline` (≤160), `accent_color` (`#RRGGBB`), `seo_title` (≤70), `seo_description` (≤170), `seo_keywords` (≤255), `noindex`, `showcase` (whole object, see below). Safe-input on every string. Logged as `showcase_updated` (admin edits noted as override) |
+| POST | `/:idOrSlug/og-image` | Share image · multipart **`image`** · max **1 MB** · always resized on the server to fit 1200×630 |
+| DELETE | `/:idOrSlug/og-image` | Remove the share image |
 | DELETE | `/:idOrSlug` | Soft-delete (super only) |
+
+**`showcase` body** (validator `src/validators/showcase.ts`): `hero_style` (`banner`|`split`|`minimal`), `sections[] { key: featured|products|about|reviews|contact|policies, enabled }` (each key once, order = page order), `about` (≤5000), `contact { phone ≤40, email, address ≤300, hours ≤160 }`, `social { facebook, instagram, youtube, tiktok, x, website }` (https only; each network must use its own host, e.g. `instagram.com`; `website` any https host), `policies { shipping ≤3000, returns ≤3000 }`, `announcement { enabled, text ≤160 (required when enabled), link (site path like `/shop` or https URL), tone: brand|info|success|warning }`. Errors include `issues[] { path, message }`.
+
+Store edits call the storefront's `POST /api/revalidate` (tags `stores`, `store:<slug>`) when `REVALIDATE_SECRET` is set.
 
 **Shop object:** `id`, `user_id`, `logo_id`, `shop_name`, `slug`, `description`, `status` (`pending`\|`active`\|…), timestamps, `logo`, `user?`.
 
@@ -895,23 +969,34 @@ Saves and OG image uploads append history with field diffs.
 
 ## Dashboard brands — `/api/dashboard/brands`
 
-Auth: STAFF. Create/update/delete/image: **elevated** only. Vendors read **active** brands only.
+Auth: STAFF. Create/update/delete: **elevated** only. Vendors read **active** brands, plus any brand linked to their store.
 
-Validators: `backend-api/src/validators/brand.ts` (Zod + SQL/PHP/JS injection guards)
+**Linked store:** a super_admin/admin links a brand to one store (`brands.vendor_id`). That store's vendor can then edit the brand's **page** (showcase, logo, banner, share image) but never its name, slug, active state or order. Moderators manage the catalog fields but not the page.
+
+Validators: `backend-api/src/validators/brand.ts`, `src/validators/showcase.ts` (Zod + SQL/PHP/JS injection guards)
 
 | Method | Path | Notes |
 |--------|------|--------|
-| GET | `/` | `q?` (safe text), `active=true\|false\|all`, `page`, `limit` |
+| GET | `/` | `q?` (safe text), `active=true\|false\|all`, `page`, `limit`, `mine=1` (vendor only: brands linked to their store, any active state) |
 | GET | `/slug-preview?name=` | `{ slug }` · name validated for injection |
-| GET | `/:id` | |
+| GET | `/:id` | `{ brand, permissions: { manage, assign_owner, showcase } }` |
 | POST | `/` | elevated · Zod body |
-| POST | `/:id/image` | elevated · multipart field **`image`** · max **1 MB** · resized |
+| POST | `/:id/image` | Logo · elevated or linked vendor · multipart field **`image`** · max **1 MB** · always resized |
 | PATCH | `/:id` | elevated · Zod partial |
 | DELETE | `/:id` | elevated soft-delete |
+| PATCH | `/:id/owner` | super_admin/admin · body `{ vendor_id: "12" \| null }` (`null` unlinks) |
+| GET | `/:id/showcase` | super_admin/admin/linked vendor · same shape as the store showcase GET, plus `name`, `image`, `banner` |
+| PATCH | `/:id/showcase` | super_admin/admin/linked vendor · same body as `PATCH /api/dashboard/shops/:idOrSlug/showcase` |
+| POST | `/:id/banner` | Page banner · multipart field **`banner`** · max **5 MB** · always resized on the server to fit 1920×640 |
+| DELETE | `/:id/banner` | Remove the banner |
+| POST | `/:id/og-image` | Share image · multipart field **`image`** · max **1 MB** · always resized on the server to fit 1200×630 |
+| DELETE | `/:id/og-image` | Remove the share image |
 
 **Body:** `name` (2–120), `slug?` (kebab), `description?` (≤500 or null), `is_active?`, `sort_order?` (0–999999)
 
-**Brand object:** `id`, `name`, `slug`, `description`, `is_active`, `sort_order`, `image_id`, `image` (public media), timestamps, `products_count`.
+**Brand object:** `id`, `name`, `slug`, `description`, `is_active`, `sort_order`, `image_id`, `image` (public media), `banner`, `tagline`, `vendor_id`, `vendor { id, shop_name, slug } | null`, timestamps, `products_count`.
+
+Brand edits refresh the storefront (`brands`, `brand:<slug>` tags).
 
 Create flow: JSON create first, then optional `POST .../image` with field `image`.
 
@@ -1135,6 +1220,10 @@ Includes: `id`, `vendor_id`, `category_id`, `brand_id`, `thumbnail_id`, `name`, 
 | `POST /api/dashboard/products/:id/thumbnail` | `image` | **5 MB** · resized |
 | `POST /api/dashboard/products/:id/images` | `images` | **5 MB** × 12 · resized |
 | `POST /api/dashboard/shops/:id/logo` | `logo` | **5 MB** · resized |
+| `POST /api/dashboard/shops/:idOrSlug/og-image` | `image` | **1 MB** · always resized on the server (1200×630) |
+| `POST /api/dashboard/brands/:id/banner` | `banner` | **5 MB** · always resized on the server (1920×640) |
+| `POST /api/dashboard/brands/:id/og-image` | `image` | **1 MB** · always resized on the server (1200×630) |
+| `POST /api/dashboard/seo/og-image` | `image` | **1 MB** · always resized on the server (1200×630) |
 | `POST /api/products/:idOrSlug/reviews` | `images` | **2 MB** × 4 · always resized on the server |
 
 Allowed MIME (all uploads): `image/jpeg`, `image/png`, `image/webp`, `image/gif`.  

@@ -14,13 +14,24 @@ import { prisma } from "../lib/prisma.js";
 import { uniqueVendorSlug } from "../lib/slug.js";
 import { toPublicMedia } from "../lib/user.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
-import { brandImageUpload } from "../middleware/upload.js";
+import { brandImageUpload, categoryImageUpload, shopImageUpload } from "../middleware/upload.js";
 import {
   brandListQuerySchema,
   createBrandSchema,
   updateBrandSchema,
 } from "../validators/brand.js";
 import { withSafeInput } from "../validators/customerAuth.js";
+import { brandOwnerSchema, updateShowcaseSchema } from "../validators/showcase.js";
+import { buildShowcaseUpdate, toDashboardShowcase } from "../lib/showcase.js";
+import {
+  discardUpload,
+  removeStoredMedia,
+  SHOWCASE_IMAGE_MAX_BYTES,
+  singleImageUpload,
+  storeShowcaseImage,
+  type ShowcaseImageKind,
+} from "../lib/showcaseMedia.js";
+import { revalidateFrontend } from "../lib/revalidate.js";
 
 export const dashboardBrandsRouter = Router();
 
@@ -33,6 +44,35 @@ const ELEVATED = ["super_admin", "admin", "moderator"] as const;
 
 function canManage(role: string) {
   return (ELEVATED as readonly string[]).includes(role);
+}
+
+/** Linked-store assignment and design override: super_admin / admin. */
+function canAssignOwner(role: string) {
+  return role === "super_admin" || role === "admin";
+}
+
+async function actorVendorId(userId: bigint) {
+  const vendor = await prisma.vendor.findFirst({
+    where: { user_id: userId, deleted_at: null },
+    select: { id: true },
+  });
+  return vendor?.id ?? null;
+}
+
+/** super_admin / admin, or the vendor whose store the brand is linked to. Moderators are excluded. */
+async function canEditShowcase(
+  auth: { role: string; userId: bigint },
+  brand: { vendor_id: bigint | null },
+) {
+  if (canAssignOwner(auth.role)) return true;
+  if (auth.role !== "vendor" || !brand.vendor_id) return false;
+  return brand.vendor_id === (await actorVendorId(auth.userId));
+}
+
+function brandTags(...slugs: (string | null | undefined)[]) {
+  const tags = ["brands"];
+  for (const slug of slugs) if (slug) tags.push(`brand:${slug}`);
+  return tags;
 }
 
 function parseId(raw: string) {
@@ -55,6 +95,10 @@ function toPublicBrand(row: {
   updated_at: Date;
   image_id?: bigint | null;
   image?: Parameters<typeof toPublicMedia>[0];
+  banner?: Parameters<typeof toPublicMedia>[0];
+  vendor_id?: bigint | null;
+  vendor?: { id: bigint; shop_name: string; slug: string } | null;
+  tagline?: string | null;
   _count?: { products: number };
 }) {
   return {
@@ -66,6 +110,12 @@ function toPublicBrand(row: {
     sort_order: row.sort_order,
     image_id: row.image_id?.toString() ?? null,
     image: toPublicMedia(row.image),
+    banner: toPublicMedia(row.banner),
+    tagline: row.tagline ?? null,
+    vendor_id: row.vendor_id?.toString() ?? null,
+    vendor: row.vendor
+      ? { id: row.vendor.id.toString(), shop_name: row.vendor.shop_name, slug: row.vendor.slug }
+      : null,
     created_at: row.created_at,
     updated_at: row.updated_at,
     products_count: row._count?.products ?? 0,
@@ -86,6 +136,8 @@ async function slugTaken(slug: string, excludeId?: bigint) {
 
 const brandInclude = {
   image: true,
+  banner: true,
+  vendor: { select: { id: true, shop_name: true, slug: true } },
   _count: {
     select: { products: { where: { deleted_at: null } } },
   },
@@ -100,8 +152,19 @@ dashboardBrandsRouter.get("/", async (req, res) => {
     });
   }
 
-  const { q, active, page, limit } = parsed.data;
+  const { q, active, page, limit, mine } = parsed.data;
   const where: Prisma.BrandWhereInput = { deleted_at: null };
+
+  if (mine === "1") {
+    if (req.auth!.role !== "vendor") {
+      return res.status(400).json({ message: "`mine=1` is only for vendor accounts" });
+    }
+    const vendorId = await actorVendorId(req.auth!.userId);
+    if (!vendorId) {
+      return res.json({ brands: [], pagination: { page, limit, total: 0, pages: 0 } });
+    }
+    where.vendor_id = vendorId;
+  }
 
   if (q) {
     where.OR = [
@@ -112,7 +175,7 @@ dashboardBrandsRouter.get("/", async (req, res) => {
   }
   if (active === "true") where.is_active = true;
   if (active === "false") where.is_active = false;
-  if (req.auth!.role === "vendor") where.is_active = true;
+  if (req.auth!.role === "vendor" && mine !== "1") where.is_active = true;
 
   const skip = (page - 1) * limit;
   const [total, rows] = await Promise.all([
@@ -156,11 +219,19 @@ dashboardBrandsRouter.get("/:id", async (req, res) => {
     include: brandInclude,
   });
   if (!row) return res.status(404).json({ message: "Brand not found" });
-  if (req.auth!.role === "vendor" && !row.is_active) {
+  const canShowcase = await canEditShowcase(req.auth!, row);
+  if (req.auth!.role === "vendor" && !row.is_active && !canShowcase) {
     return res.status(404).json({ message: "Brand not found" });
   }
 
-  return res.json({ brand: toPublicBrand(row) });
+  return res.json({
+    brand: toPublicBrand(row),
+    permissions: {
+      manage: canManage(req.auth!.role),
+      assign_owner: canAssignOwner(req.auth!.role),
+      showcase: canShowcase,
+    },
+  });
 });
 
 dashboardBrandsRouter.post("/", async (req, res) => {
@@ -202,14 +273,14 @@ dashboardBrandsRouter.post("/", async (req, res) => {
   });
 });
 
-/** Upload / replace brand logo — elevated only. Max 1 MB; resized server-side. */
+/** Upload / replace brand logo — elevated or the linked store's vendor. Max 1 MB; resized server-side. */
 dashboardBrandsRouter.post(
   "/:id/image",
   (req, res, next) => {
-    if (!canManage(req.auth!.role)) {
+    if (!canManage(req.auth!.role) && req.auth!.role !== "vendor") {
       return res.status(403).json({
         message:
-          "Only super admin, admin, or moderator can set brand images",
+          "Only super admin, admin, moderator, or the linked store can set brand images",
       });
     }
     brandImageUpload.single("image")(req, res, (err) => {
@@ -253,6 +324,12 @@ dashboardBrandsRouter.post(
         /* ignore */
       }
       return res.status(404).json({ message: "Brand not found" });
+    }
+    if (!canManage(req.auth!.role) && !(await canEditShowcase(req.auth!, existing))) {
+      discardUpload(file);
+      return res.status(403).json({
+        message: "You can only change logos of brands linked to your store",
+      });
     }
 
     const finalized = await finalizeCategoryImageUpload(
@@ -304,6 +381,7 @@ dashboardBrandsRouter.post(
           .catch(() => undefined);
       }
 
+      revalidateFrontend(brandTags(row.slug));
       return res.json({
         message: "Brand image updated",
         brand: toPublicBrand(row),
@@ -371,6 +449,7 @@ dashboardBrandsRouter.patch("/:id", async (req, res) => {
     });
   }
 
+  revalidateFrontend(brandTags(existing.slug, row.slug));
   return res.json({
     message: "Brand updated",
     brand: toPublicBrand(row),
@@ -398,8 +477,205 @@ dashboardBrandsRouter.delete("/:id", async (req, res) => {
     include: brandInclude,
   });
 
+  revalidateFrontend(brandTags(existing.slug));
   return res.json({
     message: "Brand deleted",
     brand: toPublicBrand(row),
   });
 });
+
+/** Link a brand to one store (its vendor may then edit the brand page), or unlink with `null`. */
+dashboardBrandsRouter.patch("/:id/owner", async (req, res) => {
+  if (!canAssignOwner(req.auth!.role)) {
+    return res.status(403).json({ message: "Only super admin or admin can link brands to stores" });
+  }
+  const id = parseId(String(req.params.id));
+  if (!id) return res.status(400).json({ message: "Invalid brand id" });
+
+  const parsed = brandOwnerSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: parsed.error.issues[0]?.message ?? "Validation failed",
+      errors: parsed.error.flatten().fieldErrors,
+    });
+  }
+
+  const existing = await prisma.brand.findFirst({
+    where: { id, deleted_at: null },
+    include: { vendor: { select: { slug: true } } },
+  });
+  if (!existing) return res.status(404).json({ message: "Brand not found" });
+
+  let vendorId: bigint | null = null;
+  let vendorSlug: string | null = null;
+  if (parsed.data.vendor_id) {
+    const vendor = await prisma.vendor.findFirst({
+      where: { id: BigInt(parsed.data.vendor_id), deleted_at: null },
+      select: { id: true, slug: true },
+    });
+    if (!vendor) return res.status(404).json({ message: "Store not found" });
+    vendorId = vendor.id;
+    vendorSlug = vendor.slug;
+  }
+
+  const row = await prisma.brand.update({
+    where: { id },
+    data: { vendor_id: vendorId },
+    include: brandInclude,
+  });
+
+  revalidateFrontend([
+    ...brandTags(row.slug),
+    "stores",
+    ...(existing.vendor?.slug ? [`store:${existing.vendor.slug}`] : []),
+    ...(vendorSlug ? [`store:${vendorSlug}`] : []),
+  ]);
+  return res.json({
+    message: vendorId ? "Brand linked to store" : "Brand unlinked from store",
+    brand: toPublicBrand(row),
+  });
+});
+
+const showcaseBrandInclude = { og_image: true, banner: true, image: true } as const;
+
+async function loadShowcaseBrand(
+  req: import("express").Request,
+  res: import("express").Response,
+) {
+  const id = parseId(String(req.params.id));
+  if (!id) {
+    res.status(400).json({ message: "Invalid brand id" });
+    return null;
+  }
+  const brand = await prisma.brand.findFirst({
+    where: { id, deleted_at: null },
+    include: showcaseBrandInclude,
+  });
+  if (!brand) {
+    res.status(404).json({ message: "Brand not found" });
+    return null;
+  }
+  if (!(await canEditShowcase(req.auth!, brand))) {
+    res.status(403).json({
+      message: "Only super admin, admin, or the linked store can customize this brand page",
+    });
+    return null;
+  }
+  return brand;
+}
+
+function brandShowcasePayload(brand: NonNullable<Awaited<ReturnType<typeof loadShowcaseBrand>>>) {
+  return {
+    id: brand.id.toString(),
+    slug: brand.slug,
+    name: brand.name,
+    image: toPublicMedia(brand.image),
+    banner: toPublicMedia(brand.banner),
+    ...toDashboardShowcase(brand),
+  };
+}
+
+dashboardBrandsRouter.get("/:id/showcase", async (req, res) => {
+  const brand = await loadShowcaseBrand(req, res);
+  if (!brand) return;
+  return res.json({ showcase: brandShowcasePayload(brand) });
+});
+
+dashboardBrandsRouter.patch("/:id/showcase", async (req, res) => {
+  const parsed = updateShowcaseSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: parsed.error.issues[0]?.message ?? "Validation failed",
+      errors: parsed.error.flatten().fieldErrors,
+      issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
+    });
+  }
+  const existing = await loadShowcaseBrand(req, res);
+  if (!existing) return;
+
+  const { data } = buildShowcaseUpdate(existing, parsed.data);
+  const brand = await prisma.brand.update({
+    where: { id: existing.id },
+    data,
+    include: showcaseBrandInclude,
+  });
+
+  revalidateFrontend(brandTags(brand.slug));
+  return res.json({ message: "Brand page saved", showcase: brandShowcasePayload(brand) });
+});
+
+const BRAND_MEDIA: Record<
+  ShowcaseImageKind,
+  { field: "og_image_id" | "banner_id"; relation: "og_image" | "banner"; label: string }
+> = {
+  og: { field: "og_image_id", relation: "og_image", label: "Share image" },
+  brandBanner: { field: "banner_id", relation: "banner", label: "Banner" },
+};
+
+function brandImageRoutes(route: string, kind: ShowcaseImageKind, field: string) {
+  const meta = BRAND_MEDIA[kind];
+  const upload = kind === "og" ? categoryImageUpload : shopImageUpload;
+
+  dashboardBrandsRouter.post(
+    `/:id/${route}`,
+    singleImageUpload(upload, field, meta.label, SHOWCASE_IMAGE_MAX_BYTES[kind], kind === "og" ? "OG_IMAGE" : "BANNER"),
+    async (req, res) => {
+      const existing = await loadShowcaseBrand(req, res);
+      if (!existing) {
+        discardUpload(req.file);
+        return;
+      }
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ message: `${meta.label} is required (field: ${field})` });
+      }
+
+      const stored = await storeShowcaseImage({
+        file,
+        kind,
+        actorId: req.auth!.userId,
+        altText: kind === "og" ? existing.name : `${existing.name} banner`,
+        mediableType: "Brand",
+        mediableId: existing.id,
+      });
+      if (!stored.ok) {
+        return res.status(400).json({ message: stored.message, code: stored.code });
+      }
+
+      const brand = await prisma.brand.update({
+        where: { id: existing.id },
+        data: { [meta.field]: stored.media.id },
+        include: showcaseBrandInclude,
+      });
+      const previous = existing[meta.relation];
+      if (previous && previous.id !== stored.media.id) await removeStoredMedia(previous);
+
+      revalidateFrontend(brandTags(brand.slug));
+      return res.json({ message: `${meta.label} updated`, showcase: brandShowcasePayload(brand) });
+    },
+  );
+
+  dashboardBrandsRouter.delete(`/:id/${route}`, async (req, res) => {
+    const existing = await loadShowcaseBrand(req, res);
+    if (!existing) return;
+    const previous = existing[meta.relation];
+    if (!previous) {
+      return res.status(404).json({ message: `This brand has no ${meta.label.toLowerCase()}` });
+    }
+
+    const brand = await prisma.brand.update({
+      where: { id: existing.id },
+      data: { [meta.field]: null },
+      include: showcaseBrandInclude,
+    });
+    await removeStoredMedia(previous);
+
+    revalidateFrontend(brandTags(brand.slug));
+    return res.json({ message: `${meta.label} removed`, showcase: brandShowcasePayload(brand) });
+  });
+}
+
+/** Brand page banner — field `banner`, 5 MB, resized to 1920×640. */
+brandImageRoutes("banner", "brandBanner", "banner");
+/** Brand share (Open Graph) image — field `image`, 1 MB, resized to 1200×630. */
+brandImageRoutes("og-image", "og", "image");

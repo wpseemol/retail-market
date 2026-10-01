@@ -91,7 +91,20 @@ type PageMetaInput = {
     /** Extra `<meta property>` tags, e.g. `product:price:amount`. */
     other?: Record<string, string | number>;
     noIndex?: boolean;
+    /** Settings-driven defaults (see `getSeoDefaults()` in `lib/seo.ts`). */
+    siteName?: string;
+    /** `%s` is replaced by `title` for the OG / Twitter title. */
+    titleTemplate?: string;
+    defaultImage?: string;
+    twitterHandle?: string;
+    /** OG `type`, e.g. `profile` for store pages. Defaults to `website`. */
+    ogType?: "website" | "article" | "profile";
 };
+
+/** Applies a `%s | Brand` style template. */
+export function applyTitleTemplate(title: string, template: string): string {
+    return template.includes("%s") ? template.replace("%s", title) : `${title} | ${template}`;
+}
 
 /** Plain-text meta description: strips HTML, collapses whitespace, trims to ~160 chars. */
 export function toMetaDescription(text: string, max = 160): string {
@@ -111,19 +124,25 @@ export function createPageMetadata({
     title,
     description = siteConfig.description,
     path = "/",
-    image = siteConfig.logo.og,
+    image,
     images = [],
     imageAlt,
     keywords = [],
     other,
     noIndex = false,
+    siteName = siteConfig.name,
+    titleTemplate,
+    defaultImage,
+    twitterHandle = siteConfig.social.twitter,
+    ogType = "website",
 }: PageMetaInput = {}): Metadata {
     const pageTitle = title
-        ? `${title} | ${siteConfig.name}`
+        ? applyTitleTemplate(title, titleTemplate ?? `%s | ${siteName}`)
         : siteConfig.title;
     const url = absoluteUrl(path);
-    const ogImage = absoluteUrl(image);
-    const isLogo = image === siteConfig.logo.og;
+    const shareImage = image || defaultImage || siteConfig.logo.og;
+    const ogImage = absoluteUrl(shareImage);
+    const isLogo = shareImage === siteConfig.logo.og;
     const ogImages = [
         isLogo
             ? {
@@ -134,7 +153,7 @@ export function createPageMetadata({
               }
             : { url: ogImage, alt: imageAlt ?? title ?? siteConfig.name },
         ...images
-            .filter((src) => src && src !== image)
+            .filter((src) => src && src !== shareImage)
             .map((src) => ({
                 url: absoluteUrl(src),
                 alt: imageAlt ?? title ?? siteConfig.name,
@@ -145,18 +164,18 @@ export function createPageMetadata({
         title,
         description,
         keywords: [...new Set([...keywords, ...siteConfig.keywords])],
-        authors: [...siteConfig.authors],
-        creator: siteConfig.creator,
-        publisher: siteConfig.publisher,
+        authors: [{ name: siteName }],
+        creator: siteName,
+        publisher: siteName,
         metadataBase: new URL(siteConfig.url),
         alternates: {
             canonical: url,
         },
         openGraph: {
-            type: "website",
+            type: ogType,
             locale: siteConfig.locale,
             url,
-            siteName: siteConfig.name,
+            siteName,
             title: pageTitle,
             description,
             images: ogImages,
@@ -166,21 +185,10 @@ export function createPageMetadata({
             title: pageTitle,
             description,
             images: [{ url: ogImage, alt: ogImages[0].alt }],
-            creator: siteConfig.social.twitter,
+            creator: twitterHandle,
         },
         ...(other ? { other } : {}),
-        robots: noIndex
-            ? { index: false, follow: false }
-            : {
-                  index: true,
-                  follow: true,
-                  googleBot: {
-                      index: true,
-                      follow: true,
-                      "max-image-preview": "large",
-                      "max-snippet": -1,
-                      "max-video-preview": -1,
-                  },
-              },
+        // Index rules are inherited from the root layout (site-wide noindex); pages only opt out.
+        ...(noIndex ? { robots: { index: false, follow: true } } : {}),
     };
 }

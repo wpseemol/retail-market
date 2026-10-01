@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { History, Trash2 } from "lucide-react";
+import { History, Palette, Trash2 } from "lucide-react";
 import { useConfirm } from "@/components/providers/ConfirmProvider";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { imageUploadHint } from "@/lib/imagePresets";
@@ -337,9 +337,17 @@ export function StoreEditPage() {
         title={shop.shop_name}
         subtitle={`Edit store · /stores/${shop.slug}`}
         badge={
-          <Badge variant="outline" className="capitalize">
-            {shopStatusLabel(shop.status)}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className="capitalize">
+              {shopStatusLabel(shop.status)}
+            </Badge>
+            <Button asChild type="button" size="sm" variant="outline" className="h-7 gap-1.5">
+              <Link to={`/stores/${shop.slug}/design`}>
+                <Palette className="size-3.5" />
+                Customize store page
+              </Link>
+            </Button>
+          </div>
         }
       />
 

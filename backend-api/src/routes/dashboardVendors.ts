@@ -17,14 +17,25 @@ import {
   SHOP_IMAGES_RELATIVE,
 } from "../lib/shopImage.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
-import { shopImageUpload } from "../middleware/upload.js";
+import { categoryImageUpload, shopImageUpload } from "../middleware/upload.js";
 import { findUnsafeInputReason } from "../validators/customerAuth.js";
+import { updateShowcaseSchema } from "../validators/showcase.js";
+import { buildShowcaseUpdate, toDashboardShowcase } from "../lib/showcase.js";
+import {
+  discardUpload,
+  removeStoredMedia,
+  SHOWCASE_IMAGE_MAX_BYTES,
+  singleImageUpload,
+  storeShowcaseImage,
+} from "../lib/showcaseMedia.js";
+import { revalidateFrontend } from "../lib/revalidate.js";
 
 export const dashboardVendorsRouter = Router();
 
+/** Admins can read every store and override its design; everything else stays super_admin / owner. */
 dashboardVendorsRouter.use(
   requireAuth,
-  requireRoles("super_admin", "vendor"),
+  requireRoles("super_admin", "admin", "vendor"),
 );
 
 function withSafeInput(schema: z.ZodString) {
@@ -223,13 +234,23 @@ async function slugTaken(slug: string, excludeId?: bigint) {
   return Boolean(existing);
 }
 
+/**
+ * `read` and `design` (showcase, logo, banner, share image) are open to admins;
+ * `manage` (settings PATCH, history clear) is super_admin or the store owner only.
+ */
 async function assertCanAccessShop(
   vendor: { user_id: bigint },
   actorId: bigint,
   role: string,
+  mode: "read" | "design" | "manage" = "manage",
 ) {
   if (role === "super_admin") return true;
+  if (role === "admin") return mode !== "manage";
   return vendor.user_id === actorId;
+}
+
+function storeTags(...slugs: string[]) {
+  return ["stores", "brands", ...slugs.map((s) => `store:${s}`)];
 }
 
 dashboardVendorsRouter.get("/slug-preview", async (req, res) => {
@@ -252,7 +273,7 @@ dashboardVendorsRouter.get("/slug-preview", async (req, res) => {
 });
 
 dashboardVendorsRouter.get("/", async (req, res) => {
-  const isSuper = req.auth!.role === "super_admin";
+  const isSuper = ["super_admin", "admin"].includes(req.auth!.role);
   const q = String(req.query.q ?? "").trim();
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
@@ -311,7 +332,7 @@ dashboardVendorsRouter.get("/:idOrSlug/history", async (req, res) => {
     return res.status(404).json({ message: "Store not found" });
   }
   if (
-    !(await assertCanAccessShop(vendor, req.auth!.userId, req.auth!.role))
+    !(await assertCanAccessShop(vendor, req.auth!.userId, req.auth!.role, "read"))
   ) {
     return res.status(403).json({ message: "Insufficient permissions" });
   }
@@ -366,7 +387,7 @@ dashboardVendorsRouter.get("/:idOrSlug", async (req, res) => {
   if (!vendor) return res.status(404).json({ message: "Store not found" });
 
   if (
-    !(await assertCanAccessShop(vendor, req.auth!.userId, req.auth!.role))
+    !(await assertCanAccessShop(vendor, req.auth!.userId, req.auth!.role, "read"))
   ) {
     return res.status(403).json({ message: "Insufficient permissions" });
   }
@@ -375,6 +396,10 @@ dashboardVendorsRouter.get("/:idOrSlug", async (req, res) => {
 });
 
 dashboardVendorsRouter.post("/", async (req, res) => {
+  if (req.auth!.role === "admin") {
+    return res.status(403).json({ message: "Only super admin can create stores for others" });
+  }
+
   const parsed = createShopSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({
@@ -646,6 +671,8 @@ dashboardVendorsRouter.patch("/:idOrSlug", async (req, res) => {
     });
   }
 
+  revalidateFrontend(storeTags(existing.slug, vendor.slug));
+
   return res.json({
     message: "Shop updated",
     shop: toPublicShop(vendor),
@@ -667,7 +694,10 @@ dashboardVendorsRouter.post(
   },
   async (req, res) => {
     const existing = await findVendorWithMedia(String(req.params.idOrSlug));
-    if (!existing) return res.status(404).json({ message: "Store not found" });
+    if (!existing) {
+      discardUpload(req.file);
+      return res.status(404).json({ message: "Store not found" });
+    }
     const id = existing.id;
 
     const file = req.file;
@@ -678,8 +708,9 @@ dashboardVendorsRouter.post(
     }
 
     if (
-      !(await assertCanAccessShop(existing, req.auth!.userId, req.auth!.role))
+      !(await assertCanAccessShop(existing, req.auth!.userId, req.auth!.role, "design"))
     ) {
+      discardUpload(file);
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 
@@ -744,6 +775,7 @@ dashboardVendorsRouter.post(
           .catch(() => undefined);
       }
 
+      revalidateFrontend(storeTags(vendor.slug));
       return res.json({
         message: "Shop image updated",
         shop: toPublicShop(vendor),
@@ -794,7 +826,7 @@ dashboardVendorsRouter.post(
     }
 
     if (
-      !(await assertCanAccessShop(existing, req.auth!.userId, req.auth!.role))
+      !(await assertCanAccessShop(existing, req.auth!.userId, req.auth!.role, "design"))
     ) {
       try {
         fs.unlinkSync(file.path);
@@ -865,6 +897,7 @@ dashboardVendorsRouter.post(
           .catch(() => undefined);
       }
 
+      revalidateFrontend(storeTags(vendor.slug));
       return res.json({
         message: "Store banner updated",
         shop: toPublicShop(vendor),
@@ -879,6 +912,173 @@ dashboardVendorsRouter.post(
     }
   },
 );
+
+const showcaseVendorInclude = { og_image: true, logo: true, banner: true } as const;
+
+async function loadShowcaseVendor(
+  req: import("express").Request,
+  res: import("express").Response,
+) {
+  const where = vendorWhere(String(req.params.idOrSlug));
+  const vendor = where
+    ? await prisma.vendor.findFirst({ where, include: showcaseVendorInclude })
+    : null;
+  if (!vendor) {
+    res.status(404).json({ message: "Store not found" });
+    return null;
+  }
+  if (!(await assertCanAccessShop(vendor, req.auth!.userId, req.auth!.role, "design"))) {
+    res.status(403).json({ message: "You can only customize your own store page" });
+    return null;
+  }
+  return vendor;
+}
+
+function showcasePayload(
+  vendor: NonNullable<Awaited<ReturnType<typeof loadShowcaseVendor>>>,
+  actorId: bigint,
+) {
+  return {
+    id: vendor.id.toString(),
+    slug: vendor.slug,
+    shop_name: vendor.shop_name,
+    owned_by_actor: vendor.user_id === actorId,
+    logo: toPublicMedia(vendor.logo),
+    banner: toPublicMedia(vendor.banner),
+    ...toDashboardShowcase(vendor),
+  };
+}
+
+/** Store page design: SEO, branding, layout, about/contact/social, policies, announcement. */
+dashboardVendorsRouter.get("/:idOrSlug/showcase", async (req, res) => {
+  const vendor = await loadShowcaseVendor(req, res);
+  if (!vendor) return;
+  return res.json({
+    showcase: showcasePayload(vendor, req.auth!.userId),
+  });
+});
+
+dashboardVendorsRouter.patch("/:idOrSlug/showcase", async (req, res) => {
+  const parsed = updateShowcaseSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: parsed.error.issues[0]?.message ?? "Validation failed",
+      errors: parsed.error.flatten().fieldErrors,
+      issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
+    });
+  }
+
+  const existing = await loadShowcaseVendor(req, res);
+  if (!existing) return;
+
+  const { data, changes } = buildShowcaseUpdate(existing, parsed.data);
+  const vendor = await prisma.vendor.update({
+    where: { id: existing.id },
+    data,
+    include: showcaseVendorInclude,
+  });
+
+  if (Object.keys(changes).length > 0) {
+    await recordHistory({
+      vendorId: vendor.id,
+      actorId: req.auth!.userId,
+      action: "showcase_updated",
+      changes,
+      note:
+        req.auth!.role === "admin" || (req.auth!.role === "super_admin" && existing.user_id !== req.auth!.userId)
+          ? "Store page design changed by admin override"
+          : null,
+    });
+  }
+
+  revalidateFrontend(storeTags(vendor.slug));
+  return res.json({
+    message: "Store page saved",
+    showcase: showcasePayload(vendor, req.auth!.userId),
+  });
+});
+
+/** Share (Open Graph) image for the store page — field `image`, 1 MB, resized to 1200×630. */
+dashboardVendorsRouter.post(
+  "/:idOrSlug/og-image",
+  singleImageUpload(categoryImageUpload, "image", "Share image", SHOWCASE_IMAGE_MAX_BYTES.og, "OG_IMAGE"),
+  async (req, res) => {
+    const existing = await loadShowcaseVendor(req, res);
+    if (!existing) {
+      discardUpload(req.file);
+      return;
+    }
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ message: "Share image is required (field: image)" });
+    }
+
+    const stored = await storeShowcaseImage({
+      file,
+      kind: "og",
+      actorId: req.auth!.userId,
+      altText: existing.shop_name,
+      mediableType: "Vendor",
+      mediableId: existing.id,
+    });
+    if (!stored.ok) {
+      return res.status(400).json({ message: stored.message, code: stored.code });
+    }
+
+    const vendor = await prisma.vendor.update({
+      where: { id: existing.id },
+      data: { og_image_id: stored.media.id },
+      include: showcaseVendorInclude,
+    });
+    await recordHistory({
+      vendorId: vendor.id,
+      actorId: req.auth!.userId,
+      action: "og_image_changed",
+      changes: {
+        og_image_id: {
+          from: existing.og_image_id?.toString() ?? null,
+          to: stored.media.id.toString(),
+        },
+      },
+    });
+    if (existing.og_image && existing.og_image.id !== stored.media.id) {
+      await removeStoredMedia(existing.og_image);
+    }
+
+    revalidateFrontend(storeTags(vendor.slug));
+    return res.json({
+      message: "Share image updated",
+      showcase: showcasePayload(vendor, req.auth!.userId),
+    });
+  },
+);
+
+dashboardVendorsRouter.delete("/:idOrSlug/og-image", async (req, res) => {
+  const existing = await loadShowcaseVendor(req, res);
+  if (!existing) return;
+  if (!existing.og_image) {
+    return res.status(404).json({ message: "This store has no share image" });
+  }
+
+  const vendor = await prisma.vendor.update({
+    where: { id: existing.id },
+    data: { og_image_id: null },
+    include: showcaseVendorInclude,
+  });
+  await removeStoredMedia(existing.og_image);
+  await recordHistory({
+    vendorId: vendor.id,
+    actorId: req.auth!.userId,
+    action: "og_image_removed",
+    changes: { og_image_id: { from: existing.og_image.id.toString(), to: null } },
+  });
+
+  revalidateFrontend(storeTags(vendor.slug));
+  return res.json({
+    message: "Share image removed",
+    showcase: showcasePayload(vendor, req.auth!.userId),
+  });
+});
 
 /** Soft-delete shop — super admin only. */
 dashboardVendorsRouter.delete("/:idOrSlug", async (req, res) => {
@@ -906,6 +1106,8 @@ dashboardVendorsRouter.delete("/:idOrSlug", async (req, res) => {
     },
     note: "Store soft-deleted by super admin",
   });
+
+  revalidateFrontend(storeTags(existing.slug));
 
   return res.json({
     message: "Store deleted",

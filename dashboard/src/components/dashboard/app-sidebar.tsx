@@ -5,6 +5,8 @@ import {
   LayoutDashboard,
   MessageSquareText,
   Package,
+  Palette,
+  SearchCheck,
   Shield,
   ShieldCheck,
   Store,
@@ -31,7 +33,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import type { StaffRole } from "@/lib/api";
-import { REVIEW_ROLES } from "@/lib/rbac";
+import { REVIEW_ROLES, SEO_ROLES, STORE_ROLES } from "@/lib/rbac";
 import { useAuthStore } from "@/store/auth";
 
 const ROLE_HOME: Record<StaffRole, string> = {
@@ -45,7 +47,7 @@ const topLinks: Array<{
   to: string;
   label: string;
   icon: typeof LayoutDashboard;
-  roles: StaffRole[];
+  roles: readonly StaffRole[];
   end?: boolean;
 }> = [
   {
@@ -71,7 +73,7 @@ const topLinks: Array<{
     to: "/stores",
     label: "Stores",
     icon: Store,
-    roles: ["super_admin", "vendor"],
+    roles: STORE_ROLES,
   },
 ];
 
@@ -117,6 +119,36 @@ const supportLinks: Array<{
   },
 ];
 
+const marketingLinks: Array<{
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  roles: readonly StaffRole[];
+  /** Only these roles see it, even super_admin (e.g. vendor-only shortcuts). */
+  only?: boolean;
+}> = [
+  {
+    to: "/seo",
+    label: "Search & SEO",
+    icon: SearchCheck,
+    roles: SEO_ROLES,
+  },
+  {
+    to: "/stores",
+    label: "My store page",
+    icon: Palette,
+    roles: ["vendor"],
+    only: true,
+  },
+  {
+    to: "/brands?mine=1",
+    label: "My brands",
+    icon: Tag,
+    roles: ["vendor"],
+    only: true,
+  },
+];
+
 const roleLinks: Array<{
   to: string;
   label: string;
@@ -155,7 +187,7 @@ function canSee(roles: readonly StaffRole[], userRole: StaffRole) {
 
 export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   const user = useAuthStore((state) => state.user);
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const logoHref = user ? ROLE_HOME[user.role] : "/";
 
   const links = topLinks.filter(
@@ -169,6 +201,10 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   );
   const qualityLinks = supportLinks.filter(
     (link) => user && canSee(link.roles, user.role),
+  );
+  const seoLinks = marketingLinks.filter(
+    (link) =>
+      user && (link.only ? link.roles.includes(user.role) : canSee(link.roles, user.role)),
   );
 
   const catalogOpen =
@@ -292,6 +328,32 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {seoLinks.length > 0 ? (
+          <SidebarGroup>
+            <SidebarGroupLabel>Marketing &amp; SEO</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {seoLinks.map((link) => {
+                  const [path, query] = link.to.split("?");
+                  const active = query
+                    ? pathname === path && search === `?${query}`
+                    : pathname === path || pathname.startsWith(`${path}/`);
+                  return (
+                    <SidebarMenuItem key={link.to}>
+                      <SidebarMenuButton asChild isActive={active} tooltip={link.label}>
+                        <NavLink to={link.to} end>
+                          <link.icon />
+                          <span>{link.label}</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
 
         {qualityLinks.length > 0 ? (
           <SidebarGroup>

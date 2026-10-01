@@ -166,3 +166,29 @@
   background: transparent;
   height: 4px;
 }
+
+/*
+ * Store / brand showcase pages. `--showcase-accent` and `--showcase-on-accent`
+ * are set inline from the vendor's accent colour (falls back to the brand green).
+ */
+.showcase-theme {
+  --sc-accent: var(--showcase-accent, var(--brand-primary));
+  --sc-on-accent: var(--showcase-on-accent, #ffffff);
+  --sc-accent-text: color-mix(in oklab, var(--sc-accent) 88%, black);
+  --sc-accent-soft: color-mix(in oklab, var(--sc-accent) 10%, transparent);
+  --sc-accent-deep: color-mix(in oklab, var(--sc-accent) 55%, black);
+}
+
+.dark .showcase-theme {
+  --sc-accent-text: color-mix(in oklab, var(--sc-accent) 65%, white);
+  --sc-accent-soft: color-mix(in oklab, var(--sc-accent) 20%, transparent);
+  --sc-accent-deep: color-mix(in oklab, var(--sc-accent) 45%, black);
+}
+
+@theme inline {
+  --color-sc-accent: var(--sc-accent);
+  --color-sc-on-accent: var(--sc-on-accent);
+  --color-sc-accent-text: var(--sc-accent-text);
+  --color-sc-accent-soft: var(--sc-accent-soft);
+  --color-sc-accent-deep: var(--sc-accent-deep);
+}

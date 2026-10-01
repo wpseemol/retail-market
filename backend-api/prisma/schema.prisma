@@ -45,6 +45,8 @@ enum MediaCollection {
   avatars
   site_banners
   review_images
+  brand_banners
+  showcase_og
 }
 
 enum DeviceType {
@@ -225,6 +227,9 @@ model Media {
   variantImages       ProductVariant[] @relation("VariantImage")
   vendorLogos         Vendor[]         @relation("VendorLogo")
   vendorBanners       Vendor[]         @relation("VendorBanner")
+  vendorOgImages      Vendor[]         @relation("VendorOgImage")
+  brandBanners        Brand[]          @relation("BrandBanner")
+  brandOgImages       Brand[]          @relation("BrandOgImage")
 
   @@index([user_id])
   @@index([collection_name])
@@ -314,15 +319,35 @@ model Brand {
   description String?   @db.VarChar(500)
   is_active   Boolean   @default(true)
   sort_order  Int       @default(0)
+  /// Store whose vendor may customize this brand's showcase page (assigned by admins).
+  vendor_id   BigInt?   @db.UnsignedBigInt
+  /// Wide showcase banner (uploads/shops/, collection `brand_banners`).
+  banner_id   BigInt?   @unique @db.UnsignedBigInt
+
+  seo_title       String? @db.VarChar(70)
+  seo_description String? @db.VarChar(170)
+  seo_keywords    String? @db.VarChar(255)
+  noindex         Boolean @default(false)
+  og_image_id     BigInt? @unique @db.UnsignedBigInt
+  tagline         String? @db.VarChar(160)
+  /// Hex `#RRGGBB`; page accent in light and dark themes.
+  accent_color    String? @db.VarChar(7)
+  /// Layout, about, contact, social, policies, announcement (validated by `showcaseSchema`).
+  showcase        Json?
+
   created_at  DateTime  @default(now())
   updated_at  DateTime  @updatedAt
   deleted_at  DateTime?
 
   image    Media?    @relation("BrandImage", fields: [image_id], references: [id], onDelete: SetNull)
+  banner   Media?    @relation("BrandBanner", fields: [banner_id], references: [id], onDelete: SetNull)
+  og_image Media?    @relation("BrandOgImage", fields: [og_image_id], references: [id], onDelete: SetNull)
+  vendor   Vendor?   @relation("VendorBrands", fields: [vendor_id], references: [id], onDelete: SetNull)
   products Product[]
 
   @@index([is_active])
   @@index([sort_order])
+  @@index([vendor_id])
   @@map("brands")
 }
 
@@ -347,6 +372,18 @@ model Vendor {
   show_banned_brands      Boolean         @default(true)
   /// Product ordering on the public store page.
   product_sort            String          @default("featured_first") @db.VarChar(32)
+
+  seo_title       String? @db.VarChar(70)
+  seo_description String? @db.VarChar(170)
+  seo_keywords    String? @db.VarChar(255)
+  noindex         Boolean @default(false)
+  og_image_id     BigInt? @unique @db.UnsignedBigInt
+  tagline         String? @db.VarChar(160)
+  /// Hex `#RRGGBB`; page accent in light and dark themes.
+  accent_color    String? @db.VarChar(7)
+  /// Layout, about, contact, social, policies, announcement (validated by `showcaseSchema`).
+  showcase        Json?
+
   created_at              DateTime        @default(now())
   updated_at              DateTime        @updatedAt
   deleted_at              DateTime?
@@ -354,6 +391,8 @@ model Vendor {
   user     User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
   logo     Media?          @relation("VendorLogo", fields: [logo_id], references: [id], onDelete: SetNull)
   banner   Media?          @relation("VendorBanner", fields: [banner_id], references: [id], onDelete: SetNull)
+  og_image Media?          @relation("VendorOgImage", fields: [og_image_id], references: [id], onDelete: SetNull)
+  brands   Brand[]         @relation("VendorBrands")
   products Product[]
   history  VendorHistory[]
 
@@ -841,6 +880,15 @@ model SiteSettings {
   twitter_title       String? @db.VarChar(160)
   twitter_description String? @db.VarChar(500)
   twitter_handle      String? @db.VarChar(80)
+
+  /// e.g. `%s | Niyenin`; `%s` is replaced by the page title.
+  seo_title_template       String? @db.VarChar(120)
+  /// Blocks indexing of the whole storefront (staging).
+  seo_noindex_site         Boolean @default(false)
+  google_site_verification String? @db.VarChar(120)
+  bing_site_verification   String? @db.VarChar(120)
+  /// Default title/description per index page: { home, shop, stores, brands }.
+  seo_pages                Json?
 
   google_analytics_id        String? @db.VarChar(40)
   google_analytics_enabled   Boolean @default(false)

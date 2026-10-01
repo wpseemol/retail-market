@@ -21,6 +21,30 @@ export type PublicNavItem = {
   }>;
 };
 
+export type SeoPageKey = "home" | "shop" | "stores" | "brands";
+
+export type SiteSeoSettings = {
+  /** e.g. `%s | Niyenin`; null → `%s | {site_name}`. */
+  title_template: string | null;
+  noindex_site: boolean;
+  google_site_verification: string | null;
+  bing_site_verification: string | null;
+  pages: Record<SeoPageKey, { title: string | null; description: string | null }>;
+};
+
+const EMPTY_SEO: SiteSeoSettings = {
+  title_template: null,
+  noindex_site: false,
+  google_site_verification: null,
+  bing_site_verification: null,
+  pages: {
+    home: { title: null, description: null },
+    shop: { title: null, description: null },
+    stores: { title: null, description: null },
+    brands: { title: null, description: null },
+  },
+};
+
 export type PublicSiteSettings = {
   site_name: string;
   site_title: string;
@@ -34,6 +58,7 @@ export type PublicSiteSettings = {
   twitter_title: string | null;
   twitter_description: string | null;
   twitter_handle: string | null;
+  seo: SiteSeoSettings;
   shop: {
     default_view: "grid4" | "grid3" | "grid2" | "list";
     products_per_page: number;
@@ -97,6 +122,7 @@ const FALLBACK: PublicSiteSettings = {
   twitter_title: null,
   twitter_description: null,
   twitter_handle: siteConfig.social.twitter,
+  seo: EMPTY_SEO,
   shop: {
     default_view: "grid4",
     products_per_page: 12,
@@ -160,6 +186,11 @@ export async function getSiteSettings(): Promise<PublicSiteSettings> {
     if (!data.settings) return FALLBACK;
     return {
       ...data.settings,
+      seo: {
+        ...EMPTY_SEO,
+        ...data.settings.seo,
+        pages: { ...EMPTY_SEO.pages, ...data.settings.seo?.pages },
+      },
       shop: normalizeShopSettings(data.settings.shop),
     };
   } catch {

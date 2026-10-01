@@ -55,6 +55,8 @@ export const env = {
   ).replace(/\/$/, ""),
   /** Storefront origin — payment gateways redirect customers back here. */
   frontendUrl: (process.env.FRONTEND_URL ?? "http://localhost:3000").replace(/\/$/, ""),
+  /** Shared with the storefront's `REVALIDATE_SECRET`; empty → on-demand cache refresh is off. */
+  revalidateSecret: (process.env.REVALIDATE_SECRET ?? "").trim(),
   /** SSLCOMMERZ hosted checkout. Sandbox unless SSLCZ_IS_LIVE=true. */
   sslcommerz: {
     storeId: process.env.SSLCZ_STORE_ID ?? "",

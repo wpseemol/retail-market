@@ -31,8 +31,9 @@ function optionalSafeId(
 
 export const updateSiteSettingsSchema = z.object({
   site_name: withSafeInput(z.string().trim().min(2).max(120)),
-  site_title: withSafeInput(z.string().trim().min(2).max(160)),
-  site_description: withSafeInput(z.string().trim().min(10).max(500)),
+  /** SEO fields are owned by `/api/dashboard/seo`; omitted here → left unchanged. */
+  site_title: withSafeInput(z.string().trim().min(2).max(160)).optional(),
+  site_description: withSafeInput(z.string().trim().min(10).max(500)).optional(),
   keywords: z
     .union([withSafeInput(z.string().trim().max(500)), z.literal(""), z.null()])
     .optional()

@@ -21,6 +21,7 @@ export const IMAGE_PRESETS = {
   brand: { width: 600, height: 300, format: "webp" },
   shopLogo: { width: 512, height: 512, format: "webp" },
   shopBanner: { width: 1920, height: 640, format: "webp" },
+  brandBanner: { width: 1920, height: 640, format: "webp" },
   avatar: { width: 400, height: 400, format: "webp" },
   loginLogo: { width: 480, height: 120, format: "webp" },
   favicon: { width: 512, height: 512, format: "png" },

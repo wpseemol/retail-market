@@ -11,7 +11,7 @@ export type SiteSettingsOutletContext = {
     token: string;
     settings: SiteSettingsSnapshot;
     setSettings: (settings: SiteSettingsSnapshot) => void;
-    /** Shared by Identity, Shop, Social, Analytics and Pixels — one PATCH saves them all. */
+    /** Shared by Identity, Shop, Analytics and Pixels — one PATCH saves them all. */
     form: UseFormReturn<SiteSettingsFormValues>;
     error: string | null;
     success: string | null;
@@ -28,14 +28,6 @@ export function toSiteSettingsFormValues(
 ): SiteSettingsFormValues {
     return {
         site_name: s.site_name,
-        site_title: s.site_title,
-        site_description: s.site_description,
-        keywords: s.keywords ?? "",
-        og_title: s.og_title ?? "",
-        og_description: s.og_description ?? "",
-        twitter_title: s.twitter_title ?? "",
-        twitter_description: s.twitter_description ?? "",
-        twitter_handle: s.twitter_handle ?? "",
         google_analytics_id: s.google_analytics_id ?? "",
         google_analytics_enabled: s.google_analytics_enabled,
         google_tag_manager_id: s.google_tag_manager_id ?? "",
@@ -65,14 +57,6 @@ export function toSiteSettingsFormValues(
 
 export const EMPTY_SITE_SETTINGS_FORM: SiteSettingsFormValues = {
     site_name: "",
-    site_title: "",
-    site_description: "",
-    keywords: "",
-    og_title: "",
-    og_description: "",
-    twitter_title: "",
-    twitter_description: "",
-    twitter_handle: "",
     google_analytics_id: "",
     google_analytics_enabled: false,
     google_tag_manager_id: "",

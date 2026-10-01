@@ -14,7 +14,18 @@ export type Brand = {
   sort_order: number;
   image_id?: string | null;
   image?: BrandMedia | null;
+  banner?: BrandMedia | null;
+  tagline?: string | null;
   products_count?: number;
+  /** Store (vendor) the brand is linked to; that vendor may edit the brand page. */
+  vendor_id?: string | null;
+  vendor?: { id: string; shop_name: string; slug: string } | null;
+};
+
+export type BrandPermissions = {
+  manage: boolean;
+  assign_owner: boolean;
+  showcase: boolean;
 };
 
 export function slugifyClient(input: string): string {
