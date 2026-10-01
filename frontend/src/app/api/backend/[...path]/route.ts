@@ -28,6 +28,13 @@ async function proxy(request: NextRequest, context: RouteContext) {
       : await request.arrayBuffer();
 
   const contentType = request.headers.get("content-type") ?? undefined;
+  // Per-IP limits on the API (e.g. review eligibility) need the shopper's address, not this server's.
+  const forwardedFor =
+    request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? undefined;
+  const forwardHeaders: Record<string, string> = {
+    ...(contentType ? { "Content-Type": contentType } : {}),
+    ...(forwardedFor ? { "X-Forwarded-For": forwardedFor } : {}),
+  };
 
   let accessToken = token?.accessToken as string | undefined;
 
@@ -35,7 +42,7 @@ async function proxy(request: NextRequest, context: RouteContext) {
     method,
     body,
     accessToken,
-    headers: contentType ? { "Content-Type": contentType } : undefined,
+    headers: forwardHeaders,
   });
 
   if (upstream.status === 401 && token?.refreshToken) {
@@ -56,7 +63,7 @@ async function proxy(request: NextRequest, context: RouteContext) {
       method,
       body,
       accessToken,
-      headers: contentType ? { "Content-Type": contentType } : undefined,
+      headers: forwardHeaders,
     });
   }
 

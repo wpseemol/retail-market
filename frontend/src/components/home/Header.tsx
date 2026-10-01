@@ -21,65 +21,70 @@ import { selectHeaderNav } from "@/store/siteChromeSlice";
 import { selectWishlistCount } from "@/store/wishlistSlice";
 import { resolveStorefrontHref } from "@/lib/storefrontLinks";
 import type { PublicCategory } from "@/lib/categories";
+import { useI18n } from "@/components/providers/LocaleProvider";
+import { format } from "@/i18n/config";
+import type { Dictionary } from "@/i18n/dictionaries";
 
-const FALLBACK_HEADER_NAV = [
-    { id: "home", label: "Home", href: "/", external: false, position: 0 },
-    { id: "shop", label: "Shop", href: "/shop", external: false, position: 1 },
-    {
-        id: "stores",
-        label: "Stores",
-        href: "/stores",
-        external: false,
-        position: 2,
-    },
-    {
-        id: "pages",
-        label: "Pages",
-        href: "#",
-        external: false,
-        position: 3,
-        children: [
-            { id: "faq", label: "FAQ", href: "/faq", external: false, position: 0 },
-            {
-                id: "terms",
-                label: "Terms",
-                href: "/terms",
-                external: false,
-                position: 1,
-            },
-        ],
-    },
-    {
-        id: "blog",
-        label: "Blog",
-        href: "/blog",
-        external: false,
-        position: 4,
-        children: [
-            {
-                id: "blog-main",
-                label: "Blog",
-                href: "/blog",
-                external: false,
-                position: 0,
-            },
-        ],
-    },
-    {
-        id: "about",
-        label: "About Us",
-        href: "/about",
-        external: false,
-        position: 5,
-    },
-    {
-        id: "contact",
-        label: "Contact",
-        href: "/contact",
-        external: false,
-        position: 6,
-    },
-];
+function fallbackHeaderNav(nav: Dictionary["nav"]) {
+    return [
+        { id: "home", label: nav.home, href: "/", external: false, position: 0 },
+        { id: "shop", label: nav.shop, href: "/shop", external: false, position: 1 },
+        {
+            id: "stores",
+            label: nav.stores,
+            href: "/stores",
+            external: false,
+            position: 2,
+        },
+        {
+            id: "pages",
+            label: nav.pages,
+            href: "#",
+            external: false,
+            position: 3,
+            children: [
+                { id: "faq", label: nav.faq, href: "/faq", external: false, position: 0 },
+                {
+                    id: "terms",
+                    label: nav.terms,
+                    href: "/terms",
+                    external: false,
+                    position: 1,
+                },
+            ],
+        },
+        {
+            id: "blog",
+            label: nav.blog,
+            href: "/blog",
+            external: false,
+            position: 4,
+            children: [
+                {
+                    id: "blog-main",
+                    label: nav["blog-main"],
+                    href: "/blog",
+                    external: false,
+                    position: 0,
+                },
+            ],
+        },
+        {
+            id: "about",
+            label: nav.about,
+            href: "/about",
+            external: false,
+            position: 5,
+        },
+        {
+            id: "contact",
+            label: nav.contact,
+            href: "/contact",
+            external: false,
+            position: 6,
+        },
+    ];
+}
 
 export default function Header({
     categories = [],
@@ -87,6 +92,7 @@ export default function Header({
     categories?: PublicCategory[];
 }) {
     const pathname = usePathname();
+    const { t } = useI18n();
     const { theme, setTheme } = useTheme();
     const mounted = useSyncExternalStore(
         noopSubscribe,
@@ -101,7 +107,7 @@ export default function Header({
     const wishlistCount = useAppSelector(selectWishlistCount);
     const configuredNav = useAppSelector(selectHeaderNav);
     const headerNav =
-        configuredNav.length > 0 ? configuredNav : FALLBACK_HEADER_NAV;
+        configuredNav.length > 0 ? configuredNav : fallbackHeaderNav(t.nav);
 
     function linkActive(href: string) {
         if (href === "/") return pathname === "/";
@@ -152,14 +158,14 @@ export default function Header({
         >
             {/* ================= 1. Middle Main Section ================= */}
             <section
-                aria-label="Main Header Information"
+                aria-label={t.header.mainInfo}
                 className="w-full py-2.5 sm:py-3"
             >
                 <div className="container mx-auto flex items-center justify-between gap-2 sm:gap-4 px-4 sm:px-6">
                     {/* Mobile Hamburger Button */}
                     <button
                         type="button"
-                        aria-label="Toggle Navigation Menu"
+                        aria-label={t.header.toggleMenu}
                         aria-expanded={isMobileMenuOpen}
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                         className="lg:hidden p-2 rounded-md text-text-primary hover:bg-bg-subtle transition-colors focus:outline-none"
@@ -186,7 +192,7 @@ export default function Header({
                     {/* Brand Logo */}
                     <Link
                         href="/"
-                        aria-label="Niyenin Home"
+                        aria-label={t.header.homeLabel}
                         className="relative flex h-8 w-[120px] shrink-0 items-center sm:h-10 sm:w-[150px]"
                     >
                         <Image
@@ -217,8 +223,10 @@ export default function Header({
                             href="/wishlist"
                             aria-label={
                                 wishlistCount > 0
-                                    ? `View Wishlist, ${wishlistCount} items`
-                                    : "View Wishlist"
+                                    ? format(t.header.viewWishlistCount, {
+                                          count: wishlistCount,
+                                      })
+                                    : t.header.viewWishlist
                             }
                             className="hidden sm:inline-flex relative p-1.5 hover:opacity-80 transition-opacity"
                         >
@@ -249,7 +257,10 @@ export default function Header({
                         {/* Shopping Cart */}
                         <Link
                             href="/cart"
-                            aria-label={`Shopping Cart containing ${cartCount} items, total ${formatPrice(cartTotal)}`}
+                            aria-label={format(t.header.cartLabel, {
+                                count: cartCount,
+                                total: formatPrice(cartTotal),
+                            })}
                             className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity"
                         >
                             <div className="relative">
@@ -264,7 +275,9 @@ export default function Header({
                                 />
                                 {cartCount > 0 && (
                                     <span
-                                        aria-label={`${cartCount} items`}
+                                        aria-label={format(t.header.cartItems, {
+                                            count: cartCount,
+                                        })}
                                         className="absolute -top-1 -right-1 bg-brand-hover text-white text-[10px] font-semibold h-4 min-w-4 px-1 rounded-full border border-white flex items-center justify-center"
                                     >
                                         {cartCount}
@@ -273,7 +286,7 @@ export default function Header({
                             </div>
                             <div className="hidden md:flex flex-col text-left">
                                 <span className="text-[11px] leading-tight text-text-secondary">
-                                    Shopping cart:
+                                    {t.header.shoppingCart}
                                 </span>
                                 <span
                                     className={`text-[13px] font-semibold ${
@@ -293,8 +306,8 @@ export default function Header({
                             onClick={toggleTheme}
                             aria-label={
                                 isDark
-                                    ? "Switch to light theme"
-                                    : "Switch to dark theme"
+                                    ? t.header.lightTheme
+                                    : t.header.darkTheme
                             }
                             className={`w-6 h-10 rounded-full p-0.75 transition-colors duration-200 cursor-pointer flex flex-col justify-between items-center ${
                                 isDark ? "bg-brand-primary" : "bg-[#4D4D4D]"
@@ -318,7 +331,7 @@ export default function Header({
 
             {/* ================= 3. Desktop Navigation Menu Bar ================= */}
             <nav
-                aria-label="Primary Site Navigation"
+                aria-label={t.header.primaryNav}
                 className="hidden lg:block w-full bg-bg-base py-2.5 border-t border-border-default/50"
             >
                 <div className="container mx-auto flex items-center justify-between gap-4 px-6">
@@ -432,13 +445,13 @@ export default function Header({
                         {/* Drawer Header */}
                         <div className="flex items-center justify-between pb-3 border-b border-border-default">
                             <span className="text-sm font-semibold text-text-primary">
-                                Menu
+                                {t.header.menu}
                             </span>
                             <button
                                 type="button"
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className="p-1.5 rounded-full hover:bg-bg-subtle text-text-secondary"
-                                aria-label="Close menu"
+                                aria-label={t.header.closeMenu}
                             >
                                 <svg
                                     width="20"
@@ -582,7 +595,7 @@ export default function Header({
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className="sm:hidden px-3 py-2 rounded-md text-text-primary hover:bg-bg-subtle flex items-center justify-between"
                             >
-                                <span>Wishlist</span>
+                                <span>{t.header.wishlist}</span>
                                 {wishlistCount > 0 ? (
                                     <span className="bg-brand-primary text-white text-[10px] px-1.5 py-0.5 rounded-full">
                                         {wishlistCount > 99 ? "99+" : wishlistCount}

@@ -13,6 +13,11 @@ import {
   toShopProduct,
   type ApiProduct,
 } from "@/lib/products";
+import {
+  fetchProductReviews,
+  reviewsJsonLd,
+  type ReviewsPayload,
+} from "@/lib/reviews";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -78,7 +83,7 @@ export async function generateMetadata({
   });
 }
 
-function productJsonLd(product: ApiProduct) {
+function productJsonLd(product: ApiProduct, reviews: ReviewsPayload) {
   const url = absoluteUrl(`/shop/${product.slug}`);
   const images = productImages(product).map((src) => absoluteUrl(src));
   const brand = product.brand_name || product.brand?.name;
@@ -125,6 +130,7 @@ function productJsonLd(product: ApiProduct) {
           name: product.vendor?.shop_name ?? siteConfig.name,
         },
       },
+      ...reviewsJsonLd(reviews),
     },
     {
       "@context": "https://schema.org",
@@ -152,7 +158,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
     redirect(`/shop/${data.product.slug}`);
   }
 
-  const product = toShopProduct(data.product);
+  const reviews = await fetchProductReviews(data.product.slug);
+  const product = {
+    ...toShopProduct(data.product),
+    rating: reviews.summary.average,
+    reviewCount: reviews.summary.count,
+  };
   const related = data.related.map(toShopProduct);
   const store =
     data.product.vendor != null
@@ -168,7 +179,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         type="application/ld+json"
         // `<` is escaped so product text can never close the script tag.
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(productJsonLd(data.product)).replace(
+          __html: JSON.stringify(productJsonLd(data.product, reviews)).replace(
             /</g,
             "\\u003c",
           ),
@@ -181,6 +192,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         store={store}
         shareUrl={absoluteUrl(`/shop/${product.slug}`)}
         inStock={data.product.stock_qty > 0}
+        reviews={reviews}
       />
     </main>
   );

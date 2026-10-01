@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logoutSession } from "@/lib/logoutSession";
 import type { ApiUser } from "@/lib/api";
+import { useI18n } from "@/components/providers/LocaleProvider";
 
 function initials(first: string, last: string, email: string) {
   const value = `${first.trim()[0] ?? ""}${last.trim()[0] ?? ""}`.toUpperCase();
@@ -47,9 +48,9 @@ function UserAvatar({
 }
 
 const links = [
-  { href: "/account", label: "My account" },
-  { href: "/account/orders", label: "My orders" },
-  { href: "/account/addresses", label: "My addresses" },
+  { href: "/account", key: "myAccount" },
+  { href: "/account/orders", key: "myOrders" },
+  { href: "/account/addresses", key: "myAddresses" },
 ] as const;
 
 type AccountMenuProps = {
@@ -62,6 +63,7 @@ export default function AccountMenu({
   variant = "desktop",
 }: AccountMenuProps) {
   const router = useRouter();
+  const { t } = useI18n();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const hydrated = useAppSelector((state) => state.auth.hydrated);
@@ -94,14 +96,14 @@ export default function AccountMenu({
             onClick={onNavigate}
             className="text-center border border-brand-primary text-brand-primary text-sm font-semibold py-2.5 rounded hover:bg-brand-primary hover:text-white transition-colors"
           >
-            Login
+            {t.account.login}
           </Link>
           <Link
             href="/register"
             onClick={onNavigate}
             className="text-center bg-brand-primary text-white text-sm font-semibold py-2.5 rounded hover:bg-brand-hover transition-colors"
           >
-            Sign Up
+            {t.account.signUp}
           </Link>
         </div>
       );
@@ -113,20 +115,20 @@ export default function AccountMenu({
           href="/login"
           className="text-text-primary hover:text-brand-primary text-[13px] font-semibold px-2 py-2 transition-colors whitespace-nowrap"
         >
-          Login
+          {t.account.login}
         </Link>
         <Link
           href="/register"
           className="bg-brand-primary hover:bg-brand-hover text-white text-[13px] font-semibold px-4 py-2 rounded transition-colors whitespace-nowrap"
         >
-          Sign Up
+          {t.account.signUp}
         </Link>
       </div>
     );
   }
 
-  const name = `${user.first_name} ${user.last_name}`.trim() || "Account";
-  const firstName = user.first_name?.trim() || "Account";
+  const name = `${user.first_name} ${user.last_name}`.trim() || t.account.account;
+  const firstName = user.first_name?.trim() || t.account.account;
 
   if (variant === "mobile") {
     return (
@@ -148,7 +150,7 @@ export default function AccountMenu({
               onClick={onNavigate}
               className="px-3 py-2 rounded-md text-sm text-text-primary hover:bg-bg-subtle"
             >
-              {link.label}
+              {t.account[link.key]}
             </Link>
           ))}
         </nav>
@@ -162,7 +164,7 @@ export default function AccountMenu({
           }}
           className="w-full text-center border border-border-default text-sm font-semibold py-2.5 rounded hover:border-brand-primary hover:text-brand-primary transition-colors"
         >
-          Log out
+          {t.account.logout}
         </button>
       </div>
     );
@@ -217,7 +219,7 @@ export default function AccountMenu({
               onClick={() => setOpen(false)}
               className="block px-3 py-2 text-sm text-text-primary hover:bg-bg-subtle hover:text-brand-primary"
             >
-              {link.label}
+              {t.account[link.key]}
             </Link>
           ))}
           <button
@@ -231,7 +233,7 @@ export default function AccountMenu({
             }}
             className="w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-bg-subtle cursor-pointer"
           >
-            Log out
+            {t.account.logout}
           </button>
         </div>
       ) : null}

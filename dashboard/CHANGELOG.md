@@ -5,6 +5,14 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-01
 
+### Product review moderation (Support & Quality)
+- New `src/pages/support/ReviewsModerationPage.tsx` (+ `index.ts`) at `/support/reviews` (`/reviews` redirects): tabs All / Pending / Approved / Hidden with counts, flagged-only toggle, search, rating filter, desktop table and mobile cards (product thumb + title, stars, customer name/email/phone, Verified Purchase pill, status badge).
+- Row actions: view, open on storefront, approve, hide/show, reject (admins), flag/clear flag, vendor reply, delete. Delete asks through `useConfirm()` and is disabled with a tooltip for moderators; vendors don't see it.
+- New `src/components/reviews/` (`ReviewStars`, `ReviewBadges`, `ReviewReplyDialog` — shadcn Form; removing a reply is confirmed).
+- New `src/lib/reviews.ts` (types, status meta, `reviewStatusBlockReason` mirroring the API rules) and `src/lib/validators/review.ts`.
+- `src/lib/rbac.ts`: `REVIEW_ROLES`, `REVIEW_FLAG_ROLES`, `REVIEW_REPLY_ROLES`, `REVIEW_DELETE_ROLES`.
+- `src/App.tsx`: new route; `src/components/dashboard/app-sidebar.tsx`: "Support & Quality" group with "Product reviews".
+
 ### Pages reorganized into feature domains (RBAC-aligned)
 Route URLs and effective access are unchanged; only file locations, imports, and guard grouping changed. Moves done with `git mv` to keep history.
 - `src/pages/LoginPage.tsx` → `src/pages/auth/LoginPage.tsx`

@@ -30,6 +30,8 @@ import { publicSearchRouter } from "./routes/publicSearch.js";
 import { publicHomeRouter } from "./routes/publicHome.js";
 import { publicHomeBlocksRouter } from "./routes/publicHomeBlocks.js";
 import { dashboardHomeBlocksRouter } from "./routes/dashboardHomeBlocks.js";
+import { productReviewsRouter } from "./routes/productReviews.js";
+import { dashboardReviewsRouter } from "./routes/dashboardReviews.js";
 
 const app = express();
 
@@ -62,6 +64,7 @@ app.use("/api/payments", paymentsRouter);
 app.use("/api/site-settings", publicSiteSettingsRouter);
 app.use("/api/analytics", publicAnalyticsRouter);
 app.use("/api/shops", publicShopsRouter);
+app.use("/api/products/:idOrSlug/reviews", productReviewsRouter);
 app.use("/api/products", publicProductsRouter);
 app.use("/api/categories", publicCategoriesRouter);
 app.use("/api/search", publicSearchRouter);
@@ -79,6 +82,7 @@ app.use("/api/dashboard/home-blocks", dashboardHomeBlocksRouter);
 app.use("/api/dashboard/overview", dashboardOverviewRouter);
 app.use("/api/dashboard/notifications", dashboardNotificationsRouter);
 app.use("/api/dashboard/orders", dashboardOrdersRouter);
+app.use("/api/dashboard/reviews", dashboardReviewsRouter);
 
 app.use(
   (

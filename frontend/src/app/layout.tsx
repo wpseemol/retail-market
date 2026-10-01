@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Poppins } from "next/font/google";
+import { Hind_Siliguri, Poppins } from "next/font/google";
 import "lenis/dist/lenis.css";
 import "./globals.css";
 import TopBar from "@/components/home/TopBar";
@@ -19,6 +19,9 @@ import { SiteChromeHydrator } from "@/components/providers/SiteChromeHydrator";
 import { absoluteUrl, siteConfig } from "@/config/site";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { getCategories } from "@/lib/categories";
+import { LocaleProvider } from "@/components/providers/LocaleProvider";
+import { getLocale } from "@/i18n/server";
+import { LOCALE_TAGS } from "@/i18n/config";
 
 const poppins = Poppins({
     variable: "--font-poppins",
@@ -27,8 +30,17 @@ const poppins = Poppins({
     display: "swap",
 });
 
+// Poppins has no Bengali glyphs; the browser falls back to this per character.
+const hindSiliguri = Hind_Siliguri({
+    variable: "--font-bengali",
+    subsets: ["bengali"],
+    weight: ["400", "500", "600", "700"],
+    display: "swap",
+});
+
 export async function generateMetadata(): Promise<Metadata> {
     const settings = await getSiteSettings();
+    const locale = await getLocale();
     const name = settings.site_name || siteConfig.name;
     const title = settings.site_title || siteConfig.title;
     const description =
@@ -64,7 +76,7 @@ export async function generateMetadata(): Promise<Metadata> {
         },
         openGraph: {
             type: "website",
-            locale: siteConfig.locale,
+            locale: LOCALE_TAGS[locale].og,
             url: absoluteUrl("/"),
             siteName: name,
             title: ogTitle,
@@ -122,6 +134,7 @@ export default async function RootLayout({
 }: LayoutProps<"/">) {
     const settings = await getSiteSettings();
     const categories = await getCategories();
+    const locale = await getLocale();
     const chromePayload = {
         siteName: settings.site_name,
         topbarEmail: settings.chrome?.topbar_email ?? null,
@@ -141,30 +154,32 @@ export default async function RootLayout({
 
     return (
         <html
-            lang={siteConfig.language}
-            className={`${poppins.variable} h-full antialiased`}
+            lang={locale}
+            className={`${poppins.variable} ${hindSiliguri.variable} h-full antialiased`}
             suppressHydrationWarning
         >
             <body
-                className={`${poppins.className} min-h-full flex flex-col font-sans`}
+                className="min-h-full flex flex-col font-sans"
             >
                 <AnalyticsPixels settings={settings} />
                 <VisitBeacon />
                 <DisableMotion />
                 <SmoothScroll />
                 <ThemeProvider>
-                    <StoreProvider>
-                        <AuthSessionProvider>
-                            <AuthHydrator />
-                            <WishlistHydrator />
-                            <CartHydrator />
-                            <SiteChromeHydrator payload={chromePayload} />
-                            <TopBar />
-                            <Header categories={categories} />
-                            {children}
-                            <Footer />
-                        </AuthSessionProvider>
-                    </StoreProvider>
+                    <LocaleProvider locale={locale}>
+                        <StoreProvider>
+                            <AuthSessionProvider>
+                                <AuthHydrator />
+                                <WishlistHydrator />
+                                <CartHydrator />
+                                <SiteChromeHydrator payload={chromePayload} />
+                                <TopBar />
+                                <Header categories={categories} />
+                                {children}
+                                <Footer />
+                            </AuthSessionProvider>
+                        </StoreProvider>
+                    </LocaleProvider>
                 </ThemeProvider>
             </body>
         </html>

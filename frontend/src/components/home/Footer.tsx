@@ -6,6 +6,9 @@ import Link from "next/link";
 import { useAppSelector } from "@/store/hooks";
 import { selectSiteChrome } from "@/store/siteChromeSlice";
 import { resolveStorefrontHref } from "@/lib/storefrontLinks";
+import { useI18n } from "@/components/providers/LocaleProvider";
+import { format } from "@/i18n/config";
+import type { Dictionary } from "@/i18n/dictionaries";
 
 interface FooterLink {
     label: string;
@@ -13,38 +16,44 @@ interface FooterLink {
     external?: boolean;
 }
 
-const findItFastLinks: FooterLink[] = [
-    { label: "Laptops & Computers", href: "/category/laptops" },
-    { label: "Cameras & Photography", href: "/category/cameras" },
-    { label: "Smart Phones & Tablets", href: "/category/smartphones" },
-    { label: "Video Games & Consoles", href: "/category/gaming" },
-    { label: "TV & Audio", href: "/category/tv-audio" },
-    { label: "Gadgets", href: "/category/gadgets" },
-    { label: "Waterproof Headphones", href: "/category/headphones" },
-    { label: "Quick Links", href: "/quick-links" },
+type FooterLinkKey = keyof Dictionary["footer"]["links"];
+type FallbackLink = { key: FooterLinkKey; href: string; external?: boolean };
+
+const findItFastLinks: FallbackLink[] = [
+    { key: "laptops", href: "/category/laptops" },
+    { key: "cameras", href: "/category/cameras" },
+    { key: "smartphones", href: "/category/smartphones" },
+    { key: "gaming", href: "/category/gaming" },
+    { key: "tvAudio", href: "/category/tv-audio" },
+    { key: "gadgets", href: "/category/gadgets" },
+    { key: "headphones", href: "/category/headphones" },
+    { key: "quickLinks", href: "/quick-links" },
 ];
 
-const customerCareLinks: FooterLink[] = [
-    { label: "My Account", href: "/account" },
-    { label: "Track Your Order", href: "/track-order" },
-    { label: "Wishlist", href: "/wishlist" },
-    { label: "Stores", href: "/stores" },
-    { label: "Customer Service", href: "/customer-service" },
-    { label: "Returns/Exchange", href: "/returns" },
-    { label: "FAQ", href: "/faq" },
-    { label: "Product Support", href: "/support" },
+const customerCareLinks: FallbackLink[] = [
+    { key: "myAccount", href: "/account" },
+    { key: "trackOrder", href: "/track-order" },
+    { key: "wishlist", href: "/wishlist" },
+    { key: "stores", href: "/stores" },
+    { key: "customerService", href: "/customer-service" },
+    { key: "returns", href: "/returns" },
+    { key: "faq", href: "/faq" },
+    { key: "support", href: "/support" },
 ];
 
-const sellAndManageLinks: FooterLink[] = [
-    { label: "Become a Seller", href: "dashboard:vendor", external: true },
-    {
-        label: "Super Admin Login",
-        href: "dashboard:super_admin",
-        external: true,
-    },
-    { label: "Admin Login", href: "dashboard:admin", external: true },
-    { label: "Moderator Login", href: "dashboard:moderator", external: true },
+const sellAndManageLinks: FallbackLink[] = [
+    { key: "becomeSeller", href: "dashboard:vendor", external: true },
+    { key: "superAdminLogin", href: "dashboard:super_admin", external: true },
+    { key: "adminLogin", href: "dashboard:admin", external: true },
+    { key: "moderatorLogin", href: "dashboard:moderator", external: true },
 ];
+
+function localizeLinks(
+    links: FallbackLink[],
+    labels: Dictionary["footer"]["links"],
+): FooterLink[] {
+    return links.map(({ key, ...rest }) => ({ ...rest, label: labels[key] }));
+}
 
 function FooterNavLink({ link }: { link: FooterLink }) {
     const className =
@@ -109,18 +118,20 @@ const weeklySelectedProducts = [
 export default function Footer() {
     const currentYear = 2026;
     const chrome = useAppSelector(selectSiteChrome);
+    const { t } = useI18n();
     const findLinks =
         chrome.nav.footer_find.length > 0
             ? chrome.nav.footer_find
-            : findItFastLinks;
+            : localizeLinks(findItFastLinks, t.footer.links);
     const careLinks =
         chrome.nav.footer_care.length > 0
             ? chrome.nav.footer_care
-            : customerCareLinks;
+            : localizeLinks(customerCareLinks, t.footer.links);
     const sellLinks =
         chrome.nav.footer_sell.length > 0
             ? chrome.nav.footer_sell
-            : sellAndManageLinks;
+            : localizeLinks(sellAndManageLinks, t.footer.links);
+    const logoAlt = format(t.footer.logoAlt, { name: chrome.siteName });
 
     return (
         <footer className="w-full bg-bg-surface border-t border-border-default pt-12 pb-6 transition-colors duration-200">
@@ -133,14 +144,14 @@ export default function Footer() {
                         <Link href="/" className="relative mb-4 inline-block h-[50px] w-[180px]">
                             <Image
                                 src="/logo/niyenin-white.png"
-                                alt={`${chrome.siteName} Logo`}
+                                alt={logoAlt}
                                 fill
                                 sizes="180px"
                                 className="object-contain object-left dark:hidden"
                             />
                             <Image
                                 src="/logo/niyenin-dark.png"
-                                alt={`${chrome.siteName} Logo`}
+                                alt={logoAlt}
                                 fill
                                 sizes="180px"
                                 className="hidden object-contain object-left dark:block"
@@ -148,8 +159,7 @@ export default function Footer() {
                         </Link>
 
                         <p className="text-text-secondary text-sm leading-relaxed mb-6 max-w-sm">
-                            {chrome.footerBlurb ||
-                                "Phasellus justo ligula, dictum sit amet tortor eu, iaculis tristique turpis."}
+                            {chrome.footerBlurb || t.footer.blurb}
                         </p>
 
                         {/* Support Contact */}
@@ -171,8 +181,7 @@ export default function Footer() {
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-brand-primary text-xs font-bold uppercase tracking-wider">
-                                    {chrome.footerCallout ||
-                                        "Got Question? Call Us 24/7!"}
+                                    {chrome.footerCallout || t.footer.callout}
                                 </span>
                                 <span className="text-text-primary text-[19px] font-bold tracking-tight">
                                     {chrome.footerPhone || "+1(000)000-000"}
@@ -196,7 +205,7 @@ export default function Footer() {
                                 </svg>
                                 <div className="flex flex-col items-start leading-none">
                                     <span className="text-[8px] uppercase tracking-wider">
-                                        Get it on
+                                        {t.footer.getItOn}
                                     </span>
                                     <span className="text-[13px] font-semibold">
                                         Google Play
@@ -218,7 +227,7 @@ export default function Footer() {
                                 </svg>
                                 <div className="flex flex-col items-start leading-none">
                                     <span className="text-[8px] uppercase tracking-wider">
-                                        Download on the
+                                        {t.footer.downloadOn}
                                     </span>
                                     <span className="text-[13px] font-semibold">
                                         App Store
@@ -231,7 +240,7 @@ export default function Footer() {
                     {/* Column 2: Find It Fast (Col span 2) */}
                     <div className="lg:col-span-2 flex flex-col">
                         <h3 className="text-[#00B207] text-[15px] font-bold uppercase tracking-wider mb-5">
-                            Find It Fast
+                            {t.footer.findItFast}
                         </h3>
                         <ul className="flex flex-col gap-3 list-none p-0 m-0">
                             {findLinks.map((link) => (
@@ -251,7 +260,7 @@ export default function Footer() {
                     {/* Column 3: Customer Care (Col span 2) */}
                     <div className="lg:col-span-2 flex flex-col">
                         <h3 className="text-[#00B207] text-[15px] font-bold uppercase tracking-wider mb-5">
-                            Customer Care
+                            {t.footer.customerCare}
                         </h3>
                         <ul className="flex flex-col gap-3 list-none p-0 m-0">
                             {careLinks.map((link) => (
@@ -271,7 +280,7 @@ export default function Footer() {
                     {/* Column 4: Sell & Manage (Col span 2) */}
                     <div className="lg:col-span-2 flex flex-col">
                         <h3 className="text-[#00B207] text-[15px] font-bold uppercase tracking-wider mb-5">
-                            Sell & Manage
+                            {t.footer.sellAndManage}
                         </h3>
                         <ul className="flex flex-col gap-3 list-none p-0 m-0">
                             {sellLinks.map((link) => (
@@ -291,7 +300,7 @@ export default function Footer() {
                     {/* Column 5: Weekly Selected (Col span 3) */}
                     <div className="lg:col-span-3 flex flex-col">
                         <h3 className="text-[#00B207] text-[15px] font-bold uppercase tracking-wider mb-5">
-                            Weekly Selected
+                            {t.footer.weeklySelected}
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5">
                             {weeklySelectedProducts.map((product) => (
@@ -327,11 +336,11 @@ export default function Footer() {
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 py-6 border-t border-border-default/60">
                     {/* Copyright */}
                     <p className="text-text-secondary text-[13px]">
-                        Copyright &copy; {currentYear}.{" "}
+                        {format(t.footer.copyright, { year: currentYear })}{" "}
                         <strong className="text-[#00B207] font-semibold">
                             {chrome.siteName}
                         </strong>
-                        . All Rights Reserved.
+                        . {t.footer.rights}
                     </p>
 
                     {/* Social Icons */}

@@ -44,6 +44,7 @@ enum MediaCollection {
   trade_licenses
   avatars
   site_banners
+  review_images
 }
 
 enum DeviceType {
@@ -146,17 +147,19 @@ model User {
   updated_at                DateTime   @updatedAt
   deleted_at                DateTime?
 
-  avatar         Media?              @relation("UserAvatar", fields: [avatar_id], references: [id], onDelete: SetNull)
-  uploadedMedia  Media[]             @relation("MediaUploader")
-  sessions       UserSession[]
-  addresses      CustomerAddress[]
-  cart           Cart?
-  wishlist       Wishlist?
-  orders         Order[]
-  reviews        Review[]
-  notifications  Notification[]
-  vendorProfile  Vendor?
-  vendorHistory  VendorHistory[]     @relation("VendorHistoryActor")
+  avatar              Media?                @relation("UserAvatar", fields: [avatar_id], references: [id], onDelete: SetNull)
+  uploadedMedia       Media[]               @relation("MediaUploader")
+  sessions            UserSession[]
+  addresses           CustomerAddress[]
+  cart                Cart?
+  wishlist            Wishlist?
+  orders              Order[]
+  reviews             Review[]
+  productReviews      ProductReview[]       @relation("ProductReviewAuthor")
+  moderatedReviews    ProductReview[]       @relation("ProductReviewModerator")
+  notifications       Notification[]
+  vendorProfile       Vendor?
+  vendorHistory       VendorHistory[]       @relation("VendorHistoryActor")
   siteSettingsHistory SiteSettingsHistory[] @relation("SiteSettingsHistoryActor")
   verificationCodes   VerificationCode[]
 
@@ -324,29 +327,29 @@ model Brand {
 }
 
 model Vendor {
-  id           BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
-  user_id      BigInt     @unique @db.UnsignedBigInt
+  id                      BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id                 BigInt          @unique @db.UnsignedBigInt
   /// Store brand / logo image (uploads/shops/).
-  logo_id      BigInt?    @unique @db.UnsignedBigInt
+  logo_id                 BigInt?         @unique @db.UnsignedBigInt
   /// Wide storefront banner (uploads/shops/).
-  banner_id    BigInt?    @unique @db.UnsignedBigInt
-  shop_name    String     @db.VarChar(200)
-  slug         String     @unique @db.VarChar(220)
-  description  String?    @db.Text
-  status       UserStatus @default(pending)
+  banner_id               BigInt?         @unique @db.UnsignedBigInt
+  shop_name               String          @db.VarChar(200)
+  slug                    String          @unique @db.VarChar(220)
+  description             String?         @db.Text
+  status                  UserStatus      @default(pending)
   /// Customer /stores/[slug] layout theme.
-  storefront_theme          StorefrontTheme @default(classic)
+  storefront_theme        StorefrontTheme @default(classic)
   /// How many products to list on the store page.
-  products_per_page         Int             @default(12)
+  products_per_page       Int             @default(12)
   /// Featured strip size (showcase / marketplace themes).
-  featured_products_count   Int             @default(4)
+  featured_products_count Int             @default(4)
   /// Show products whose brand is inactive — styled as banned.
-  show_banned_brands        Boolean         @default(true)
+  show_banned_brands      Boolean         @default(true)
   /// Product ordering on the public store page.
-  product_sort              String          @default("featured_first") @db.VarChar(32)
-  created_at   DateTime   @default(now())
-  updated_at   DateTime   @updatedAt
-  deleted_at   DateTime?
+  product_sort            String          @default("featured_first") @db.VarChar(32)
+  created_at              DateTime        @default(now())
+  updated_at              DateTime        @updatedAt
+  deleted_at              DateTime?
 
   user     User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
   logo     Media?          @relation("VendorLogo", fields: [logo_id], references: [id], onDelete: SetNull)
@@ -379,50 +382,51 @@ model VendorHistory {
 /// Parent sellable item. Price/stock on the product are used for `simple`
 /// products; for `variable` products use `ProductVariant` rows instead.
 model Product {
-  id                BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
-  vendor_id         BigInt?       @db.UnsignedBigInt
-  category_id       BigInt?       @db.UnsignedBigInt
-  brand_id          BigInt?       @db.UnsignedBigInt
+  id                  BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  vendor_id           BigInt?       @db.UnsignedBigInt
+  category_id         BigInt?       @db.UnsignedBigInt
+  brand_id            BigInt?       @db.UnsignedBigInt
   /// Primary thumbnail from `medias` (files under uploads/products/).
-  thumbnail_id      BigInt?       @unique @db.UnsignedBigInt
-  name              String        @db.VarChar(255)
-  slug              String        @unique @db.VarChar(270)
-  sku               String?       @unique @db.VarChar(100)
-  barcode           String?       @db.VarChar(64)
+  thumbnail_id        BigInt?       @unique @db.UnsignedBigInt
+  name                String        @db.VarChar(255)
+  slug                String        @unique @db.VarChar(270)
+  sku                 String?       @unique @db.VarChar(100)
+  barcode             String?       @db.VarChar(64)
   /// Denormalized brand name (kept in sync with `brands.name`).
-  brand             String?       @db.VarChar(120)
-  description       String?       @db.Text
-  short_description String?       @db.VarChar(500)
-  type              ProductType   @default(simple)
-  price             Decimal       @db.Decimal(12, 2)
-  compare_at_price  Decimal?      @db.Decimal(12, 2)
-  cost_price        Decimal?      @db.Decimal(12, 2)
-  stock_qty         Int           @default(0)
-  low_stock_threshold Int?        @db.UnsignedInt
-  weight            Decimal?      @db.Decimal(10, 3)
-  weight_unit       WeightUnit    @default(kg)
+  brand               String?       @db.VarChar(120)
+  description         String?       @db.Text
+  short_description   String?       @db.VarChar(500)
+  type                ProductType   @default(simple)
+  price               Decimal       @db.Decimal(12, 2)
+  compare_at_price    Decimal?      @db.Decimal(12, 2)
+  cost_price          Decimal?      @db.Decimal(12, 2)
+  stock_qty           Int           @default(0)
+  low_stock_threshold Int?          @db.UnsignedInt
+  weight              Decimal?      @db.Decimal(10, 3)
+  weight_unit         WeightUnit    @default(kg)
   /// Per-product delivery charge (BDT). Null = site default, 0 = free shipping.
-  shipping_fee      Decimal?      @db.Decimal(12, 2)
-  status            ProductStatus @default(draft)
-  is_featured       Boolean       @default(false)
-  is_taxable        Boolean       @default(true)
-  meta_title        String?       @db.VarChar(160)
-  meta_description  String?       @db.VarChar(320)
-  published_at      DateTime?
-  created_at        DateTime      @default(now())
-  updated_at        DateTime      @updatedAt
-  deleted_at        DateTime?
+  shipping_fee        Decimal?      @db.Decimal(12, 2)
+  status              ProductStatus @default(draft)
+  is_featured         Boolean       @default(false)
+  is_taxable          Boolean       @default(true)
+  meta_title          String?       @db.VarChar(160)
+  meta_description    String?       @db.VarChar(320)
+  published_at        DateTime?
+  created_at          DateTime      @default(now())
+  updated_at          DateTime      @updatedAt
+  deleted_at          DateTime?
 
-  vendor        Vendor?               @relation(fields: [vendor_id], references: [id], onDelete: SetNull)
-  category      Category?             @relation(fields: [category_id], references: [id], onDelete: SetNull)
-  brandRef      Brand?                @relation(fields: [brand_id], references: [id], onDelete: SetNull)
-  thumbnail     Media?                @relation("ProductThumbnail", fields: [thumbnail_id], references: [id], onDelete: SetNull)
-  options       ProductOption[]
-  variants      ProductVariant[]
-  cartItems     CartItem[]
-  wishlistItems WishlistItem[]
-  orderItems    OrderItem[]
-  reviews       Review[]
+  vendor         Vendor?          @relation(fields: [vendor_id], references: [id], onDelete: SetNull)
+  category       Category?        @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  brandRef       Brand?           @relation(fields: [brand_id], references: [id], onDelete: SetNull)
+  thumbnail      Media?           @relation("ProductThumbnail", fields: [thumbnail_id], references: [id], onDelete: SetNull)
+  options        ProductOption[]
+  variants       ProductVariant[]
+  cartItems      CartItem[]
+  wishlistItems  WishlistItem[]
+  orderItems     OrderItem[]
+  reviews        Review[]
+  productReviews ProductReview[]
 
   @@index([vendor_id])
   @@index([category_id])
@@ -443,7 +447,7 @@ model ProductOption {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  product Product             @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product Product              @relation(fields: [product_id], references: [id], onDelete: Cascade)
   values  ProductOptionValue[]
 
   @@unique([product_id, name])
@@ -472,31 +476,31 @@ model ProductOptionValue {
 
 /// Sellable SKU / stock unit (one row even for simple products).
 model ProductVariant {
-  id               BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  product_id       BigInt    @db.UnsignedBigInt
+  id               BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  product_id       BigInt      @db.UnsignedBigInt
   /// Variant image from `medias` (collection: product_images, uploads/products/).
-  image_id         BigInt?   @unique @db.UnsignedBigInt
-  sku              String?   @unique @db.VarChar(100)
-  barcode          String?   @db.VarChar(64)
-  title            String?   @db.VarChar(255)
-  price            Decimal?  @db.Decimal(12, 2)
-  compare_at_price Decimal?  @db.Decimal(12, 2)
-  cost_price       Decimal?  @db.Decimal(12, 2)
-  stock_qty        Int       @default(0)
-  weight           Decimal?  @db.Decimal(10, 3)
+  image_id         BigInt?     @unique @db.UnsignedBigInt
+  sku              String?     @unique @db.VarChar(100)
+  barcode          String?     @db.VarChar(64)
+  title            String?     @db.VarChar(255)
+  price            Decimal?    @db.Decimal(12, 2)
+  compare_at_price Decimal?    @db.Decimal(12, 2)
+  cost_price       Decimal?    @db.Decimal(12, 2)
+  stock_qty        Int         @default(0)
+  weight           Decimal?    @db.Decimal(10, 3)
   weight_unit      WeightUnit?
-  is_default       Boolean   @default(false)
-  is_active        Boolean   @default(true)
-  position         Int       @default(0)
-  created_at       DateTime  @default(now())
-  updated_at       DateTime  @updatedAt
+  is_default       Boolean     @default(false)
+  is_active        Boolean     @default(true)
+  position         Int         @default(0)
+  created_at       DateTime    @default(now())
+  updated_at       DateTime    @updatedAt
   deleted_at       DateTime?
 
-  product     Product               @relation(fields: [product_id], references: [id], onDelete: Cascade)
-  image       Media?                @relation("VariantImage", fields: [image_id], references: [id], onDelete: SetNull)
+  product      Product                @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  image        Media?                 @relation("VariantImage", fields: [image_id], references: [id], onDelete: SetNull)
   optionValues ProductVariantOption[]
-  cartItems   CartItem[]
-  orderItems  OrderItem[]
+  cartItems    CartItem[]
+  orderItems   OrderItem[]
 
   @@index([product_id])
   @@index([product_id, is_default])
@@ -521,23 +525,23 @@ model ProductVariantOption {
 // ─── Customer addresses ─────────────────────────────────────────
 
 model CustomerAddress {
-  id                 BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
-  user_id            BigInt      @db.UnsignedBigInt
-  label              String?     @db.VarChar(50)
-  full_name          String      @db.VarChar(150)
-  phone              String      @db.VarChar(30)
-  line1              String      @db.VarChar(255)
-  line2              String?     @db.VarChar(255)
-  city               String      @db.VarChar(100)
-  state              String?     @db.VarChar(100)
-  postal_code        String      @db.VarChar(20)
-  country            String      @default("BD") @db.VarChar(2)
-  type               AddressType @default(both)
-  is_default_shipping Boolean    @default(false)
-  is_default_billing  Boolean    @default(false)
-  created_at         DateTime    @default(now())
-  updated_at         DateTime    @updatedAt
-  deleted_at         DateTime?
+  id                  BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id             BigInt      @db.UnsignedBigInt
+  label               String?     @db.VarChar(50)
+  full_name           String      @db.VarChar(150)
+  phone               String      @db.VarChar(30)
+  line1               String      @db.VarChar(255)
+  line2               String?     @db.VarChar(255)
+  city                String      @db.VarChar(100)
+  state               String?     @db.VarChar(100)
+  postal_code         String      @db.VarChar(20)
+  country             String      @default("BD") @db.VarChar(2)
+  type                AddressType @default(both)
+  is_default_shipping Boolean     @default(false)
+  is_default_billing  Boolean     @default(false)
+  created_at          DateTime    @default(now())
+  updated_at          DateTime    @updatedAt
+  deleted_at          DateTime?
 
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -613,41 +617,42 @@ model WishlistItem {
 // ─── Orders ─────────────────────────────────────────────────────
 
 model Order {
-  id               BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  id              BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
   /// Null for guest checkout until claimed by a verified account.
-  user_id          BigInt?       @db.UnsignedBigInt
+  user_id         BigInt?       @db.UnsignedBigInt
   /// Lowercased contact email captured at checkout (guest + customer).
-  customer_email   String?       @db.VarChar(255)
+  customer_email  String?       @db.VarChar(255)
   /// Normalized E.164 contact phone captured at checkout (e.g. +8801712345678).
-  customer_phone   String?       @db.VarChar(30)
+  customer_phone  String?       @db.VarChar(30)
   /// Set when a guest order is attached to an account after verification.
-  claimed_at       DateTime?
-  order_number     String        @unique @db.VarChar(40)
-  status           OrderStatus   @default(pending)
-  payment_status   PaymentStatus @default(pending)
-  payment_method   PaymentMethod @default(cash_on_delivery)
+  claimed_at      DateTime?
+  order_number    String        @unique @db.VarChar(40)
+  status          OrderStatus   @default(pending)
+  payment_status  PaymentStatus @default(pending)
+  payment_method  PaymentMethod @default(cash_on_delivery)
   /// Wallet/card actually used on SSLCOMMERZ: bkash | nagad | rocket | card | other (null until paid).
-  payment_channel  String?       @db.VarChar(20)
-  courier_name     String?       @db.VarChar(80)
-  tracking_number  String?       @db.VarChar(80)
-  currency         String        @default("BDT") @db.VarChar(3)
-  subtotal         Decimal       @db.Decimal(12, 2)
-  shipping_fee     Decimal       @default(0) @db.Decimal(12, 2)
-  discount_amount  Decimal       @default(0) @db.Decimal(12, 2)
-  tax_amount       Decimal       @default(0) @db.Decimal(12, 2)
-  total            Decimal       @db.Decimal(12, 2)
-  notes            String?       @db.Text
-  placed_at        DateTime      @default(now())
-  shipped_at       DateTime?
-  delivered_at     DateTime?
-  cancelled_at     DateTime?
-  created_at       DateTime      @default(now())
-  updated_at       DateTime      @updatedAt
+  payment_channel String?       @db.VarChar(20)
+  courier_name    String?       @db.VarChar(80)
+  tracking_number String?       @db.VarChar(80)
+  currency        String        @default("BDT") @db.VarChar(3)
+  subtotal        Decimal       @db.Decimal(12, 2)
+  shipping_fee    Decimal       @default(0) @db.Decimal(12, 2)
+  discount_amount Decimal       @default(0) @db.Decimal(12, 2)
+  tax_amount      Decimal       @default(0) @db.Decimal(12, 2)
+  total           Decimal       @db.Decimal(12, 2)
+  notes           String?       @db.Text
+  placed_at       DateTime      @default(now())
+  shipped_at      DateTime?
+  delivered_at    DateTime?
+  cancelled_at    DateTime?
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
 
-  user      User?          @relation(fields: [user_id], references: [id], onDelete: Restrict)
+  user      User?           @relation(fields: [user_id], references: [id], onDelete: Restrict)
   items     OrderItem[]
   addresses OrderAddress[]
   payments  Payment[]
+  reviews   ProductReview[]
 
   @@index([user_id])
   @@index([customer_email])
@@ -728,15 +733,15 @@ model Payment {
 // ─── Reviews & notifications ────────────────────────────────────
 
 model Review {
-  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  user_id    BigInt   @db.UnsignedBigInt
-  product_id BigInt   @db.UnsignedBigInt
-  rating     Int
-  title      String?  @db.VarChar(150)
-  body       String?  @db.Text
-  is_approved Boolean @default(false)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id          BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id     BigInt   @db.UnsignedBigInt
+  product_id  BigInt   @db.UnsignedBigInt
+  rating      Int
+  title       String?  @db.VarChar(150)
+  body        String?  @db.Text
+  is_approved Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
   user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
   product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
@@ -747,15 +752,68 @@ model Review {
   @@map("reviews")
 }
 
+enum ProductReviewStatus {
+  pending
+  approved
+  hidden
+  rejected
+}
+
+/// Purchase-verified review: every row is tied to a paid + delivered order containing the product.
+model ProductReview {
+  id                   BigInt              @id @default(autoincrement()) @db.UnsignedBigInt
+  product_id           BigInt              @db.UnsignedBigInt
+  /// Set when the order belongs to a customer account (null for guest orders).
+  user_id              BigInt?             @db.UnsignedBigInt
+  order_id             BigInt              @db.UnsignedBigInt
+  author_name          String              @db.VarChar(150)
+  /// Lowercased email the reviewer verified with.
+  author_email         String?             @db.VarChar(255)
+  /// E.164 phone the reviewer verified with.
+  author_phone         String?             @db.VarChar(30)
+  rating               Int                 @db.UnsignedTinyInt
+  title                String?             @db.VarChar(150)
+  comment              String              @db.Text
+  /// Ordered `medias.id` list (collection: review_images, uploads/reviews/).
+  images               Json?
+  is_verified_purchase Boolean             @default(true)
+  status               ProductReviewStatus @default(approved)
+  /// Staff flag for a second look (moderators flag, admins decide).
+  flagged_at           DateTime?
+  flag_reason          String?             @db.VarChar(255)
+  moderated_by         BigInt?             @db.UnsignedBigInt
+  moderated_at         DateTime?
+  vendor_reply         String?             @db.Text
+  vendor_replied_at    DateTime?
+  created_at           DateTime            @default(now())
+  updated_at           DateTime            @updatedAt
+  deleted_at           DateTime?
+
+  product   Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  user      User?   @relation("ProductReviewAuthor", fields: [user_id], references: [id], onDelete: SetNull)
+  order     Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  moderator User?   @relation("ProductReviewModerator", fields: [moderated_by], references: [id], onDelete: SetNull)
+
+  @@unique([order_id, product_id])
+  @@index([product_id, status])
+  @@index([user_id])
+  @@index([author_email])
+  @@index([author_phone])
+  @@index([status, created_at])
+  @@index([moderated_by])
+  @@index([deleted_at])
+  @@map("product_reviews")
+}
+
 model Notification {
-  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  user_id    BigInt   @db.UnsignedBigInt
-  type       String   @db.VarChar(80)
-  title      String   @db.VarChar(200)
-  body       String?  @db.Text
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    BigInt    @db.UnsignedBigInt
+  type       String    @db.VarChar(80)
+  title      String    @db.VarChar(200)
+  body       String?   @db.Text
   data       Json?
   read_at    DateTime?
-  created_at DateTime @default(now())
+  created_at DateTime  @default(now())
 
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -766,32 +824,32 @@ model Notification {
 
 /// Singleton website SEO + analytics / pixel config (id = 1).
 model SiteSettings {
-  id               Int       @id @default(1)
-  site_name        String    @db.VarChar(120)
-  site_title       String    @db.VarChar(160)
-  site_description String    @db.VarChar(500)
-  keywords         String?   @db.VarChar(500)
+  id               Int     @id @default(1)
+  site_name        String  @db.VarChar(120)
+  site_title       String  @db.VarChar(160)
+  site_description String  @db.VarChar(500)
+  keywords         String? @db.VarChar(500)
 
-  og_title       String?  @db.VarChar(160)
-  og_description String?  @db.VarChar(500)
-  og_image_id    BigInt?  @unique @db.UnsignedBigInt
+  og_title       String? @db.VarChar(160)
+  og_description String? @db.VarChar(500)
+  og_image_id    BigInt? @unique @db.UnsignedBigInt
   /// Browser tab / bookmark icon.
-  favicon_id     BigInt?  @unique @db.UnsignedBigInt
+  favicon_id     BigInt? @unique @db.UnsignedBigInt
   /// Logo shown on dashboard (and storefront) login screens.
-  login_logo_id  BigInt?  @unique @db.UnsignedBigInt
+  login_logo_id  BigInt? @unique @db.UnsignedBigInt
 
   twitter_title       String? @db.VarChar(160)
   twitter_description String? @db.VarChar(500)
   twitter_handle      String? @db.VarChar(80)
 
-  google_analytics_id        String?  @db.VarChar(40)
-  google_analytics_enabled   Boolean  @default(false)
-  google_tag_manager_id      String?  @db.VarChar(40)
-  google_tag_manager_enabled Boolean  @default(false)
-  hotjar_site_id             String?  @db.VarChar(40)
-  hotjar_enabled             Boolean  @default(false)
-  plerdy_site_id             String?  @db.VarChar(80)
-  plerdy_enabled             Boolean  @default(false)
+  google_analytics_id        String? @db.VarChar(40)
+  google_analytics_enabled   Boolean @default(false)
+  google_tag_manager_id      String? @db.VarChar(40)
+  google_tag_manager_enabled Boolean @default(false)
+  hotjar_site_id             String? @db.VarChar(40)
+  hotjar_enabled             Boolean @default(false)
+  plerdy_site_id             String? @db.VarChar(80)
+  plerdy_enabled             Boolean @default(false)
 
   google_ads_id         String? @db.VarChar(40)
   google_ads_enabled    Boolean @default(false)
@@ -818,11 +876,11 @@ model SiteSettings {
   shop_show_less_label    String @default("Show less") @db.VarChar(40)
 
   /// Delivery charge (BDT) for products without their own shipping fee.
-  shipping_default_fee    Decimal  @default(60) @db.Decimal(12, 2)
+  shipping_default_fee     Decimal  @default(60) @db.Decimal(12, 2)
   /// Order subtotal at/above which the whole order ships free. Null = never.
-  shipping_free_threshold Decimal? @db.Decimal(12, 2)
+  shipping_free_threshold  Decimal? @db.Decimal(12, 2)
   /// Store owners (vendors) may set a per-product shipping fee.
-  shipping_vendor_override Boolean @default(true)
+  shipping_vendor_override Boolean  @default(true)
 
   /// Top bar + footer chrome (storefront header/footer).
   topbar_email     String? @db.VarChar(160)
@@ -838,11 +896,11 @@ model SiteSettings {
 
   updated_at DateTime @updatedAt
 
-  og_image    Media? @relation("SiteSettingsOgImage", fields: [og_image_id], references: [id], onDelete: SetNull)
-  favicon     Media? @relation("SiteSettingsFavicon", fields: [favicon_id], references: [id], onDelete: SetNull)
-  login_logo  Media? @relation("SiteSettingsLoginLogo", fields: [login_logo_id], references: [id], onDelete: SetNull)
-  history     SiteSettingsHistory[]
-  nav_items   SiteNavItem[]
+  og_image      Media?                @relation("SiteSettingsOgImage", fields: [og_image_id], references: [id], onDelete: SetNull)
+  favicon       Media?                @relation("SiteSettingsFavicon", fields: [favicon_id], references: [id], onDelete: SetNull)
+  login_logo    Media?                @relation("SiteSettingsLoginLogo", fields: [login_logo_id], references: [id], onDelete: SetNull)
+  history       SiteSettingsHistory[]
+  nav_items     SiteNavItem[]
   home_sections HomeSection[]
 
   @@map("site_settings")
@@ -924,21 +982,21 @@ model EmailProvider {
 
 /// Header / footer menu links (ordered; drag-drop position in dashboard).
 model SiteNavItem {
-  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  settings_id Int     @default(1)
+  id          BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  settings_id Int      @default(1)
   /// header | footer_find | footer_care | footer_sell
-  menu       String   @db.VarChar(32)
-  label      String   @db.VarChar(120)
-  href       String   @db.VarChar(500)
-  external   Boolean  @default(false)
-  position   Int      @default(0)
-  is_enabled Boolean  @default(true)
+  menu        String   @db.VarChar(32)
+  label       String   @db.VarChar(120)
+  href        String   @db.VarChar(500)
+  external    Boolean  @default(false)
+  position    Int      @default(0)
+  is_enabled  Boolean  @default(true)
   /// Optional parent for dropdown children (header only).
-  parent_id  BigInt?  @db.UnsignedBigInt
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  parent_id   BigInt?  @db.UnsignedBigInt
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
-  settings SiteSettings @relation(fields: [settings_id], references: [id], onDelete: Cascade)
+  settings SiteSettings  @relation(fields: [settings_id], references: [id], onDelete: Cascade)
   parent   SiteNavItem?  @relation("SiteNavChildren", fields: [parent_id], references: [id], onDelete: Cascade)
   children SiteNavItem[] @relation("SiteNavChildren")
 
@@ -991,15 +1049,15 @@ model HomeHeroBanner {
   main_product_image_id BigInt? @unique @db.UnsignedBigInt
   main_bg_image_id      BigInt? @unique @db.UnsignedBigInt
 
-  side_badge_label       String? @db.VarChar(40)
-  side_offer_percent     Int?    @default(25)
-  side_offer_label       String? @default("offer") @db.VarChar(40)
-  side_headline          String  @default("CLOUD CAM, SECURITY CAMERA") @db.VarChar(200)
-  side_discount_percent  Int?    @default(70)
-  side_cta_label         String  @default("SHOP NOW") @db.VarChar(40)
-  side_cta_href          String  @default("/shop") @db.VarChar(300)
-  side_product_image_id  BigInt? @unique @db.UnsignedBigInt
-  side_bg_image_id       BigInt? @unique @db.UnsignedBigInt
+  side_badge_label      String? @db.VarChar(40)
+  side_offer_percent    Int?    @default(25)
+  side_offer_label      String? @default("offer") @db.VarChar(40)
+  side_headline         String  @default("CLOUD CAM, SECURITY CAMERA") @db.VarChar(200)
+  side_discount_percent Int?    @default(70)
+  side_cta_label        String  @default("SHOP NOW") @db.VarChar(40)
+  side_cta_href         String  @default("/shop") @db.VarChar(300)
+  side_product_image_id BigInt? @unique @db.UnsignedBigInt
+  side_bg_image_id      BigInt? @unique @db.UnsignedBigInt
 
   updated_at DateTime @updatedAt
 
@@ -1013,15 +1071,15 @@ model HomeHeroBanner {
 
 /// Audit trail for site settings create / edit / OG image / clear.
 model SiteSettingsHistory {
-  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  id          BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
   /// Always points at the singleton site_settings row (id = 1).
-  settings_id Int     @default(1)
-  actor_id   BigInt?  @db.UnsignedBigInt
-  action     String   @db.VarChar(40)
+  settings_id Int      @default(1)
+  actor_id    BigInt?  @db.UnsignedBigInt
+  action      String   @db.VarChar(40)
   /// Field-level diffs, e.g. { site_name: { from, to } }
-  changes    Json?
-  note       String?  @db.VarChar(500)
-  created_at DateTime @default(now())
+  changes     Json?
+  note        String?  @db.VarChar(500)
+  created_at  DateTime @default(now())
 
   settings SiteSettings @relation(fields: [settings_id], references: [id], onDelete: Cascade)
   actor    User?        @relation("SiteSettingsHistoryActor", fields: [actor_id], references: [id], onDelete: SetNull)
@@ -1033,15 +1091,15 @@ model SiteSettingsHistory {
 
 /// Anonymous storefront page hits for visitor-by-country analytics.
 model PageVisit {
-  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  id          BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
   /// ISO 3166-1 alpha-2 (LO = local/private, XX = unknown).
-  country    String   @db.VarChar(2)
-  path       String   @db.VarChar(255)
-  referrer   String?  @db.VarChar(500)
+  country     String     @db.VarChar(2)
+  path        String     @db.VarChar(255)
+  referrer    String?    @db.VarChar(500)
   /// Hashed IP only — never store raw visitor IPs for analytics.
-  ip_hash    String?  @db.VarChar(64)
+  ip_hash     String?    @db.VarChar(64)
   device_type DeviceType @default(unknown)
-  created_at DateTime @default(now())
+  created_at  DateTime   @default(now())
 
   @@index([created_at])
   @@index([country, created_at])

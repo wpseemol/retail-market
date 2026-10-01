@@ -14,6 +14,7 @@ import * as LucideIcons from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { PublicCategory } from "@/lib/categories";
 import { categoryShopHref } from "@/lib/categories";
+import { useI18n } from "@/components/providers/LocaleProvider";
 
 type Props = {
   categories: PublicCategory[];
@@ -82,6 +83,7 @@ export default function CategoryBrowseMenu({
   onNavigate,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const { t } = useI18n();
   const reduceMotion = useReducedMotion();
   const isMobile = variant === "mobile";
   const menuId = isMobile
@@ -129,7 +131,7 @@ export default function CategoryBrowseMenu({
             <circle cx="13" cy="9" r="1.6" fill="currentColor" />
             <circle cx="13" cy="14" r="1.6" fill="currentColor" />
           </svg>
-          <span>Browse Category</span>
+          <span>{t.categories.browse}</span>
           <svg
             width="10"
             height="6"
@@ -154,7 +156,7 @@ export default function CategoryBrowseMenu({
             <m.div
               id={menuId}
               role="navigation"
-              aria-label="Product categories"
+              aria-label={t.categories.menuLabel}
               initial={
                 reduceMotion
                   ? { opacity: 1 }
@@ -182,17 +184,16 @@ export default function CategoryBrowseMenu({
               >
                 <div className="border-b border-border-default/70 bg-linear-to-r from-brand-primary/8 via-bg-base to-bg-subtle px-4 py-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-primary">
-                    Shop by category
+                    {t.categories.shopBy}
                   </p>
                   <p className="mt-0.5 text-[13px] text-text-secondary">
-                    Browse the full catalog — pick a department to start
-                    shopping.
+                    {t.categories.intro}
                   </p>
                 </div>
 
                 {safeCategories.length === 0 ? (
                   <p className="px-4 py-8 text-center text-sm text-text-secondary">
-                    Categories will appear here once they are published.
+                    {t.categories.empty}
                   </p>
                 ) : (
                   <ul data-lenis-prevent className="grid max-h-[min(70vh,480px)] grid-cols-1 gap-1.5 overflow-y-auto p-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -245,7 +246,7 @@ export default function CategoryBrowseMenu({
                                   </span>
                                 ) : (
                                   <span className="mt-0.5 block text-[11px] text-text-secondary">
-                                    View products
+                                    {t.categories.viewProducts}
                                   </span>
                                 )}
                               </span>
@@ -284,7 +285,7 @@ export default function CategoryBrowseMenu({
                     }}
                     className="text-[13px] font-medium text-brand-primary hover:underline"
                   >
-                    View all products →
+                    {t.categories.viewAll}
                   </Link>
                 </div>
               </div>
@@ -292,7 +293,7 @@ export default function CategoryBrowseMenu({
           ) : null}
         </AnimatePresence>
 
-        <nav className="sr-only" aria-label="All product categories">
+        <nav className="sr-only" aria-label={t.categories.allLabel}>
           <ul>
             {safeCategories.map((category) => (
               <li key={`seo-${category.id}`}>

@@ -3,6 +3,7 @@ import {
   ClipboardList,
   FolderTree,
   LayoutDashboard,
+  MessageSquareText,
   Package,
   Shield,
   ShieldCheck,
@@ -30,6 +31,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import type { StaffRole } from "@/lib/api";
+import { REVIEW_ROLES } from "@/lib/rbac";
 import { useAuthStore } from "@/store/auth";
 
 const ROLE_HOME: Record<StaffRole, string> = {
@@ -101,6 +103,20 @@ const productSubLinks: Array<{
   },
 ];
 
+const supportLinks: Array<{
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  roles: readonly StaffRole[];
+}> = [
+  {
+    to: "/support/reviews",
+    label: "Product reviews",
+    icon: MessageSquareText,
+    roles: REVIEW_ROLES,
+  },
+];
+
 const roleLinks: Array<{
   to: string;
   label: string;
@@ -133,7 +149,7 @@ const roleLinks: Array<{
   },
 ];
 
-function canSee(roles: StaffRole[], userRole: StaffRole) {
+function canSee(roles: readonly StaffRole[], userRole: StaffRole) {
   return userRole === "super_admin" || roles.includes(userRole);
 }
 
@@ -149,6 +165,9 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
     (link) => user && canSee(link.roles, user.role),
   );
   const workspaceRoleLinks = roleLinks.filter(
+    (link) => user && canSee(link.roles, user.role),
+  );
+  const qualityLinks = supportLinks.filter(
     (link) => user && canSee(link.roles, user.role),
   );
 
@@ -273,6 +292,34 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {qualityLinks.length > 0 ? (
+          <SidebarGroup>
+            <SidebarGroupLabel>Support &amp; Quality</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {qualityLinks.map((link) => {
+                  const active =
+                    pathname === link.to || pathname.startsWith(`${link.to}/`);
+                  return (
+                    <SidebarMenuItem key={link.to}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={active}
+                        tooltip={link.label}
+                      >
+                        <NavLink to={link.to}>
+                          <link.icon />
+                          <span>{link.label}</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
       </SidebarContent>
 
       <SidebarFooter>{user ? <NavUser user={user} /> : null}</SidebarFooter>

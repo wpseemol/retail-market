@@ -12,6 +12,8 @@ import {
   SEARCH_MAX_CHARS,
   type SearchSuggestPayload,
 } from "@/lib/search";
+import { useI18n } from "@/components/providers/LocaleProvider";
+import { format } from "@/i18n/config";
 
 type Variant = "desktop" | "mobile";
 
@@ -53,6 +55,7 @@ function Thumb({ src, label }: { src: string | null; label: string }) {
 export default function HeaderSearch({ variant }: { variant: Variant }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useI18n();
   const listboxId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -91,7 +94,8 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
         setResult({
           q: normalized,
           data: null,
-          error: err instanceof Error ? err.message : "Search failed",
+          // Empty string → generic localized message at render time.
+          error: err instanceof Error ? err.message : "",
         });
       });
     return () => controller.abort();
@@ -189,7 +193,7 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
           maxLength={SEARCH_MAX_CHARS}
           autoComplete="off"
           placeholder={
-            isDesktop ? "Search..." : "Search products, categories, shops..."
+            isDesktop ? t.search.placeholderShort : t.search.placeholderLong
           }
           role="combobox"
           aria-expanded={showPanel}
@@ -214,7 +218,7 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
         ) : null}
         <button
           type="submit"
-          aria-label="Submit Search"
+          aria-label={t.search.submit}
           className="ml-1.5 shrink-0 cursor-pointer"
         >
           <Image
@@ -237,20 +241,24 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
             isDesktop ? "right-0 w-[26rem]" : "left-0 right-0"
           }`}
         >
-          {error ? (
-            <p className="px-4 py-3 text-sm text-red-600">{error}</p>
+          {error !== null ? (
+            <p className="px-4 py-3 text-sm text-red-600">
+              {error || t.search.failed}
+            </p>
           ) : loading && !data ? (
-            <p className="px-4 py-3 text-sm text-text-secondary">Searching…</p>
+            <p className="px-4 py-3 text-sm text-text-secondary">
+              {t.search.searching}
+            </p>
           ) : !hasResults && data ? (
             <p className="px-4 py-3 text-sm text-text-secondary">
-              No products, categories, or shops match “{trimmed}”.
+              {format(t.search.noResults, { query: trimmed })}
             </p>
           ) : null}
 
           {products.length > 0 ? (
-            <section aria-label="Products" className="py-1">
+            <section aria-label={t.search.products} className="py-1">
               <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
-                Products
+                {t.search.products}
               </p>
               {products.map((p) => {
                 const key = `p-${p.id}`;
@@ -285,11 +293,11 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
 
           {categories.length > 0 ? (
             <section
-              aria-label="Categories"
+              aria-label={t.search.categories}
               className="border-t border-border-default py-1"
             >
               <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
-                Categories
+                {t.search.categories}
               </p>
               {categories.map((c) => {
                 const key = `c-${c.id}`;
@@ -318,12 +326,12 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
                       </span>
                       {c.parent ? (
                         <span className="block truncate text-[11px] text-text-secondary">
-                          in {c.parent}
+                          {format(t.search.inParent, { parent: c.parent })}
                         </span>
                       ) : null}
                     </span>
                     <span className="shrink-0 text-[11px] text-text-secondary">
-                      {c.products_count} items
+                      {format(t.search.itemsCount, { count: c.products_count })}
                     </span>
                   </Link>
                 );
@@ -333,11 +341,11 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
 
           {shops.length > 0 ? (
             <section
-              aria-label="Shops"
+              aria-label={t.search.shops}
               className="border-t border-border-default py-1"
             >
               <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
-                Shops
+                {t.search.shops}
               </p>
               {shops.map((s) => {
                 const key = `s-${s.id}`;
@@ -358,7 +366,7 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
                         <Highlight text={s.name} query={trimmed} />
                       </span>
                       <span className="block truncate text-[11px] text-text-secondary">
-                        {s.products_count} products
+                        {format(t.search.productsCount, { count: s.products_count })}
                       </span>
                     </span>
                   </Link>
@@ -373,7 +381,7 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
               onClick={goToAllResults}
               className="block w-full border-t border-border-default px-3 py-2.5 text-center text-sm font-medium text-brand-primary hover:bg-bg-subtle"
             >
-              See all {data.product_total} product results for “{trimmed}”
+              {format(t.search.seeAll, { count: data.product_total, query: trimmed })}
             </button>
           ) : null}
         </div>

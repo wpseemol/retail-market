@@ -75,6 +75,7 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/site-settings` | `routes/publicSiteSettings.ts` | Public |
 | `/api/analytics` | `routes/publicAnalytics.ts` | Public |
 | `/api/shops` | `routes/publicShops.ts` | Public |
+| `/api/products/:idOrSlug/reviews` | `routes/productReviews.ts` | Public (verified buyers submit) |
 | `/api/products` | `routes/publicProducts.ts` | Public |
 | `/api/categories` | `routes/publicCategories.ts` | Public |
 | `/api/search` | `routes/publicSearch.ts` | Public |
@@ -84,6 +85,7 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/dashboard/overview` | `routes/dashboardOverview.ts` | `super_admin`, `admin` |
 | `/api/dashboard/notifications` | `routes/dashboardNotifications.ts` | Staff |
 | `/api/dashboard/orders` | `routes/dashboardOrders.ts` | Staff |
+| `/api/dashboard/reviews` | `routes/dashboardReviews.ts` | Staff (vendors: own store only) |
 | `/api/dashboard/site-settings` | `routes/dashboardSiteSettings.ts` | `super_admin` |
 | `/api/dashboard/home-hero` | `routes/dashboardHomeHero.ts` | `super_admin` |
 | `/api/dashboard/home-blocks` | `routes/dashboardHomeBlocks.ts` | `super_admin` |
@@ -254,6 +256,45 @@ Numeric id or product slug.
 `related`: up to 8 active products from the same store (or category)
 
 **404** if not found / not active.
+
+---
+
+## Product reviews — `/api/products/:idOrSlug/reviews`
+
+Purchase-verified reviews. A review is only accepted when an order with `status: delivered` **and** `payment_status: paid` contains the product and its checkout `customer_email` **or** `customer_phone` matches what the reviewer enters (a signed-in customer's own orders also match via `Authorization: Bearer`). Cash-on-delivery orders become `paid` when marked delivered. One review per customer per product (matched by email, phone, account or order); `(order_id, product_id)` is unique in the database.
+
+`:idOrSlug` is the numeric id or slug of an **active** product (404 otherwise). The task spec's `/api/v1/products/:id/reviews*` paths map to these.
+
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/?page=&limit=&sort=` | Approved reviews only. `limit` ≤ 20, `sort`: `newest` (default) \| `highest` \| `lowest` → `{ summary: { average, count, breakdown: { "1".."5" } }, reviews, pagination }` |
+| POST | `/check-eligibility` | JSON `{ email?, phone? }` (at least one unless signed in; phone accepts `017…` / `8801…` / `+8801…`) → `{ canReview: true, orderId, authorName }` (`authorName` is the full name from the order, used to prefill the review form) · `{ canReview: false, reason: "not_purchased", message }` · `{ canReview: false, reason: "already_reviewed", message, review }` where `review` is the caller's own review (public object + `status`) so they can edit or delete it · **10 requests / 10 min per IP** (429 `REVIEW_ELIGIBILITY_RATE_LIMITED`) |
+| POST | `/` | **multipart/form-data**: `email?`, `phone?`, `author_name?` (2–80; defaults to the order's shipping name), `rating` (1–5), `title?` (≤ 150), `comment` (10–2000), `images` (0–4 files) → **201** `{ message, status, review }` · **403** `REVIEW_NOT_ELIGIBLE` with message `Only customers who purchased and received this product can leave a review.` · **409** `REVIEW_ALREADY_SUBMITTED` · **400** validation / upload errors · **5 submissions / hour per IP** (429 `REVIEW_SUBMIT_RATE_LIMITED`) |
+| PATCH | `/:reviewId` | Author edits their own review. **multipart/form-data**: `email?`, `phone?` (proof of ownership; optional when signed in), `author_name?`, `rating`, `title?`, `comment`, `keep_images` (repeat or comma-separate the ids of existing photos to keep; others are deleted), `images` (new files; kept + new ≤ 4) → `{ message, status, review }` (own review object). An approved review goes back to `pending` when `REVIEWS_REQUIRE_APPROVAL=true`; `hidden` / `rejected` stay as staff left them. **403** `REVIEW_NOT_OWNER` when the contact/account doesn't own this review · **20 changes / hour per IP** (429 `REVIEW_MANAGE_RATE_LIMITED`) |
+| DELETE | `/:reviewId` | Author permanently deletes their own review and its photos. JSON `{ email?, phone? }` (optional when signed in) → `{ message, id }` · **403** `REVIEW_NOT_OWNER` · shares the 20 / hour limit. The storefront confirms in a modal first. The buyer can write a new review afterwards. |
+
+Review photos: field `images`, up to **4 × 2 MB**, JPEG / PNG / WebP / GIF, magic bytes checked, **always resized on the server** (fit inside 1200 × 1200, WebP) and re-checked against 2 MB after resize. Stored under `uploads/reviews/` as `medias` rows (`collection_name: review_images`, `mediable_type: ProductReview`).
+
+New reviews are `approved` immediately unless `REVIEWS_REQUIRE_APPROVAL=true`, which queues them as `pending`.
+
+Public review object:
+
+```json
+{
+  "id": "1",
+  "author_name": "Rahim Khan",
+  "rating": 4,
+  "title": "Solid tablet",
+  "comment": "Great screen, battery lasts all day.",
+  "images": [{ "id": "85", "url": "http://localhost:8001/uploads/reviews/….webp" }],
+  "is_verified_purchase": true,
+  "vendor_reply": "Thanks for your kind words!",
+  "vendor_replied_at": "2026-10-01T08:33:16.000Z",
+  "created_at": "2026-10-01T08:31:54.849Z"
+}
+```
+
+`author_name` is the reviewer's full name (the storefront shows the first name and the full name on hover); email / phone are never public.
 
 ---
 
@@ -605,6 +646,28 @@ Query filters:
 Status transitions: `pending → confirmed | processing | shipped | cancelled`, `confirmed → pending | processing | shipped | cancelled`, `processing → confirmed | shipped | cancelled`, `shipped → processing | delivered | cancelled`, `delivered → refunded`; `cancelled` and `refunded` are final. Side effects: `shipped_at` is set on shipped/delivered, `delivered_at` on delivered (a pending **cash on delivery** payment becomes `paid`), `cancelled_at` on cancelled, and a paid order moved to `refunded` gets `payment_status: refunded`. Stock and money are not moved automatically.
 
 Each order includes `is_guest`, `claimed_at`, `customer: { id | null, name, email, phone, avatar }`, `billing`, `payment_channel`, `courier_name`, `tracking_number`, `shipped_at`, `delivered_at`, `cancelled_at` — for guest orders `customer.id` is `null`, `name` comes from the billing address and `email`/`phone` from checkout. `payment_channel` is filled when an SSLCOMMERZ payment settles (from the gateway `card_type`).
+
+---
+
+## Dashboard reviews — `/api/dashboard/reviews`
+
+Auth: Bearer **staff** (`super_admin`, `admin`, `moderator`, `vendor`). Vendors only see reviews on their own store's products (others return 404); they see the buyer's email / phone masked and no order number. Nobody can edit a review's rating or text. The task spec's `/api/v1/admin/reviews*` paths map to these.
+
+| Method | Path | Who | Notes |
+|--------|------|-----|-------|
+| GET | `/?status=&flagged=&rating=&product_id=&q=&page=&limit=` | all | `status`: `all` (default) \| `pending` \| `approved` \| `hidden` \| `rejected` · `flagged`: `true`/`false` · `q` (≤ 120, safe-input) matches name, email, phone, title, comment, product name · `limit` ≤ 100 → `{ reviews, counts: { all, pending, approved, hidden, rejected }, pagination }` |
+| PATCH | `/:id/status` | see below | `{ status }` → `{ message, review }` · 403 `REVIEW_STATUS_FORBIDDEN` · 409 `STATUS_UNCHANGED` / `REVIEW_CHANGED` |
+| PATCH | `/:id/flag` | super_admin, admin, moderator | `{ flagged: boolean, reason? (≤ 255) }` — marks a review for an admin to look at |
+| PATCH | `/:id/reply` | super_admin, admin, vendor | `{ reply }` (2–1000 chars, `""` removes it) — public merchant reply shown under the review |
+| DELETE | `/:id` | **super_admin, admin** | Permanently deletes the review and its photos → `{ message, id }` |
+
+Status rules:
+
+- `super_admin` / `admin`: any status.
+- `moderator`: `approved` or `hidden` only (cannot reject or delete).
+- `vendor`: hide / show only (`approved` ↔ `hidden`); can't touch `pending` / `rejected` reviews, and can't re-show a review that staff hid.
+
+Dashboard review object: public fields plus `status`, `author_name` (full), `author_email`, `author_phone`, `flagged`, `flagged_at`, `flag_reason`, `moderated_at`, `moderated_by { id, name, role }`, `product { id, name, slug, thumbnail_url, vendor }`, `order { id, order_number } | null`, `updated_at`.
 
 ---
 
@@ -1072,6 +1135,7 @@ Includes: `id`, `vendor_id`, `category_id`, `brand_id`, `thumbnail_id`, `name`, 
 | `POST /api/dashboard/products/:id/thumbnail` | `image` | **5 MB** · resized |
 | `POST /api/dashboard/products/:id/images` | `images` | **5 MB** × 12 · resized |
 | `POST /api/dashboard/shops/:id/logo` | `logo` | **5 MB** · resized |
+| `POST /api/products/:idOrSlug/reviews` | `images` | **2 MB** × 4 · always resized on the server |
 
 Allowed MIME (all uploads): `image/jpeg`, `image/png`, `image/webp`, `image/gif`.  
 Do **not** upload SVG.

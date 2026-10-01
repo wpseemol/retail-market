@@ -16,6 +16,7 @@ import type {
  */
 export const IMAGE_PRESETS = {
   product: { width: 1200, height: 1200, format: "webp" },
+  review: { width: 1200, height: 1200, format: "webp" },
   category: { width: 400, height: 400, format: "webp" },
   brand: { width: 600, height: 300, format: "webp" },
   shopLogo: { width: 512, height: 512, format: "webp" },

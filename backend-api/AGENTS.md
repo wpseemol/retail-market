@@ -37,7 +37,8 @@ backend-api/
     ├── services/
     ├── middleware/          # auth (Bearer), requireRoles, upload (multer)
     ├── validators/          # Zod schemas per domain (order.ts, cart.ts, ...)
-    ├── lib/                 # env, prisma, cart, sslcommerz, image helpers
+    ├── lib/                 # env, prisma, cart, sslcommerz, image helpers, productReviews,
+    │                        # reviewImage, rateLimit (in-memory per-IP)
     ├── utils/
     └── data/
 ```
@@ -47,6 +48,7 @@ backend-api/
 - **Validation:** every mutating/list route parses body and query with a Zod schema from `src/validators/`. Wrap user strings with `withSafeInput` / `findUnsafeInputReason` (SQL, PHP, JS, HTML payloads are rejected).
 - **Errors:** respond `{ message, code?, errors? }`. Use 409 with a stable `code` for state conflicts (e.g. `ORDER_NOT_DELETABLE`, `ORDER_CHANGED`).
 - **Auth:** protected routes require `Authorization: Bearer <token>`. Dashboard catalog mutations require `super_admin | admin | moderator`; order deletion is `super_admin | admin` only.
+- **Reviews:** `ProductReview` (`product_reviews`) is the purchase-verified review model; the older `Review` model is unused legacy. Review eligibility = a `delivered` + `paid` order matching the email/phone/user that contains the product. Vendors are scoped to their own shop's products.
 - **Uploads:** sniff MIME by magic bytes, enforce multer size limit, always resize with sharp, re-check size after resize, sanitize original filenames. Document field names and limits in `API.md`.
 - **Migrations:** add a new folder under `prisma/migrations/` (never edit an applied one). Backfill data in the same SQL when adding non-null columns.
 - **Concurrency:** guard state-changing writes with the expected current state in the `where` clause (`updateMany` / `deleteMany`) and return 409 when nothing matched.

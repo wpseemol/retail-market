@@ -18,6 +18,7 @@ import {
 } from "./pages/catalog";
 import { StoreCreatePage, StoreEditPage, StoresPage } from "./pages/stores";
 import { UserEditPage, UsersPage } from "./pages/access";
+import { ReviewsModerationPage } from "./pages/support";
 import {
   AnalyticsSettingsPage,
   EmailProviderSettingsPage,
@@ -42,6 +43,7 @@ import {
   ORDER_ROLES,
   OVERVIEW_ROLES,
   PRODUCT_ROLES,
+  REVIEW_ROLES,
   STAFF_MANAGEMENT_ROLES,
   STORE_ROLES,
   SYSTEM_SETTINGS_ROLES,
@@ -89,6 +91,11 @@ export default function App() {
           <Route element={<ProtectedRoute roles={ORDER_ROLES} />}>
             <Route path="orders" element={<OrdersPage />} />
             <Route path="orders/:id" element={<OrderDetailPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={REVIEW_ROLES} />}>
+            <Route path="support/reviews" element={<ReviewsModerationPage />} />
+            <Route path="reviews" element={<Navigate to="/support/reviews" replace />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={STAFF_MANAGEMENT_ROLES} />}>

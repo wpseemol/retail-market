@@ -32,6 +32,7 @@ dashboard/
     │   ├── catalog/                # products/, categories/, brands/ (list + create + edit)
     │   ├── stores/                 # StoresPage, StoreCreatePage, StoreEditPage
     │   ├── access/                 # UsersPage, UserEditPage (staff management)
+    │   ├── support/                # ReviewsModerationPage (Support & Quality, all staff, role-limited actions)
     │   └── system/settings/        # super_admin only: SiteSettingsLayout + context/tabs, then
     │       ├── storefront/         #   identity, header, footer, home, shop, social share
     │       ├── integrations/       #   credentials: social login, SMS, email, payment, shipping
@@ -43,10 +44,12 @@ dashboard/
     │   ├── dashboard/page-shell.tsx  # PageHero, FormSection, StickyFormActions
     │   ├── motion.tsx              # LazyMotion `m` + useMotionSafe
     │   ├── providers/ConfirmProvider.tsx  # useConfirm()
-    │   └── orders/                 # order badges, drawer, status dialog, invoices
+    │   ├── orders/                 # order badges, drawer, status dialog, invoices
+    │   └── reviews/                # review stars, status/verified badges, vendor reply dialog
     ├── lib/
     │   ├── api.ts                  # apiFetch / apiDownload (Bearer)
     │   ├── orders.ts               # order labels, roles, delete rules
+    │   ├── reviews.ts              # review types, status meta, per-role status rules (mirror the API)
     │   ├── rbac.ts                 # route role lists named after the TARGET_REQUIREMENTS.md RBAC matrix
     │   ├── imagePresets.ts         # image ratio / size hints per upload type
     │   ├── siteBranding.ts         # cached branding + getPrintBranding()

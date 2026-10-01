@@ -43,7 +43,7 @@ const listQuerySchema = z.object({
     .default("default"),
 });
 
-function activeProductScope(): Prisma.ProductWhereInput {
+export function activeProductScope(): Prisma.ProductWhereInput {
   return {
     status: "active",
     deleted_at: null,

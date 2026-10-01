@@ -14,6 +14,11 @@ import {
   PRODUCT_IMAGES_DIR,
 } from "../lib/productImage.js";
 import { SHOP_IMAGES_DIR } from "../lib/shopImage.js";
+import {
+  REVIEW_IMAGE_MAX_BYTES,
+  REVIEW_IMAGE_MAX_FILES,
+  REVIEW_IMAGES_DIR,
+} from "../lib/reviewImage.js";
 
 /** Disk folder for all customer profile photos. */
 export const USER_PHOTOS_DIR = path.resolve(
@@ -128,6 +133,27 @@ export const shopImageUpload = multer({
     files: 1,
     fields: 8,
     parts: 10,
+  },
+  fileFilter: imageFileFilter,
+});
+
+const reviewImageStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, REVIEW_IMAGES_DIR);
+  },
+  filename: (_req, _file, cb) => {
+    cb(null, `${randomUUID()}.upload`);
+  },
+});
+
+/** Customer review photos → `uploads/reviews/` + `medias` · max 4 × 2 MB · resized. */
+export const reviewImageUpload = multer({
+  storage: reviewImageStorage,
+  limits: {
+    fileSize: REVIEW_IMAGE_MAX_BYTES,
+    files: REVIEW_IMAGE_MAX_FILES,
+    fields: 10,
+    parts: 14,
   },
   fileFilter: imageFileFilter,
 });

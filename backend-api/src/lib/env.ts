@@ -63,6 +63,8 @@ export const env = {
   },
   /** Brand name shown in verification emails / SMS. */
   appName: process.env.APP_NAME ?? "Niyenin",
+  /** New product reviews start as `pending` (moderation queue) instead of `approved`. */
+  reviewsRequireApproval: process.env.REVIEWS_REQUIRE_APPROVAL === "true",
   /** SMTP for verification emails. Empty host → codes are logged to the console (dev). */
   smtp: {
     host: process.env.SMTP_HOST ?? "",

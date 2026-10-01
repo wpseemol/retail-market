@@ -124,6 +124,7 @@ export async function apiFetch<T>(
 export async function apiUpload<T>(
   path: string,
   formData: FormData,
+  method: "POST" | "PATCH" | "PUT" = "POST",
 ): Promise<T> {
   const url = path.startsWith("/api/backend/")
     ? path
@@ -132,7 +133,7 @@ export async function apiUpload<T>(
       : path;
 
   const response = await fetch(url, {
-    method: "POST",
+    method,
     body: formData,
     credentials: "same-origin",
     headers: { Accept: "application/json" },

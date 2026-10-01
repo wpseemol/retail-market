@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import {
     DEFAULT_PRODUCT_SPECS,
     PRODUCT_QUESTIONS,
-    PRODUCT_REVIEWS,
     SHOP_BRANDS,
     SHOP_CATEGORIES,
     getProductGallery,
@@ -20,6 +19,9 @@ import WishlistToggleButton from "./WishlistToggleButton";
 import { ProductImageZoom } from "./ProductImageZoom";
 import ProductShare from "./ProductShare";
 import { formatPrice, formatPriceRange } from "@/lib/money";
+import { EMPTY_REVIEWS, type ReviewsPayload } from "@/lib/reviews";
+import ProductReviews from "@/components/reviews/ProductReviews";
+import { StarIcon } from "@/components/reviews/ReviewStars";
 
 interface ProductPageContentProps {
     product: ShopProduct;
@@ -28,6 +30,8 @@ interface ProductPageContentProps {
     /** Canonical absolute product URL. */
     shareUrl?: string;
     inStock?: boolean;
+    /** Approved reviews, rendered on the server. */
+    reviews?: ReviewsPayload | null;
 }
 
 function ProductImage({
@@ -101,26 +105,18 @@ function StarRating({
                     : `Rating: ${rating} out of 5 stars`
             }
         >
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center gap-0.5" aria-hidden="true">
                 {[1, 2, 3, 4, 5].map((star) => (
-                    <svg
-                        key={star}
-                        width="16"
-                        height="16"
-                        viewBox="0 0 20 20"
-                        fill={star <= rating ? "#FF8A00" : "none"}
-                        stroke="#FF8A00"
-                        strokeWidth="1.5"
-                        aria-hidden="true"
-                    >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
+                    <StarIcon key={star} fill={rating - (star - 1)} />
                 ))}
             </div>
             {showCount && reviewCount != null && (
-                <span className="text-[13px] text-text-secondary">
+                <a
+                    href="#product-review"
+                    className="text-[13px] text-text-secondary hover:text-brand-primary"
+                >
                     ({reviewCount}) Review
-                </span>
+                </a>
             )}
         </div>
     );
@@ -174,6 +170,7 @@ export default function ProductPageContent({
     store = null,
     shareUrl,
     inStock = product.available > 0,
+    reviews = null,
 }: ProductPageContentProps) {
     const dispatch = useAppDispatch();
     const router = useRouter();
@@ -725,36 +722,13 @@ export default function ProductPageContent({
                                 aria-labelledby="product-review-title"
                                 className="rounded-lg border border-border-default bg-bg-surface p-4 sm:p-6"
                             >
-                                <div className="flex flex-col gap-5">
-                                    <h2
-                                        id="product-review-title"
-                                        className="text-[18px] font-bold text-text-primary m-0"
-                                    >
-                                        Customer Reviews
-                                    </h2>
-                                    {PRODUCT_REVIEWS.map((review) => (
-                                        <article
-                                            key={review.id}
-                                            className="border-b border-border-default pb-4 last:border-0 last:pb-0"
-                                        >
-                                            <header className="flex flex-wrap items-center gap-2 mb-2">
-                                                <h3 className="text-[14px] font-semibold text-text-primary m-0">
-                                                    {review.author}
-                                                </h3>
-                                                <StarRating
-                                                    rating={review.rating}
-                                                    showCount={false}
-                                                />
-                                            </header>
-                                            <p className="text-[13px] text-text-secondary leading-relaxed m-0 mb-1.5">
-                                                {review.comment}
-                                            </p>
-                                            <footer className="text-[12px] text-text-secondary">
-                                                {review.date}
-                                            </footer>
-                                        </article>
-                                    ))}
-                                </div>
+                                <ProductReviews
+                                    titleId="product-review-title"
+                                    productSlug={product.slug}
+                                    productName={product.name}
+                                    storeName={store?.name}
+                                    initial={reviews ?? EMPTY_REVIEWS}
+                                />
                             </section>
                         </div>
                     </div>
