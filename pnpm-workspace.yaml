@@ -1,4 +1,4 @@
 packages:
   - "frontend"
   - "dashboard"
-  - "backend"
+  - "backend-api"

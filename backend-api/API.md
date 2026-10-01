@@ -2,7 +2,7 @@
 
 > **Audience:** Frontend developers, Cursor, Claude, Gemini, and other coding agents.  
 > **Base URL (local):** `http://localhost:8001`  
-> **Source of truth:** Express routes under `backend/src/routes/` mounted in `backend/src/server.ts`.
+> **Source of truth:** Express routes under `backend-api/src/routes/` mounted in `backend-api/src/server.ts`.
 
 Use this file when building dashboard or storefront clients. Prefer exact paths, field names, and roles from this document.
 
@@ -834,7 +834,7 @@ Saves and OG image uploads append history with field diffs.
 
 Auth: STAFF. Create/update/delete/image: **elevated** only. Vendors read **active** brands only.
 
-Validators: `backend/src/validators/brand.ts` (Zod + SQL/PHP/JS injection guards)
+Validators: `backend-api/src/validators/brand.ts` (Zod + SQL/PHP/JS injection guards)
 
 | Method | Path | Notes |
 |--------|------|--------|
@@ -860,8 +860,8 @@ Dashboard UI: react-hook-form + shadcn Form + Zod (`dashboard/src/lib/validators
 
 Auth: STAFF. Mutations + image: **elevated** only. Vendors list/get **active** categories only (for product picking).
 
-Validators: `backend/src/validators/category.ts`  
-Icon catalog: `backend/src/data/category-icons.json` (~185 names)
+Validators: `backend-api/src/validators/category.ts`  
+Icon catalog: `backend-api/src/data/category-icons.json` (~185 names)
 
 ### List
 
@@ -1156,13 +1156,13 @@ images=<file1>&images=<file2>
 
 | Concern | Path |
 |---------|------|
-| Mounts | `backend/src/server.ts` |
-| Category routes | `backend/src/routes/dashboardCategories.ts` |
-| Category Zod | `backend/src/validators/category.ts` |
-| Category image 1MB | `backend/src/lib/categoryImage.ts` |
-| Icon names | `backend/src/data/category-icons.json` |
-| Product routes | `backend/src/routes/dashboardProducts.ts` |
-| Upload middleware | `backend/src/middleware/upload.ts` |
-| Unsafe input guards | `backend/src/validators/customerAuth.ts` (`findUnsafeInputReason`) |
+| Mounts | `backend-api/src/server.ts` |
+| Category routes | `backend-api/src/routes/dashboardCategories.ts` |
+| Category Zod | `backend-api/src/validators/category.ts` |
+| Category image 1MB | `backend-api/src/lib/categoryImage.ts` |
+| Icon names | `backend-api/src/data/category-icons.json` |
+| Product routes | `backend-api/src/routes/dashboardProducts.ts` |
+| Upload middleware | `backend-api/src/middleware/upload.ts` |
+| Unsafe input guards | `backend-api/src/validators/customerAuth.ts` (`findUnsafeInputReason`) |
 
 When routes change, update this file in the same PR.

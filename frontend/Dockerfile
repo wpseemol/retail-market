@@ -8,7 +8,7 @@ FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY frontend/package.json ./frontend/
 COPY dashboard/package.json ./dashboard/
-COPY backend/package.json ./backend/
+COPY backend-api/package.json ./backend-api/
 RUN pnpm install --frozen-lockfile --filter frontend...
 
 FROM base AS build

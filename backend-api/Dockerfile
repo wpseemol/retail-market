@@ -9,17 +9,17 @@ FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY frontend/package.json ./frontend/
 COPY dashboard/package.json ./dashboard/
-COPY backend/package.json ./backend/
-RUN pnpm install --frozen-lockfile --filter backend...
+COPY backend-api/package.json ./backend-api/
+RUN pnpm install --frozen-lockfile --filter backend-api...
 
 FROM base AS build
 COPY --from=deps /app/ ./
-COPY backend ./backend
-RUN pnpm --filter backend build \
-  && pnpm --filter backend deploy --prod --legacy /deploy \
+COPY backend-api ./backend-api
+RUN pnpm --filter backend-api build \
+  && pnpm --filter backend-api deploy --prod --legacy /deploy \
   && rm -rf /deploy/dist /deploy/prisma \
-  && cp -R backend/dist /deploy/dist \
-  && cp -R backend/prisma /deploy/prisma \
+  && cp -R backend-api/dist /deploy/dist \
+  && cp -R backend-api/prisma /deploy/prisma \
   && cd /deploy && pnpm exec prisma generate
 
 FROM node:22-alpine AS runner
@@ -28,7 +28,7 @@ ENV NODE_ENV=production
 WORKDIR /app
 
 COPY --from=build /deploy ./
-COPY backend/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY backend-api/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh \
   && chmod +x /usr/local/bin/docker-entrypoint.sh \
   && mkdir -p /app/uploads

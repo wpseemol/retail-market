@@ -40,23 +40,23 @@ services:
   backend:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: backend-api/Dockerfile
     image: retail_market_backend
     container_name: retail_market_backend
     restart: unless-stopped
     ports:
       - "${BACKEND_PORT:-8001}:8001"
     # Secrets (JWT_SECRET, SETTINGS_ENCRYPTION_KEY, SMTP/SMS/SSLCOMMERZ fallbacks) come
-    # from backend/.env — reuse the same key or DB-stored settings can't be decrypted.
+    # from backend-api/.env — reuse the same key or DB-stored settings can't be decrypted.
     env_file:
-      - path: backend/.env
+      - path: backend-api/.env
         required: false
     environment:
       NODE_ENV: production
       PORT: 8001
       DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD:-root}@mysql:3306/${MYSQL_DATABASE:-retail_market}
     volumes:
-      - ./backend/uploads:/app/uploads
+      - ./backend-api/uploads:/app/uploads
     depends_on:
       mysql:
         condition: service_healthy

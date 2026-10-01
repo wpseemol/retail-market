@@ -1,0 +1,20 @@
+---
+description: Log every change in the affected app's CHANGELOG.md
+alwaysApply: true
+---
+
+# Change tracking
+
+The repo has three apps, each with its own `AGENTS.md` (read it first) and `CHANGELOG.md`:
+
+- `frontend/` — Next.js storefront
+- `dashboard/` — Vite admin panel
+- `backend-api/` — Express + Prisma API
+
+After **every** task that changes files:
+
+1. Append an entry to the `CHANGELOG.md` of **each** app you touched, under today's date heading (`## YYYY-MM-DD`, newest first). Create the heading if missing.
+2. Use a short `###` title for the task, then bullets naming the files and what changed (and why, if not obvious).
+3. Root-level changes (workspace config, Docker, rules) go in every app they affect.
+4. If the app's structure, scripts, or conventions changed, update its `AGENTS.md` too.
+5. API changes still go in `backend-api/API.md` as well.

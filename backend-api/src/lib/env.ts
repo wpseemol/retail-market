@@ -7,7 +7,7 @@ const required = ["DATABASE_URL", "JWT_SECRET"] as const;
 
 for (const key of required) {
   if (!process.env[key]) {
-    console.warn(`[env] Missing ${key} — set it in backend/.env`);
+    console.warn(`[env] Missing ${key} — set it in backend-api/.env`);
   }
 }
 

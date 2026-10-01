@@ -39,4 +39,4 @@ async function onDelete() {
 ## API side
 
 - Deletes stay behind elevated roles and server-side guards (e.g. don't hard-delete paid orders); the modal is UX, not security.
-- Document new delete endpoints in `backend/API.md`.
+- Document new delete endpoints in `backend-api/API.md`.

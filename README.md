@@ -8,7 +8,7 @@ Monorepo for the Niyenin multi-vendor platform. Architecture source of truth: `T
 | --- | --- | --- | --- |
 | `frontend/` | Next.js (App Router) | http://localhost:3000 | Customer storefront (`www.niyenin.com`) |
 | `dashboard/` | Vite + React + ReactDOM SPA | http://localhost:5173 | Admin / Vendor dashboard |
-| `backend/` | Express (TypeScript) | http://localhost:8001 | API · see [`backend/API.md`](backend/API.md) |
+| `backend-api/` | Express (TypeScript) | http://localhost:8001 | API · see [`backend-api/API.md`](backend-api/API.md) |
 
 ## Prerequisites
 
@@ -55,7 +55,7 @@ pnpm build:backend
 retail-market/
 ├── frontend/                 # Customer storefront (Next.js)
 ├── dashboard/                # Management SPA (plain React + ReactDOM / Vite)
-├── backend/                  # API (Express)
+├── backend-api/              # API (Express)
 ├── package.json              # Root workspace scripts
 ├── pnpm-workspace.yaml
 └── TARGET_REQUIREMENTS.md    # Master requirements (do not remove)

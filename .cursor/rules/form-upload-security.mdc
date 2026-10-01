@@ -16,7 +16,7 @@ Whenever you write or edit **forms**, **file uploads**, or related **API endpoin
 
 ## Always validate with Zod
 
-- **Backend:** Every JSON body and query for mutating/list routes must use a Zod schema (prefer `backend/src/validators/*.ts`).
+- **Backend:** Every JSON body and query for mutating/list routes must use a Zod schema (prefer `backend-api/src/validators/*.ts`).
 - **Dashboard/Frontend:** Every create/edit form must validate with Zod before submit via `zodResolver` (prefer `*/lib/validators/*.ts`).
 - Never trust HTML `required` alone.
 
@@ -37,7 +37,7 @@ Apply to names, slugs, descriptions, search `q`, filenames metadata, etc.
 - Enforce **size limits** on multer **and** again after finalize/resize.
 - Reject SVG / HTML / PHP polyglots and dangerous extensions in original names.
 - Sanitize stored original filenames; never use user filename as disk path.
-- Document multipart **field names** and max bytes in `backend/API.md` when adding endpoints.
+- Document multipart **field names** and max bytes in `backend-api/API.md` when adding endpoints.
 - Mirror size/type checks on the **UI** before upload.
 - Upload fields inside create/edit pages still sit inside the same shadcn `Form` where practical.
 
@@ -64,4 +64,4 @@ Whenever you add or edit an **image upload** (brand, category, product, shop, av
 4. Upload limits + type sniff + UI pre-check
 5. Server-side **image resize** + size check after resize; UI/API copy mentions resize
 6. Clear error `message` / optional `code` / field `errors` (FormMessage on UI)
-7. Update `backend/API.md` if a public API changed
+7. Update `backend-api/API.md` if a public API changed

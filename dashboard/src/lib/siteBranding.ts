@@ -85,7 +85,22 @@ export function useLoginBranding() {
   return { logoUrl, siteName };
 }
 
+/** Full dark-text wordmark, padding trimmed — the uploaded login logo is a small square mark that prints blurry. */
+const PRINT_LOGO = "/logo/niyenin-print.png";
+
+/**
+ * Logo + name for printed documents (invoices).
+ * Synchronous so print windows can open inside the click handler; the hydrator warms the cache on app start.
+ */
+export function getPrintBranding(): { logoUrl: string; siteName: string } {
+  return {
+    logoUrl: new URL(PRINT_LOGO, window.location.origin).href,
+    siteName: brandingCache?.site_name?.trim() || "Niyenin",
+  };
+}
+
 /** Clear cached branding after dashboard uploads so the next load refetches. */
 export function invalidateSiteBrandingCache() {
   brandingCache = null;
+  void fetchPublicBranding();
 }
