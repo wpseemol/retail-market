@@ -5,6 +5,16 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-01
 
+### Overview page: charts + visitor world map
+
+- `src/pages/overview/HomePage.tsx`: rebuilt — 7 / 30 / 90-day range (kept in `?range=`), refresh, action alerts (pending orders, reviews, low stock), KPI cards with sparklines and change vs previous period, secondary stats, sales & traffic chart, orders-by-status / payment / device charts, visitor world map + top countries, sales by category, best sellers, recent orders, top pages + traffic sources, low stock, quick links.
+- `src/components/overview/OverviewCharts.tsx`: Recharts charts built on the shadcn chart wrapper (`KpiCard`, `TrendChart`, donuts, payment + category bars, `ChangeBadge`).
+- `src/components/overview/WorldMap.tsx`: lazy-loaded choropleth (d3-geo Equal Earth + world-atlas 110m TopoJSON, ISO alpha-2 → numeric via `i18n-iso-countries`) with hover tooltip and legend; local / unknown traffic is listed but not mapped.
+- `src/components/ui/chart.tsx`: shadcn chart component (Recharts 3).
+- `src/lib/overview.ts`: response types, labels, compact formatters.
+- `src/index.css`: `--chart-1…6` and `--map-empty` tokens (light + dark).
+- `package.json`: added `recharts`, `d3-geo`, `topojson-client`, `world-atlas`, `i18n-iso-countries` (+ types), installed with pnpm.
+
 ### Fix: FAQ / Terms editors crashed on load
 
 - `src/pages/content/FaqPageEditor.tsx`, `TermsPageEditor.tsx`: `useFieldArray` seeds an empty `content` object before the loaded page is reset into the form, so the form rendered early and `hero.subtitle.length` threw (blank screen). The form now waits for a `hydrated` flag set after `form.reset()`; list / counter reads tolerate missing values.

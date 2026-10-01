@@ -26,7 +26,7 @@ dashboard/
     ├── App.tsx                     # route tree, one ProtectedRoute block per RBAC domain
     ├── pages/                      # route pages grouped by feature domain; each folder has an index.ts barrel
     │   ├── auth/                   # LoginPage
-    │   ├── overview/               # HomePage (KPIs), RolePage (role workspaces)
+    │   ├── overview/               # HomePage (KPIs, charts, world map), RolePage (role workspaces)
     │   ├── account/                # ProfilePage, NotificationsPage
     │   ├── orders/                 # OrdersPage, OrderDetailPage
     │   ├── catalog/                # products/, categories/, brands/ (list + create + edit + BrandShowcasePage)
@@ -49,6 +49,7 @@ dashboard/
     │   ├── reviews/                # review stars, status/verified badges, vendor reply dialog
     │   ├── seo/                    # SeoPreview (Google snippet, share card, char counter)
     │   ├── showcase/               # ShowcaseEditor (store + brand page designer), preview, image slot
+    │   ├── overview/               # OverviewCharts (Recharts via ui/chart), WorldMap (d3-geo, lazy)
     │   ├── content/                # FAQ / Terms editor sections (hero, help box, SEO, status), useContentPage
     │   └── brands/                 # brand form shell, BrandLinkedStoreCard
     ├── lib/
@@ -74,6 +75,8 @@ dashboard/
 - **Layout & motion:** pages use `PageHero`, `FormSection`, `StickyFormActions`. Animate with LazyMotion `m` via `useMotionSafe`; no layout animations or `AnimatePresence` on large tables.
 - **Roles:** catalog mutations are for `super_admin | admin | moderator`; hide or disable actions the current role cannot perform and show why (title tooltip).
 - **Stores, brands & SEO:** `STORE_ROLES` (list + page design: super_admin, admin, vendor), `STORE_MANAGE_ROLES` (create / settings: super_admin, vendor), `STORE_DELETE_ROLES` (super_admin), `SEO_ROLES` (global SEO: super_admin, admin), `BRAND_SHOWCASE_ROLES` (brand page: super_admin, admin, linked vendor — the API checks the link), `BRAND_OWNER_ROLES` (link a brand to a store: super_admin, admin). Brand detail returns `permissions { manage, assign_owner, showcase }`; use it instead of guessing from the role.
+- **Dependencies:** the repo is a pnpm workspace — add packages with `pnpm add <pkg> --filter dashboard` (never `npm install`, it breaks the `.pnpm` links).
+- **Charts:** use the shadcn wrapper in `src/components/ui/chart.tsx` (`ChartContainer`, `ChartTooltipContent`) with Recharts, and colour series with the `--chart-1…6` tokens so light / dark both work.
 - **Content pages:** `pages/content/` holds `FaqPageEditor` (`/content/faq`) and `TermsPageEditor` (`/content/terms`), guarded by `CONTENT_PAGE_ROLES` (super_admin, admin). List items use `useFieldArray({ keyName: "_key" })` because each item has its own `id`. Keep `src/lib/validators/contentPage.ts` in sync with the API schema.
 - **Pages & routes:** put new pages in the matching domain folder under `src/pages/`, export them from that folder's `index.ts`, and import from the barrel in `App.tsx`. Guard routes with the role lists from `src/lib/rbac.ts` instead of inline arrays, and keep those lists in sync with the backend's `requireRoles(...)`. Anything that edits global config or stores credentials goes under `pages/system/` (super_admin only); secrets-bearing settings go in `system/settings/integrations/`.
 - **Printing:** `window.open` must happen synchronously in the click handler, so branding comes from the synchronous `getPrintBranding()`.

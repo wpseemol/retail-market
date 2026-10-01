@@ -369,10 +369,27 @@ Public review object:
 
 Auth: Bearer **`super_admin`** or **`admin`**.
 
-`GET /` → `{ overview: { stats, visitors_by_country, source, period_days } }`
+`GET /?range=7|30|90` (default `30`, validated with Zod — anything else → 400) → `{ overview }`
 
-`stats`: products, orders, staff_users, shops, visits_30d, visits_7d, sessions_30d  
-`visitors_by_country`: `{ country, country_name, flag, visits, percent }[]`
+| Field | Shape |
+| --- | --- |
+| `period_days`, `range` | Selected range and `{ from, to }` ISO timestamps (from = UTC midnight `range - 1` days ago) |
+| `source` | `page_visits` (storefront beacon) or `sessions` (fallback when no visits yet) |
+| `stats` | products, orders, staff_users, shops, customers, visits_30d, visits_7d, sessions_30d, pending_orders, pending_reviews, low_stock |
+| `kpis` | `{ current, previous, change }` — revenue, orders, avg_order_value, page_views, visitors (distinct hashed IPs), conversion_rate (valid orders ÷ visitors × 100), new_customers. `previous` is the same-length period before; `change` is % (null when the previous value was 0) |
+| `timeseries` | One row per day: `{ date, revenue, orders, page_views, visitors }` (missing days filled with 0) |
+| `orders_by_status` | `{ status, count }[]` |
+| `payment_methods` | `{ method, count, revenue }[]` |
+| `devices` | `{ device, visits }[]` |
+| `top_pages` / `top_referrers` | `{ path, visits }[]` (8) / `{ source, visits }[]` (6, referrer host or `Direct`) |
+| `top_products` | `{ product_id, name, units, revenue }[]` (6) |
+| `sales_by_category` | `{ category, revenue, units }[]` (7) |
+| `catalog_status` | `{ status, count }[]` |
+| `low_stock` | `{ id, name, sku, stock_qty, threshold }[]` — active / out-of-stock products at or below `low_stock_threshold` (default 5) |
+| `recent_orders` | 6 latest: `{ id, order_number, status, payment_status, total, currency, placed_at, items, customer }` |
+| `visitors_by_country` | Every country in range: `{ country, country_name, flag, visits, percent }[]` (`LO` = local network, `XX` = unknown) |
+
+Revenue = order `total` excluding `cancelled` and `refunded` orders.
 
 ---
 

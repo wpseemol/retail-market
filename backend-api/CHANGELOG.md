@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-01
 
+### Richer dashboard overview analytics
+
+- `src/routes/dashboardOverview.ts`: `GET /api/dashboard/overview` accepts `?range=7|30|90` and now returns KPIs with previous-period change (revenue, orders, AOV, visitors, page views, conversion, new customers), a daily timeseries, orders by status, payment methods, devices, top pages / referrers / products, sales by category, catalog status, low-stock products, recent orders and every visitor country (for the world map). Existing `stats` keys kept.
+- `src/validators/overview.ts`: Zod schema for `range`.
+- `API.md`: documented the new response.
+
 ### FAQ & Terms content pages
 
 - `prisma/schema.prisma` + migration `20261001120000_content_pages`: new `ContentPage` model (`content_pages`, one row per `page_key`, JSON `content`, SEO fields, publish / noindex flags).
