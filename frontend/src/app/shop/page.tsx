@@ -23,6 +23,8 @@ export default async function ShopPage({
   const params = await searchParams;
   const q = firstParam(params.q);
   const category = firstParam(params.category);
+  const perPageParam = firstParam(params.per_page);
+  const initialPerPage = /^\d{1,2}$/.test(perPageParam) ? Number(perPageParam) : null;
 
   const [data, settings] = await Promise.all([
     fetchProducts({
@@ -56,6 +58,7 @@ export default async function ShopPage({
         tags={tags}
         defaultViewMode={settings.shop.default_view as ShopViewMode}
         productsPerPage={settings.shop.products_per_page}
+        initialPerPage={initialPerPage}
         categoriesVisible={settings.shop.categories_visible}
         brandsVisible={settings.shop.brands_visible}
         seeAllLabel={settings.shop.see_all_label}

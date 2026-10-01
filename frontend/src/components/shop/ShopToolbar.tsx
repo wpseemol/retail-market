@@ -12,7 +12,28 @@ interface ShopToolbarProps {
     onViewModeChange: (mode: ShopViewMode) => void;
     sortBy: ShopSortOption;
     onSortChange: (sort: ShopSortOption) => void;
+    perPage: number;
+    perPageOptions: number[];
+    onPerPageChange: (perPage: number) => void;
 }
+
+function ChevronDown() {
+    return (
+        <svg
+            width="10"
+            height="6"
+            viewBox="0 0 10 6"
+            fill="none"
+            className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none stroke-text-secondary"
+            aria-hidden="true"
+        >
+            <path d="M1 1L5 5L9 1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    );
+}
+
+const selectClass =
+    "appearance-none bg-bg-surface border border-border-default rounded-md text-[13px] text-text-primary pl-3 pr-8 py-2 outline-none cursor-pointer hover:border-brand-primary focus:border-brand-primary transition-colors";
 
 const VIEW_OPTIONS: {
     mode: ShopViewMode;
@@ -113,6 +134,9 @@ export default function ShopToolbar({
     onViewModeChange,
     sortBy,
     onSortChange,
+    perPage,
+    perPageOptions,
+    onPerPageChange,
 }: ShopToolbarProps) {
     return (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-5 border-b border-border-default">
@@ -126,7 +150,26 @@ export default function ShopToolbar({
                 Results
             </p>
 
-            <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                <label className="flex items-center gap-2 text-[13px] text-text-secondary">
+                    Show
+                    <span className="relative">
+                        <select
+                            value={perPage}
+                            onChange={(e) => onPerPageChange(Number(e.target.value))}
+                            aria-label="Products per page"
+                            className={selectClass}
+                        >
+                            {perPageOptions.map((n) => (
+                                <option key={n} value={n}>
+                                    {n}
+                                </option>
+                            ))}
+                        </select>
+                        <ChevronDown />
+                    </span>
+                </label>
+
                 <div
                     className="flex items-center gap-0.5 sm:gap-1"
                     role="group"
@@ -161,7 +204,7 @@ export default function ShopToolbar({
                             onSortChange(e.target.value as ShopSortOption)
                         }
                         aria-label="Sort products"
-                        className="appearance-none bg-bg-surface border border-border-default rounded-md text-[13px] text-text-primary pl-3 pr-8 py-2 outline-none cursor-pointer hover:border-brand-primary transition-colors"
+                        className={selectClass}
                     >
                         {SORT_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>
@@ -169,21 +212,7 @@ export default function ShopToolbar({
                             </option>
                         ))}
                     </select>
-                    <svg
-                        width="10"
-                        height="6"
-                        viewBox="0 0 10 6"
-                        fill="none"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none stroke-text-secondary"
-                        aria-hidden="true"
-                    >
-                        <path
-                            d="M1 1L5 5L9 1"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        />
-                    </svg>
+                    <ChevronDown />
                 </div>
             </div>
         </div>

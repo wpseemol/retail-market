@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PRODUCTS_PER_PAGE } from "./data";
+import { clampPerPage, PRODUCTS_PER_PAGE, perPageChoices } from "./data";
 import QuickViewModal from "./QuickViewModal";
 import ShopBreadcrumb from "./ShopBreadcrumb";
 import ShopPagination from "./ShopPagination";
@@ -24,7 +24,10 @@ type ShopPageContentProps = {
   priceRange: { min: number; max: number };
   tags?: string[];
   defaultViewMode?: ShopViewMode;
+  /** Dashboard default page size. */
   productsPerPage?: number;
+  /** Shopper's choice from `?per_page=`; falls back to the default. */
+  initialPerPage?: number | null;
   categoriesVisible?: number;
   brandsVisible?: number;
   seeAllLabel?: string;
@@ -105,6 +108,7 @@ export default function ShopPageContent({
   tags = [],
   defaultViewMode = "grid4",
   productsPerPage = PRODUCTS_PER_PAGE,
+  initialPerPage = null,
   categoriesVisible = 5,
   brandsVisible = 6,
   seeAllLabel = "See all",
@@ -117,7 +121,11 @@ export default function ShopPageContent({
     Math.ceil(priceRange.max || 0),
     rangeMin + 1,
   );
-  const perPage = Math.min(48, Math.max(4, productsPerPage || PRODUCTS_PER_PAGE));
+  const defaultPerPage = clampPerPage(productsPerPage);
+  const perPageOptions = useMemo(() => perPageChoices(defaultPerPage), [defaultPerPage]);
+  const [perPage, setPerPage] = useState(() =>
+    initialPerPage && perPageOptions.includes(initialPerPage) ? initialPerPage : defaultPerPage,
+  );
 
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [priceMin, setPriceMin] = useState(rangeMin);
@@ -195,6 +203,17 @@ export default function ShopPageContent({
   );
 
   const resetPage = () => setCurrentPage(1);
+
+  const handlePerPageChange = (next: number) => {
+    if (!perPageOptions.includes(next)) return;
+    const firstVisible = startIndex;
+    setPerPage(next);
+    setCurrentPage(Math.floor(firstVisible / next) + 1);
+    const url = new URL(window.location.href);
+    if (next === defaultPerPage) url.searchParams.delete("per_page");
+    else url.searchParams.set("per_page", String(next));
+    window.history.replaceState(window.history.state, "", url);
+  };
 
   const handleBrandToggle = (brandId: string) => {
     setSelectedBrands((prev) =>
@@ -295,6 +314,9 @@ export default function ShopPageContent({
                   setSortBy(sort);
                   resetPage();
                 }}
+                perPage={perPage}
+                perPageOptions={perPageOptions}
+                onPerPageChange={handlePerPageChange}
               />
 
               {hasActiveFilters ? (

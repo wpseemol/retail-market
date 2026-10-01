@@ -152,8 +152,8 @@ export function ShopSettingsPage() {
                     />
                     <CountSelect
                         name="shop_products_per_page"
-                        label="Products per page"
-                        description="Pagination size for the shop catalog listing."
+                        label="Default products per page"
+                        description="Selected when shoppers open /shop. They can still switch between 12, 24, 36 and 48 (plus this value) in the toolbar."
                         options={SHOP_PER_PAGE_OPTIONS}
                         suffix="per page"
                     />

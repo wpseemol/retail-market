@@ -60,6 +60,21 @@ export const SORT_OPTIONS = [
 
 export const PRODUCTS_PER_PAGE = 12;
 
+/** Page sizes shoppers can pick on /shop (the dashboard default is always added). */
+export const PER_PAGE_CHOICES = [12, 24, 36, 48] as const;
+export const MIN_PER_PAGE = 4;
+export const MAX_PER_PAGE = 48;
+
+export function clampPerPage(value: number) {
+    return Math.min(MAX_PER_PAGE, Math.max(MIN_PER_PAGE, Math.round(value) || PRODUCTS_PER_PAGE));
+}
+
+export function perPageChoices(defaultPerPage: number) {
+    return [...new Set<number>([...PER_PAGE_CHOICES, clampPerPage(defaultPerPage)])].sort(
+        (a, b) => a - b,
+    );
+}
+
 export const shopProducts: ShopProduct[] = [
     {
         id: 1,
