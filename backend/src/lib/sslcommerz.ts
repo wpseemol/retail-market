@@ -79,6 +79,19 @@ function gatewayPhone(phone: string) {
   return phone.startsWith("+880") ? `0${phone.slice(4)}` : phone.slice(0, 20);
 }
 
+export const PAYMENT_CHANNELS = ["bkash", "nagad", "rocket", "card", "other"] as const;
+export type PaymentChannel = (typeof PAYMENT_CHANNELS)[number];
+
+/** `card_type` looks like `BKASH-BKash`, `NAGAD-Nagad`, `DBBLMOBILEB-Dbbl Mobile Banking`, `VISA-Dutch Bangla`. */
+export function paymentChannelFromCardType(cardType: string | null | undefined): PaymentChannel {
+  const t = (cardType ?? "").toUpperCase();
+  if (t.startsWith("BKASH")) return "bkash";
+  if (t.startsWith("NAGAD")) return "nagad";
+  if (t.startsWith("DBBLMOBILE") || t.startsWith("ROCKET")) return "rocket";
+  if (/^(VISA|MASTER|AMEX|UNIONPAY|DINERS|NEXUS)/.test(t)) return "card";
+  return "other";
+}
+
 function amountCents(value: string | number | { toString(): string }) {
   return Math.round(Number(value.toString()) * 100);
 }
@@ -302,6 +315,7 @@ export async function settleSslcommerzPayment(input: {
       where: { id: payment.order.id },
       data: {
         payment_status: "paid",
+        payment_channel: paymentChannelFromCardType(validation.card_type),
         ...(payment.order.status === "pending" ? { status: "confirmed" as const } : {}),
       },
     }),

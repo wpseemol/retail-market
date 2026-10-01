@@ -4,6 +4,14 @@
  * (favicon: PNG), so uploading at this size keeps the storefront fast without
  * losing sharpness.
  */
+type ImagePreset = {
+  width: number;
+  height: number;
+  ratio: string;
+  format?: "PNG";
+  transparent?: boolean;
+};
+
 export const IMAGE_PRESETS = {
   product: { width: 1200, height: 1200, ratio: "1:1" },
   category: { width: 400, height: 400, ratio: "1:1" },
@@ -31,16 +39,7 @@ export const IMAGE_PRESETS = {
   homeDealsLeftImage: { width: 520, height: 480, ratio: "13:12" },
   homeDealsLeftBg: { width: 720, height: 920, ratio: "~4:5" },
   homeGeneric: { width: 1600, height: 1600, ratio: "any" },
-} as const satisfies Record<
-  string,
-  {
-    width: number;
-    height: number;
-    ratio: string;
-    format?: "PNG";
-    transparent?: boolean;
-  }
->;
+} as const satisfies Record<string, ImagePreset>;
 
 export type ImagePresetKey = keyof typeof IMAGE_PRESETS;
 
@@ -83,7 +82,7 @@ export function imageUploadHint(
   maxMb: number,
   opts: { prefix?: string; each?: boolean } = {},
 ): string {
-  const p: { format?: "PNG"; transparent?: boolean } = IMAGE_PRESETS[preset];
+  const p: ImagePreset = IMAGE_PRESETS[preset];
   const parts = [
     opts.prefix,
     `Recommended ${recommendedSize(preset)}${p.transparent ? ", transparent PNG/WebP works best" : ""}`,

@@ -626,6 +626,10 @@ model Order {
   status           OrderStatus   @default(pending)
   payment_status   PaymentStatus @default(pending)
   payment_method   PaymentMethod @default(cash_on_delivery)
+  /// Wallet/card actually used on SSLCOMMERZ: bkash | nagad | rocket | card | other (null until paid).
+  payment_channel  String?       @db.VarChar(20)
+  courier_name     String?       @db.VarChar(80)
+  tracking_number  String?       @db.VarChar(80)
   currency         String        @default("BDT") @db.VarChar(3)
   subtotal         Decimal       @db.Decimal(12, 2)
   shipping_fee     Decimal       @default(0) @db.Decimal(12, 2)
@@ -634,6 +638,8 @@ model Order {
   total            Decimal       @db.Decimal(12, 2)
   notes            String?       @db.Text
   placed_at        DateTime      @default(now())
+  shipped_at       DateTime?
+  delivered_at     DateTime?
   cancelled_at     DateTime?
   created_at       DateTime      @default(now())
   updated_at       DateTime      @updatedAt
@@ -648,6 +654,7 @@ model Order {
   @@index([customer_phone])
   @@index([status])
   @@index([payment_status])
+  @@index([payment_method, payment_channel])
   @@index([placed_at])
   @@map("orders")
 }

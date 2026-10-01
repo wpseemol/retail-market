@@ -580,14 +580,27 @@ Notification `data.link` is a dashboard path (e.g. `/orders/12`).
 
 ## Dashboard orders — `/api/dashboard/orders`
 
-Auth: Bearer **staff**. Vendors only see orders that include their products.
+Auth: Bearer **staff**. Vendors only see orders that include their products and cannot change them; status / tracking / bulk routes need `super_admin`, `admin` or `moderator`.
 
 | Method | Path | Notes |
 |--------|------|--------|
-| GET | `/?page=&limit=&status=` | List |
-| GET | `/:id` | Detail + addresses |
+| GET | `/?page=&limit=&status=&q=&payment_status=&payment_method=` | List (`limit` ≤ 100). Returns `orders`, `pagination`, `summary` (counts per status for everything you can see — KPI cards) and `status_counts` (same, narrowed by `q` / payment filters) |
+| GET | `/export?status=&q=&payment_status=&payment_method=` | `text/csv` (UTF-8 BOM) of the filtered list, newest first, max 5000 rows · cells starting with `= + - @` are prefixed with `'` |
+| GET | `/:id` | Detail: addresses, items with `thumbnail` + `vendor { id, shop_name, slug }`, last 10 `payments` (incl. SSLCOMMERZ `card_type`), plus `next_statuses` |
+| PATCH | `/:id/status` | `{ status, courier_name?, tracking_number? }` → `{ message, order, next_statuses }` · 409 `STATUS_UNCHANGED` / `INVALID_STATUS_TRANSITION` / `ORDER_CHANGED` |
+| PATCH | `/:id/tracking` | `{ courier_name?, tracking_number? }` (max 80 chars each, `""`/`null` clears) |
+| POST | `/bulk-status` | `{ ids: string[1..100], status }` → `{ message, updated: id[], skipped: [{ id, order_number, reason }] }` — each order follows the same transition rules |
 
-Each order includes `is_guest`, `claimed_at`, and `customer: { id | null, name, email, phone }` — for guest orders `id` is `null`, `name` comes from the billing address and `email`/`phone` from checkout.
+Query filters:
+
+- `status`: one status or a comma list (`confirmed,processing`); `all`/empty = any.
+- `q` (≤ 100 chars, safe-input checked): order number (leading `#` ignored), customer / billing name, email, or phone — `017…`, `8801…` and `+8801…` all match.
+- `payment_status`: `pending | paid | failed | refunded | partially_refunded | all`.
+- `payment_method`: `cod` (cash on delivery) · `bkash | nagad | rocket | card | other` (wallet/card used on SSLCOMMERZ) · `online` (SSLCOMMERZ, not paid yet) · `all`.
+
+Status transitions: `pending → confirmed | processing | shipped | cancelled`, `confirmed → pending | processing | shipped | cancelled`, `processing → confirmed | shipped | cancelled`, `shipped → processing | delivered | cancelled`, `delivered → refunded`; `cancelled` and `refunded` are final. Side effects: `shipped_at` is set on shipped/delivered, `delivered_at` on delivered (a pending **cash on delivery** payment becomes `paid`), `cancelled_at` on cancelled, and a paid order moved to `refunded` gets `payment_status: refunded`. Stock and money are not moved automatically.
+
+Each order includes `is_guest`, `claimed_at`, `customer: { id | null, name, email, phone, avatar }`, `billing`, `payment_channel`, `courier_name`, `tracking_number`, `shipped_at`, `delivered_at`, `cancelled_at` — for guest orders `customer.id` is `null`, `name` comes from the billing address and `email`/`phone` from checkout. `payment_channel` is filled when an SSLCOMMERZ payment settles (from the gateway `card_type`).
 
 ---
 

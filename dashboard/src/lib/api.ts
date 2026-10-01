@@ -278,6 +278,42 @@ export async function apiUpload<T>(
   return data as T;
 }
 
+/** GET a file (CSV, …) with the staff token; returns the blob and the server's file name. */
+export async function apiDownload(
+  path: string,
+  options: { token?: string | null } = {},
+): Promise<{ blob: Blob; filename: string | null }> {
+  const initialToken =
+    options.token !== undefined ? options.token : readStoredAccessToken();
+
+  const send = (token: string | null) =>
+    fetch(`${API_URL}${path}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+  let response = await send(initialToken);
+  if (response.status === 401) {
+    const newToken = await refreshAccessToken();
+    if (!newToken) {
+      forceLogout("session_expired");
+      throw new ApiError("Session expired — please log in again", 401, "SESSION_EXPIRED");
+    }
+    response = await send(newToken);
+  }
+
+  if (!response.ok) {
+    const data = (await response.json().catch(() => ({}))) as {
+      message?: string;
+      code?: string;
+    };
+    throw new ApiError(data.message ?? "Download failed", response.status, data.code);
+  }
+
+  const disposition = response.headers.get("Content-Disposition") ?? "";
+  const filename = /filename="?([^";]+)"?/i.exec(disposition)?.[1] ?? null;
+  return { blob: await response.blob(), filename };
+}
+
 export async function fetchHealth() {
   return apiFetch<{
     status: string;

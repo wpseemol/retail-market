@@ -57,20 +57,72 @@ export const customerOrdersQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(10),
 });
 
+export const ORDER_STATUSES = [
+  "pending",
+  "confirmed",
+  "processing",
+  "shipped",
+  "delivered",
+  "cancelled",
+  "refunded",
+] as const;
+export type OrderStatusValue = (typeof ORDER_STATUSES)[number];
+
+/** `cod` = cash on delivery; the rest is the wallet/card used on SSLCOMMERZ (`online` = not paid yet). */
+export const ORDER_PAYMENT_FILTERS = ["cod", "bkash", "nagad", "rocket", "card", "other", "online"] as const;
+
+/** Comma-separated list, e.g. `status=confirmed,processing`; `all` or empty = no filter. */
+const statusListField = z
+  .string()
+  .trim()
+  .max(120)
+  .optional()
+  .transform((v, ctx) => {
+    if (!v || v === "all") return [] as OrderStatusValue[];
+    const parts = [...new Set(v.split(",").map((s) => s.trim()).filter(Boolean))];
+    const bad = parts.filter((s) => !(ORDER_STATUSES as readonly string[]).includes(s));
+    if (bad.length > 0) {
+      ctx.addIssue({ code: "custom", message: `Unknown status: ${bad.join(", ")}` });
+      return z.NEVER;
+    }
+    return parts as OrderStatusValue[];
+  });
+
+const orderFiltersShape = {
+  status: statusListField,
+  q: withSafeInput(z.string().trim().max(100)).optional(),
+  payment_status: z.enum(["pending", "paid", "failed", "refunded", "partially_refunded", "all"]).optional(),
+  payment_method: z.enum([...ORDER_PAYMENT_FILTERS, "all"]).optional(),
+};
+
 export const listOrdersQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
-  status: z
-    .enum([
-      "pending",
-      "confirmed",
-      "processing",
-      "shipped",
-      "delivered",
-      "cancelled",
-      "refunded",
-      "all",
-    ])
-    .optional()
-    .default("all"),
+  ...orderFiltersShape,
+});
+
+export const exportOrdersQuerySchema = z.object(orderFiltersShape);
+
+export type OrderFilters = z.infer<typeof exportOrdersQuerySchema>;
+
+const optionalShipText = (max: number) =>
+  withSafeInput(z.string().trim().max(max)).optional().or(z.literal("")).or(z.null());
+
+export const updateOrderStatusSchema = z.object({
+  status: z.enum(ORDER_STATUSES),
+  courier_name: optionalShipText(80),
+  tracking_number: optionalShipText(80),
+});
+
+export const updateOrderTrackingSchema = z.object({
+  courier_name: optionalShipText(80),
+  tracking_number: optionalShipText(80),
+});
+
+export const bulkOrderStatusSchema = z.object({
+  ids: z
+    .array(z.string().trim().regex(/^\d{1,19}$/, "Invalid order id"))
+    .min(1, "Select at least one order")
+    .max(100, "Update at most 100 orders at a time"),
+  status: z.enum(ORDER_STATUSES),
 });

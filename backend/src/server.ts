@@ -38,6 +38,7 @@ app.use(
   cors({
     origin: env.corsOrigins,
     credentials: true,
+    exposedHeaders: ["Content-Disposition", "X-Total-Rows"],
   }),
 );
 app.use(express.json());
