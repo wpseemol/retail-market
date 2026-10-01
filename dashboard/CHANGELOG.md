@@ -5,6 +5,33 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-01
 
+### Pages reorganized into feature domains (RBAC-aligned)
+Route URLs and effective access are unchanged; only file locations, imports, and guard grouping changed. Moves done with `git mv` to keep history.
+- `src/pages/LoginPage.tsx` → `src/pages/auth/LoginPage.tsx`
+- `src/pages/HomePage.tsx` → `src/pages/overview/HomePage.tsx`
+- `src/pages/RolePage.tsx` → `src/pages/overview/RolePage.tsx`
+- `src/pages/ProfilePage.tsx` → `src/pages/account/ProfilePage.tsx`
+- `src/pages/NotificationsPage.tsx` → `src/pages/account/NotificationsPage.tsx`
+- `src/pages/OrdersPage.tsx` → `src/pages/orders/OrdersPage.tsx`
+- `src/pages/ProductsPage.tsx`, `ProductCreatePage.tsx`, `ProductEditPage.tsx` → `src/pages/catalog/products/`
+- `src/pages/CategoriesPage.tsx`, `CategoryCreatePage.tsx`, `CategoryEditPage.tsx` → `src/pages/catalog/categories/`
+- `src/pages/BrandsPage.tsx`, `BrandCreatePage.tsx`, `BrandEditPage.tsx` → `src/pages/catalog/brands/`
+- `src/pages/ShopsPage.tsx` → `src/pages/stores/StoresPage.tsx`; `ShopCreatePage.tsx` → `stores/StoreCreatePage.tsx`; `ShopEditPage.tsx` → `stores/StoreEditPage.tsx` (file names now match the `Store*` exports)
+- `src/pages/UsersPage.tsx`, `UserEditPage.tsx` → `src/pages/access/` (staff management)
+- `src/pages/settings/` → `src/pages/system/settings/` (System Settings, super_admin only):
+  - root: `SiteSettingsLayout.tsx`, `settingsContext.ts`, `settingsTabs.ts`, `GeneralSettingsForm.tsx`, `index.ts`
+  - `storefront/`: `IdentitySettingsPage`, `HeaderSettingsPage`, `FooterSettingsPage`, `HomeSettingsPage`, `ShopSettingsPage`, `SocialShareSettingsPage`
+  - `integrations/` (credential-bearing): `SocialLoginSettingsPage`, `SmsGatewaySettingsPage`, `EmailProviderSettingsPage`, `PaymentSettingsPage`, `ShippingSettingsPage`
+  - `tracking/`: `AnalyticsSettingsPage`, `PixelsSettingsPage`
+  - `audit/`: `HistorySettingsPage`
+  - All 14 sub-folder pages: `./settingsContext` / `./GeneralSettingsForm` imports → `../`.
+  - `index.ts` re-exports from the new sub-folders.
+- New barrels: `src/pages/{auth,overview,account,orders,catalog,stores,access}/index.ts`.
+- New `src/lib/rbac.ts`: route role lists named after the `TARGET_REQUIREMENTS.md` §2 matrix (`SYSTEM_SETTINGS_ROLES`, `STAFF_MANAGEMENT_ROLES`, `ORDER_ROLES`, `PRODUCT_ROLES`, `TAXONOMY_VIEW_ROLES`, `TAXONOMY_MANAGE_ROLES`, `STORE_ROLES`, `NOTIFICATION_ROLES`, `OVERVIEW_ROLES`, `WORKSPACE_ROLES`), matching the backend's current `requireRoles(...)`.
+- `src/App.tsx`: imports from the domain barrels; route tree regrouped into one `ProtectedRoute` block per domain using `lib/rbac.ts` (settings, users, and the super-admin workspace are now separate blocks); `OverviewGate` uses `OVERVIEW_ROLES`.
+- `src/components/ProtectedRoute.tsx`: `roles` prop accepts `readonly StaffRole[]`.
+- `AGENTS.md`: new `pages/` tree, `lib/rbac.ts`, and the "Pages & routes" convention.
+
 ### Docs
 - Added `AGENTS.md` and this `CHANGELOG.md`.
 - `Dockerfile`: copies `backend-api/package.json` after the backend folder rename.

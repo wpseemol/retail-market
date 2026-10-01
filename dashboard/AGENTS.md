@@ -23,7 +23,20 @@ dashboard/
 ├── public/logo/niyenin-print.png   # wordmark used on printed invoices
 └── src/
     ├── main.tsx                    # providers: Theme, Confirm, Router
-    ├── pages/                      # route pages (OrdersPage, *EditPage, settings/*)
+    ├── App.tsx                     # route tree, one ProtectedRoute block per RBAC domain
+    ├── pages/                      # route pages grouped by feature domain; each folder has an index.ts barrel
+    │   ├── auth/                   # LoginPage
+    │   ├── overview/               # HomePage (KPIs), RolePage (role workspaces)
+    │   ├── account/                # ProfilePage, NotificationsPage
+    │   ├── orders/                 # OrdersPage, OrderDetailPage
+    │   ├── catalog/                # products/, categories/, brands/ (list + create + edit)
+    │   ├── stores/                 # StoresPage, StoreCreatePage, StoreEditPage
+    │   ├── access/                 # UsersPage, UserEditPage (staff management)
+    │   └── system/settings/        # super_admin only: SiteSettingsLayout + context/tabs, then
+    │       ├── storefront/         #   identity, header, footer, home, shop, social share
+    │       ├── integrations/       #   credentials: social login, SMS, email, payment, shipping
+    │       ├── tracking/           #   analytics, pixels
+    │       └── audit/              #   history
     ├── layouts/
     ├── components/
     │   ├── ui/                     # shadcn primitives
@@ -34,6 +47,7 @@ dashboard/
     ├── lib/
     │   ├── api.ts                  # apiFetch / apiDownload (Bearer)
     │   ├── orders.ts               # order labels, roles, delete rules
+    │   ├── rbac.ts                 # route role lists named after the TARGET_REQUIREMENTS.md RBAC matrix
     │   ├── imagePresets.ts         # image ratio / size hints per upload type
     │   ├── siteBranding.ts         # cached branding + getPrintBranding()
     │   └── validators/             # Zod schemas + safeInput helpers
@@ -48,6 +62,7 @@ dashboard/
 - **Destructive actions:** always `const confirm = useConfirm()` and `await confirm({ title, description, tone: "destructive" })`. Never `window.confirm`.
 - **Layout & motion:** pages use `PageHero`, `FormSection`, `StickyFormActions`. Animate with LazyMotion `m` via `useMotionSafe`; no layout animations or `AnimatePresence` on large tables.
 - **Roles:** catalog mutations are for `super_admin | admin | moderator`; hide or disable actions the current role cannot perform and show why (title tooltip).
+- **Pages & routes:** put new pages in the matching domain folder under `src/pages/`, export them from that folder's `index.ts`, and import from the barrel in `App.tsx`. Guard routes with the role lists from `src/lib/rbac.ts` instead of inline arrays, and keep those lists in sync with the backend's `requireRoles(...)`. Anything that edits global config or stores credentials goes under `pages/system/` (super_admin only); secrets-bearing settings go in `system/settings/integrations/`.
 - **Printing:** `window.open` must happen synchronously in the click handler, so branding comes from the synchronous `getPrintBranding()`.
 
 ## Workspace rules
