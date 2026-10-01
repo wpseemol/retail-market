@@ -7,7 +7,7 @@ import { formatPrice } from "@/lib/money";
 import { SHOP_BRANDS, SHOP_CATEGORIES } from "./data";
 import type { ShopProduct } from "./types";
 import { useAppDispatch } from "@/store/hooks";
-import { addToCart } from "@/store/cartSlice";
+import { addCartItem, cartSnapshot } from "@/store/cartSlice";
 import WishlistToggleButton from "./WishlistToggleButton";
 
 interface QuickViewModalProps {
@@ -140,15 +140,8 @@ export default function QuickViewModal({
     const tags = product.tags.slice(0, 3).map((tag) => tag.toLowerCase());
 
     const handleAddToCart = () => {
-        dispatch(
-            addToCart({
-                id: product.id,
-                name: product.name,
-                image: product.image,
-                alt: product.alt,
-                price: product.priceMin,
-                quantity,
-            }),
+        void dispatch(
+            addCartItem({ productId: product.id, quantity, product: cartSnapshot(product) }),
         );
     };
 

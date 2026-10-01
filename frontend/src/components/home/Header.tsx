@@ -15,7 +15,7 @@ import { useAppSelector } from "@/store/hooks";
 import { formatPrice } from "@/lib/money";
 import {
     selectCartItemCount,
-    selectCartTotal,
+    selectCartSubtotal,
 } from "@/store/cartSlice";
 import { selectHeaderNav } from "@/store/siteChromeSlice";
 import { selectWishlistCount } from "@/store/wishlistSlice";
@@ -97,7 +97,7 @@ export default function Header({
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const cartCount = useAppSelector(selectCartItemCount);
-    const cartTotal = useAppSelector(selectCartTotal);
+    const cartTotal = useAppSelector(selectCartSubtotal);
     const wishlistCount = useAppSelector(selectWishlistCount);
     const configuredNav = useAppSelector(selectHeaderNav);
     const headerNav =

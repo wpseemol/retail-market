@@ -15,14 +15,20 @@ import { useSession } from "next-auth/react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
     applyCoupon,
-    clearCart,
     clearCoupon,
-    selectCartDiscount,
+    fetchCart,
+    removeCartLines,
+    removeOrderedLines,
     selectCartItems,
-    selectCartSubtotal,
-    selectCartTotal,
+    selectCartLoaded,
+    selectCheckoutDiscount,
+    selectCheckoutItems,
+    selectCheckoutSubtotal,
+    selectCheckoutTotal,
     selectCouponCode,
+    setLineQuantity,
 } from "@/store/cartSlice";
+import { MAX_LINE_QUANTITY } from "@/lib/cartTypes";
 import { apiFetch, ApiError } from "@/lib/api";
 import { formatPrice } from "@/lib/money";
 import { validateCheckoutContact } from "@/lib/validators/checkout";
@@ -381,10 +387,13 @@ export default function CheckoutPageContent() {
     const router = useRouter();
     const { data: session, status: authStatus } = useSession();
     const dispatch = useAppDispatch();
-    const items = useAppSelector(selectCartItems);
-    const subtotal = useAppSelector(selectCartSubtotal);
-    const discount = useAppSelector(selectCartDiscount);
-    const cartTotal = useAppSelector(selectCartTotal);
+    const items = useAppSelector(selectCheckoutItems);
+    const cartLineCount = useAppSelector(selectCartItems).length;
+    const cartLoaded = useAppSelector(selectCartLoaded);
+    const subtotal = useAppSelector(selectCheckoutSubtotal);
+    const discount = useAppSelector(selectCheckoutDiscount);
+    const cartTotal = useAppSelector(selectCheckoutTotal);
+    const [lineErrors, setLineErrors] = useState<Record<string, string>>({});
     const shippingQuote = useShippingQuote(items);
     const total = cartTotal + shippingQuote.fee;
     const appliedCoupon = useAppSelector(selectCouponCode);
@@ -482,6 +491,8 @@ export default function CheckoutPageContent() {
 
         setPlacing(true);
         setPlaceError(null);
+        setLineErrors({});
+        const orderedIds = items.map((item) => item.product_id);
         try {
             const data = await apiFetch<{
                 order: { order_number: string; is_guest?: boolean };
@@ -491,9 +502,7 @@ export default function CheckoutPageContent() {
                 body: {
                     email: billing.email.trim().toLowerCase(),
                     items: items.map((item) => ({
-                        product_id: item.id,
-                        name: item.name,
-                        unit_price: item.price,
+                        product_id: item.product_id,
                         quantity: item.quantity,
                     })),
                     billing: toApiAddress(billing),
@@ -512,7 +521,7 @@ export default function CheckoutPageContent() {
                     email: billing.email.trim().toLowerCase(),
                 });
                 setRedirecting(true);
-                dispatch(clearCart());
+                void dispatch(removeOrderedLines(orderedIds));
                 if (data.payment.gateway_url) {
                     window.location.assign(data.payment.gateway_url);
                     return;
@@ -525,8 +534,19 @@ export default function CheckoutPageContent() {
             setOrderNumber(data.order.order_number);
             setPlacedAsGuest(Boolean(data.order.is_guest));
             setOrderPlaced(true);
-            dispatch(clearCart());
+            void dispatch(removeOrderedLines(orderedIds));
         } catch (err) {
+            if (err instanceof ApiError && err.code === "ITEM_UNAVAILABLE" && err.errors) {
+                const perLine: Record<string, string> = {};
+                for (const [productId, message] of Object.entries(err.errors)) {
+                    const text = Array.isArray(message) ? message[0] : message;
+                    if (text) perLine[productId] = String(text);
+                }
+                setLineErrors(perLine);
+                setPlaceError(err.message);
+                void dispatch(fetchCart());
+                return;
+            }
             const fieldMessage =
                 err instanceof ApiError && err.errors
                     ? Object.values(err.errors).flat().find(Boolean)
@@ -566,22 +586,43 @@ export default function CheckoutPageContent() {
         );
     }
 
+    if (!cartLoaded && !orderPlaced) {
+        return (
+            <div className="w-full bg-bg-base">
+                <CheckoutBreadcrumb />
+                <div
+                    className="container mx-auto px-4 sm:px-6 py-24 flex items-center justify-center"
+                    aria-busy="true"
+                    aria-label="Loading your cart"
+                >
+                    <span
+                        className="size-10 rounded-full border-[3px] border-brand-primary/25 border-t-brand-primary animate-spin"
+                        aria-hidden
+                    />
+                </div>
+            </div>
+        );
+    }
+
     if (items.length === 0 && !orderPlaced) {
+        const hasUnselected = cartLineCount > 0;
         return (
             <div className="w-full bg-bg-base">
                 <CheckoutBreadcrumb />
                 <div className="container mx-auto px-4 sm:px-6 py-20 flex flex-col items-center justify-center gap-4 text-center">
                     <p className="text-[18px] font-semibold text-text-primary m-0">
-                        Your cart is empty
+                        {hasUnselected ? "No products selected" : "Your cart is empty"}
                     </p>
                     <p className="text-[14px] text-text-secondary m-0 max-w-md">
-                        Add items to your cart before checking out.
+                        {hasUnselected
+                            ? "Tick the products you want to buy in your cart, then come back to checkout."
+                            : "Add items to your cart before checking out."}
                     </p>
                     <Link
-                        href="/shop"
+                        href={hasUnselected ? "/cart" : "/shop"}
                         className="mt-2 h-11 px-6 inline-flex items-center justify-center rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[14px] font-semibold transition-colors"
                     >
-                        Return to Shop
+                        {hasUnselected ? "Go to Cart" : "Return to Shop"}
                     </Link>
                 </div>
             </div>
@@ -855,10 +896,16 @@ export default function CheckoutPageContent() {
 
                     {/* Your Order */}
                     <aside className="w-full lg:sticky lg:top-6 border border-border-default rounded-lg bg-bg-surface overflow-hidden">
-                        <div className="px-5 py-4 border-b border-border-default">
+                        <div className="px-5 py-4 border-b border-border-default flex items-center justify-between gap-3">
                             <h2 className="text-[18px] font-semibold text-text-primary m-0">
                                 Your Order
                             </h2>
+                            <Link
+                                href="/cart"
+                                className="text-[13px] font-medium text-brand-primary hover:underline"
+                            >
+                                Edit cart
+                            </Link>
                         </div>
 
                         <div className="px-5 pt-3">
@@ -868,38 +915,106 @@ export default function CheckoutPageContent() {
                             </div>
 
                             <ul className="list-none m-0 p-0">
-                                {items.map((item) => (
-                                    <li
-                                        key={item.id}
-                                        className="flex items-start justify-between gap-3 py-3.5 border-b border-border-default"
-                                    >
-                                        <div className="flex items-start gap-3 min-w-0">
-                                            <div className="relative h-12 w-12 rounded border border-border-default bg-bg-subtle overflow-hidden shrink-0">
-                                                <Image
-                                                    src={item.image}
-                                                    alt={item.alt}
-                                                    fill
-                                                    sizes="48px"
-                                                    className="object-contain p-1"
-                                                />
+                                {items.map((item) => {
+                                    const maxQty = Math.min(
+                                        MAX_LINE_QUANTITY,
+                                        Math.max(item.stock_qty, 1),
+                                    );
+                                    const lineError = lineErrors[item.product_id];
+                                    return (
+                                        <li
+                                            key={item.product_id}
+                                            className="py-3.5 border-b border-border-default"
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <Link
+                                                    href={`/shop/${item.slug}`}
+                                                    className="relative h-14 w-14 rounded border border-border-default bg-bg-subtle overflow-hidden shrink-0"
+                                                >
+                                                    <Image
+                                                        src={item.image || "/images/camera.png"}
+                                                        alt={item.alt}
+                                                        fill
+                                                        sizes="56px"
+                                                        className="object-contain p-1"
+                                                    />
+                                                </Link>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <Link
+                                                            href={`/shop/${item.slug}`}
+                                                            className="text-[13px] text-text-primary leading-snug line-clamp-2 hover:text-brand-primary transition-colors"
+                                                        >
+                                                            {item.name}
+                                                        </Link>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                void dispatch(
+                                                                    removeCartLines([item.product_id]),
+                                                                )
+                                                            }
+                                                            aria-label={`Remove ${item.name}`}
+                                                            className="shrink-0 text-[12px] font-medium text-text-secondary hover:text-error cursor-pointer transition-colors"
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    </div>
+                                                    <p className="m-0 mt-0.5 text-[12px] text-text-secondary tabular-nums">
+                                                        {formatPrice(item.unit_price)} each
+                                                    </p>
+                                                    <div className="mt-2 flex items-center justify-between gap-3">
+                                                        <div className="inline-flex items-center border border-border-default rounded-md bg-bg-base overflow-hidden">
+                                                            <button
+                                                                type="button"
+                                                                aria-label={`Decrease quantity of ${item.name}`}
+                                                                disabled={item.quantity <= 1}
+                                                                onClick={() =>
+                                                                    void dispatch(
+                                                                        setLineQuantity({
+                                                                            productId: item.product_id,
+                                                                            quantity: item.quantity - 1,
+                                                                        }),
+                                                                    )
+                                                                }
+                                                                className="h-7 w-7 text-text-primary hover:bg-bg-subtle cursor-pointer text-[14px] leading-none disabled:cursor-not-allowed disabled:opacity-40"
+                                                            >
+                                                                −
+                                                            </button>
+                                                            <span className="min-w-7 text-center text-[13px] font-medium text-text-primary tabular-nums">
+                                                                {item.quantity}
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                aria-label={`Increase quantity of ${item.name}`}
+                                                                disabled={item.quantity >= maxQty}
+                                                                onClick={() =>
+                                                                    void dispatch(
+                                                                        setLineQuantity({
+                                                                            productId: item.product_id,
+                                                                            quantity: item.quantity + 1,
+                                                                        }),
+                                                                    )
+                                                                }
+                                                                className="h-7 w-7 text-text-primary hover:bg-bg-subtle cursor-pointer text-[14px] leading-none disabled:cursor-not-allowed disabled:opacity-40"
+                                                            >
+                                                                +
+                                                            </button>
+                                                        </div>
+                                                        <span className="text-[13px] font-medium text-text-primary tabular-nums shrink-0">
+                                                            {formatPrice(item.unit_price * item.quantity)}
+                                                        </span>
+                                                    </div>
+                                                    {lineError ? (
+                                                        <p className="m-0 mt-1.5 text-[12px] text-error" role="alert">
+                                                            {lineError}
+                                                        </p>
+                                                    ) : null}
+                                                </div>
                                             </div>
-                                            <p className="m-0 text-[13px] text-text-primary leading-snug">
-                                                <span className="line-clamp-2">
-                                                    {item.name}
-                                                </span>
-                                                <span className="text-text-secondary">
-                                                    {" "}
-                                                    × {item.quantity}
-                                                </span>
-                                            </p>
-                                        </div>
-                                        <span className="text-[13px] font-medium text-text-primary tabular-nums shrink-0">
-                                            {formatPrice(
-                                                item.price * item.quantity,
-                                            )}
-                                        </span>
-                                    </li>
-                                ))}
+                                        </li>
+                                    );
+                                })}
                             </ul>
 
                             <div className="flex items-center justify-between py-3.5 border-b border-border-default">

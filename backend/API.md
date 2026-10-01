@@ -69,6 +69,8 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/customer/addresses` | `routes/customerAddresses.ts` | Customers |
 | `/api/customer/orders` | `routes/customerOrders.ts` | Guests (POST) + customers |
 | `/api/customer/wishlist` | `routes/customerWishlist.ts` | Customers only |
+| `/api/customer/cart` | `routes/customerCart.ts` | Customers only |
+| `/api/cart` | `routes/customerCart.ts` | Public (guest cart pricing) |
 | `/api/payments` | `routes/payments.ts` | SSLCOMMERZ callbacks (gateway) + retry (guest/customer) |
 | `/api/site-settings` | `routes/publicSiteSettings.ts` | Public |
 | `/api/analytics` | `routes/publicAnalytics.ts` | Public |
@@ -412,7 +414,7 @@ Placing an order creates inbox notifications for `super_admin` / `admin` / `mode
 {
   "email": "ada@example.com",
   "items": [
-    { "product_id": "12", "name": "Widget", "unit_price": 500, "quantity": 2 }
+    { "product_id": "12", "quantity": 2 }
   ],
   "billing": {
     "full_name": "Ada Lovelace",
@@ -429,6 +431,14 @@ Placing an order creates inbox notifications for `super_admin` / `admin` / `mode
 ```
 
 `shipping_fee` in the body is **ignored** — shipping is always calculated on the server (see shipping rule below).
+
+**Pricing and stock**
+
+- `items[].product_id` is required (numeric id). Prices and names come from the database; `name` / `unit_price` in the body are accepted for older clients but **ignored**.
+- The same `product_id` sent twice is merged into one line.
+- Every product must be active (from an active shop) with enough `stock_qty`, otherwise **`409 ITEM_UNAVAILABLE`** with `errors: { "<product_id>": "Only 2 of Widget left in stock." }` and no order is created.
+- `discount_amount` is capped at the items subtotal.
+- For a Bearer customer, the ordered products are removed from their saved cart (`/api/customer/cart`) in the same transaction.
 
 `payment_method`: `sslcommerz` (bKash, Nagad, Rocket, cards via SSLCOMMERZ) | `cash_on_delivery`. Anything else → `400`.
 
@@ -473,6 +483,52 @@ Bearer **customer** only (guests get `401` → storefront sends them to `/login?
 | `DELETE` | `/:productId` | — | `{ message, product_ids, count }` (idempotent) |
 
 Errors: `400` validation (`product_id` must be a numeric id), `404 PRODUCT_NOT_FOUND` (missing / inactive product), `400 WISHLIST_FULL`.
+
+---
+
+## Customer cart — `/api/customer/cart`
+
+Bearer **customer** only. Stored in `carts` / `cart_items`. Guests keep their cart in an encrypted httpOnly cookie on the storefront (`nyn_cart`, handled by the Next.js route `/api/cart`), priced through `POST /api/cart/resolve`; after login the storefront calls `POST /merge` and clears the cookie.
+
+Lines are product-level (`variant_id` is always `null` for now). Max **50** lines, quantity **1–99**, and never more than `stock_qty`.
+
+Every route returns the full cart:
+
+```json
+{
+  "items": [
+    {
+      "product_id": "12", "variant_id": null, "name": "Widget", "slug": "widget",
+      "image": "/uploads/products/a.webp", "alt": "Widget",
+      "unit_price": 500, "compare_at_price": 650, "stock_qty": 8, "available": true,
+      "quantity": 2, "selected": true, "line_total": 1000
+    }
+  ],
+  "count": 2,
+  "selected_count": 2,
+  "selected_subtotal": 1000
+}
+```
+
+Hidden or deleted products are dropped from the response; out-of-stock ones stay with `available: false` and are not counted in `selected_*`.
+
+| Method | Path | Body | Notes |
+|--------|------|------|-------|
+| `GET` | `/` | — | Newest line first |
+| `POST` | `/items` | `{ "product_id": "12", "quantity": 1 }` | `201`. Adds to the existing quantity when the product is already in the cart |
+| `PATCH` | `/items/:productId` | `{ "quantity"?: 3, "selected"?: false }` | At least one field. `404 NOT_IN_CART` |
+| `DELETE` | `/items/:productId` | — | Idempotent |
+| `PATCH` | `/selection` | `{ "selected": true, "product_ids"?: ["12"] }` | Without `product_ids` applies to every line |
+| `POST` | `/merge` | `{ "items": [{ "product_id": "12", "quantity": 2, "selected": true }] }` | Guest cart → account cart; quantities add up. Unavailable products are skipped |
+| `DELETE` | `/` | — | Empties the cart |
+
+Errors: `400` validation (including product ids above the BIGINT range), `404 PRODUCT_NOT_FOUND`, `409 OUT_OF_STOCK`, `409 STOCK_LIMIT` (the line already holds all available stock, capped at 99), `400 CART_FULL` (50 different products).
+
+Quantities are clamped to stock. Concurrent adds for the same cart are serialized, so repeated clicks never create duplicate lines.
+
+### `POST /api/cart/resolve` — no auth
+
+Body `{ "items": [{ "product_id": "12", "quantity": 2, "selected": true }] }` (max 50). Returns the same cart object as above, priced from the database. Used by the storefront for guest carts.
 
 ---
 

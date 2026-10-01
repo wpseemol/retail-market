@@ -8,7 +8,7 @@ import { formatPrice } from "@/lib/money";
 import { toShopProduct, type ApiProduct } from "@/lib/products";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { addToCart } from "@/store/cartSlice";
+import { addCartItem, cartSnapshot } from "@/store/cartSlice";
 import { selectWishlistIds, selectWishlistLoaded } from "@/store/wishlistSlice";
 import type { ShopProduct } from "@/components/shop/types";
 
@@ -107,15 +107,8 @@ export default function WishlistPageContent() {
             : rows;
 
     const handleAddToCart = (product: ShopProduct) => {
-        dispatch(
-            addToCart({
-                id: product.id,
-                name: product.name,
-                image: product.image,
-                alt: product.alt,
-                price: product.priceMin,
-                quantity: 1,
-            }),
+        void dispatch(
+            addCartItem({ productId: product.id, quantity: 1, product: cartSnapshot(product) }),
         );
         setAddedId(product.id);
         window.setTimeout(() => setAddedId((cur) => (cur === product.id ? null : cur)), 1600);

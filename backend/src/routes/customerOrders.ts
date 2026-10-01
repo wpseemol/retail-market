@@ -2,6 +2,7 @@ import { Router } from "express";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { notifyNewOrder } from "../lib/notifications.js";
+import { purchasableScope } from "../lib/cart.js";
 import {
   isSslcommerzConfigured,
   SslcommerzError,
@@ -133,58 +134,66 @@ customerOrdersRouter.post(
     }
     const contactPhone = input.billing.phone;
 
-    const productIds = input.items
-      .map((item) => {
-        if (item.product_id == null || item.product_id === "") return null;
-        try {
-          return BigInt(item.product_id);
-        } catch {
-          return null;
-        }
-      })
-      .filter((id): id is bigint => id != null);
+    // Same product sent twice is one line, so stock is checked against the total.
+    const requested = new Map<string, number>();
+    for (const item of input.items) {
+      requested.set(item.product_id, (requested.get(item.product_id) ?? 0) + item.quantity);
+    }
 
-    const products =
-      productIds.length > 0
-        ? await prisma.product.findMany({
-            where: { id: { in: productIds }, deleted_at: null },
-            select: {
-              id: true,
-              name: true,
-              sku: true,
-              price: true,
-              shipping_fee: true,
-              vendor_id: true,
-              vendor: { select: { user_id: true } },
-            },
-          })
-        : [];
+    const products = await prisma.product.findMany({
+      where: {
+        id: { in: [...requested.keys()].map((id) => BigInt(id)) },
+        ...purchasableScope(),
+      },
+      select: {
+        id: true,
+        name: true,
+        sku: true,
+        price: true,
+        stock_qty: true,
+        shipping_fee: true,
+        vendor_id: true,
+        vendor: { select: { user_id: true } },
+      },
+    });
     const productMap = new Map(products.map((p) => [p.id.toString(), p]));
+
+    const unavailable: Record<string, string> = {};
+    for (const [pid, qty] of requested) {
+      const product = productMap.get(pid);
+      if (!product) unavailable[pid] = "This product is no longer available.";
+      else if (product.stock_qty <= 0) unavailable[pid] = `${product.name} is out of stock.`;
+      else if (product.stock_qty < qty) {
+        unavailable[pid] = `Only ${product.stock_qty} of ${product.name} left in stock.`;
+      }
+    }
+    if (Object.keys(unavailable).length > 0) {
+      return res.status(409).json({
+        message: "Some items in your order are unavailable. Update your cart and try again.",
+        code: "ITEM_UNAVAILABLE",
+        errors: unavailable,
+      });
+    }
+
     const shippingSettings = await getShippingSettings();
 
-    const lineItems = input.items.map((item) => {
-      const pid =
-        item.product_id != null && item.product_id !== ""
-          ? String(item.product_id)
-          : null;
-      const product = pid ? productMap.get(pid) : undefined;
-      const unit = new Prisma.Decimal(item.unit_price.toFixed(2));
-      const qty = item.quantity;
-      const lineTotal = unit.mul(qty);
+    const lineItems = [...requested].map(([pid, qty]) => {
+      const product = productMap.get(pid)!;
+      const unit = new Prisma.Decimal(product.price);
       return {
-        product_id: product?.id ?? null,
-        product_name: product?.name ?? item.name,
-        product_sku: product?.sku ?? null,
+        product_id: product.id,
+        product_name: product.name,
+        product_sku: product.sku ?? null,
         unit_price: unit,
         quantity: qty,
-        line_total: lineTotal,
-        vendor_user_id: product?.vendor?.user_id ?? null,
-        vendor_id: product?.vendor_id ?? null,
-        product_shipping_fee: product?.shipping_fee ?? null,
+        line_total: unit.mul(qty),
+        vendor_user_id: product.vendor?.user_id ?? null,
+        vendor_id: product.vendor_id ?? null,
+        product_shipping_fee: product.shipping_fee ?? null,
       };
     });
 
-    const discount = new Prisma.Decimal(
+    const requestedDiscount = new Prisma.Decimal(
       (input.discount_amount ?? 0).toFixed(2),
     );
     // Shipping is always computed server-side; any client `shipping_fee` is ignored.
@@ -196,6 +205,7 @@ customerOrdersRouter.post(
       })),
       shippingSettings,
     );
+    const discount = Prisma.Decimal.min(requestedDiscount, subtotal);
     const total = Prisma.Decimal.max(
       subtotal.sub(discount).add(shippingFee),
       new Prisma.Decimal(0),
@@ -300,6 +310,14 @@ customerOrdersRouter.post(
           items: true,
         },
       });
+      if (userId != null) {
+        await tx.cartItem.deleteMany({
+          where: {
+            cart: { user_id: userId },
+            product_id: { in: lineItems.map((l) => l.product_id) },
+          },
+        });
+      }
       return created;
     });
 

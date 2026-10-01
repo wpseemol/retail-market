@@ -9,6 +9,7 @@ import Header from "@/components/home/Header";
 import Footer from "@/components/home/Footer";
 import AuthHydrator from "@/components/providers/AuthHydrator";
 import WishlistHydrator from "@/components/providers/WishlistHydrator";
+import CartHydrator from "@/components/providers/CartHydrator";
 import DisableMotion from "@/components/providers/DisableMotion";
 import SmoothScroll from "@/components/providers/SmoothScroll";
 import AuthSessionProvider from "@/components/providers/AuthSessionProvider";
@@ -156,6 +157,7 @@ export default async function RootLayout({
                         <AuthSessionProvider>
                             <AuthHydrator />
                             <WishlistHydrator />
+                            <CartHydrator />
                             <SiteChromeHydrator payload={chromePayload} />
                             <TopBar />
                             <Header categories={categories} />

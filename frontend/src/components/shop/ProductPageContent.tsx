@@ -14,8 +14,8 @@ import {
     getRelatedProducts,
 } from "./data";
 import type { ProductTabId, ShopProduct } from "./types";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { addToCart, selectCartItems, updateQuantity } from "@/store/cartSlice";
+import { useAppDispatch } from "@/store/hooks";
+import { addCartItem, buyNow, cartSnapshot } from "@/store/cartSlice";
 import WishlistToggleButton from "./WishlistToggleButton";
 import { ProductImageZoom } from "./ProductImageZoom";
 import ProductShare from "./ProductShare";
@@ -177,7 +177,6 @@ export default function ProductPageContent({
 }: ProductPageContentProps) {
     const dispatch = useAppDispatch();
     const router = useRouter();
-    const cartItems = useAppSelector(selectCartItems);
     const gallery = useMemo(() => getProductGallery(product), [product]);
     const relatedProducts = useMemo(
         () =>
@@ -205,28 +204,20 @@ export default function ProductPageContent({
     /** Ignore scroll-spy while a tab click is smooth-scrolling. */
     const spyPausedUntil = useRef(0);
 
-    const cartLine = {
-        id: product.id,
-        name: product.name,
-        image: product.image,
-        alt: product.alt,
-        price: product.priceMin,
-        quantity,
-    };
-
     const handleAddToCart = () => {
-        dispatch(addToCart(cartLine));
+        void dispatch(
+            addCartItem({ productId: product.id, quantity, product: cartSnapshot(product) }),
+        );
     };
 
-    const handleBuyNow = () => {
+    const handleBuyNow = async () => {
         setBuying(true);
         // Buy now checks out exactly the chosen quantity instead of adding to what's already in the cart.
-        if (cartItems.some((item) => item.id === product.id)) {
-            dispatch(updateQuantity({ id: product.id, quantity }));
-        } else {
-            dispatch(addToCart(cartLine));
-        }
-        router.push("/checkout");
+        const result = await dispatch(
+            buyNow({ productId: product.id, quantity, exact: true, product: cartSnapshot(product) }),
+        );
+        if (result.meta.requestStatus === "fulfilled") router.push("/checkout");
+        else setBuying(false);
     };
 
     const scrollToSection = useCallback((id: ProductTabId) => {

@@ -1,6 +1,6 @@
 import { Router } from "express";
-import type { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
+import { purchasableScope } from "../lib/cart.js";
 import { productWithCatalogInclude, toPublicProduct } from "../lib/productCatalog.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -11,14 +11,6 @@ export const customerWishlistRouter = Router();
 customerWishlistRouter.use(requireAuth, requireRoles("customer"));
 
 const MAX_WISHLIST_ITEMS = 200;
-
-function purchasableScope(): Prisma.ProductWhereInput {
-  return {
-    status: "active",
-    deleted_at: null,
-    OR: [{ vendor_id: null }, { vendor: { status: "active", deleted_at: null } }],
-  };
-}
 
 async function wishlistIdFor(userId: bigint) {
   const wishlist = await prisma.wishlist.upsert({

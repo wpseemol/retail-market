@@ -567,6 +567,8 @@ model CartItem {
   product_id         BigInt   @db.UnsignedBigInt
   product_variant_id BigInt?  @db.UnsignedBigInt
   quantity           Int      @default(1)
+  /// Included in checkout when true (cart page checkbox).
+  selected           Boolean  @default(true)
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt
 

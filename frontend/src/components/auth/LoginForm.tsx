@@ -240,6 +240,7 @@ export default function LoginForm() {
         New here?{" "}
         <Link
           href={authSwitchHref("/register", rawNext)}
+          scroll={false}
           className="font-semibold text-brand-primary hover:underline"
         >
           Create an account

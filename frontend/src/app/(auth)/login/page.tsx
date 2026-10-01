@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import AuthPage from "@/components/auth/AuthPage";
 import { createPageMetadata, siteConfig } from "@/config/site";
 
 export const metadata: Metadata = createPageMetadata({
@@ -9,6 +8,7 @@ export const metadata: Metadata = createPageMetadata({
   noIndex: true,
 });
 
+// UI lives in app/(auth)/layout.tsx (AuthShell) so switching to /register animates.
 export default function LoginRoutePage() {
-  return <AuthPage mode="login" />;
+  return null;
 }

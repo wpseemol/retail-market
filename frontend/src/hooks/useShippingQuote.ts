@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/api";
-import type { CartItem } from "@/store/cartSlice";
+import type { CartLine } from "@/lib/cartTypes";
 
 export type ShippingQuote = {
     shipping_fee: number;
@@ -19,12 +19,12 @@ type State = {
 };
 
 /** Server-calculated shipping for the cart; the order endpoint uses the same rule. */
-export function useShippingQuote(items: CartItem[]) {
+export function useShippingQuote(items: CartLine[]) {
     const payload = useMemo(
         () =>
             items.map((item) => ({
-                product_id: String(item.id),
-                unit_price: item.price,
+                product_id: item.product_id,
+                unit_price: item.unit_price,
                 quantity: item.quantity,
             })),
         [items],

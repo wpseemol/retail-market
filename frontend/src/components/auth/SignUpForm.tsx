@@ -287,6 +287,7 @@ export default function SignUpForm() {
         Already have an account?{" "}
         <Link
           href={authSwitchHref("/login", rawNext)}
+          scroll={false}
           className="font-semibold text-brand-primary hover:underline"
         >
           Log in

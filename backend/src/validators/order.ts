@@ -1,13 +1,15 @@
 import { z } from "zod";
 import { phoneField, withSafeInput } from "./customerAuth.js";
+import { productIdField as orderProductId } from "./productId.js";
 
 const safeStr = (min: number, max: number) =>
   withSafeInput(z.string().trim().min(min).max(max));
 
+/** Price and name come from the database; `name` / `unit_price` are accepted but ignored. */
 export const placeOrderItemSchema = z.object({
-  product_id: z.union([z.string(), z.number()]).optional(),
-  name: safeStr(1, 255),
-  unit_price: z.coerce.number().finite().nonnegative().max(1_000_000),
+  product_id: orderProductId,
+  name: safeStr(1, 255).optional(),
+  unit_price: z.coerce.number().finite().nonnegative().max(1_000_000).optional(),
   quantity: z.coerce.number().int().min(1).max(99),
 });
 
@@ -41,7 +43,11 @@ export type PlaceOrderInput = z.infer<typeof placeOrderSchema>;
 export const shippingQuoteSchema = z.object({
   items: z
     .array(
-      placeOrderItemSchema.pick({ product_id: true, unit_price: true, quantity: true }),
+      z.object({
+        product_id: z.union([z.string(), z.number()]).optional(),
+        unit_price: z.coerce.number().finite().nonnegative().max(1_000_000),
+        quantity: z.coerce.number().int().min(1).max(99),
+      }),
     )
     .max(50),
 });

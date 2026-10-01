@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ShopProduct, ShopViewMode } from "./types";
 import { useAppDispatch } from "@/store/hooks";
-import { addToCart } from "@/store/cartSlice";
+import { addCartItem, buyNow, cartSnapshot } from "@/store/cartSlice";
 import { formatPriceRange } from "@/lib/money";
 import { useWishlist } from "@/hooks/useWishlist";
 
@@ -361,29 +361,20 @@ export default function ShopProductCard({
         };
     }, []);
 
-    const dispatchAdd = () => {
-        dispatch(
-            addToCart({
-                id: product.id,
-                name: product.name,
-                image: product.image,
-                alt: product.alt,
-                price: product.priceMin,
-                quantity: 1,
-            }),
-        );
-    };
-
     const handleAddToCart = () => {
-        dispatchAdd();
+        void dispatch(
+            addCartItem({ productId: product.id, quantity: 1, product: cartSnapshot(product) }),
+        );
         setAdded(true);
         if (addedTimer.current) window.clearTimeout(addedTimer.current);
         addedTimer.current = window.setTimeout(() => setAdded(false), 1600);
     };
 
-    const handleBuyNow = () => {
-        dispatchAdd();
-        router.push("/checkout");
+    const handleBuyNow = async () => {
+        const result = await dispatch(
+            buyNow({ productId: product.id, quantity: 1, product: cartSnapshot(product) }),
+        );
+        if (result.meta.requestStatus === "fulfilled") router.push("/checkout");
     };
 
     const handleExpandProduct = () => {
