@@ -7,6 +7,7 @@ storefront (`frontend/`, port 3000) and the admin dashboard (`dashboard/`, port 
 - **Package name:** `backend-api` (pnpm workspace member)
 - **Public API reference:** [`API.md`](./API.md) — update it whenever an endpoint changes.
 - **Change log:** [`CHANGELOG.md`](./CHANGELOG.md) — append every change you make here.
+- **Security audit:** [`SECURITY_AUDIT.md`](./SECURITY_AUDIT.md) — mark items `Fixed YYYY-MM-DD` when resolved and update the root [`../SECURITY_AUDIT.md`](../SECURITY_AUDIT.md) counts.
 
 ## Scripts
 

@@ -3,6 +3,12 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-08
+
+### Security audit
+- `SECURITY_AUDIT.md`: new findings tracker (BE-01 – BE-22) from `npm audit` + code review; rolled up in the root `SECURITY_AUDIT.md`. No code changed.
+- `AGENTS.md`: points to the audit file.
+
 ## 2026-10-01
 
 ### Richer dashboard overview analytics

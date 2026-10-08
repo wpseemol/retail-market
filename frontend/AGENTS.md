@@ -16,6 +16,7 @@ Data comes from `backend-api` (port 8001).
 - **Port:** 3000 (`next dev --port 3000`)
 - **API reference:** [`../backend-api/API.md`](../backend-api/API.md)
 - **Change log:** [`CHANGELOG.md`](./CHANGELOG.md) — append every change you make here.
+- **Security audit:** [`SECURITY_AUDIT.md`](./SECURITY_AUDIT.md) — mark items `Fixed YYYY-MM-DD` when resolved and update the root [`../SECURITY_AUDIT.md`](../SECURITY_AUDIT.md) counts.
 
 ## Stack
 

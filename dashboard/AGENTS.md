@@ -6,6 +6,7 @@ Talks to `backend-api` (port 8001) with Bearer auth.
 - **Port:** 5173 (`vite --port 5173 --strictPort`)
 - **API reference:** [`../backend-api/API.md`](../backend-api/API.md)
 - **Change log:** [`CHANGELOG.md`](./CHANGELOG.md) — append every change you make here.
+- **Security audit:** [`SECURITY_AUDIT.md`](./SECURITY_AUDIT.md) — mark items `Fixed YYYY-MM-DD` when resolved and update the root [`../SECURITY_AUDIT.md`](../SECURITY_AUDIT.md) counts.
 
 ## Scripts
 
