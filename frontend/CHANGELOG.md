@@ -5,6 +5,16 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-08
 
+### Dynamic shop price range
+- `src/hooks/usePriceRange.ts` (new): fetches `GET /api/products/price-range` when search (debounced 300 ms), category or brands change; uses the SSR range until then.
+- `src/lib/products.ts`: `fetchPriceRange()` + `PriceRange` type.
+- `src/components/shop/ShopPageContent.tsx`: slider bounds come from `usePriceRange`; when bounds change, an untouched handle follows the new bound and a dragged one is clamped into it.
+- `src/components/shop/ShopSidebar.tsx`: `priceRangeLoading` prop dims the price card (`aria-busy`) while bounds load.
+- `src/app/shop/page.tsx`: dropped the fake `1000` max fallback when the API returns no products.
+
+### Price filter input: no setState in effect
+- `src/components/shop/ShopSidebar.tsx`: `PriceInput` resyncs its draft from the `value` prop during render (tracked `syncedValue`) instead of a `useEffect`, fixing the `react-hooks/set-state-in-effect` lint error.
+
 ### Shop price filter redesign
 - `src/components/shop/ShopSidebar.tsx`: price section is now a card with a "Selected range" readout, thicker track, catalog min/max labels under the slider, ৳-prefixed Min/Max boxes and a Reset link when filtered. New `PriceInput` keeps typing as a draft and applies it on blur / Enter (previously every keystroke was clamped, so typing e.g. 5000 snapped back to the minimum). Max slider now snaps to the true maximum at the end of the track.
 - `src/app/globals.css`: `.shop-range` thumb is a larger white handle with a brand ring, hover/focus halo and grab cursor.

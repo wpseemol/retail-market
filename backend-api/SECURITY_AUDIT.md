@@ -5,7 +5,7 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 
 - **Last audit:** 2026-10-08
 - **Method:** `npm audit` + manual code review of `src/`
-- **Totals:** 1 Critical · 6 High · 6 Medium · 5 Low · 4 Info
+- **Totals:** 1 Critical · 6 High · 7 Medium · 5 Low · 4 Info
 
 ## Summary
 
@@ -33,6 +33,7 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 | BE-20 | Info | Order numbers use `Math.random()` (9,000 per day) | Open |
 | BE-21 | Info | Unbounded `page` allows huge OFFSET scans | Open |
 | BE-22 | Info | `withSafeInput` on passwords rejects valid passwords | Open |
+| BE-23 | Medium | Public product API exposes `cost_price` | Open |
 
 ## Details
 
@@ -127,6 +128,11 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 - **BE-21:** `src/routes/publicProducts.ts:27` and other list routes — cap `page`.
 - **BE-22:** `src/routes/customerAuth.ts:76, 82` — don't run passwords through `withSafeInput`.
 
+### BE-23 · Medium · `cost_price` in public responses
+- **Where:** `src/lib/productCatalog.ts:128` (`cost_price: decimalToNumber(row.cost_price)` inside `toPublicProduct`), served by `GET /api/products` and `GET /api/products/:idOrSlug`.
+- **Issue:** Found 2026-10-08. Every product currently has it `null`, but once a vendor fills it in, anyone can read the store's purchase cost / margin.
+- **Fix:** Drop `cost_price` from `toPublicProduct` (keep it only in dashboard serializers).
+
 ## Done well
 - SSLCommerz settlement re-validates with the gateway (tran_id, amount, currency); fail/cancel only touch pending attempts.
 - Item prices and shipping always come from the DB (apart from BE-01).
@@ -141,3 +147,4 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 | Date | Notes |
 | --- | --- |
 | 2026-10-08 | Initial audit (BE-01 – BE-22). |
+| 2026-10-08 | Added BE-23 (found while adding `/api/products/price-range`). |

@@ -311,7 +311,16 @@ Query: `page`, `limit` (max 48), `q?`, `category?` (slug), `brand?` (slug), `sor
 **200** → `{ products, facets, pagination }`
 
 `facets.categories` / `facets.brands`: `{ id, label, count }[]`  
-`facets.price`: `{ min, max }`
+`facets.price`: `{ min, max }` — lowest / highest `price` of active products matching `q`, `category` and `brand` (not the whole catalog).
+
+### `GET /api/products/price-range`
+
+Price-slider bounds for the shop filters; the storefront refetches it when search, category or brands change.
+
+Query: `q?` (≤ 120, safe-input checked), `category?` (slug), `brands?` (comma-separated slugs, max 20).
+
+**200** → `{ min, max, count }` — `min` / `max` of active product `price`; all `0` when nothing matches. `Cache-Control: public, max-age=60`.  
+**400** → `{ message, errors }` for an invalid slug or unsafe `q`.
 
 ### `GET /api/products/:idOrSlug`
 

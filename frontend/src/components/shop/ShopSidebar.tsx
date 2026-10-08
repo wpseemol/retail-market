@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import Image from "next/image";
 import { SHOP_COLORS } from "./data";
 import type { ShopFacetOption } from "./ShopPageContent";
@@ -12,6 +12,8 @@ interface ShopSidebarProps {
     priceMin: number;
     priceMax: number;
     priceRange: { min: number; max: number };
+    /** True while new slider bounds are loading for changed filters. */
+    priceRangeLoading?: boolean;
     onPriceChange: (min: number, max: number) => void;
     selectedColor: string | null;
     onColorChange: (colorId: string | null) => void;
@@ -54,16 +56,18 @@ function PriceInput({
     ariaLabel: string;
 }) {
     const [draft, setDraft] = useState(String(value));
+    const [syncedValue, setSyncedValue] = useState(value);
 
-    useEffect(() => {
+    if (syncedValue !== value) {
+        setSyncedValue(value);
         setDraft(String(value));
-    }, [value]);
+    }
 
     const commit = () => {
         const parsed = Number(draft);
         const valid = draft.trim() !== "" && Number.isFinite(parsed);
         onCommit(valid ? Math.round(parsed) : fallback);
-        // Clamped results equal to the current value don't re-run the effect below.
+        // A clamped result equal to the current value won't change `value`, so reset the draft here.
         setDraft(String(value));
     };
 
@@ -137,6 +141,7 @@ export default function ShopSidebar({
     priceMin,
     priceMax,
     priceRange,
+    priceRangeLoading = false,
     onPriceChange,
     selectedColor,
     onColorChange,
@@ -236,7 +241,12 @@ export default function ShopSidebar({
                         </button>
                     ) : null}
                 </div>
-                <div className="rounded-xl border border-border-default bg-bg-surface p-4 shadow-sm">
+                <div
+                    aria-busy={priceRangeLoading}
+                    className={`rounded-xl border border-border-default bg-bg-surface p-4 shadow-sm transition-opacity ${
+                        priceRangeLoading ? "opacity-60" : ""
+                    }`}
+                >
                     <p className="m-0 text-[11px] font-medium uppercase tracking-wider text-text-secondary">
                         Selected range
                     </p>

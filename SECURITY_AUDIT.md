@@ -4,7 +4,7 @@ Root tracker for the three apps. Each app keeps its own detailed findings file; 
 
 | App | Audit file | Critical | High | Medium | Low | Info | Open |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| backend-api | [`backend-api/SECURITY_AUDIT.md`](backend-api/SECURITY_AUDIT.md) | 1 | 6 | 6 | 5 | 4 | 22 |
+| backend-api | [`backend-api/SECURITY_AUDIT.md`](backend-api/SECURITY_AUDIT.md) | 1 | 6 | 7 | 5 | 4 | 23 |
 | frontend | [`frontend/SECURITY_AUDIT.md`](frontend/SECURITY_AUDIT.md) | 2 | 1 | 4 | 4 | 2 | 12 |
 | dashboard | [`dashboard/SECURITY_AUDIT.md`](dashboard/SECURITY_AUDIT.md) | 0 | 0 | 3 | 5 | 2 | 8 |
 
@@ -41,3 +41,4 @@ These need changes in more than one app; fix them together.
 | Date | Scope | Result |
 | --- | --- | --- |
 | 2026-10-08 | All three apps — deps + code review | 45 findings (3 Critical, 7 High, 13 Medium, 14 Low, 8 Info incl. 3 OK) |
+| 2026-10-08 | backend-api | +BE-23 `cost_price` exposed on public product API (Medium) |

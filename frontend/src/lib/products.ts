@@ -1,4 +1,4 @@
-import { API_URL } from "@/lib/api";
+import { API_URL, apiFetch } from "@/lib/api";
 import type { ShopProduct } from "@/components/shop/types";
 
 export type ApiProductMedia = {
@@ -144,6 +144,29 @@ export async function fetchProducts(options?: {
   } catch {
     return empty;
   }
+}
+
+export type PriceRange = { min: number; max: number; count?: number };
+
+/** Browser-side: slider bounds for the current shop filters (via the `/api/backend` proxy). */
+export async function fetchPriceRange(filters: {
+  q?: string;
+  category?: string | null;
+  brands?: string[];
+}): Promise<PriceRange> {
+  const params = new URLSearchParams();
+  if (filters.q?.trim()) params.set("q", filters.q.trim());
+  if (filters.category) params.set("category", filters.category);
+  if (filters.brands?.length) params.set("brands", filters.brands.join(","));
+  const qs = params.toString();
+  const data = await apiFetch<PriceRange>(
+    `/api/products/price-range${qs ? `?${qs}` : ""}`,
+  );
+  return {
+    min: Number(data.min) || 0,
+    max: Number(data.max) || 0,
+    count: Number(data.count) || 0,
+  };
 }
 
 export async function fetchProductByIdOrSlug(

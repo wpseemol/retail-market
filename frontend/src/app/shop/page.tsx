@@ -74,7 +74,7 @@ export default async function ShopPage({
         brands={data.facets.brands}
         priceRange={{
           min: data.facets.price.min || 0,
-          max: data.facets.price.max || 1000,
+          max: data.facets.price.max || 0,
         }}
         tags={tags}
         defaultViewMode={settings.shop.default_view as ShopViewMode}

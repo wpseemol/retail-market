@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { usePriceRange } from "@/hooks/usePriceRange";
 import { clampPerPage, PRODUCTS_PER_PAGE, perPageChoices } from "./data";
 import QuickViewModal from "./QuickViewModal";
 import ShopBreadcrumb from "./ShopBreadcrumb";
@@ -119,11 +120,6 @@ export default function ShopPageContent({
   initialCategory = null,
   initialBrand = null,
 }: ShopPageContentProps) {
-  const rangeMin = Math.floor(priceRange.min || 0);
-  const rangeMax = Math.max(
-    Math.ceil(priceRange.max || 0),
-    rangeMin + 1,
-  );
   const defaultPerPage = clampPerPage(productsPerPage);
   const perPageOptions = useMemo(() => perPageChoices(defaultPerPage), [defaultPerPage]);
   const [perPage, setPerPage] = useState(() =>
@@ -131,8 +127,6 @@ export default function ShopPageContent({
   );
 
   const [searchQuery, setSearchQuery] = useState(initialSearch);
-  const [priceMin, setPriceMin] = useState(rangeMin);
-  const [priceMax, setPriceMax] = useState(rangeMax);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
     initialCategory,
@@ -144,6 +138,32 @@ export default function ShopPageContent({
     );
     return [facet?.id ?? initialBrand];
   });
+
+  const { range: liveRange, loading: priceRangeLoading } = usePriceRange(
+    { q: searchQuery, category: selectedCategory, brands: selectedBrands },
+    priceRange,
+  );
+  const rangeMin = Math.floor(liveRange.min || 0);
+  const rangeMax = Math.max(Math.ceil(liveRange.max || 0), rangeMin + 1);
+
+  const [priceMin, setPriceMin] = useState(rangeMin);
+  const [priceMax, setPriceMax] = useState(rangeMax);
+  const [syncedRange, setSyncedRange] = useState({ min: rangeMin, max: rangeMax });
+
+  // New bounds from the API: an untouched end follows the new bound, a dragged end is clamped into it.
+  if (syncedRange.min !== rangeMin || syncedRange.max !== rangeMax) {
+    let nextMin =
+      priceMin <= syncedRange.min ? rangeMin : Math.min(Math.max(priceMin, rangeMin), rangeMax);
+    let nextMax =
+      priceMax >= syncedRange.max ? rangeMax : Math.min(Math.max(priceMax, rangeMin), rangeMax);
+    if (nextMin >= nextMax) {
+      nextMin = rangeMin;
+      nextMax = rangeMax;
+    }
+    setSyncedRange({ min: rangeMin, max: rangeMax });
+    setPriceMin(nextMin);
+    setPriceMax(nextMax);
+  }
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ShopViewMode>(defaultViewMode);
   const [sortBy, setSortBy] = useState<ShopSortOption>("default");
@@ -274,6 +294,7 @@ export default function ShopPageContent({
               priceMin={priceMin}
               priceMax={priceMax}
               priceRange={{ min: rangeMin, max: rangeMax }}
+              priceRangeLoading={priceRangeLoading}
               onPriceChange={(min, max) => {
                 setPriceMin(min);
                 setPriceMax(max);

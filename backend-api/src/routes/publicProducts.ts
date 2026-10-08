@@ -11,6 +11,7 @@ import {
   findUnsafeInputReason,
   withSafeInput,
 } from "../validators/customerAuth.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 export const publicProductsRouter = Router();
 
@@ -23,24 +24,60 @@ const idOrSlugSchema = withSafeInput(
     .regex(/^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/, "Invalid product id or slug"),
 );
 
+const searchQuerySchema = z
+  .string()
+  .trim()
+  .max(120)
+  .optional()
+  .superRefine((value, ctx) => {
+    if (!value) return;
+    const reason = findUnsafeInputReason(value);
+    if (reason) ctx.addIssue({ code: "custom", message: reason });
+  });
+
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(48).default(24),
-  q: z
-    .string()
-    .trim()
-    .max(120)
-    .optional()
-    .superRefine((value, ctx) => {
-      if (!value) return;
-      const reason = findUnsafeInputReason(value);
-      if (reason) ctx.addIssue({ code: "custom", message: reason });
-    }),
+  q: searchQuerySchema,
   category: z.string().trim().max(140).optional(),
   brand: z.string().trim().max(140).optional(),
   sort: z
     .enum(["default", "price-asc", "price-desc", "name-asc", "newest"])
     .default("default"),
+});
+
+const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+const priceRangeQuerySchema = z.object({
+  q: searchQuerySchema,
+  category: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(140)
+    .regex(SLUG_RE, "Invalid category")
+    .optional(),
+  /** Comma-separated brand slugs (the shop sidebar allows several). */
+  brands: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(600)
+    .optional()
+    .transform((value) =>
+      value
+        ? Array.from(
+            new Set(
+              value
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean),
+            ),
+          )
+        : [],
+    )
+    .refine((list) => list.length <= 20, "Too many brands")
+    .refine((list) => list.every((s) => s.length <= 140 && SLUG_RE.test(s)), "Invalid brand"),
 });
 
 export function activeProductScope(): Prisma.ProductWhereInput {
@@ -60,6 +97,47 @@ function safeOptionalSlug(value: string | undefined): string | undefined {
   const reason = findUnsafeInputReason(trimmed);
   if (reason) return undefined;
   return trimmed;
+}
+
+function catalogWhere(filters: {
+  q?: string;
+  category?: string;
+  brands?: string[];
+}): Prisma.ProductWhereInput {
+  const { q, category, brands = [] } = filters;
+  return {
+    AND: [
+      activeProductScope(),
+      q
+        ? {
+            OR: [
+              { name: { contains: q } },
+              { short_description: { contains: q } },
+              { brand: { contains: q } },
+              { brandRef: { name: { contains: q } } },
+              { category: { name: { contains: q } } },
+            ],
+          }
+        : {},
+      category
+        ? {
+            OR: [
+              { category: { slug: category } },
+              { category: { name: { equals: category } } },
+            ],
+          }
+        : {},
+      brands.length > 0
+        ? {
+            OR: brands.flatMap((brand) => [
+              { brandRef: { slug: brand } },
+              { brandRef: { name: { equals: brand } } },
+              { brand: { equals: brand } },
+            ]),
+          }
+        : {},
+    ],
+  };
 }
 
 function orderBy(
@@ -99,39 +177,7 @@ publicProductsRouter.get("/", async (req, res) => {
   const category = safeOptionalSlug(parsed.data.category);
   const brand = safeOptionalSlug(parsed.data.brand);
 
-  const where: Prisma.ProductWhereInput = {
-    AND: [
-      activeProductScope(),
-      q
-        ? {
-            OR: [
-              { name: { contains: q } },
-              { short_description: { contains: q } },
-              { brand: { contains: q } },
-              { brandRef: { name: { contains: q } } },
-              { category: { name: { contains: q } } },
-            ],
-          }
-        : {},
-      category
-        ? {
-            OR: [
-              { category: { slug: category } },
-              { category: { name: { equals: category } } },
-            ],
-          }
-        : {},
-      brand
-        ? {
-            OR: [
-              { brandRef: { slug: brand } },
-              { brandRef: { name: { equals: brand } } },
-              { brand: { equals: brand } },
-            ],
-          }
-        : {},
-    ],
-  };
+  const where = catalogWhere({ q, category, brands: brand ? [brand] : [] });
 
   const [total, rows, categories, brands, priceAgg] = await Promise.all([
     prisma.product.count({ where }),
@@ -179,7 +225,7 @@ publicProductsRouter.get("/", async (req, res) => {
       },
     }),
     prisma.product.aggregate({
-      where: activeProductScope(),
+      where,
       _min: { price: true },
       _max: { price: true },
     }),
@@ -211,6 +257,39 @@ publicProductsRouter.get("/", async (req, res) => {
     },
   });
 });
+
+/**
+ * GET /api/products/price-range?q=&category=&brands=a,b
+ * Min / max `price` of active products matching the shop filters (drives the price slider).
+ * Registered before `/:idOrSlug` so "price-range" isn't treated as a slug.
+ */
+publicProductsRouter.get(
+  "/price-range",
+  asyncHandler(async (req, res) => {
+    const parsed = priceRangeQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: parsed.error.issues[0]?.message ?? "Invalid query",
+        errors: parsed.error.flatten().fieldErrors,
+      });
+    }
+
+    const { q, category, brands } = parsed.data;
+    const agg = await prisma.product.aggregate({
+      where: catalogWhere({ q, category, brands }),
+      _min: { price: true },
+      _max: { price: true },
+      _count: { _all: true },
+    });
+
+    res.set("Cache-Control", "public, max-age=60");
+    return res.json({
+      min: Number(agg._min.price ?? 0),
+      max: Number(agg._max.price ?? 0),
+      count: agg._count._all,
+    });
+  }),
+);
 
 /**
  * GET /api/products/:idOrSlug
