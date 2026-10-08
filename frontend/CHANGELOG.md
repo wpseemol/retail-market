@@ -5,6 +5,9 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-08
 
+### Welcome modal buttons stay on one line
+- `src/components/home/HomeWelcomeModal.tsx`: CTA and dismiss buttons use `whitespace-nowrap shrink-0` so their labels no longer wrap onto two lines.
+
 ### Security audit
 - `SECURITY_AUDIT.md`: new findings tracker (FE-01 – FE-13) from `pnpm audit` + code review; rolled up in the root `SECURITY_AUDIT.md`. No code changed.
 - `AGENTS.md`: points to the audit file.
