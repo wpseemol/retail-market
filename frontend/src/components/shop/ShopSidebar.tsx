@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { SHOP_COLORS } from "./data";
 import type { ShopFacetOption } from "./ShopPageContent";
@@ -32,6 +32,10 @@ interface ShopSidebarProps {
     seeAllLabel?: string;
     showLessLabel?: string;
 }
+
+/** Matches `lg:top-28` (clears the sticky header). */
+const STICKY_TOP = 112;
+const STICKY_BOTTOM_GAP = 24;
 
 function FilterTitle({ children }: { children: ReactNode }) {
     return (
@@ -162,6 +166,25 @@ export default function ShopSidebar({
 }: ShopSidebarProps) {
     const [categoriesExpanded, setCategoriesExpanded] = useState(false);
     const [brandsExpanded, setBrandsExpanded] = useState(false);
+    const asideRef = useRef<HTMLElement>(null);
+
+    // No inner scroll box (it hid Brands/Tags and trapped the wheel). A sidebar taller than the
+    // viewport gets a negative sticky `top`, so it scrolls with the page and pins by its bottom.
+    useEffect(() => {
+        const aside = asideRef.current;
+        if (!aside) return;
+        const update = () => {
+            const fitTop = window.innerHeight - aside.offsetHeight - STICKY_BOTTOM_GAP;
+            aside.style.top = `${Math.min(STICKY_TOP, fitTop)}px`;
+        };
+        const observer = new ResizeObserver(update);
+        observer.observe(aside);
+        window.addEventListener("resize", update);
+        return () => {
+            observer.disconnect();
+            window.removeEventListener("resize", update);
+        };
+    }, []);
 
     const span = Math.max(1, priceRange.max - priceRange.min);
     const leftPercent = ((priceMin - priceRange.min) / span) * 100;
@@ -193,9 +216,9 @@ export default function ShopSidebar({
 
     return (
         <aside
+            ref={asideRef}
             aria-label="Shop filters"
-            data-lenis-prevent
-            className="w-full lg:w-70 xl:w-75 shrink-0 flex flex-col gap-7 lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-1 scrollbar-thin"
+            className="w-full lg:w-70 xl:w-75 shrink-0 flex flex-col gap-7 lg:sticky lg:top-28 lg:self-start"
         >
             <section>
                 <FilterTitle>Search</FilterTitle>

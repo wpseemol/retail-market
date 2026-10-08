@@ -5,6 +5,9 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-08
 
+### Shop sidebar scrolling fix
+- `src/components/shop/ShopSidebar.tsx`: removed the sidebar's inner scroll box (`lg:max-h` + `overflow-y-auto` + `data-lenis-prevent`). It hid Brands / Tags behind a thin scrollbar and, via Lenis' `overscroll-behavior: contain`, stopped the page from scrolling while the cursor was over the sidebar. The sidebar now scrolls with the page; a `ResizeObserver` sets a negative sticky `top` when it's taller than the viewport so it pins by its bottom edge (24 px gap) instead.
+
 ### Dynamic shop price range
 - `src/hooks/usePriceRange.ts` (new): fetches `GET /api/products/price-range` when search (debounced 300 ms), category or brands change; uses the SSR range until then.
 - `src/lib/products.ts`: `fetchPriceRange()` + `PriceRange` type.
