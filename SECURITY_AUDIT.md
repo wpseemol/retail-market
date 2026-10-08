@@ -6,7 +6,7 @@ Root tracker for the three apps. Each app keeps its own detailed findings file; 
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | backend-api | [`backend-api/SECURITY_AUDIT.md`](backend-api/SECURITY_AUDIT.md) | 1 | 6 | 7 | 5 | 4 | 23 |
 | frontend | [`frontend/SECURITY_AUDIT.md`](frontend/SECURITY_AUDIT.md) | 2 | 1 | 4 | 4 | 2 | 12 |
-| dashboard | [`dashboard/SECURITY_AUDIT.md`](dashboard/SECURITY_AUDIT.md) | 0 | 0 | 3 | 5 | 2 | 8 |
+| dashboard | [`dashboard/SECURITY_AUDIT.md`](dashboard/SECURITY_AUDIT.md) | 0 | 0 | 3 | 4 | 2 | 7 |
 
 - **Last full audit:** 2026-10-08
 - **Dependency audit:** frontend 10 advisories (1 critical) · backend-api 1 high · dashboard 0

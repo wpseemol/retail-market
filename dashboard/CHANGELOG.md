@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-08
 
+### Login page redesign
+- `src/pages/auth/LoginPage.tsx`: new split layout with a plain dark-green brand panel on the left (logo, one short line about the dashboard, footer) and a left-aligned form on the right. On mobile it's one column. The form now uses shadcn `Form` + react-hook-form + `zodResolver`, has a password show/hide toggle, a left-border session-expired notice, inline field errors, and a "Customer sign-in" link. The page is wrapped in `MotionProvider` because `/login` sits outside `DashboardLayout`, and without it `FadeUp` stayed at opacity 0.
+- `src/lib/validators/auth.ts` (new): `staffLoginSchema` with `withSafeInput` on identifier and password, plus length limits. Closes audit item DB-08 (`SECURITY_AUDIT.md`).
+
 ### Security audit
 - `SECURITY_AUDIT.md`: new findings tracker (DB-01 – DB-10) from `npm audit` + code review; rolled up in the root `SECURITY_AUDIT.md`. No code changed.
 - `AGENTS.md`: points to the audit file.

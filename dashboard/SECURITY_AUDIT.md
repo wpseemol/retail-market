@@ -5,7 +5,7 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 
 - **Last audit:** 2026-10-08
 - **Method:** `npm audit` (0 vulnerabilities) + manual review of `src/`, `nginx.conf`, `Dockerfile`, `vite.config.ts`
-- **Totals:** 0 Critical · 0 High · 3 Medium · 5 Low · 2 Info
+- **Totals:** 0 Critical · 0 High · 3 Medium · 5 Low · 2 Info (open: 3 Medium · 4 Low)
 
 ## Summary
 
@@ -18,7 +18,7 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 | DB-05 | Low | Unused `cn` npm package + stray `package-lock.json` | Open |
 | DB-06 | Low | Container runs nginx as root on plain HTTP | Open |
 | DB-07 | Low | Product description validator is a bypassable denylist | Open |
-| DB-08 | Low | Login form skips shadcn Form + Zod (repo rule) | Open |
+| DB-08 | Low | Login form skips shadcn Form + Zod (repo rule) | Fixed 2026-10-08 |
 | DB-09 | Info | UI role checks use editable `sessionStorage` (backend enforces) | OK |
 | DB-10 | Info | Print window opened without `noopener` (same-origin, escaped) | OK |
 
@@ -59,6 +59,7 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 ### DB-08 · Low · Login form not on shadcn Form
 - **Where:** `src/pages/auth/LoginPage.tsx:51-53, 121-168`
 - **Fix:** `loginSchema` in `src/lib/validators/` (identifier via safe-input, max lengths) + `useForm({ resolver: zodResolver(loginSchema) })` + shadcn `Form`.
+- **Status:** Fixed 2026-10-08 — `staffLoginSchema` in `src/lib/validators/auth.ts` (safe-input on both fields, length caps) wired through shadcn `Form` + `zodResolver`.
 
 ### DB-09 · Info · Client role checks
 - `src/components/ProtectedRoute.tsx:26` uses the user from `sessionStorage`, but `AuthSessionGuard` re-fetches `/auth/me` and every API route uses `requireRoles`. Keep `src/lib/rbac.ts` in sync with the API.
