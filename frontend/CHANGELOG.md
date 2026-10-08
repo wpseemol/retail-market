@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-08
 
+### Shop price filter redesign
+- `src/components/shop/ShopSidebar.tsx`: price section is now a card with a "Selected range" readout, thicker track, catalog min/max labels under the slider, ৳-prefixed Min/Max boxes and a Reset link when filtered. New `PriceInput` keeps typing as a draft and applies it on blur / Enter (previously every keystroke was clamped, so typing e.g. 5000 snapped back to the minimum). Max slider now snaps to the true maximum at the end of the track.
+- `src/app/globals.css`: `.shop-range` thumb is a larger white handle with a brand ring, hover/focus halo and grab cursor.
+
 ### Welcome modal buttons stay on one line
 - `src/components/home/HomeWelcomeModal.tsx`: CTA and dismiss buttons use `whitespace-nowrap shrink-0` so their labels no longer wrap onto two lines.
 
