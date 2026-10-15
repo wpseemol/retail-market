@@ -13,6 +13,7 @@ import {
 } from "@/lib/validators/category";
 import { useAuthStore } from "@/store/auth";
 import { CategoryIconPicker } from "@/components/categories/CategoryIconPicker";
+import { CategoryBanglaFields } from "@/components/categories/CategoryBanglaFields";
 import {
   CategoryCoverDropzone,
   CategoryFormHeader,
@@ -41,6 +42,9 @@ export function CategoryCreatePage() {
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
   const [description, setDescription] = useState("");
+  const [bnEnabled, setBnEnabled] = useState(false);
+  const [nameBn, setNameBn] = useState("");
+  const [descriptionBn, setDescriptionBn] = useState("");
   const [icon, setIcon] = useState<string | null>("ShoppingBag");
   const [parentId, setParentId] = useState("");
   const [isActive, setIsActive] = useState("active");
@@ -132,6 +136,8 @@ export function CategoryCreatePage() {
       name,
       slug: slug.trim() || slugifyClient(name),
       description,
+      name_bn: bnEnabled ? nameBn : "",
+      description_bn: bnEnabled ? descriptionBn : "",
       icon,
       parent_id: parentId || null,
       is_active: isActive === "active",
@@ -161,6 +167,8 @@ export function CategoryCreatePage() {
             name: parsed.data.name,
             slug: parsed.data.slug,
             description: parsed.data.description ?? null,
+            name_bn: parsed.data.name_bn ?? null,
+            description_bn: parsed.data.description_bn ?? null,
             icon: parsed.data.icon ?? null,
             parent_id: parsed.data.parent_id ?? null,
             is_active: parsed.data.is_active,
@@ -319,6 +327,23 @@ export function CategoryCreatePage() {
                 </Select>
               </div>
             </div>
+          </CategoryFormSection>
+
+          <CategoryFormSection
+            step="03"
+            title="Bangla version"
+            description="Optional — skip it and the storefront shows the English name in Bangla too."
+          >
+            <CategoryBanglaFields
+              enabled={bnEnabled}
+              onEnabledChange={setBnEnabled}
+              nameBn={nameBn}
+              onNameBnChange={setNameBn}
+              descriptionBn={descriptionBn}
+              onDescriptionBnChange={setDescriptionBn}
+              englishName={name.trim()}
+              disabled={loading}
+            />
           </CategoryFormSection>
 
           <CategoryStickyActions

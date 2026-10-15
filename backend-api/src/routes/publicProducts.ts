@@ -199,6 +199,7 @@ publicProductsRouter.get("/", async (req, res) => {
       select: {
         id: true,
         name: true,
+        name_bn: true,
         slug: true,
         _count: {
           select: {
@@ -217,6 +218,7 @@ publicProductsRouter.get("/", async (req, res) => {
       select: {
         id: true,
         name: true,
+        name_bn: true,
         slug: true,
         _count: {
           select: {
@@ -238,11 +240,13 @@ publicProductsRouter.get("/", async (req, res) => {
       categories: categories.map((c) => ({
         id: c.slug,
         label: c.name,
+        label_bn: c.name_bn,
         count: c._count.products,
       })),
       brands: brands.map((b) => ({
         id: b.slug,
         label: b.name,
+        label_bn: b.name_bn,
         count: b._count.products,
       })),
       price: {

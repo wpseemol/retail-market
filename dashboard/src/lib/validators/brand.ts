@@ -30,6 +30,14 @@ export const brandFormSchema = z.object({
       ),
   ),
   description: withSafeInput(z.string().trim().max(500)),
+  /** UI-only switch; when off the Bangla fields are sent as null. */
+  bn_enabled: z.boolean(),
+  name_bn: withSafeInput(
+    z.string().trim().max(120, "Bangla name must be at most 120 characters"),
+  ),
+  description_bn: withSafeInput(
+    z.string().trim().max(500, "Bangla description must be at most 500 characters"),
+  ),
   is_active: z.boolean(),
   sort_order: z.number().int().min(0).max(999_999),
 });
@@ -37,10 +45,14 @@ export const brandFormSchema = z.object({
 export type BrandFormValues = z.infer<typeof brandFormSchema>;
 
 export function toBrandApiBody(values: BrandFormValues) {
+  const nameBn = values.bn_enabled ? values.name_bn.trim() : "";
+  const descriptionBn = values.bn_enabled ? values.description_bn.trim() : "";
   return {
     name: values.name,
     slug: values.slug,
     description: values.description.trim() ? values.description.trim() : null,
+    name_bn: nameBn || null,
+    description_bn: descriptionBn || null,
     is_active: values.is_active,
     sort_order: values.sort_order,
   };

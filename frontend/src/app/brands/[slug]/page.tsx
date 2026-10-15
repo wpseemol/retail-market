@@ -9,7 +9,7 @@ import { ShowcaseSections } from "@/components/showcase/ShowcaseSections";
 import { ShowcaseTheme } from "@/components/showcase/ShowcaseTheme";
 import { format, LOCALE_TAGS } from "@/i18n/config";
 import { getDictionary, getLocale } from "@/i18n/server";
-import { fetchBrandBySlug } from "@/lib/brands";
+import { brandText, fetchBrandBySlug } from "@/lib/brands";
 import { brandJsonLd, breadcrumbJsonLd, buildMetadata, getSeoDefaults, itemListJsonLd } from "@/lib/seo";
 import { fetchShowcaseReviews, parseSort } from "@/lib/showcase";
 
@@ -62,6 +62,7 @@ export default async function BrandDetailPage({ params, searchParams }: PageProp
   const reviews = content.sections.includes("reviews") ? await fetchShowcaseReviews("brands", brand.slug) : null;
   const path = `/brands/${brand.slug}`;
   const summary = brand.review_summary;
+  const display = brandText(brand, locale);
 
   const actions = (
     <>
@@ -69,7 +70,7 @@ export default async function BrandDetailPage({ params, searchParams }: PageProp
         href={`/shop?brand=${encodeURIComponent(brand.slug)}`}
         className="inline-flex h-10 items-center rounded-full bg-sc-accent px-5 text-sm font-semibold text-sc-on-accent hover:opacity-90"
       >
-        {format(t.shopAll, { name: brand.name })}
+        {format(t.shopAll, { name: display.name })}
       </Link>
       {brand.store ? (
         <Link
@@ -118,14 +119,14 @@ export default async function BrandDetailPage({ params, searchParams }: PageProp
         <AnnouncementBar announcement={content.announcement} />
         <ShowcaseBreadcrumb
           label={t.breadcrumb}
-          items={[{ name: t.home, href: "/" }, { name: t.brands, href: "/brands" }, { name: brand.name }]}
+          items={[{ name: t.home, href: "/" }, { name: t.brands, href: "/brands" }, { name: display.name }]}
         />
         <ShowcaseHero
           style={content.hero_style}
           kicker={t.brandKicker}
-          name={brand.name}
+          name={display.name}
           tagline={brand.tagline}
-          description={brand.description}
+          description={display.description}
           logo={brand.image}
           banner={brand.banner}
           rating={{
@@ -154,7 +155,7 @@ export default async function BrandDetailPage({ params, searchParams }: PageProp
 
         <ShowcaseSections
           content={content}
-          name={brand.name}
+          name={display.name}
           dict={dict}
           intlLocale={LOCALE_TAGS[locale].intl}
           featured={data.featured_products}

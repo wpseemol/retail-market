@@ -5,6 +5,19 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Optional Bangla version for brands
+- New `src/components/brands/BrandBanglaFields.tsx`: shadcn `FormField`s (via `useFormContext`) for an "Add Bangla version" switch plus optional Bangla name and description. Turning the switch off clears both fields.
+- `src/pages/catalog/brands/BrandCreatePage.tsx`: new step 03 "Bangla version", off by default so it can be skipped.
+- `src/pages/catalog/brands/BrandEditPage.tsx`: the same step 03. The switch starts on when the brand already has Bangla text. Turning it off with text present asks for confirmation (`useConfirm`). "Linked store" is now step 04.
+- `src/lib/validators/brand.ts`: `bn_enabled`, `name_bn` (≤120), `description_bn` (≤500) with safe input. `toBrandApiBody` sends `null` when the switch is off or a field is blank.
+- `src/lib/brands.ts`: `name_bn` / `description_bn` on `Brand`.
+
+### Optional Bangla version for categories
+- New `src/components/categories/CategoryBanglaFields.tsx`: an "Add Bangla version" switch that shows optional Bangla name and description fields. The help text explains that the slug is shared and that the English name is used when the Bangla name is empty.
+- `src/pages/catalog/categories/CategoryCreatePage.tsx`: new step 03 "Bangla version", off by default so it can be skipped. Sends `name_bn` / `description_bn` only when the switch is on.
+- `src/pages/catalog/categories/CategoryEditPage.tsx`: the same step. The switch starts on when the category already has Bangla text. Turning it off with text present asks for confirmation (`useConfirm`), then the text is cleared on save.
+- `src/lib/categories.ts`, `src/lib/validators/category.ts`: `name_bn` / `description_bn` types and Zod rules (safe input, ≤150 / ≤5000, blank becomes `null`).
+
 ### Readable primary buttons
 - `src/components/ui/button.tsx`: the default button variant used white text on the bright brand green (`#00b207`). That contrast is only about 2.9:1, so labels such as "Add product", "Add brand", "Add category" and Save looked faint. The variant now uses the darker brand green (`bg-brand-hover`, `#2c742f`, about 5.8:1 with white), bold text and a soft shadow, with a darker green on hover. There are no `dark:` classes, so pages that pass their own `bg-*` keep working in dark mode. The `--primary` token is unchanged, so focus rings, charts and accents keep the bright green.
 

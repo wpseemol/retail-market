@@ -76,8 +76,10 @@ publicBrandsRouter.get(
       brands: rows.map((b) => ({
         id: b.id.toString(),
         name: b.name,
+        name_bn: b.name_bn,
         slug: b.slug,
         description: b.description,
+        description_bn: b.description_bn,
         tagline: b.tagline,
         image: toPublicMedia(b.image),
         products_count: b._count.products,
@@ -154,8 +156,10 @@ publicBrandsRouter.get(
       brand: {
         id: brand.id.toString(),
         name: brand.name,
+        name_bn: brand.name_bn,
         slug: brand.slug,
         description: brand.description,
+        description_bn: brand.description_bn,
         image: toPublicMedia(brand.image),
         banner: toPublicMedia(brand.banner),
         created_at: brand.created_at,

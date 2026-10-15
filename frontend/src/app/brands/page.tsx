@@ -3,8 +3,8 @@ import Link from "next/link";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { DirectoryPage } from "@/components/showcase/DirectoryPage";
 import { format } from "@/i18n/config";
-import { getDictionary } from "@/i18n/server";
-import { fetchBrands, type BrandListItem } from "@/lib/brands";
+import { getDictionary, getLocale } from "@/i18n/server";
+import { brandText, fetchBrands, type BrandListItem } from "@/lib/brands";
 import { breadcrumbJsonLd, buildIndexMetadata, getSeoDefaults, itemListJsonLd } from "@/lib/seo";
 
 type PageProps = {
@@ -32,7 +32,12 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 }
 
 export default async function BrandsPage({ searchParams }: PageProps) {
-  const [query, dict, seo] = await Promise.all([searchParams, getDictionary(), getSeoDefaults()]);
+  const [query, dict, seo, locale] = await Promise.all([
+    searchParams,
+    getDictionary(),
+    getSeoDefaults(),
+    getLocale(),
+  ]);
   const t = dict.showcase;
   const q = query.q?.trim().slice(0, 100) || undefined;
   const { brands, pagination } = await fetchBrands({ q });
@@ -115,7 +120,9 @@ export default async function BrandsPage({ searchParams }: PageProps) {
                 <span aria-hidden="true" className="h-px flex-1 bg-border-default" />
               </h2>
               <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-                {groups.get(key)!.map((brand) => (
+                {groups.get(key)!.map((brand) => {
+                  const displayName = brandText(brand, locale).name;
+                  return (
                   <li key={brand.id}>
                     <Link
                       href={`/brands/${brand.slug}`}
@@ -126,19 +133,19 @@ export default async function BrandsPage({ searchParams }: PageProps) {
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={brand.image.path}
-                            alt={brand.image.alt_text ?? brand.name}
+                            alt={brand.image.alt_text ?? displayName}
                             loading="lazy"
                             decoding="async"
                             className="max-h-16 max-w-full object-contain"
                           />
                         ) : (
                           <span className="flex size-14 items-center justify-center rounded-full bg-brand-tint text-xl font-semibold text-brand-deep">
-                            {brand.name.charAt(0).toUpperCase()}
+                            {displayName.charAt(0).toUpperCase()}
                           </span>
                         )}
                       </span>
                       <span className="mt-3 line-clamp-1 text-[14px] font-semibold text-text-primary group-hover:text-brand-primary">
-                        {brand.name}
+                        {displayName}
                       </span>
                       <span className="mt-0.5 text-[12px] text-text-secondary">
                         {brand.products_count === 1
@@ -147,7 +154,8 @@ export default async function BrandsPage({ searchParams }: PageProps) {
                       </span>
                     </Link>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             </section>
           ))}

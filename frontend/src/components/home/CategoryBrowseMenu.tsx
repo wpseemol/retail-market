@@ -13,7 +13,7 @@ import {
 import * as LucideIcons from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { PublicCategory } from "@/lib/categories";
-import { categoryShopHref } from "@/lib/categories";
+import { categoryName, categoryShopHref } from "@/lib/categories";
 import { useI18n } from "@/components/providers/LocaleProvider";
 
 type Props = {
@@ -83,7 +83,7 @@ export default function CategoryBrowseMenu({
   onNavigate,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const reduceMotion = useReducedMotion();
   const isMobile = variant === "mobile";
   const menuId = isMobile
@@ -228,7 +228,7 @@ export default function CategoryBrowseMenu({
                               <span className="min-w-0 flex-1">
                                 <span className="flex items-start justify-between gap-1.5">
                                   <span className="line-clamp-2 text-[13px] font-semibold leading-snug text-text-primary group-hover:text-brand-primary">
-                                    {category.name}
+                                    {categoryName(category, locale)}
                                   </span>
                                   <span className="shrink-0 pt-0.5 text-[10px] tabular-nums text-text-secondary">
                                     {category.products_count ?? 0}
@@ -238,7 +238,7 @@ export default function CategoryBrowseMenu({
                                   <span className="mt-1 line-clamp-1 text-[11px] text-text-secondary">
                                     {children
                                       .slice(0, 3)
-                                      .map((c) => c.name)
+                                      .map((c) => categoryName(c, locale))
                                       .join(" · ")}
                                     {children.length > 3
                                       ? ` +${children.length - 3}`
@@ -263,7 +263,7 @@ export default function CategoryBrowseMenu({
                                       }}
                                       className="inline-flex rounded-full border border-border-default/70 bg-bg-subtle px-1.5 py-0.5 text-[10px] text-text-secondary transition-colors hover:border-brand-primary/40 hover:text-brand-primary"
                                     >
-                                      {child.name}
+                                      {categoryName(child, locale)}
                                     </Link>
                                   </li>
                                 ))}
@@ -298,14 +298,14 @@ export default function CategoryBrowseMenu({
             {safeCategories.map((category) => (
               <li key={`seo-${category.id}`}>
                 <Link href={categoryShopHref(category.slug)}>
-                  {category.name}
+                  {categoryName(category, locale)}
                 </Link>
                 {(category.children?.length ?? 0) > 0 ? (
                   <ul>
                     {category.children.map((child) => (
                       <li key={`seo-${child.id}`}>
                         <Link href={categoryShopHref(child.slug)}>
-                          {child.name}
+                          {categoryName(child, locale)}
                         </Link>
                       </li>
                     ))}

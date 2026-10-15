@@ -12,8 +12,10 @@ export type Category = {
   image_id?: string | null;
   icon?: string | null;
   name: string;
+  name_bn?: string | null;
   slug: string;
   description?: string | null;
+  description_bn?: string | null;
   is_active: boolean;
   sort_order: number;
   created_at?: string;

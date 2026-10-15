@@ -1,8 +1,10 @@
 import { API_URL } from "@/lib/api";
+import type { Locale } from "@/i18n/config";
 
 export type PublicCategoryChild = {
   id: string;
   name: string;
+  name_bn?: string | null;
   slug: string;
   products_count: number;
 };
@@ -10,6 +12,7 @@ export type PublicCategoryChild = {
 export type PublicCategory = {
   id: string;
   name: string;
+  name_bn?: string | null;
   slug: string;
   icon: string | null;
   image: { path: string; alt_text?: string | null } | null;
@@ -29,6 +32,15 @@ export async function getCategories(): Promise<PublicCategory[]> {
   } catch {
     return [];
   }
+}
+
+/** Bangla name when the shopper uses Bangla and one was entered; otherwise the English name. */
+export function categoryName(
+  category: { name: string; name_bn?: string | null },
+  locale: Locale,
+): string {
+  const bn = category.name_bn?.trim();
+  return locale === "bn" && bn ? bn : category.name;
 }
 
 export function categoryShopHref(slug: string) {

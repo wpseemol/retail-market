@@ -14,6 +14,7 @@ import {
 } from "@/lib/validators/category";
 import { useAuthStore } from "@/store/auth";
 import { CategoryIconPicker } from "@/components/categories/CategoryIconPicker";
+import { CategoryBanglaFields } from "@/components/categories/CategoryBanglaFields";
 import {
   CategoryCoverDropzone,
   CategoryFormHeader,
@@ -46,6 +47,9 @@ export function CategoryEditPage() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
+  const [bnEnabled, setBnEnabled] = useState(false);
+  const [nameBn, setNameBn] = useState("");
+  const [descriptionBn, setDescriptionBn] = useState("");
   const [icon, setIcon] = useState<string | null>(null);
   const [parentId, setParentId] = useState("");
   const [isActive, setIsActive] = useState("active");
@@ -83,6 +87,9 @@ export function CategoryEditPage() {
         setName(next.name);
         setSlug(next.slug);
         setDescription(next.description ?? "");
+        setNameBn(next.name_bn ?? "");
+        setDescriptionBn(next.description_bn ?? "");
+        setBnEnabled(Boolean(next.name_bn || next.description_bn));
         setIcon(next.icon ?? null);
         setParentId(next.parent_id ?? "");
         setIsActive(next.is_active ? "active" : "inactive");
@@ -117,6 +124,8 @@ export function CategoryEditPage() {
       name,
       slug,
       description,
+      name_bn: bnEnabled ? nameBn : "",
+      description_bn: bnEnabled ? descriptionBn : "",
       icon,
       parent_id: parentId || null,
       is_active: isActive === "active",
@@ -142,6 +151,8 @@ export function CategoryEditPage() {
             name: parsed.data.name,
             slug: parsed.data.slug,
             description: parsed.data.description ?? null,
+            name_bn: parsed.data.name_bn ?? null,
+            description_bn: parsed.data.description_bn ?? null,
             icon: parsed.data.icon ?? null,
             parent_id: parsed.data.parent_id ?? null,
             is_active: parsed.data.is_active,
@@ -158,6 +169,21 @@ export function CategoryEditPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function onToggleBangla(next: boolean) {
+    if (!next && (nameBn.trim() || descriptionBn.trim())) {
+      const ok = await confirm({
+        title: `Remove the Bangla version of “${category?.name ?? name}”?`,
+        description:
+          "The Bangla name and description are cleared when you save, and Bangla shoppers see the English name instead. This cannot be undone after saving.",
+        confirmLabel: "Remove Bangla",
+      });
+      if (!ok) return;
+      setNameBn("");
+      setDescriptionBn("");
+    }
+    setBnEnabled(next);
   }
 
   async function onUploadCover(file: File | null) {
@@ -401,6 +427,23 @@ export function CategoryEditPage() {
                 </Select>
               </div>
             </div>
+          </CategoryFormSection>
+
+          <CategoryFormSection
+            step="03"
+            title="Bangla version"
+            description="Optional — when empty the storefront shows the English name in Bangla too."
+          >
+            <CategoryBanglaFields
+              enabled={bnEnabled}
+              onEnabledChange={(next) => void onToggleBangla(next)}
+              nameBn={nameBn}
+              onNameBnChange={setNameBn}
+              descriptionBn={descriptionBn}
+              onDescriptionBnChange={setDescriptionBn}
+              englishName={name.trim()}
+              disabled={saving}
+            />
           </CategoryFormSection>
 
           <CategoryStickyActions

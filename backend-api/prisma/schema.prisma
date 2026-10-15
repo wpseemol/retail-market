@@ -288,8 +288,12 @@ model Category {
   /// Lucide SVG icon key for catalog display (e.g. "Smartphone").
   icon             String?   @db.VarChar(80)
   name             String    @db.VarChar(150)
+  /// Optional Bangla name; the storefront falls back to `name` when empty.
+  name_bn          String?   @db.VarChar(150)
   slug             String    @unique @db.VarChar(160)
   description      String?   @db.Text
+  /// Optional Bangla description; falls back to `description` when empty.
+  description_bn   String?   @db.Text
   meta_title       String?   @db.VarChar(160)
   meta_description String?   @db.VarChar(320)
   is_active        Boolean   @default(true)
@@ -315,8 +319,12 @@ model Brand {
   /// Brand logo / mark from `medias` (collection: product_images).
   image_id    BigInt?   @unique @db.UnsignedBigInt
   name        String    @db.VarChar(120)
+  /// Optional Bangla name; the storefront falls back to `name` when empty.
+  name_bn     String?   @db.VarChar(120)
   slug        String    @unique @db.VarChar(140)
   description String?   @db.VarChar(500)
+  /// Optional Bangla description; falls back to `description` when empty.
+  description_bn String? @db.VarChar(500)
   is_active   Boolean   @default(true)
   sort_order  Int       @default(0)
   /// Store whose vendor may customize this brand's showcase page (assigned by admins).

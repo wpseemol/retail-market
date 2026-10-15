@@ -8,8 +8,10 @@ export type BrandMedia = {
 export type Brand = {
   id: string;
   name: string;
+  name_bn?: string | null;
   slug: string;
   description?: string | null;
+  description_bn?: string | null;
   is_active: boolean;
   sort_order: number;
   image_id?: string | null;

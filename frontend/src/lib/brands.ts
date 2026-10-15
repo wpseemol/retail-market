@@ -1,12 +1,15 @@
 import { API_URL } from "@/lib/api";
+import type { Locale } from "@/i18n/config";
 import type { ShowcaseMedia, ShowcasePayload, StorefrontSort } from "@/lib/showcase";
 import type { StorefrontProduct } from "@/lib/stores";
 
 export type BrandListItem = {
   id: string;
   name: string;
+  name_bn?: string | null;
   slug: string;
   description: string | null;
+  description_bn?: string | null;
   tagline: string | null;
   image: ShowcaseMedia;
   products_count: number;
@@ -21,8 +24,10 @@ export type BrandsListPayload = {
 export type BrandDetail = ShowcasePayload & {
   id: string;
   name: string;
+  name_bn?: string | null;
   slug: string;
   description: string | null;
+  description_bn?: string | null;
   image: ShowcaseMedia;
   banner: ShowcaseMedia;
   created_at: string;
@@ -38,6 +43,26 @@ export type BrandPagePayload = {
   sort: StorefrontSort;
   pagination: { page: number; limit: number; total: number; total_pages: number };
 };
+
+/**
+ * Display name / description for the shopper's language. Each Bangla field falls back to
+ * its English one on its own, so a brand with only a Bangla name still shows the English description.
+ */
+export function brandText(
+  brand: {
+    name: string;
+    name_bn?: string | null;
+    description: string | null;
+    description_bn?: string | null;
+  },
+  locale: Locale,
+): { name: string; description: string | null } {
+  if (locale !== "bn") return { name: brand.name, description: brand.description };
+  return {
+    name: brand.name_bn?.trim() || brand.name,
+    description: brand.description_bn?.trim() || brand.description,
+  };
+}
 
 const EMPTY_LIST: BrandsListPayload = {
   brands: [],

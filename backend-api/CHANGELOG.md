@@ -5,6 +5,22 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Optional Bangla name / description for brands
+- `prisma/schema.prisma` + `prisma/migrations/20261015130000_brand_bangla/`: new nullable `brands.name_bn` (VARCHAR 120) and `description_bn` (VARCHAR 500). The slug stays shared.
+- `src/validators/brand.ts`: `name_bn` (≤120) and `description_bn` (≤500) are optional and safe-input checked. `""` or `null` clears them.
+- `src/routes/dashboardBrands.ts`: create and update save both fields, and the brand object includes them.
+- `src/routes/publicBrands.ts`: the brand list and brand detail include `name_bn` / `description_bn`.
+- `src/routes/publicProducts.ts`: brand facets include `label_bn`.
+- `API.md`: documented the new fields.
+
+### Optional Bangla name / description for categories
+- `prisma/schema.prisma` + `prisma/migrations/20261015120000_category_bangla/`: new nullable `categories.name_bn` (VARCHAR 150) and `description_bn` (TEXT). The slug stays shared by both languages.
+- `src/validators/category.ts`: `name_bn` (≤150) and `description_bn` (≤5000) are optional and safe-input checked. `""` or `null` clears them.
+- `src/routes/dashboardCategories.ts`: create and update save both fields, and every category response includes them.
+- `src/routes/publicCategories.ts`: `name_bn` on root and child categories.
+- `src/routes/publicProducts.ts`: category facets include `label_bn`.
+- `API.md`: documented the new fields.
+
 ### Image dimension rule on dashboard uploads
 - `src/lib/imageOptimize.ts`: new `checkImageDimensions(buffer, preset)`.
   - It reads the size with sharp, after applying EXIF rotation.

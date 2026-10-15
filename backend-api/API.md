@@ -193,8 +193,8 @@ No auth. Active brands only.
 
 | Method | Path | Notes |
 |--------|------|-------|
-| GET | `/` | `q?` (safe text), `page`, `limit` (≤200, default 60) → `{ brands[] (id, name, slug, description, tagline, image, products_count, updated_at), pagination }`, A–Z |
-| GET | `/:slug` | `page`, `limit` (4–48, default 12), `sort?` → `{ brand, products, featured_products, sort, pagination }`. `brand` has `image` (logo), `banner`, the [showcase payload](#showcase-payload), `store` (linked active store or `null`), `review_summary`, `products_count` |
+| GET | `/` | `q?` (safe text), `page`, `limit` (≤200, default 60) → `{ brands[] (id, name, name_bn, slug, description, description_bn, tagline, image, products_count, updated_at), pagination }`, A–Z by `name` |
+| GET | `/:slug` | `page`, `limit` (4–48, default 12), `sort?` → `{ brand, products, featured_products, sort, pagination }`. `brand` has `name_bn` / `description_bn` (optional Bangla, `null` when unset — the storefront falls back to English), `image` (logo), `banner`, the [showcase payload](#showcase-payload), `store` (linked active store or `null`), `review_summary`, `products_count` |
 | GET | `/:slug/reviews` | Same query/response as `/api/shops/:slug/reviews`, over the brand's products |
 
 **404** if the brand is missing or inactive.
@@ -230,7 +230,9 @@ Hidden categories, questions and sections (`enabled: false`) are removed; FAQ ca
 
 No auth. Active root categories with nested children for the storefront header mega-menu.
 
-`GET /api/categories` → `{ categories: [{ id, name, slug, icon, image, products_count, children: [{ id, name, slug, products_count }] }] }`
+`GET /api/categories` → `{ categories: [{ id, name, name_bn, slug, icon, image, products_count, children: [{ id, name, name_bn, slug, products_count }] }] }`
+
+`name_bn` is the optional Bangla name (`null` when not set). The slug is shared by both languages; Bangla shoppers see `name_bn` when it is set and `name` otherwise.
 
 ---
 
@@ -313,7 +315,7 @@ Query: `page`, `limit` (max 48), `q?`, `category?` (slug), `brand?` (slug), `sor
 
 **200** → `{ products, facets, pagination }`
 
-`facets.categories` / `facets.brands`: `{ id, label, count }[]`  
+`facets.categories` / `facets.brands`: `{ id, label, count }[]`. Both also have `label_bn` (Bangla name or `null`).  
 `facets.price`: `{ min, max }` — lowest / highest `price` of active products matching `q`, `category` and `brand` (not the whole catalog).
 
 ### `GET /api/products/price-range`
@@ -1069,9 +1071,9 @@ Validators: `backend-api/src/validators/brand.ts`, `src/validators/showcase.ts` 
 | POST | `/:id/og-image` | Share image · multipart field **`image`** · max **1 MB** · always resized on the server to fit 1200×630 |
 | DELETE | `/:id/og-image` | Remove the share image |
 
-**Body:** `name` (2–120), `slug?` (kebab), `description?` (≤500 or null), `is_active?`, `sort_order?` (0–999999)
+**Body:** `name` (2–120), `slug?` (kebab), `description?` (≤500 or null), `name_bn?` (Bangla name, ≤120, safe text; `""`/`null` clears), `description_bn?` (Bangla description, ≤500, safe text; `""`/`null` clears), `is_active?`, `sort_order?` (0–999999). The slug is shared by both languages.
 
-**Brand object:** `id`, `name`, `slug`, `description`, `is_active`, `sort_order`, `image_id`, `image` (public media), `banner`, `tagline`, `vendor_id`, `vendor { id, shop_name, slug } | null`, timestamps, `products_count`.
+**Brand object:** `id`, `name`, `name_bn`, `slug`, `description`, `description_bn`, `is_active`, `sort_order`, `image_id`, `image` (public media), `banner`, `tagline`, `vendor_id`, `vendor { id, shop_name, slug } | null`, timestamps, `products_count`.
 
 Brand edits refresh the storefront (`brands`, `brand:<slug>` tags).
 
@@ -1152,6 +1154,8 @@ Use `name` as `icon` on create/update. Must be an exact catalog name (PascalCase
 | `name` | yes | 2–150 chars, safe text |
 | `slug` | no | kebab-case `a-z0-9-` |
 | `description` | no | ≤5000 or `null` |
+| `name_bn` | no | Bangla name, ≤150 chars, safe text; `""`/`null` clears it. The storefront falls back to `name`. |
+| `description_bn` | no | Bangla description, ≤5000, safe text; `""`/`null` clears it |
 | `icon` | no | catalog name or `null` |
 | `parent_id` | no | digit string or `null` |
 | `is_active` | no | boolean (default true) |

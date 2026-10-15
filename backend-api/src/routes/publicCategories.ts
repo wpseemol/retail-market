@@ -45,6 +45,7 @@ publicCategoriesRouter.get("/", async (_req, res) => {
     categories: rows.map((row) => ({
       id: row.id.toString(),
       name: row.name,
+      name_bn: row.name_bn,
       slug: row.slug,
       icon: row.icon,
       image: toPublicMedia(row.image),
@@ -52,6 +53,7 @@ publicCategoriesRouter.get("/", async (_req, res) => {
       children: row.children.map((child) => ({
         id: child.id.toString(),
         name: child.name,
+        name_bn: child.name_bn,
         slug: child.slug,
         products_count: child._count.products,
       })),

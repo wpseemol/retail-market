@@ -39,7 +39,13 @@ export type ProductDetailPayload = {
   related: ApiProduct[];
 };
 
-export type ShopFacet = { id: string; label: string; count: number };
+export type ShopFacet = {
+  id: string;
+  label: string;
+  /** Optional Bangla label (categories and brands). */
+  label_bn?: string | null;
+  count: number;
+};
 
 export type ProductsListPayload = {
   products: ApiProduct[];

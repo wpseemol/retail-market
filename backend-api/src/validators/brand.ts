@@ -26,6 +26,15 @@ export const createBrandSchema = z.object({
   description: z
     .union([withSafeInput(z.string().trim().max(500)), z.null()])
     .optional(),
+  /** Optional Bangla copy; empty string or null clears it. */
+  name_bn: z
+    .union([withSafeInput(z.string().trim().max(120)), z.null()])
+    .transform((v) => (v ? v : null))
+    .optional(),
+  description_bn: z
+    .union([withSafeInput(z.string().trim().max(500)), z.null()])
+    .transform((v) => (v ? v : null))
+    .optional(),
   is_active: z.boolean().optional(),
   sort_order: z.number().int().min(0).max(999_999).optional(),
 });

@@ -5,6 +5,17 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Bangla brand names on the storefront
+- `src/lib/brands.ts`: `name_bn` / `description_bn` on brand types, plus a new `brandText(brand, locale)` helper. In Bangla it returns the Bangla name and description when they are set; each one falls back to English on its own.
+- `src/app/brands/[slug]/page.tsx`: the brand page hero (name and description), breadcrumb, "Shop all" button and page sections use the localized text. SEO metadata and JSON-LD stay on the English name because the URL is the same for both languages.
+- `src/app/brands/page.tsx`: directory cards show the Bangla name in Bangla. The A–Z grouping still uses the English name.
+- `src/components/shop/ShopSidebar.tsx`, `src/lib/products.ts`: brand filters show `label_bn` in Bangla.
+
+### Bangla category names
+- `src/lib/categories.ts`: `name_bn` on category types, plus a new `categoryName(category, locale)` helper that returns the Bangla name in Bangla when one is set, and the English name otherwise.
+- `src/components/home/CategoryBrowseMenu.tsx`: the category menu (visible list and screen-reader list) uses `categoryName`.
+- `src/lib/products.ts`, `src/components/shop/ShopPageContent.tsx`, `src/components/shop/ShopSidebar.tsx`: category facets carry `label_bn`, and the sidebar shows it when the locale is Bangla.
+
 ### Hover animations back
 - `src/app/globals.css`: the site-wide "no motion" rule (added 2026-09-29) also set `transition: none !important` on every element, which killed all hover / focus transitions. Transitions are allowed again; they are still turned off for visitors with `prefers-reduced-motion: reduce`. Keyframe animations stay off (spinners excepted) and `DisableMotion` (framer-motion) is unchanged.
 - `src/components/shop/ShopProductCard.tsx`: restored the hover classes removed in the wishlist commit — grid card lift + shadow, image zoom (grid and list view), action icons sliding in, purchase panel slide-down, button press / icon pop, saved-heart fade. All respect `motion-reduce`.

@@ -81,8 +81,10 @@ const parseId = parseBigIntId;
 function toPublicBrand(row: {
   id: bigint;
   name: string;
+  name_bn: string | null;
   slug: string;
   description: string | null;
+  description_bn: string | null;
   is_active: boolean;
   sort_order: number;
   created_at: Date;
@@ -98,8 +100,10 @@ function toPublicBrand(row: {
   return {
     id: row.id.toString(),
     name: row.name,
+    name_bn: row.name_bn,
     slug: row.slug,
     description: row.description,
+    description_bn: row.description_bn,
     is_active: row.is_active,
     sort_order: row.sort_order,
     image_id: row.image_id?.toString() ?? null,
@@ -255,6 +259,8 @@ dashboardBrandsRouter.post("/", async (req, res) => {
       name: data.name,
       slug,
       description: data.description ?? null,
+      name_bn: data.name_bn ?? null,
+      description_bn: data.description_bn ?? null,
       is_active: data.is_active ?? true,
       sort_order: data.sort_order ?? 0,
     },
@@ -430,6 +436,8 @@ dashboardBrandsRouter.patch("/:id", async (req, res) => {
       slug: data.slug,
       description:
         data.description === undefined ? undefined : data.description,
+      name_bn: data.name_bn,
+      description_bn: data.description_bn,
       is_active: data.is_active,
       sort_order: data.sort_order,
     },

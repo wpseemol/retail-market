@@ -21,6 +21,7 @@ import {
   BrandLivePreview,
   BrandStickyActions,
 } from "@/components/brands/BrandFormShell";
+import { BrandBanglaFields } from "@/components/brands/BrandBanglaFields";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -58,6 +59,9 @@ export function BrandCreatePage() {
       name: "",
       slug: "",
       description: "",
+      bn_enabled: false,
+      name_bn: "",
+      description_bn: "",
       is_active: true,
       sort_order: 0,
     },
@@ -299,6 +303,14 @@ export function BrandCreatePage() {
                   )}
                 />
               </div>
+            </BrandFormSection>
+
+            <BrandFormSection
+              step="03"
+              title="Bangla version"
+              description="Optional — skip it and the storefront shows the English text in Bangla too."
+            >
+              <BrandBanglaFields disabled={form.formState.isSubmitting} />
             </BrandFormSection>
 
             <BrandStickyActions

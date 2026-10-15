@@ -15,6 +15,7 @@ import { VIEW_MODE_GRID_CLASS } from "./types";
 export type ShopFacetOption = {
   id: string;
   label: string;
+  label_bn?: string | null;
   count: number;
 };
 

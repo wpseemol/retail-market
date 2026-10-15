@@ -5,6 +5,8 @@ import Image from "next/image";
 import { SHOP_COLORS } from "./data";
 import type { ShopFacetOption } from "./ShopPageContent";
 import { formatPrice } from "@/lib/money";
+import { categoryName } from "@/lib/categories";
+import { useI18n } from "@/components/providers/LocaleProvider";
 
 interface ShopSidebarProps {
     searchQuery: string;
@@ -164,6 +166,7 @@ export default function ShopSidebar({
     seeAllLabel = "See all",
     showLessLabel = "Show less",
 }: ShopSidebarProps) {
+    const { locale } = useI18n();
     const [categoriesExpanded, setCategoriesExpanded] = useState(false);
     const [brandsExpanded, setBrandsExpanded] = useState(false);
     const asideRef = useRef<HTMLElement>(null);
@@ -413,7 +416,15 @@ export default function ShopSidebar({
                                                     : "text-text-secondary hover:text-brand-primary"
                                             }`}
                                         >
-                                            <span>{category.label}</span>
+                                            <span>
+                                                {categoryName(
+                                                    {
+                                                        name: category.label,
+                                                        name_bn: category.label_bn,
+                                                    },
+                                                    locale,
+                                                )}
+                                            </span>
                                             <span className="text-text-secondary">
                                                 ({category.count})
                                             </span>
@@ -458,7 +469,9 @@ export default function ShopSidebar({
                                                 className="h-4 w-4 rounded border-border-default accent-brand-primary cursor-pointer"
                                             />
                                             <span className="flex-1">
-                                                {brand.label}
+                                                {(locale === "bn" &&
+                                                    brand.label_bn?.trim()) ||
+                                                    brand.label}
                                             </span>
                                             <span>({brand.count})</span>
                                         </label>

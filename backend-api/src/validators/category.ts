@@ -30,6 +30,15 @@ export const createCategorySchema = z.object({
   description: z
     .union([withSafeInput(z.string().trim().max(5000)), z.null()])
     .optional(),
+  /** Optional Bangla copy; empty string or null clears it. */
+  name_bn: z
+    .union([withSafeInput(z.string().trim().max(150)), z.null()])
+    .transform((v) => (v ? v : null))
+    .optional(),
+  description_bn: z
+    .union([withSafeInput(z.string().trim().max(5000)), z.null()])
+    .transform((v) => (v ? v : null))
+    .optional(),
   icon: z.union([iconSchema, z.null()]).optional(),
   parent_id: z
     .union([z.string().regex(/^\d+$/), z.null()])

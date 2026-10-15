@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Palette, Trash2 } from "lucide-react";
 import { useConfirm } from "@/components/providers/ConfirmProvider";
 import { BrandLinkedStoreCard } from "@/components/brands/BrandLinkedStoreCard";
+import { BrandBanglaFields } from "@/components/brands/BrandBanglaFields";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { slugifyClient, type Brand, type BrandPermissions } from "@/lib/brands";
 import {
@@ -67,6 +68,9 @@ export function BrandEditPage() {
       name: "",
       slug: "",
       description: "",
+      bn_enabled: false,
+      name_bn: "",
+      description_bn: "",
       is_active: true,
       sort_order: 0,
     },
@@ -91,6 +95,9 @@ export function BrandEditPage() {
           name: data.brand.name,
           slug: data.brand.slug,
           description: data.brand.description ?? "",
+          bn_enabled: Boolean(data.brand.name_bn || data.brand.description_bn),
+          name_bn: data.brand.name_bn ?? "",
+          description_bn: data.brand.description_bn ?? "",
           is_active: data.brand.is_active,
           sort_order: data.brand.sort_order ?? 0,
         });
@@ -373,11 +380,31 @@ export function BrandEditPage() {
               </div>
             </BrandFormSection>
 
+            <BrandFormSection
+              step="03"
+              title="Bangla version"
+              description="Optional — when empty the storefront shows the English text in Bangla too."
+            >
+              <BrandBanglaFields
+                disabled={form.formState.isSubmitting}
+                onBeforeDisable={async () => {
+                  const { name_bn, description_bn } = form.getValues();
+                  if (!name_bn.trim() && !description_bn.trim()) return true;
+                  return confirm({
+                    title: `Remove the Bangla version of “${brand.name}”?`,
+                    description:
+                      "The Bangla name and description are cleared when you save, and Bangla shoppers see the English text instead. This cannot be undone after saving.",
+                    confirmLabel: "Remove Bangla",
+                  });
+                }}
+              />
+            </BrandFormSection>
+
             {permissions?.assign_owner && token ? (
               <BrandLinkedStoreCard
                 brand={brand}
                 token={token}
-                step="03"
+                step="04"
                 onChange={(next) => setBrand((prev) => (prev ? { ...prev, ...next } : next))}
               />
             ) : null}

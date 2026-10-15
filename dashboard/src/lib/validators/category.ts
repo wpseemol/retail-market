@@ -69,6 +69,19 @@ export const categoryFormSchema = z.object({
     .transform((v) => (v === "" ? null : v))
     .nullable()
     .optional(),
+  name_bn: z
+    .union([
+      withSafeInput(z.string().trim().max(150, "Bangla name must be 150 characters or fewer")),
+      z.literal(""),
+    ])
+    .transform((v) => (v === "" ? null : v))
+    .nullable()
+    .optional(),
+  description_bn: z
+    .union([withSafeInput(z.string().trim().max(5000)), z.literal("")])
+    .transform((v) => (v === "" ? null : v))
+    .nullable()
+    .optional(),
   icon: z.union([iconSchema, z.null()]).optional(),
   parent_id: z
     .union([z.string().regex(/^\d+$/), z.literal(""), z.null()])
