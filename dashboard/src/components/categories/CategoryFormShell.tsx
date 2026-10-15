@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   ImagePlus,
   Layers3,
+  Trash2,
   Upload,
 } from "lucide-react";
 import {
@@ -282,10 +283,12 @@ export function CategoryCoverDropzone({
                 type="button"
                 variant="ghost"
                 size="sm"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                 disabled={disabled || uploading}
                 onClick={onClear}
               >
-                Remove
+                <Trash2 className="size-3.5" />
+                Remove photo
               </Button>
             ) : null}
           </div>

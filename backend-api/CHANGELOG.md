@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Remove a category cover photo
+- `src/routes/dashboardCategories.ts`: new `DELETE /:id/image` for elevated roles. It clears `image_id` and deletes the media row and file, so the category falls back to its icon. The update only applies if the current `image_id` still matches; otherwise it returns `409 CATEGORY_IMAGE_CHANGED`.
+- `API.md`: documented the endpoint.
+
 ### Health check hardening
 - `src/routes/health.ts`: same path and response shape (Docker `HEALTHCHECK` still works), but the DB ping is shared for 5 s across requests, times out after 3 s (→ `503 degraded`), and responses send `Cache-Control: no-store`. Stops a public endpoint from turning every poll into a DB query.
 - `API.md`: corrected the documented response (`service: "backend"`, `database: "connected"`) and noted the cache / timeout.

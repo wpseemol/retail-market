@@ -1187,6 +1187,10 @@ curl -X POST http://localhost:8001/api/dashboard/categories/1/image \
 
 Oversize: `{ "message": "Category image must be 1 MB or smaller", "code": "CATEGORY_IMAGE_TOO_LARGE" }`
 
+`DELETE /api/dashboard/categories/:id/image` — elevated
+
+Removes the cover photo (clears `image_id`, deletes the media row and file) so the category falls back to its `icon`. Returns `{ message, category }` with `image: null`. No-op if there is no cover. `409 CATEGORY_IMAGE_CHANGED` if the cover was replaced at the same time. The dashboard asks for confirmation first.
+
 ### Export / import (CSV or ZIP with images)
 
 Elevated only (`super_admin`, `admin`, `moderator`); vendors get `403 { code: "INSUFFICIENT_ROLE" }`.

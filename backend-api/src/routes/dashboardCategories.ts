@@ -320,6 +320,61 @@ dashboardCategoriesRouter.post(
   },
 );
 
+/** Remove the cover photo so the category falls back to its icon — elevated staff only. */
+dashboardCategoriesRouter.delete("/:id/image", async (req, res) => {
+  if (!canManageCategories(req.auth!.role)) {
+    return res.status(403).json({
+      message:
+        "Only super admin, admin, or moderator can remove category images",
+    });
+  }
+
+  const id = parseId(String(req.params.id));
+  if (!id) return res.status(400).json({ message: "Invalid category id" });
+
+  const existing = await prisma.category.findFirst({
+    where: { id, deleted_at: null },
+    include: { image: true },
+  });
+  if (!existing) return res.status(404).json({ message: "Category not found" });
+
+  if (existing.image_id) {
+    const cleared = await prisma.category.updateMany({
+      where: { id, deleted_at: null, image_id: existing.image_id },
+      data: { image_id: null },
+    });
+    if (cleared.count === 0) {
+      return res.status(409).json({
+        message: "The cover photo changed while you were editing. Reload and try again.",
+        code: "CATEGORY_IMAGE_CHANGED",
+      });
+    }
+
+    if (existing.image) {
+      const oldPath = path.join(PRODUCT_IMAGES_DIR, existing.image.file_name);
+      try {
+        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+      } catch {
+        /* ignore */
+      }
+      await prisma.media
+        .delete({ where: { id: existing.image.id } })
+        .catch(() => undefined);
+    }
+  }
+
+  const row = await prisma.category.findFirst({
+    where: { id, deleted_at: null },
+    include: categoryInclude,
+  });
+  if (!row) return res.status(404).json({ message: "Category not found" });
+
+  return res.json({
+    message: "Category cover removed",
+    category: toPublicCategory(row),
+  });
+});
+
 /** Create — super_admin / admin / moderator only. */
 dashboardCategoriesRouter.post("/", async (req, res) => {
   if (!canManageCategories(req.auth!.role)) {

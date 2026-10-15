@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Remove a category cover photo
+- `src/pages/catalog/categories/CategoryEditPage.tsx`: new "Remove photo" action on the cover dropzone. It asks for confirmation with `useConfirm`, then calls `DELETE /api/dashboard/categories/:id/image`, so the category goes back to using only its icon.
+- `src/components/categories/CategoryFormShell.tsx`: the dropzone's remove button is now styled as destructive, with a trash icon and the label "Remove photo". The create page uses the same button.
+
 ### API health badge polling
 - `src/components/ApiHealthBadge.tsx`: still shown to signed-in staff in production, but skips the 30 s check while the tab is hidden and re-checks when the tab becomes visible again.
 

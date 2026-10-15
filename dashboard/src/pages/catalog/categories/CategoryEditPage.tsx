@@ -189,6 +189,34 @@ export function CategoryEditPage() {
     }
   }
 
+  async function onRemoveCover() {
+    if (!token || !id || !category?.image) return;
+    const ok = await confirm({
+      title: `Remove the cover photo from “${category.name}”?`,
+      description:
+        "The image file is deleted and the category shows its icon instead. This cannot be undone — upload a new photo to bring one back.",
+      confirmLabel: "Remove photo",
+    });
+    if (!ok) return;
+    setIconUploading(true);
+    setSaveError(null);
+    setSaveSuccess(null);
+    try {
+      const data = await apiFetch<{ category: Category }>(
+        `/api/dashboard/categories/${id}/image`,
+        { method: "DELETE", token },
+      );
+      setCategory(data.category);
+      setSaveSuccess("Cover photo removed — the icon is used instead");
+    } catch (err) {
+      setSaveError(
+        err instanceof ApiError ? err.message : "Failed to remove cover photo",
+      );
+    } finally {
+      setIconUploading(false);
+    }
+  }
+
   async function onDelete() {
     if (!token || !id) return;
     const ok = await confirm({
@@ -278,6 +306,7 @@ export function CategoryEditPage() {
               disabled={saving}
               inputRef={fileRef}
               onPick={() => fileRef.current?.click()}
+              onClear={() => void onRemoveCover()}
               onFile={(file) => void onUploadCover(file)}
             />
           </CategoryFormSection>
