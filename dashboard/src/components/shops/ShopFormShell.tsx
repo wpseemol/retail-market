@@ -209,19 +209,14 @@ export function StoreLivePreview({
 
   return (
     <aside className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm lg:sticky lg:top-4">
-      <div className="relative overflow-hidden bg-gradient-to-br from-brand-deep via-[#0a4a10] to-brand-primary text-white">
+      <div className="relative overflow-hidden bg-[#14361c] text-white">
         {bannerUrl ? (
           <img
             src={bannerUrl}
             alt=""
             className="absolute inset-0 size-full object-cover opacity-40"
           />
-        ) : (
-          <>
-            <div className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-white/10 blur-2xl" />
-            <div className="pointer-events-none absolute bottom-0 left-0 h-16 w-full bg-gradient-to-t from-black/20 to-transparent" />
-          </>
-        )}
+        ) : null}
         <div className="relative px-5 pb-12 pt-5">
           <div className="flex items-center justify-between gap-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
@@ -261,7 +256,7 @@ export function StoreLivePreview({
         </div>
       </div>
 
-      <div className="-mt-6 space-y-4 px-5 pb-5">
+      <div className="relative z-10 -mt-6 space-y-4 px-5 pb-5">
         <div className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
           <div className="relative aspect-[4/3] bg-gradient-to-br from-muted/60 to-brand-tint/30">
             {imageUrl ? (

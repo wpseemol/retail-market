@@ -24,6 +24,43 @@ export type Category = {
   children_count?: number;
 };
 
+/** Returned by `GET /api/dashboard/categories` — what the current role may do in bulk. */
+export type CategoryBulkPermissions = { export: boolean; import: boolean };
+
+export const NO_CATEGORY_BULK_PERMISSIONS: CategoryBulkPermissions = {
+  export: false,
+  import: false,
+};
+
+export type CategoryImportRow = {
+  row: number;
+  handle: string | null;
+  title: string | null;
+  action: "create" | "update" | "skip" | "error";
+  image: boolean;
+  errors: string[];
+  warnings: string[];
+};
+
+export type CategoryImportResult = {
+  message: string;
+  dry_run: boolean;
+  mode: "upsert" | "create" | "update";
+  source: "csv" | "zip";
+  images_in_zip: number;
+  columns: string[];
+  ignored_columns: string[];
+  summary: {
+    total: number;
+    create: number;
+    update: number;
+    skip: number;
+    error: number;
+    images: number;
+  };
+  rows: CategoryImportRow[];
+};
+
 export function slugifyClient(input: string): string {
   return input
     .toLowerCase()

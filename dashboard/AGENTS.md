@@ -53,6 +53,7 @@ dashboard/
     │   ├── overview/               # OverviewCharts (Recharts via ui/chart), WorldMap (d3-geo, lazy)
     │   ├── content/                # FAQ / Terms editor sections (hero, help box, SEO, status), useContentPage
     │   ├── brands/                 # brand form shell, BrandLinkedStoreCard
+    │   ├── categories/             # category form shell, icon picker, CategoryImportDialog (CSV / ZIP with images)
     │   └── products/               # product form shell, gallery, ProductImportDialog, ProductBulkEditDialog
     ├── lib/
     │   ├── api.ts                  # apiFetch / apiDownload (Bearer)

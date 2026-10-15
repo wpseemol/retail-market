@@ -105,24 +105,35 @@ export async function finalizeCategoryImageUpload(
     };
   }
 
-  const validated = validateCategoryBuffer(buffer, declaredMime);
-  if (!validated.ok) {
+  try {
+    return await finalizeCategoryImageBuffer(buffer, declaredMime, preset);
+  } finally {
     try {
       fs.unlinkSync(tempPath);
     } catch {
       /* ignore */
     }
-    return validated;
   }
+}
+
+/** Size + magic-byte check only (import dry runs). */
+export function checkCategoryImageBuffer(buffer: Buffer) {
+  const validated = validateCategoryBuffer(buffer);
+  return validated.ok ? null : validated.message;
+}
+
+/** Same pipeline as `finalizeCategoryImageUpload`, for images that are already in memory. */
+export async function finalizeCategoryImageBuffer(
+  buffer: Buffer,
+  declaredMime?: string | null,
+  preset: ImagePresetKey = "category",
+): Promise<FinalizedAvatarResult> {
+  const validated = validateCategoryBuffer(buffer, declaredMime);
+  if (!validated.ok) return validated;
 
   try {
     const optimized = await optimizeImageWithin(buffer, preset, CATEGORY_IMAGE_MAX_BYTES);
     if (!optimized) {
-      try {
-        fs.unlinkSync(tempPath);
-      } catch {
-        /* ignore */
-      }
       return {
         ok: false,
         message: "Category image must be 1 MB or smaller after resize",
@@ -134,11 +145,6 @@ export async function finalizeCategoryImageUpload(
     const fileName = `${randomUUID()}${ext}`;
     const absolutePath = path.join(PRODUCT_IMAGES_DIR, fileName);
     fs.writeFileSync(absolutePath, output);
-    try {
-      fs.unlinkSync(tempPath);
-    } catch {
-      /* ignore */
-    }
 
     return {
       ok: true,
@@ -148,11 +154,6 @@ export async function finalizeCategoryImageUpload(
       absolutePath,
     } satisfies FinalizedAvatarOk;
   } catch {
-    try {
-      fs.unlinkSync(tempPath);
-    } catch {
-      /* ignore */
-    }
     return {
       ok: false,
       message: "Failed to process category image",

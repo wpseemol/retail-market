@@ -80,9 +80,8 @@ export function StoresPage() {
     return (
         <div className="flex flex-col gap-6">
             {/* Hero */}
-            <section className="relative overflow-hidden rounded-2xl bg-linear-to-br from-brand-deep via-[#0a4a10] to-brand-primary px-5 py-6 text-white shadow-lg sm:px-7 sm:py-8">
-                <div className="pointer-events-none absolute -right-16 -top-16 size-56 rounded-full bg-white/10 blur-3xl" />
-                <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <section className="overflow-hidden rounded-2xl border border-black/5 bg-[#14361c] px-5 py-6 text-white shadow-sm sm:px-7 sm:py-8">
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                     <div className="min-w-0 max-w-xl">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
                             Marketplace

@@ -5,6 +5,15 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Categories: export / import with cover images
+- `src/pages/catalog/categories/CategoriesPage.tsx`: Export menu (ZIP with cover images, or CSV with image links; follows the current search / status filter), Import button and a notice bar. Shown according to `permissions` from `GET /api/dashboard/categories` (super_admin, admin, moderator).
+- `src/components/categories/CategoryImportDialog.tsx` (new): shadcn `Form` + Zod, accepts `.csv` or `.zip`, import mode, template download, dry-run preview with created / updated / new-cover counts and per-row errors, then a warning confirm before applying. Helper text says images are always resized on the server.
+- `src/lib/validators/categoryBulk.ts` (new): file pre-check (CSV ≤2 MB, ZIP ≤25 MB, type + name) and the form schema.
+- `src/lib/categories.ts`: `CategoryBulkPermissions`, `CategoryImportRow`, `CategoryImportResult` types.
+
+### Live preview header fix (create / edit forms)
+- The preview card under the header was meant to overlap it, but the header was positioned and painted on top, hiding the card's top edge. The overlap block is now `relative z-10`, and the header uses the solid `#14361c` (blur blobs removed) to match the role banners. Files: `components/categories/CategoryFormShell.tsx`, `components/products/ProductFormShell.tsx`, `components/brands/BrandFormShell.tsx`, `components/shops/ShopFormShell.tsx`, `pages/account/ProfilePage.tsx`, `pages/access/UserEditPage.tsx`; `pages/stores/StoresPage.tsx` hero switched to the same solid colour.
+
 ### Products: CSV export / import and bulk edit
 - `src/pages/catalog/products/ProductsPage.tsx`: Export menu (all / filtered / selected), Import button, per-card checkboxes with select-all, and a selection bar with Bulk edit, Export selected and Delete selected. Buttons follow the `permissions` returned by `GET /api/dashboard/products`, so each role only sees what the API allows. Bulk delete asks for confirmation through `useConfirm`.
 - `src/components/products/ProductImportDialog.tsx` (new): shadcn `Form` + Zod (CSV type / name / 2 MB pre-check), import mode select, template download, server dry-run preview with per-row errors and warnings, then a warning confirm before applying.

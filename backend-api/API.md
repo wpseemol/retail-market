@@ -1091,9 +1091,12 @@ Icon catalog: `backend-api/src/data/category-icons.json` (~185 names)
 ```json
 {
   "categories": [ /* Category */ ],
-  "pagination": { "page": 1, "limit": 50, "total": 12, "pages": 1 }
+  "pagination": { "page": 1, "limit": 50, "total": 12, "pages": 1 },
+  "permissions": { "export": true, "import": true }
 }
 ```
+
+`permissions` tells the UI which bulk tools to show (elevated roles only; vendors get both `false`).
 
 ### Icon library
 
@@ -1171,6 +1174,59 @@ curl -X POST http://localhost:8001/api/dashboard/categories/1/image \
 ```
 
 Oversize: `{ "message": "Category image must be 1 MB or smaller", "code": "CATEGORY_IMAGE_TOO_LARGE" }`
+
+### Export / import (CSV or ZIP with images)
+
+Elevated only (`super_admin`, `admin`, `moderator`); vendors get `403 { code: "INSUFFICIENT_ROLE" }`.
+Code: `routes/dashboardCategoriesBulk.ts`, `lib/categoryCsv.ts`, `lib/zipArchive.ts`, `services/categoryImport.ts`, `validators/categoryBulk.ts`.
+
+Columns (one row per category, UTF-8 with BOM, formula cells prefixed with `'`):
+
+`Handle, Name, Parent, Description, Icon, Status, Sort Order, Meta Title, Meta Description, Image`
+
+Aliases are accepted (`slug`, `title`, `parent slug`, `position`, `seo title`, `image url`, `thumbnail`, …).
+
+| Endpoint | Notes |
+|----------|-------|
+| `GET /export?format=zip&q=&active=all&ids=` | ZIP: `categories.csv` + `images/<slug>.<ext>`; Image column holds the in-ZIP path. Covers past 200 MB fall back to their URL. |
+| `GET /export?format=csv&…` | CSV only; Image column holds the public image URL. Header `X-Total-Rows`. |
+| `GET /import-template` | Sample CSV. |
+| `POST /import` | Multipart: `file` (+ `mode`, `dry_run`). |
+
+**Import (`POST /api/dashboard/categories/import`)**
+
+| Field | Value |
+|-------|-------|
+| `file` | `.csv` (≤ **2 MB**) or `.zip` (≤ **25 MB**, must contain `categories.csv` or a single `.csv`). Extension must match the content. ZIP64 / encrypted ZIPs rejected; each entry is inflated with a hard size cap. |
+| `mode` | `upsert` (default) · `create` · `update` |
+| `dry_run` | `true` (default) previews without saving; send `false` to apply |
+
+Rows match on Handle (or a slug made from Name). Parent takes a handle — from the database or from an earlier/later row in the same file; loops and self-parents are rejected. Empty cells clear Description / Icon / Meta fields; empty Name, Status, Sort Order keep the current value. Handles still owned by a soft-deleted category are rejected.
+
+**Image column:**
+
+- path inside the ZIP (`images/kitchen.webp`) → read from the archive;
+- URL on this API's own `/uploads/` (what a CSV export writes) → copied from disk;
+- any other host → **not downloaded** (warning; no server-side fetch of user URLs);
+- empty → current cover unchanged; a file identical to the current cover is skipped.
+
+Every image is sniffed by magic bytes (JPEG, PNG, WebP, GIF), must be **≤ 1 MB**, is **always resized on the server** (same pipeline as `POST /:id/image`) and re-checked after resize. Images are validated in the dry run; on apply, category rows are written in one transaction, then covers are stored (an image failure becomes a row warning, the row itself is kept).
+
+```json
+{
+  "message": "Imported: 3 created, 0 updated, 1 image",
+  "dry_run": false,
+  "mode": "upsert",
+  "source": "zip",
+  "images_in_zip": 1,
+  "columns": ["Handle", "Name", "Parent", "Image"],
+  "ignored_columns": [],
+  "summary": { "total": 6, "create": 3, "update": 0, "skip": 0, "error": 3, "images": 1 },
+  "rows": [
+    { "row": 2, "handle": "home-living", "title": "Home & Living", "action": "create", "image": true, "errors": [], "warnings": [] }
+  ]
+}
+```
 
 ### Category object
 
@@ -1351,6 +1407,7 @@ Includes: `id`, `vendor_id`, `category_id`, `brand_id`, `thumbnail_id`, `name`, 
 | `POST /api/dashboard/seo/og-image` | `image` | **1 MB** · always resized on the server (1200×630) |
 | `POST /api/products/:idOrSlug/reviews` | `images` | **2 MB** × 4 · always resized on the server |
 | `POST /api/dashboard/products/import` | `file` | **2 MB** · `.csv` only, UTF-8 text, ≤1,000 rows (not an image — no resize) |
+| `POST /api/dashboard/categories/import` | `file` | `.csv` **2 MB** or `.zip` **25 MB** · ≤1,000 rows · bundled images ≤ **1 MB** each, always resized on the server |
 
 Allowed MIME (all image uploads): `image/jpeg`, `image/png`, `image/webp`, `image/gif`.  
 Do **not** upload SVG.

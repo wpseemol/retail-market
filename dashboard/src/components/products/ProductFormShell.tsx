@@ -97,8 +97,7 @@ export function ProductLivePreview({
 
   return (
     <aside className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm lg:sticky lg:top-4">
-      <div className="relative overflow-hidden bg-gradient-to-br from-brand-deep via-[#0a4a10] to-brand-primary px-5 pb-10 pt-5 text-white">
-        <div className="pointer-events-none absolute -right-8 -top-8 size-36 rounded-full bg-white/10 blur-2xl" />
+      <div className="relative overflow-hidden bg-[#14361c] px-5 pb-10 pt-5 text-white">
         <div className="relative flex items-center justify-between gap-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
             Live preview
@@ -134,7 +133,7 @@ export function ProductLivePreview({
         </div>
       </div>
 
-      <div className="-mt-5 space-y-4 px-5 pb-5">
+      <div className="relative z-10 -mt-5 space-y-4 px-5 pb-5">
         <div className="rounded-xl border border-border bg-background p-4 shadow-sm">
           <p className="line-clamp-2 text-xs text-muted-foreground">
             {shortDescription.trim() ||

@@ -17,6 +17,10 @@ import { PRODUCT_IMAGES_DIR } from "../lib/productImage.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
 import { categoryImageUpload } from "../middleware/upload.js";
 import {
+  categoryBulkPermissions,
+  dashboardCategoriesBulkRouter,
+} from "./dashboardCategoriesBulk.js";
+import {
   categoryListQuerySchema,
   createCategorySchema,
   updateCategorySchema,
@@ -30,6 +34,8 @@ dashboardCategoriesRouter.use(
   requireAuth,
   requireRoles("super_admin", "admin", "moderator", "vendor"),
 );
+
+dashboardCategoriesRouter.use(dashboardCategoriesBulkRouter);
 
 const ELEVATED = ["super_admin", "admin", "moderator"] as const;
 
@@ -161,6 +167,7 @@ dashboardCategoriesRouter.get("/", async (req, res) => {
   return res.json({
     categories: rows.map(toPublicCategory),
     pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    permissions: categoryBulkPermissions(req.auth!.role),
   });
 });
 

@@ -480,8 +480,7 @@ export function UserEditPage() {
 
         <FadeUp>
           <aside className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm lg:sticky lg:top-4">
-            <div className="relative overflow-hidden bg-gradient-to-br from-brand-deep via-[#0a4a10] to-brand-primary px-5 pb-10 pt-5 text-white">
-              <div className="pointer-events-none absolute -right-10 -top-10 size-36 rounded-full bg-white/10 blur-2xl" />
+            <div className="relative overflow-hidden bg-[#14361c] px-5 pb-10 pt-5 text-white">
               <p className="relative text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
                 Profile preview
               </p>
@@ -509,7 +508,7 @@ export function UserEditPage() {
                 </div>
               </div>
             </div>
-            <Stagger className="-mt-5 space-y-2 px-5 pb-5">
+            <Stagger className="relative z-10 -mt-5 space-y-2 px-5 pb-5">
               <StaggerItem className="rounded-xl border border-border bg-background p-3 text-xs shadow-sm">
                 <p className="text-muted-foreground">Role</p>
                 <p className="mt-0.5 font-medium capitalize">

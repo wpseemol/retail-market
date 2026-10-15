@@ -5,6 +5,17 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Category export / import with cover images
+- `src/routes/dashboardCategoriesBulk.ts` (new, mounted inside `dashboardCategories.ts` before `/:id`): `GET /export?format=zip|csv` (ZIP = `categories.csv` + `images/<slug>.<ext>`; CSV = image URLs), `GET /import-template`, `POST /import` (multipart `file` .csv ≤2 MB or .zip ≤25 MB, `mode`, `dry_run` default true). Elevated roles only via `categoryBulkPermissions(role)`; the list response now includes `permissions`.
+- `src/services/categoryImport.ts` (new): validates every row, resolves parents by handle (including rows in the same file, cascading missing parents, rejecting loops), rejects handles held by soft-deleted categories, writes rows in one transaction, then stores covers. Images come from the ZIP or from this API's own `/uploads/` URLs; other hosts are never fetched. Unchanged covers are skipped.
+- `src/lib/categoryCsv.ts` (new): columns + header aliases, CSV / ZIP reader, image reference classification with path-traversal checks.
+- `src/lib/zipArchive.ts` (new): minimal ZIP reader using `zlib.inflateRawSync` with `maxOutputLength` per entry (zip-bomb safe); rejects ZIP64, encrypted entries and unsafe paths.
+- `src/lib/categoryImage.ts`: new `finalizeCategoryImageBuffer()` / `checkCategoryImageBuffer()`; the file-based finalize now delegates to the buffer one (same sniff → resize → post-resize size check).
+- `src/lib/productCsv.ts`: extracted `decodeCsvText()` and exported `unguard()` for reuse.
+- `src/validators/categoryBulk.ts` (new): export query, import options and per-column cell schemas (safe input on every string, icon must be in the catalog).
+- `package.json`: added `fflate` (ZIP writing for exports).
+- `API.md`: category export / import section and multipart cheat-sheet row.
+
 ### Product CSV export / import and bulk edit
 - `src/routes/dashboardProductsBulk.ts` (new, mounted inside `dashboardProducts.ts` before `/:id`): `GET /export` (CSV, filters or `ids`, ≤5,000 rows), `GET /import-template`, `POST /import` (multipart `file`, `dry_run` preview by default, `mode` upsert/create/update), `POST /bulk` (status, category, brand, featured, price set/±%/±৳, compare-at, stock set/±, shipping fee) and `POST /bulk-delete` (soft delete). `productBulkPermissions(role)` holds the role matrix: super_admin/admin everything across stores; moderator export + bulk edit of status/category/brand/featured only; vendor export/import/bulk edit scoped to their own store; bulk delete super_admin/admin only. Denials are 403 `INSUFFICIENT_ROLE`.
 - `src/services/productImport.ts` (new): validates every row, batch-looks-up handles, categories, brands, stores and SKUs, flags in-file duplicates, then previews or writes. New rows create a simple product + default variant in one transaction; updates touch only columns present in the file and keep the default variant in sync. Variable products only get non-variant fields. Repeated handles (Shopify variant / image rows) are skipped.

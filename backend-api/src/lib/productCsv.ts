@@ -100,7 +100,7 @@ export function toCsv(header: readonly string[], rows: unknown[][]) {
 }
 
 /** Undo the formula guard added by `csvCell` on export. */
-function unguard(value: string) {
+export function unguard(value: string) {
   return /^'[=+\-@]/.test(value) ? value.slice(1) : value;
 }
 
@@ -156,11 +156,8 @@ export type ParsedProductCsv = {
   records: Array<{ row: number; values: Partial<Record<ProductCsvColumn, string>> }>;
 };
 
-/**
- * Decode and parse an uploaded file. Rejects binary data and HTML / PHP polyglots
- * before parsing; every cell is still validated per field afterwards.
- */
-export function readProductCsv(buffer: Buffer): ParsedProductCsv | { error: string } {
+/** Decode UTF-8 CSV text, rejecting binary data and HTML / PHP polyglots. */
+export function decodeCsvText(buffer: Buffer): string | { error: string } {
   let text: string;
   try {
     text = new TextDecoder("utf-8", { fatal: true }).decode(buffer);
@@ -172,6 +169,15 @@ export function readProductCsv(buffer: Buffer): ParsedProductCsv | { error: stri
   if (head.startsWith("<") || head.startsWith("%pdf") || /<\?php/i.test(text)) {
     return { error: "File is not a CSV" };
   }
+  return text;
+}
+
+/**
+ * Decode and parse an uploaded file. Every cell is still validated per field afterwards.
+ */
+export function readProductCsv(buffer: Buffer): ParsedProductCsv | { error: string } {
+  const text = decodeCsvText(buffer);
+  if (typeof text !== "string") return text;
 
   let rows: string[][];
   try {
