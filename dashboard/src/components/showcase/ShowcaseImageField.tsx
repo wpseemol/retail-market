@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ImagePresetKey } from "@/lib/imagePresets";
 import { ImageSizeBadge } from "@/components/dashboard/image-size-badge";
+import { ImageFieldError } from "@/components/dashboard/image-field-error";
 
 /** One upload slot (logo / banner / share image) with optional remove. */
 export function ShowcaseImageField({
@@ -17,6 +18,7 @@ export function ShowcaseImageField({
   disabled,
   onFile,
   onRemove,
+  error,
 }: {
   title: string;
   preset?: ImagePresetKey;
@@ -28,11 +30,17 @@ export function ShowcaseImageField({
   disabled?: boolean;
   onFile: (file: File) => void;
   onRemove?: () => void;
+  error?: string | null;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-dashed border-border bg-linear-to-br from-muted/40 via-background to-brand-tint/20 p-4 sm:flex-row sm:items-center">
+    <div
+      className={cn(
+        "flex flex-col gap-4 rounded-xl border border-dashed bg-linear-to-br from-muted/40 via-background to-brand-tint/20 p-4 transition-colors sm:flex-row sm:items-center",
+        error ? "border-destructive/60" : "border-border",
+      )}
+    >
       <div
         className={cn(
           "flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background shadow-sm",
@@ -94,6 +102,7 @@ export function ShowcaseImageField({
             </Button>
           ) : null}
         </div>
+        <ImageFieldError message={error} />
       </div>
     </div>
   );

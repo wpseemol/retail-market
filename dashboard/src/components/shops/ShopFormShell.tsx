@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { imageUploadHint } from "@/lib/imagePresets";
 import { ImageSizeBadge } from "@/components/dashboard/image-size-badge";
+import { ImageFieldError } from "@/components/dashboard/image-field-error";
 import type { ShopCreateStatus } from "@/lib/shops";
 
 export function StoreFormSection({
@@ -85,6 +86,7 @@ type ImageDropzoneProps = {
   label?: string;
   hint?: string;
   variant?: "logo" | "banner";
+  error?: string | null;
 };
 
 export function StoreImageDropzone({
@@ -98,13 +100,19 @@ export function StoreImageDropzone({
   label = "Store logo",
   hint: hintProp,
   variant = "logo",
+  error,
 }: ImageDropzoneProps) {
   const isBanner = variant === "banner";
   const hint =
     hintProp ?? imageUploadHint(isBanner ? "shopBanner" : "shopLogo", 5);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-dashed border-border bg-gradient-to-br from-muted/40 via-background to-brand-tint/20">
+    <div
+      className={cn(
+        "overflow-hidden rounded-xl border border-dashed bg-gradient-to-br from-muted/40 via-background to-brand-tint/20 transition-colors",
+        error ? "border-destructive/60" : "border-border",
+      )}
+    >
       <div
         className={cn(
           "flex flex-col gap-4 p-4",
@@ -181,6 +189,7 @@ export function StoreImageDropzone({
               </Button>
             ) : null}
           </div>
+          <ImageFieldError message={error} />
         </div>
       </div>
     </div>

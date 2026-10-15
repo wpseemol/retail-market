@@ -274,7 +274,6 @@ function FeaturedEditor(props: Props) {
                             shouldValidate: true,
                           })
                         }
-                        onError={props.onError}
                         onSuccess={props.onSuccess}
                       />
                     </FormControl>
@@ -360,7 +359,6 @@ function DealsBannerEditor(props: Props) {
                               shouldValidate: true,
                             })
                           }
-                          onError={props.onError}
                           onSuccess={props.onSuccess}
                         />
                       </FormControl>
@@ -591,7 +589,6 @@ function LaptopRepairEditor(props: Props) {
                             shouldValidate: true,
                           })
                         }
-                        onError={props.onError}
                         onSuccess={props.onSuccess}
                       />                    </FormControl>
                     <FormMessage />
@@ -618,7 +615,6 @@ function LaptopRepairEditor(props: Props) {
                             shouldValidate: true,
                           })
                         }
-                        onError={props.onError}
                         onSuccess={props.onSuccess}
                       />
                     </FormControl>
@@ -791,7 +787,6 @@ function TopBrandsEditor(props: Props) {
                               shouldValidate: true,
                             })
                           }
-                          onError={props.onError}
                           onSuccess={props.onSuccess}
                         />
                       </FormControl>
@@ -892,7 +887,6 @@ function PromoSliderEditor(props: Props) {
                             shouldValidate: true,
                           })
                         }
-                        onError={props.onError}
                         onSuccess={props.onSuccess}
                       />
                     </FormControl>
@@ -954,7 +948,6 @@ function PromoSliderEditor(props: Props) {
                               shouldValidate: true,
                             })
                           }
-                          onError={props.onError}
                           onSuccess={props.onSuccess}
                         />
                       </FormControl>
@@ -1325,7 +1318,6 @@ function SimpleChromeForm<T extends Record<string, unknown>>({
                                 shouldValidate: true,
                               })
                             }
-                            onError={onError}
                             onSuccess={onSuccess}
                           />
                         </FormControl>

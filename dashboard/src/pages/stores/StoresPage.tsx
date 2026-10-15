@@ -100,11 +100,10 @@ export function StoresPage() {
                     {canManage ? (
                         <Button
                             asChild
-                            size="sm"
-                            className="bg-white text-brand-deep hover:bg-white/90"
+                            className="h-10 shrink-0 self-start rounded-lg bg-white px-4 font-semibold text-[#14361c] shadow-sm ring-1 ring-white/20 hover:bg-white/90 hover:text-[#14361c] sm:self-auto dark:bg-white dark:text-[#14361c] dark:hover:bg-white/90"
                         >
                             <Link to="/stores/new">
-                                <Plus className="size-3.5" />
+                                <Plus className="size-4" />
                                 Create store
                             </Link>
                         </Button>
@@ -238,7 +237,7 @@ export function StoresPage() {
                                     <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-linear-to-br from-background to-muted/20 transition-all hover:border-brand-primary/30 hover:shadow-md">
                                         <Link
                                             to={canManage ? `/stores/${store.slug}` : `/stores/${store.slug}/design`}
-                                            className="relative block aspect-video bg-linear-to-br from-brand-deep/90 via-[#0a4a10] to-brand-primary"
+                                            className="relative block aspect-video bg-linear-to-br from-[#002603] via-[#0a4a10] to-brand-primary"
                                         >
                                             {store.banner?.path ? (
                                                 <img
@@ -262,12 +261,21 @@ export function StoresPage() {
                                             </div>
                                             <Badge
                                                 className={cn(
-                                                    "absolute right-3 top-3 capitalize shadow-sm",
+                                                    "absolute right-3 top-3 h-6 gap-1.5 rounded-full px-2.5 text-[11px] font-semibold capitalize shadow-md",
                                                     store.status === "active"
-                                                        ? "bg-white text-brand-deep hover:bg-white"
-                                                        : "border-white/25 bg-black/35 text-white hover:bg-black/35",
+                                                        ? "border-transparent bg-white text-[#14361c] hover:bg-white dark:bg-white dark:text-[#14361c]"
+                                                        : "border-white/20 bg-black/60 text-white backdrop-blur-sm hover:bg-black/60",
                                                 )}
                                             >
+                                                <span
+                                                    aria-hidden
+                                                    className={cn(
+                                                        "size-1.5 rounded-full",
+                                                        store.status === "active"
+                                                            ? "bg-brand-primary"
+                                                            : "bg-white/70",
+                                                    )}
+                                                />
                                                 {shopStatusLabel(store.status)}
                                             </Badge>
                                         </Link>

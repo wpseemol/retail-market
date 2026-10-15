@@ -413,7 +413,6 @@ export function ProductEditPage() {
                 onSetPrimaryRemote={(mediaId) =>
                   void onSetPrimaryRemote(mediaId)
                 }
-                onError={setSubmitError}
                 disabled={mediaUpdating || form.formState.isSubmitting}
                 maxImages={PRODUCT_IMAGE_MAX_COUNT}
               />

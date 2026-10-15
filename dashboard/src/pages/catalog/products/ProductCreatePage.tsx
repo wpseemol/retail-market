@@ -293,7 +293,6 @@ export function ProductCreatePage() {
                 localPrimaryKey={localPrimaryKey}
                 onLocalImagesChange={setLocalImages}
                 onLocalPrimaryChange={setLocalPrimaryKey}
-                onError={setSubmitError}
                 disabled={form.formState.isSubmitting}
                 maxImages={PRODUCT_IMAGE_MAX_COUNT}
               />

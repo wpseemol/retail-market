@@ -7,6 +7,8 @@ import {
   imageUploadHint,
 } from "@/lib/imagePresets";
 import { ImageSizeBadge } from "@/components/dashboard/image-size-badge";
+import { ImageFieldError } from "@/components/dashboard/image-field-error";
+import { cn } from "@/lib/utils";
 import {
   HOME_BLOCK_IMAGE_MAX_BYTES,
   validateHomeBlockImageFile,
@@ -56,7 +58,6 @@ type Props = {
   disabled?: boolean;
   allowEmpty?: boolean;
   onUploaded: (path: string) => void;
-  onError: (message: string) => void;
   onSuccess?: (message: string) => void;
 };
 
@@ -70,12 +71,12 @@ export function HomeImageField({
   disabled,
   allowEmpty,
   onUploaded,
-  onError,
   onSuccess,
 }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
   const [broken, setBroken] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const stored = (value ?? "").trim();
   const preview = resolveHomeImagePreview(stored);
   const hasImage = Boolean(preview) && !broken;
@@ -86,12 +87,13 @@ export function HomeImageField({
 
   async function onFile(file: File | null) {
     if (!file) return;
+    setError(null);
     const typeCheck = validateHomeBlockImageFile(file);
     const checked = typeCheck.ok
       ? await checkImageDimensions(file, homeBlockImagePreset(blockKey, fieldPath))
       : typeCheck;
     if (!checked.ok) {
-      onError(checked.message);
+      setError(checked.message);
       if (inputRef.current) inputRef.current.value = "";
       return;
     }
@@ -108,7 +110,7 @@ export function HomeImageField({
       onUploaded(data.path);
       onSuccess?.(data.message ?? "Image updated — live on the storefront");
     } catch (err) {
-      onError(err instanceof ApiError ? err.message : "Upload failed");
+      setError(err instanceof ApiError ? err.message : "Upload failed");
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -116,7 +118,12 @@ export function HomeImageField({
   }
 
   return (
-    <div className="flex gap-3 rounded-xl border border-border bg-card p-3">
+    <div
+      className={cn(
+        "flex gap-3 rounded-xl border bg-card p-3 transition-colors",
+        error ? "border-destructive/60" : "border-border",
+      )}
+    >
       <div className="relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted/50 ring-1 ring-border/60">
         {hasImage ? (
           <img
@@ -188,6 +195,7 @@ export function HomeImageField({
             </>
           )}
         </Button>
+        <ImageFieldError message={error} />
       </div>
     </div>
   );

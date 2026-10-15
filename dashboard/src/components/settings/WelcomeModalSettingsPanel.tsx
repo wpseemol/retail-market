@@ -400,7 +400,6 @@ export function WelcomeModalSettingsPanel({
                           shouldValidate: true,
                         })
                       }
-                      onError={onError}
                       onSuccess={onSuccess}
                     />
                   </FormControl>
@@ -428,7 +427,6 @@ export function WelcomeModalSettingsPanel({
                           shouldValidate: true,
                         })
                       }
-                      onError={onError}
                       onSuccess={onSuccess}
                     />
                   </FormControl>

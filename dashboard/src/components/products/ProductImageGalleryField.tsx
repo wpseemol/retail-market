@@ -9,6 +9,7 @@ import {
   recommendedSize,
 } from "@/lib/imagePresets";
 import { ImageSizeBadge } from "@/components/dashboard/image-size-badge";
+import { ImageFieldError } from "@/components/dashboard/image-field-error";
 import type { ProductMedia } from "@/lib/products";
 import {
   PRODUCT_IMAGE_MAX_BYTES,
@@ -33,7 +34,6 @@ type ProductImageGalleryFieldProps = {
   onLocalPrimaryChange?: (key: string) => void;
   onRemoveRemote?: (mediaId: string) => void;
   onSetPrimaryRemote?: (mediaId: string) => void;
-  onError?: (message: string) => void;
   disabled?: boolean;
   maxImages?: number;
 };
@@ -49,13 +49,13 @@ export function ProductImageGalleryField({
   onLocalPrimaryChange,
   onRemoveRemote,
   onSetPrimaryRemote,
-  onError,
   disabled = false,
   maxImages = PRODUCT_IMAGE_MAX_COUNT,
 }: ProductImageGalleryFieldProps) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const totalCount = images.length + localImages.length;
   const remaining = Math.max(0, maxImages - totalCount);
@@ -87,7 +87,7 @@ export function ProductImageGalleryField({
       }
       accepted.push(file);
     }
-    if (rejected.length > 0) onError?.(rejected.join("\n"));
+    setFileError(rejected.length > 0 ? rejected.join("\n") : null);
 
     if (accepted.length === 0) return;
 
@@ -139,6 +139,8 @@ export function ProductImageGalleryField({
         </span>
       </div>
 
+      <ImageFieldError message={fileError} />
+
       <div
         onDragEnter={(e) => {
           e.preventDefault();
@@ -151,6 +153,7 @@ export function ProductImageGalleryField({
         onDrop={onDrop}
         className={cn(
           "relative overflow-hidden rounded-xl border border-dashed bg-gradient-to-br from-muted/50 via-background to-brand-tint/30 p-4 transition-colors",
+          fileError && "border-destructive/60",
           dragging && "border-brand-primary bg-brand-tint/40",
           disabled && "pointer-events-none opacity-60",
         )}

@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Readable primary buttons
+- `src/components/ui/button.tsx`: the default button variant used white text on the bright brand green (`#00b207`). That contrast is only about 2.9:1, so labels such as "Add product", "Add brand", "Add category" and Save looked faint. The variant now uses the darker brand green (`bg-brand-hover`, `#2c742f`, about 5.8:1 with white), bold text and a soft shadow, with a darker green on hover. There are no `dark:` classes, so pages that pass their own `bg-*` keep working in dark mode. The `--primary` token is unchanged, so focus rings, charts and accents keep the bright green.
+
+### Stores hero "Create store" button
+- `src/pages/stores/StoresPage.tsx`: the hero button used `text-brand-deep`, which turns pale green in dark mode, so its text could hardly be seen on the white button. It now uses fixed dark-green text (`#14361c`) in both themes, is taller (`h-10`), has bold text, a soft shadow and ring, and a bigger icon.
+- `src/pages/stores/StoresPage.tsx`: the store card status badge ("publish" / "draft" / …) had the same dark-mode problem. It is now a rounded pill with fixed dark-green text on white for active stores, and a darker translucent pill (`bg-black/60` with blur) for the other statuses, so it stays readable on bright banners. Each badge also has a small status dot. The card banner gradient now starts from a fixed `#002603`, so it no longer looks washed out in dark mode.
+
 ### Image dimensions on every upload
 - `src/lib/imagePresets.ts`:
   - New `checkImageDimensions(file, preset)`, which follows the API's rule: shape within 3% and at least the preset size.

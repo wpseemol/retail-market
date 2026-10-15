@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ImagePresetKey } from "@/lib/imagePresets";
 import { ImageSizeBadge } from "@/components/dashboard/image-size-badge";
+import { ImageFieldError } from "@/components/dashboard/image-field-error";
 
 export function BrandingImageDropzone({
     title,
@@ -19,6 +20,7 @@ export function BrandingImageDropzone({
     onPick,
     inputRef,
     onFile,
+    error,
 }: {
     title: string;
     preset?: ImagePresetKey;
@@ -34,12 +36,18 @@ export function BrandingImageDropzone({
     onPick: () => void;
     inputRef: RefObject<HTMLInputElement | null>;
     onFile: (file: File | null) => void;
+    error?: string | null;
 }) {
     const displayUrl = previewUrl || fallbackUrl || null;
     const hasCustomUpload = Boolean(previewUrl);
 
     return (
-        <div className="overflow-hidden rounded-xl border border-dashed border-border bg-linear-to-br from-muted/40 via-background to-brand-tint/20">
+        <div
+            className={cn(
+                "overflow-hidden rounded-xl border border-dashed bg-linear-to-br from-muted/40 via-background to-brand-tint/20 transition-colors",
+                error ? "border-destructive/60" : "border-border",
+            )}
+        >
             <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
                 <div
                     className={cn(
@@ -99,6 +107,7 @@ export function BrandingImageDropzone({
                               ? "Replace image"
                               : "Upload image"}
                     </Button>
+                    <ImageFieldError message={error} />
                 </div>
             </div>
         </div>
