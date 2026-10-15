@@ -5,6 +5,14 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Products: CSV export / import and bulk edit
+- `src/pages/catalog/products/ProductsPage.tsx`: Export menu (all / filtered / selected), Import button, per-card checkboxes with select-all, and a selection bar with Bulk edit, Export selected and Delete selected. Buttons follow the `permissions` returned by `GET /api/dashboard/products`, so each role only sees what the API allows. Bulk delete asks for confirmation through `useConfirm`.
+- `src/components/products/ProductImportDialog.tsx` (new): shadcn `Form` + Zod (CSV type / name / 2 MB pre-check), import mode select, template download, server dry-run preview with per-row errors and warnings, then a warning confirm before applying.
+- `src/components/products/ProductBulkEditDialog.tsx` (new): shadcn `Form` + Zod; every field defaults to "Keep current". Price (set / ±% / ±৳) and stock (set / add / remove) are hidden for moderators. Confirms before applying and reports skipped products.
+- `src/components/products/productCsvDownload.ts` (new): `saveBlob()` download helper.
+- `src/lib/validators/productBulk.ts` (new): import and bulk-edit schemas, CSV limits mirrored from the API, `toBulkChanges()`.
+- `src/lib/products.ts`: `ProductBulkPermissions`, `ProductImportResult`, `ProductBulkResult` types.
+
 ### Solid role banners instead of gradients
 - `src/pages/overview/RolePage.tsx`: the Super Admin / Admin / Moderator / Vendor hero is now one solid, muted green per role (`#14361c`, `#1e4a2a`, `#33483a`, `#1f4740`) instead of a three-stop gradient with blurred glow circles. Config fields `accent` / `heroClass` replaced by `heroBg` / `heroInk`; the white "Your role" badge and primary button use the matching banner colour for text (they used `text-brand-deep`, which turns light green in dark mode).
 - `src/components/dashboard/page-shell.tsx`: `PageHero` uses the same solid `#14361c` with a thin border and soft shadow; glow circle removed.

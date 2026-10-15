@@ -41,7 +41,8 @@ backend-api/
     ├── lib/                 # env, prisma, cart, sslcommerz, image helpers, productReviews,
     │                        # reviewImage, rateLimit (in-memory per-IP), showcase (store/brand page
     │                        # JSON), showcaseMedia (banner / share image finalize), revalidate,
-    │                        # contentPages (FAQ / Terms defaults + public shaping)
+    │                        # contentPages (FAQ / Terms defaults + public shaping),
+    │                        # productCsv (product CSV parse / export, header aliases, limits)
     ├── utils/
     └── data/
 ```
@@ -54,6 +55,7 @@ backend-api/
 - **Reviews:** `ProductReview` (`product_reviews`) is the purchase-verified review model; the older `Review` model is unused legacy. Review eligibility = a `delivered` + `paid` order matching the email/phone/user that contains the product. Vendors are scoped to their own shop's products.
 - **Showcase & SEO:** store (`Vendor`) and brand pages store their design in the `showcase` JSON column — always read it through `normalizeShowcase()` in `src/lib/showcase.ts`. Global SEO lives on `SiteSettings` and is edited only via `/api/dashboard/seo` (super_admin + admin). A brand's `vendor_id` (set by super_admin/admin) lets that store's vendor edit the brand page, never its name/slug/active state. Admins may override any store's page design but cannot create, delete or re-configure stores.
 - **Content pages (FAQ, Terms):** one `ContentPage` row per `page_key` with JSON `content`, validated per key by `contentSchemaByKey` in `src/validators/contentPage.ts`. No row = built-in defaults from `src/lib/contentPages.ts`; `DELETE /api/dashboard/pages/:key` resets by removing the row. Editing is super_admin + admin. Add a new page by extending `CONTENT_PAGE_KEYS`, its schema, and its defaults. Default copy must pass `withSafeInput` (avoid phrases like "delete from" or "select … from").
+- **Product bulk tools:** export / import / bulk edit / bulk delete live in `routes/dashboardProductsBulk.ts` (mounted inside `dashboardProducts.ts` before `/:id`) with the import logic in `services/productImport.ts`. The role matrix is `productBulkPermissions(role)` — the list endpoint returns it as `permissions`, so change it there rather than adding role checks in the UI. Imports are dry-run by default; keep `lib/productCsv.ts` limits in sync with `dashboard/src/lib/validators/productBulk.ts`.
 - **Storefront cache:** after any write that changes public pages, call `revalidateFrontend([...tags])` from `src/lib/revalidate.ts` (needs `REVALIDATE_SECRET` + `FRONTEND_URL`; silently skipped when unset). Tags: `stores`, `store:<slug>`, `brands`, `brand:<slug>`, `reviews`, `site-settings`, `pages`, `page:<key>`.
 - **Uploads:** sniff MIME by magic bytes, enforce multer size limit, always resize with sharp, re-check size after resize, sanitize original filenames. Document field names and limits in `API.md`.
 - **Migrations:** add a new folder under `prisma/migrations/` (never edit an applied one). Backfill data in the same SQL when adding non-null columns.

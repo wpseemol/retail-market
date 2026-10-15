@@ -3,6 +3,16 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-15
+
+### Product CSV export / import and bulk edit
+- `src/routes/dashboardProductsBulk.ts` (new, mounted inside `dashboardProducts.ts` before `/:id`): `GET /export` (CSV, filters or `ids`, ≤5,000 rows), `GET /import-template`, `POST /import` (multipart `file`, `dry_run` preview by default, `mode` upsert/create/update), `POST /bulk` (status, category, brand, featured, price set/±%/±৳, compare-at, stock set/±, shipping fee) and `POST /bulk-delete` (soft delete). `productBulkPermissions(role)` holds the role matrix: super_admin/admin everything across stores; moderator export + bulk edit of status/category/brand/featured only; vendor export/import/bulk edit scoped to their own store; bulk delete super_admin/admin only. Denials are 403 `INSUFFICIENT_ROLE`.
+- `src/services/productImport.ts` (new): validates every row, batch-looks-up handles, categories, brands, stores and SKUs, flags in-file duplicates, then previews or writes. New rows create a simple product + default variant in one transaction; updates touch only columns present in the file and keep the default variant in sync. Variable products only get non-variant fields. Repeated handles (Shopify variant / image rows) are skipped.
+- `src/lib/productCsv.ts` (new): RFC 4180 parser, Shopify / WooCommerce header aliases, formula-injection guard on export (stripped again on import), UTF-8 / binary / HTML / PHP payload checks, size and row limits.
+- `src/validators/productBulk.ts` (new): Zod schemas for bulk ids, changes, export query, import options and per-column CSV cells (all text through `withSafeInput`; description through the product HTML sanitizer).
+- `src/routes/dashboardProducts.ts`: list response now includes `permissions` for the caller.
+- `API.md`: documented the endpoints, role matrix, CSV columns, import rules and the `file` multipart field.
+
 ## 2026-10-08
 
 ### Dynamic shop price range

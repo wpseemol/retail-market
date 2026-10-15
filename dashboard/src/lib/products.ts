@@ -59,6 +59,52 @@ export type Product = {
   variants?: ProductVariant[];
 };
 
+/** From `GET /api/dashboard/products` — what the current role may do in bulk. */
+export type ProductBulkPermissions = {
+  export: boolean;
+  import: boolean;
+  bulk_edit: boolean;
+  /** Price / stock / shipping changes (moderators only get status, category, brand, featured). */
+  bulk_edit_pricing: boolean;
+  bulk_delete: boolean;
+  all_stores: boolean;
+};
+
+export const NO_BULK_PERMISSIONS: ProductBulkPermissions = {
+  export: false,
+  import: false,
+  bulk_edit: false,
+  bulk_edit_pricing: false,
+  bulk_delete: false,
+  all_stores: false,
+};
+
+export type ProductImportRow = {
+  row: number;
+  handle: string | null;
+  title: string | null;
+  action: "create" | "update" | "skip" | "error";
+  errors: string[];
+  warnings: string[];
+  product_id?: string;
+};
+
+export type ProductImportResult = {
+  message: string;
+  dry_run: boolean;
+  mode: "upsert" | "create" | "update";
+  columns: string[];
+  ignored_columns: string[];
+  summary: { total: number; create: number; update: number; skip: number; error: number };
+  rows: ProductImportRow[];
+};
+
+export type ProductBulkResult = {
+  message: string;
+  updated: number;
+  skipped: Array<{ id: string; name: string; reason: string }>;
+};
+
 export const PRODUCT_CREATE_STATUSES = ["draft", "active"] as const;
 
 export function productStatusLabel(status: ProductStatus): string {

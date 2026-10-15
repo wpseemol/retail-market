@@ -52,7 +52,8 @@ dashboard/
     │   ├── showcase/               # ShowcaseEditor (store + brand page designer), preview, image slot
     │   ├── overview/               # OverviewCharts (Recharts via ui/chart), WorldMap (d3-geo, lazy)
     │   ├── content/                # FAQ / Terms editor sections (hero, help box, SEO, status), useContentPage
-    │   └── brands/                 # brand form shell, BrandLinkedStoreCard
+    │   ├── brands/                 # brand form shell, BrandLinkedStoreCard
+    │   └── products/               # product form shell, gallery, ProductImportDialog, ProductBulkEditDialog
     ├── lib/
     │   ├── api.ts                  # apiFetch / apiDownload (Bearer)
     │   ├── orders.ts               # order labels, roles, delete rules
@@ -75,7 +76,7 @@ dashboard/
 - **Destructive actions:** always `const confirm = useConfirm()` and `await confirm({ title, description, tone: "destructive" })`. Never `window.confirm`.
 - **Layout & motion:** pages use `PageHero`, `FormSection`, `StickyFormActions`. Animate with LazyMotion `m` via `useMotionSafe`; no layout animations or `AnimatePresence` on large tables.
 - **Roles:** catalog mutations are for `super_admin | admin | moderator`; hide or disable actions the current role cannot perform and show why (title tooltip).
-- **Stores, brands & SEO:** `STORE_ROLES` (list + page design: super_admin, admin, vendor), `STORE_MANAGE_ROLES` (create / settings: super_admin, vendor), `STORE_DELETE_ROLES` (super_admin), `SEO_ROLES` (global SEO: super_admin, admin), `BRAND_SHOWCASE_ROLES` (brand page: super_admin, admin, linked vendor — the API checks the link), `BRAND_OWNER_ROLES` (link a brand to a store: super_admin, admin). Brand detail returns `permissions { manage, assign_owner, showcase }`; use it instead of guessing from the role.
+- **Stores, brands & SEO:** `STORE_ROLES` (list + page design: super_admin, admin, vendor), `STORE_MANAGE_ROLES` (create / settings: super_admin, vendor), `STORE_DELETE_ROLES` (super_admin), `SEO_ROLES` (global SEO: super_admin, admin), `BRAND_SHOWCASE_ROLES` (brand page: super_admin, admin, linked vendor — the API checks the link), `BRAND_OWNER_ROLES` (link a brand to a store: super_admin, admin). Brand detail returns `permissions { manage, assign_owner, showcase }`; use it instead of guessing from the role. The products list likewise returns `permissions { export, import, bulk_edit, bulk_edit_pricing, bulk_delete, all_stores }` for the CSV and bulk tools.
 - **Dependencies:** the repo is a pnpm workspace — add packages with `pnpm add <pkg> --filter dashboard` (never `npm install`, it breaks the `.pnpm` links).
 - **Charts:** use the shadcn wrapper in `src/components/ui/chart.tsx` (`ChartContainer`, `ChartTooltipContent`) with Recharts, and colour series with the `--chart-1…6` tokens so light / dark both work.
 - **Content pages:** `pages/content/` holds `FaqPageEditor` (`/content/faq`) and `TermsPageEditor` (`/content/terms`), guarded by `CONTENT_PAGE_ROLES` (super_admin, admin). List items use `useFieldArray({ keyName: "_key" })` because each item has its own `id`. Keep `src/lib/validators/contentPage.ts` in sync with the API schema.

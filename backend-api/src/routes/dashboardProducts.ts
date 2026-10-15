@@ -20,6 +20,10 @@ import { uniqueVendorSlug } from "../lib/slug.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
 import { productImageUpload } from "../middleware/upload.js";
 import { findUnsafeInputReason } from "../validators/customerAuth.js";
+import {
+  dashboardProductsBulkRouter,
+  productBulkPermissions,
+} from "./dashboardProductsBulk.js";
 
 export const dashboardProductsRouter = Router();
 
@@ -27,6 +31,7 @@ dashboardProductsRouter.use(
   requireAuth,
   requireRoles("super_admin", "admin", "moderator", "vendor"),
 );
+dashboardProductsRouter.use(dashboardProductsBulkRouter);
 
 const ELEVATED = ["super_admin", "admin", "moderator"] as const;
 
@@ -337,6 +342,7 @@ dashboardProductsRouter.get("/", async (req, res) => {
 
   const { q, vendor_id, category_id, status, page, limit } = parsed.data;
   const where: Prisma.ProductWhereInput = { deleted_at: null };
+  const permissions = productBulkPermissions(req.auth!.role);
 
   if (req.auth!.role === "vendor") {
     const shop = await prisma.vendor.findFirst({
@@ -347,6 +353,7 @@ dashboardProductsRouter.get("/", async (req, res) => {
       return res.json({
         products: [],
         pagination: { page, limit, total: 0, pages: 0 },
+        permissions,
       });
     }
     where.vendor_id = shop.id;
@@ -380,6 +387,7 @@ dashboardProductsRouter.get("/", async (req, res) => {
   return res.json({
     products: rows.map(toPublicProduct),
     pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    permissions,
   });
 });
 

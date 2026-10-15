@@ -1206,7 +1206,7 @@ Auth: STAFF. Vendors are scoped to their own shop. Elevated may pass `vendor_id`
 
 | Method | Path | Notes |
 |--------|------|--------|
-| GET | `/` | `q?`, `vendor_id?`, `category_id?`, `status?`, `page`, `limit` |
+| GET | `/` | `q?`, `vendor_id?`, `category_id?`, `status?`, `page`, `limit` → `{ products, pagination, permissions }` (see [bulk tools](#bulk-tools--export-import-bulk-edit-bulk-delete)) |
 | GET | `/slug-preview?name=` | `{ slug }` |
 | GET | `/shipping-defaults` | `{ shipping: { default_fee, free_threshold, vendor_override, can_edit } }` · `can_edit` = whether this user's `shipping_fee` will be saved |
 | GET | `/:id` | Includes `gallery` |
@@ -1265,6 +1265,66 @@ If no thumbnail exists, first gallery upload becomes primary.
 
 `DELETE /:id` — soft-delete product + variants.
 
+### Bulk tools — export, import, bulk edit, bulk delete
+
+Code: `routes/dashboardProductsBulk.ts`, `services/productImport.ts`, `lib/productCsv.ts`, `validators/productBulk.ts`.
+`GET /` also returns `permissions` for the caller so the UI can hide what the role can't do:
+
+| Role | `export` | `import` | `bulk_edit` | `bulk_edit_pricing` | `bulk_delete` | `all_stores` |
+|------|----------|----------|-------------|---------------------|---------------|--------------|
+| super_admin, admin | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| moderator | ✓ | — | ✓ (status, category, brand, featured) | — | — | ✓ |
+| vendor | ✓ (own store) | ✓ (own store) | ✓ (own store) | ✓ | — | — |
+
+Denied calls return **403** `{ message, code: "INSUFFICIENT_ROLE" }`.
+
+| Method | Path | Body / query | Response |
+|--------|------|--------------|----------|
+| GET | `/export` | `q?`, `status?`, `category_id?`, `vendor_id?`, `ids?` (comma-separated, ≤500) | CSV download (`products-YYYY-MM-DD.csv`, UTF-8 BOM, ≤5,000 rows, header `X-Total-Rows`) |
+| GET | `/import-template` | — | CSV with the column headers and one sample row |
+| POST | `/import` | Multipart: **`file`** (.csv, ≤2 MB, ≤1,000 rows), `mode` = `upsert` (default) \| `create` \| `update`, `dry_run` = `true` (default) \| `false` | `{ message, dry_run, mode, columns, ignored_columns, summary { total, create, update, skip, error }, rows[] { row, handle, title, action, errors[], warnings[], product_id? } }` |
+| POST | `/bulk` | `{ ids: string[] (1–500), changes }` | `{ message, updated, skipped[] { id, name, reason } }` |
+| POST | `/bulk-delete` | `{ ids: string[] (1–500) }` · super_admin / admin | `{ message, deleted, skipped }` — soft-deletes products + variants (same as `DELETE /:id`) |
+
+**CSV columns** (one row per product, Shopify-style): `Handle`, `Title`, `Status`, `Type`, `SKU`, `Barcode`, `Price`,
+`Compare At Price`, `Cost Price`, `Stock`, `Category`, `Brand`, `Store`, `Short Description`, `Description (HTML)`,
+`Shipping Fee`, `Featured`, `Meta Title`, `Meta Description`, `Image URL` (export only). Shopify / WooCommerce headers
+such as `Name`, `Body (HTML)`, `Vendor`, `Variant Price`, `Variant Inventory Qty`, `Regular price` are accepted as aliases.
+
+Import rules:
+
+- Rows match existing products by `Handle` (slug). No handle → new product with a slug generated from `Title`.
+- New products need `Title`, `Price`, `Category` and (staff only) `Store`; they are always `simple` and default to `draft`.
+  Vendors' rows always go to their own store; the `Store` column is ignored for them.
+- `Category`, `Brand`, `Store` accept a slug or name (active rows only). Unknown values are row errors.
+- On update, an empty cell for an optional field clears it; empty `Title` / `Price` / `Category` / `Status` leave the value
+  unchanged. Leave a column out to keep it as is.
+- Variable products: only non-variant fields are updated (price, stock, SKU are skipped with a warning); `Type` can't change.
+- Repeated handles (Shopify variant / image rows) are skipped. Images are never downloaded.
+- Every text cell passes `withSafeInput`; `Description (HTML)` goes through the product HTML sanitizer. The file must be
+  UTF-8 text — binary, HTML and PHP payloads are rejected (`code: "INVALID_CSV"`). `dry_run=true` writes nothing.
+- Rows with errors are skipped on apply; the rest are written.
+
+**`changes` for `/bulk`** (at least one key; omitted = unchanged):
+
+```json
+{
+  "status": "active",
+  "category_id": "4",
+  "brand_id": null,
+  "is_featured": true,
+  "price": { "mode": "increase_percent", "value": 10 },
+  "compare_at_price": null,
+  "stock": { "mode": "set", "value": 25 },
+  "shipping_fee": 0
+}
+```
+
+`price.mode`: `set` \| `increase_percent` \| `decrease_percent` (≤100) \| `increase_amount` \| `decrease_amount`.
+`stock.mode`: `set` \| `increase` \| `decrease`. Results are clamped at 0. Price, stock and compare-at changes apply to simple
+products only (variable products are listed in `skipped`). `brand_id: null` removes the brand. Moderators may only send
+`status`, `category_id`, `brand_id`, `is_featured`. Vendors' `shipping_fee` is ignored when vendor overrides are off.
+
 ### Product object (detail)
 
 Includes: `id`, `vendor_id`, `category_id`, `brand_id`, `thumbnail_id`, `name`, `slug`, `description`, `short_description`, `type`, `price`, `stock_qty`, `status`, `thumbnail`, `gallery`, `category`, `vendor`, `brand`, `options`, `variants`, …
@@ -1290,8 +1350,9 @@ Includes: `id`, `vendor_id`, `category_id`, `brand_id`, `thumbnail_id`, `name`, 
 | `POST /api/dashboard/brands/:id/og-image` | `image` | **1 MB** · always resized on the server (1200×630) |
 | `POST /api/dashboard/seo/og-image` | `image` | **1 MB** · always resized on the server (1200×630) |
 | `POST /api/products/:idOrSlug/reviews` | `images` | **2 MB** × 4 · always resized on the server |
+| `POST /api/dashboard/products/import` | `file` | **2 MB** · `.csv` only, UTF-8 text, ≤1,000 rows (not an image — no resize) |
 
-Allowed MIME (all uploads): `image/jpeg`, `image/png`, `image/webp`, `image/gif`.  
+Allowed MIME (all image uploads): `image/jpeg`, `image/png`, `image/webp`, `image/gif`.  
 Do **not** upload SVG.
 
 ---
