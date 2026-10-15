@@ -3,6 +3,7 @@ import { prisma } from "../lib/prisma.js";
 import { toPublicNotification } from "../lib/notifications.js";
 import { requireAuth, requireRoles, STAFF_ROLES } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { parseBigIntId } from "../utils/ids.js";
 import { listNotificationsQuerySchema } from "../validators/notification.js";
 
 export const dashboardNotificationsRouter = Router();
@@ -84,7 +85,8 @@ dashboardNotificationsRouter.post(
 dashboardNotificationsRouter.patch(
   "/:id/read",
   asyncHandler(async (req, res) => {
-    const id = BigInt(String(req.params.id));
+    const id = parseBigIntId(req.params.id);
+    if (id == null) return res.status(404).json({ message: "Notification not found" });
     const row = await prisma.notification.findFirst({
       where: { id, user_id: req.auth!.userId },
     });
@@ -105,7 +107,8 @@ dashboardNotificationsRouter.patch(
 dashboardNotificationsRouter.delete(
   "/:id",
   asyncHandler(async (req, res) => {
-    const id = BigInt(String(req.params.id));
+    const id = parseBigIntId(req.params.id);
+    if (id == null) return res.status(404).json({ message: "Notification not found" });
     const row = await prisma.notification.findFirst({
       where: { id, user_id: req.auth!.userId },
       select: { id: true },

@@ -427,24 +427,24 @@ export default function CheckoutPageContent() {
         setShipping((prev) => ({ ...prev, [field]: value }));
     };
 
-    const handleApplyCoupon = () => {
+    const [checkingCoupon, setCheckingCoupon] = useState(false);
+
+    const handleApplyCoupon = async () => {
         const code = couponInput.trim();
         if (!code) {
             dispatch(clearCoupon());
             setCouponMessage(null);
             return;
         }
-        dispatch(applyCoupon(code));
-        const upper = code.toUpperCase();
-        if (upper === "SAVE10" || upper === "SAVE20") {
-            setCouponMessage(
-                upper === "SAVE10"
-                    ? "Coupon applied: 10% off"
-                    : "Coupon applied: 20% off",
-            );
-        } else {
-            setCouponMessage("Invalid coupon code. Try SAVE10 or SAVE20.");
-        }
+        if (checkingCoupon) return;
+        setCheckingCoupon(true);
+        const result = await dispatch(applyCoupon(code));
+        setCheckingCoupon(false);
+        setCouponMessage(
+            applyCoupon.fulfilled.match(result)
+                ? `Coupon applied: ${result.payload.percent}% off`
+                : (result.payload ?? "Invalid coupon code."),
+        );
     };
 
     const toApiAddress = (addr: typeof emptyAddress) => ({
@@ -511,7 +511,7 @@ export default function CheckoutPageContent() {
                         : undefined,
                     payment_method: PAYMENT_API_MAP[payment],
                     notes: orderNotes.trim(),
-                    discount_amount: discount,
+                    ...(appliedCoupon ? { coupon_code: appliedCoupon } : {}),
                 },
             });
             if (data.payment) {
@@ -546,6 +546,10 @@ export default function CheckoutPageContent() {
                 setPlaceError(err.message);
                 void dispatch(fetchCart());
                 return;
+            }
+            if (err instanceof ApiError && err.code === "COUPON_INVALID") {
+                dispatch(clearCoupon());
+                setCouponMessage(err.message);
             }
             const fieldMessage =
                 err instanceof ApiError && err.errors
@@ -768,7 +772,7 @@ export default function CheckoutPageContent() {
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter") {
                                         e.preventDefault();
-                                        handleApplyCoupon();
+                                        void handleApplyCoupon();
                                     }
                                 }}
                                 placeholder="Coupon Code"
@@ -777,10 +781,11 @@ export default function CheckoutPageContent() {
                             />
                             <button
                                 type="button"
-                                onClick={handleApplyCoupon}
-                                className="h-11 px-5 shrink-0 rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[14px] font-semibold transition-colors cursor-pointer whitespace-nowrap"
+                                onClick={() => void handleApplyCoupon()}
+                                disabled={checkingCoupon}
+                                className="h-11 px-5 shrink-0 rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[14px] font-semibold transition-colors cursor-pointer whitespace-nowrap disabled:cursor-wait disabled:opacity-60"
                             >
-                                Apply Coupon
+                                {checkingCoupon ? "Checking…" : "Apply Coupon"}
                             </button>
                         </div>
                         {couponMessage ? (

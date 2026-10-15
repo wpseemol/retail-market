@@ -17,13 +17,41 @@ import {
   getShippingSettings,
   toPublicShippingSettings,
 } from "../lib/shipping.js";
+import { couponDiscount, findCoupon, publicCoupon } from "../lib/coupons.js";
+import { rateLimit } from "../lib/rateLimit.js";
 import {
+  couponCheckSchema,
   customerOrdersQuerySchema,
   placeOrderSchema,
   shippingQuoteSchema,
 } from "../validators/order.js";
 
 export const customerOrdersRouter = Router();
+
+/** Codes are guessable by brute force, so checks are throttled per IP. */
+const couponLimiter = rateLimit({
+  name: "COUPON_CHECK",
+  max: 20,
+  windowMs: 10 * 60 * 1000,
+  message: "Too many coupon attempts. Please try again in a few minutes.",
+});
+
+/** Checks a coupon before checkout so the storefront can show the discount (no auth). */
+customerOrdersRouter.post(
+  "/coupon",
+  couponLimiter,
+  asyncHandler(async (req, res) => {
+    const parsed = couponCheckSchema.safeParse(req.body);
+    const coupon = parsed.success ? findCoupon(parsed.data.code) : null;
+    if (!coupon) {
+      return res.status(404).json({
+        message: "This coupon code is not valid.",
+        code: "COUPON_INVALID",
+      });
+    }
+    return res.json({ coupon: publicCoupon(coupon) });
+  }),
+);
 
 /** Shipping for a cart — same calculation the order endpoint uses (no auth). */
 customerOrdersRouter.post(
@@ -193,9 +221,14 @@ customerOrdersRouter.post(
       };
     });
 
-    const requestedDiscount = new Prisma.Decimal(
-      (input.discount_amount ?? 0).toFixed(2),
-    );
+    const coupon = input.coupon_code ? findCoupon(input.coupon_code) : null;
+    if (input.coupon_code && !coupon) {
+      return res.status(400).json({
+        message: "This coupon code is not valid.",
+        code: "COUPON_INVALID",
+        errors: { coupon_code: ["This coupon code is not valid."] },
+      });
+    }
     // Shipping is always computed server-side; any client `shipping_fee` is ignored.
     const { fee: shippingFee, subtotal } = calculateShipping(
       lineItems.map((l) => ({
@@ -205,7 +238,7 @@ customerOrdersRouter.post(
       })),
       shippingSettings,
     );
-    const discount = Prisma.Decimal.min(requestedDiscount, subtotal);
+    const discount = coupon ? couponDiscount(coupon, subtotal) : new Prisma.Decimal(0);
     const total = Prisma.Decimal.max(
       subtotal.sub(discount).add(shippingFee),
       new Prisma.Decimal(0),

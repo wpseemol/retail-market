@@ -5,6 +5,17 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Security fixes (BE-01, BE-02, BE-03, BE-05, BE-24)
+- `src/lib/coupons.ts` (new), `src/validators/order.ts`, `src/routes/customerOrders.ts`: checkout no longer accepts `discount_amount`; it takes `coupon_code` and computes the discount on the server (unknown code → `400 COUPON_INVALID`). New `POST /api/customer/orders/coupon` (rate limit 20 / 10 min per IP) lets the storefront preview a code.
+- `src/lib/env.ts`, `.env.example`: production exits at startup unless `JWT_SECRET` and `SETTINGS_ENCRYPTION_KEY` are each 32+ bytes; the encryption key falls back to `JWT_SECRET` only in development. Existing deployments that never set `SETTINGS_ENCRYPTION_KEY` should set it to the current `JWT_SECRET` to keep stored provider secrets readable.
+- `src/server.ts`: imports `express-async-errors` so rejected async handlers reach the error middleware instead of crashing Node; logs `unhandledRejection`.
+- `src/utils/ids.ts` (new) `parseBigIntId` (1–19 digits, ≤ max BIGINT) used in `publicProducts.ts` (`GET /api/products/:idOrSlug`), the `parseId` helpers in `dashboardProducts.ts` / `dashboardCategories.ts` / `dashboardVendors.ts` / `dashboardBrands.ts`, and the `:id` routes in `dashboardSiteSettings.ts` and `dashboardNotifications.ts`.
+- `package.json`: `sharp@^0.35.5`, added `express-async-errors`. Root `package.json` `pnpm.overrides` pins `proxy-addr >=2.0.8`, `qs >=6.16.0`, `sharp >=0.35.5`, `source-map-js >=1.2.2`, `shell-quote >=1.11.0`.
+- `API.md`: documented `coupon_code`, `COUPON_INVALID`, the coupon endpoint, and the production secret requirement. `SECURITY_AUDIT.md` + root index updated.
+
+### Security re-audit
+- `SECURITY_AUDIT.md`: re-checked BE-01 – BE-23 against the code; all still open. Added BE-24 (`proxy-addr` / `qs` via Express) and BE-25 (`deepmerge-ts` via Prisma) from `pnpm audit`. Root `SECURITY_AUDIT.md` counts updated. No code changed.
+
 ### Category export / import with cover images
 - `src/routes/dashboardCategoriesBulk.ts` (new, mounted inside `dashboardCategories.ts` before `/:id`): `GET /export?format=zip|csv` (ZIP = `categories.csv` + `images/<slug>.<ext>`; CSV = image URLs), `GET /import-template`, `POST /import` (multipart `file` .csv ≤2 MB or .zip ≤25 MB, `mode`, `dry_run` default true). Elevated roles only via `categoryBulkPermissions(role)`; the list response now includes `permissions`.
 - `src/services/categoryImport.ts` (new): validates every row, resolves parents by handle (including rows in the same file, cascading missing parents, rejecting loops), rejects handles held by soft-deleted categories, writes rows in one transaction, then stores covers. Images come from the ZIP or from this API's own `/uploads/` URLs; other hosts are never fetched. Unchanged covers are skipped.

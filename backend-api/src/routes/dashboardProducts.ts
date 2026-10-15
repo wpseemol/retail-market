@@ -4,6 +4,7 @@ import path from "node:path";
 import { z } from "zod";
 import { Prisma, type ProductStatus, type ProductType } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
+import { parseBigIntId } from "../utils/ids.js";
 import { getShippingSettings, toPublicShippingSettings } from "../lib/shipping.js";
 import {
   productWithCatalogInclude,
@@ -46,14 +47,7 @@ function withSafeInput(schema: z.ZodString) {
   });
 }
 
-function parseId(raw: string) {
-  if (!/^\d+$/.test(raw)) return null;
-  try {
-    return BigInt(raw);
-  } catch {
-    return null;
-  }
-}
+const parseId = parseBigIntId;
 
 const PRODUCT_STATUSES = ["draft", "active", "archived", "out_of_stock"] as const;
 const PRODUCT_TYPES = ["simple", "variable"] as const;

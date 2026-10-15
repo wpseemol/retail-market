@@ -217,22 +217,23 @@ function CouponField() {
     const appliedCoupon = useAppSelector(selectCouponCode);
     const [input, setInput] = useState(appliedCoupon ?? "");
     const [message, setMessage] = useState<string | null>(null);
+    const [checking, setChecking] = useState(false);
 
-    const apply = () => {
+    const apply = async () => {
         const code = input.trim();
         if (!code) {
             dispatch(clearCoupon());
             setMessage(null);
             return;
         }
-        dispatch(applyCoupon(code));
-        const upper = code.toUpperCase();
+        if (checking) return;
+        setChecking(true);
+        const result = await dispatch(applyCoupon(code));
+        setChecking(false);
         setMessage(
-            upper === "SAVE10"
-                ? "Coupon applied: 10% off"
-                : upper === "SAVE20"
-                  ? "Coupon applied: 20% off"
-                  : "Invalid coupon code. Try SAVE10 or SAVE20.",
+            applyCoupon.fulfilled.match(result)
+                ? `Coupon applied: ${result.payload.percent}% off`
+                : (result.payload ?? "Invalid coupon code."),
         );
     };
 
@@ -278,7 +279,7 @@ function CouponField() {
                             setMessage(null);
                         }}
                         onKeyDown={(e) => {
-                            if (e.key === "Enter") apply();
+                            if (e.key === "Enter") void apply();
                         }}
                         placeholder="Coupon code"
                         aria-label="Coupon code"
@@ -287,10 +288,11 @@ function CouponField() {
                 </div>
                 <button
                     type="button"
-                    onClick={apply}
-                    className="h-10 shrink-0 rounded-lg border border-brand-primary px-4 text-[13px] font-semibold text-brand-primary hover:bg-brand-primary hover:text-white cursor-pointer transition-colors"
+                    onClick={() => void apply()}
+                    disabled={checking}
+                    className="h-10 shrink-0 rounded-lg border border-brand-primary px-4 text-[13px] font-semibold text-brand-primary hover:bg-brand-primary hover:text-white cursor-pointer transition-colors disabled:cursor-wait disabled:opacity-60"
                 >
-                    Apply
+                    {checking ? "Checking…" : "Apply"}
                 </button>
             </div>
             {message && (

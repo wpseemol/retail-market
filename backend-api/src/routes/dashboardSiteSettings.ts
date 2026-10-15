@@ -11,6 +11,7 @@ import {
 import type { ImagePresetKey } from "../lib/imageOptimize.js";
 import { PRODUCT_IMAGES_DIR } from "../lib/productImage.js";
 import { prisma } from "../lib/prisma.js";
+import { parseBigIntId } from "../utils/ids.js";
 import { toPublicUser, userWithAvatarInclude } from "../lib/user.js";
 import { revalidateFrontend } from "../lib/revalidate.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
@@ -777,7 +778,8 @@ dashboardSiteSettingsRouter.post("/nav", async (req, res) => {
 });
 
 dashboardSiteSettingsRouter.patch("/nav/:id", async (req, res) => {
-  const id = BigInt(String(req.params.id));
+  const id = parseBigIntId(req.params.id);
+  if (id == null) return res.status(404).json({ message: "Menu item not found" });
   const parsed = updateSiteNavItemSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({
@@ -819,7 +821,8 @@ dashboardSiteSettingsRouter.patch("/nav/:id", async (req, res) => {
 });
 
 dashboardSiteSettingsRouter.delete("/nav/:id", async (req, res) => {
-  const id = BigInt(String(req.params.id));
+  const id = parseBigIntId(req.params.id);
+  if (id == null) return res.status(404).json({ message: "Menu item not found" });
   const existing = await prisma.siteNavItem.findFirst({
     where: { id, settings_id: 1 },
   });
@@ -879,7 +882,8 @@ dashboardSiteSettingsRouter.put("/nav/reorder", async (req, res) => {
 });
 
 dashboardSiteSettingsRouter.patch("/home-sections/:id", async (req, res) => {
-  const id = BigInt(String(req.params.id));
+  const id = parseBigIntId(req.params.id);
+  if (id == null) return res.status(404).json({ message: "Home section not found" });
   const parsed = updateHomeSectionSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({

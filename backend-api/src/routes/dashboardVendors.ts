@@ -4,6 +4,7 @@ import { Router } from "express";
 import { z } from "zod";
 import type { Prisma, UserStatus } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
+import { parseBigIntId } from "../utils/ids.js";
 import {
   toPublicMedia,
   toPublicUser,
@@ -176,14 +177,7 @@ function toPublicShop(
   };
 }
 
-function parseId(raw: string) {
-  if (!/^\d+$/.test(raw)) return null;
-  try {
-    return BigInt(raw);
-  } catch {
-    return null;
-  }
-}
+const parseId = parseBigIntId;
 
 const SLUG_PARAM_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 

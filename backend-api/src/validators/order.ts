@@ -5,6 +5,16 @@ import { productIdField as orderProductId } from "./productId.js";
 const safeStr = (min: number, max: number) =>
   withSafeInput(z.string().trim().min(min).max(max));
 
+export const couponCodeField = withSafeInput(
+  z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z0-9_-]{3,32}$/, "Invalid coupon code"),
+);
+
+export const couponCheckSchema = z.object({ code: couponCodeField });
+
 /** Price and name come from the database; `name` / `unit_price` are accepted but ignored. */
 export const placeOrderItemSchema = z.object({
   product_id: orderProductId,
@@ -33,7 +43,8 @@ export const placeOrderSchema = z.object({
   /** Storefront accepts only COD and SSLCOMMERZ (bKash / Nagad / Rocket / cards). */
   payment_method: z.enum(["cash_on_delivery", "sslcommerz"]),
   notes: withSafeInput(z.string().trim().max(2000)).optional().or(z.literal("")),
-  discount_amount: z.coerce.number().finite().nonnegative().max(1_000_000).optional(),
+  /** The discount is computed server-side from this code; a client `discount_amount` is stripped. */
+  coupon_code: couponCodeField.optional().or(z.literal("")),
   /** Ignored — shipping is computed server-side. Kept so older clients still validate. */
   shipping_fee: z.coerce.number().finite().nonnegative().max(1_000_000).optional(),
 });

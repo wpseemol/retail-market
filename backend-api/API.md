@@ -560,18 +560,18 @@ Placing an order creates inbox notifications for `super_admin` / `admin` / `mode
   },
   "payment_method": "cash_on_delivery",
   "notes": "",
-  "discount_amount": 0
+  "coupon_code": "SAVE10"
 }
 ```
 
-`shipping_fee` in the body is **ignored** — shipping is always calculated on the server (see shipping rule below).
+`shipping_fee` in the body is **ignored** — shipping is always calculated on the server (see shipping rule below). `discount_amount` is no longer accepted and is stripped from the body.
 
 **Pricing and stock**
 
 - `items[].product_id` is required (numeric id). Prices and names come from the database; `name` / `unit_price` in the body are accepted for older clients but **ignored**.
 - The same `product_id` sent twice is merged into one line.
 - Every product must be active (from an active shop) with enough `stock_qty`, otherwise **`409 ITEM_UNAVAILABLE`** with `errors: { "<product_id>": "Only 2 of Widget left in stock." }` and no order is created.
-- `discount_amount` is capped at the items subtotal.
+- `coupon_code` (optional, `A-Z 0-9 _ -`, 3–32 chars, case-insensitive): the discount is computed on the server as a percentage of the items subtotal. An unknown code → **`400 COUPON_INVALID`** (`errors.coupon_code`) and no order is created.
 - For a Bearer customer, the ordered products are removed from their saved cart (`/api/customer/cart`) in the same transaction.
 
 `payment_method`: `sslcommerz` (bKash, Nagad, Rocket, cards via SSLCOMMERZ) | `cash_on_delivery`. Anything else → `400`.
@@ -584,6 +584,15 @@ Placing an order creates inbox notifications for `super_admin` / `admin` / `mode
 - On success the response includes `payment: { gateway_url }` → redirect the browser there (SSLCOMMERZ hosted page: bKash, Nagad, Rocket, cards, net banking).
 - If the gateway session could not be opened, the order still exists (unpaid) and the response has `payment: { gateway_url: null, error, code }` → send the user to `/checkout/result?status=failed` where they can retry.
 - The order stays `payment_status: "unpaid"` until the payment is validated server-side (see [Payments](#payments--apipayments)).
+
+### `POST /api/customer/orders/coupon` — no auth
+
+Checks a coupon code before checkout so the storefront can show the discount. Body `{ code }`.
+
+- **200** → `{ coupon: { code, percent } }` (e.g. `{ "code": "SAVE10", "percent": 10 }`).
+- **404 `COUPON_INVALID`** for an unknown or malformed code.
+- Rate limit `COUPON_CHECK`: 20 requests / 10 min per IP → **429 `COUPON_CHECK_RATE_LIMITED`**.
+- Display only: the order endpoint re-checks the code and computes the discount itself.
 
 ### `POST /api/customer/orders/shipping-quote` — no auth
 
@@ -854,7 +863,7 @@ Auth: Bearer **`super_admin`** only. Drives the main website title, SEO, Open Gr
 | PATCH | `/social-login` | Body `{ google?, facebook?, apple? }` — see below |
 | POST | `/social-login/reveal` | Body `{ password }` · current super admin's password · returns every credential (`client_id`, `team_id`, `key_id`, decrypted `client_secret` / `private_key`) · 5 wrong tries / 15 min → 429 `REVEAL_RATE_LIMITED` · logged to history |
 
-**Social login** (table `social_login_providers`, secrets AES-256-GCM encrypted with `SETTINGS_ENCRYPTION_KEY`, falls back to `JWT_SECRET` — changing the key makes stored secrets unreadable):
+**Social login** (table `social_login_providers`, secrets AES-256-GCM encrypted with `SETTINGS_ENCRYPTION_KEY` — required (32+ bytes) in production, falls back to `JWT_SECRET` only in development; changing the key makes stored secrets unreadable):
 
 | Provider | Fields |
 |----------|--------|

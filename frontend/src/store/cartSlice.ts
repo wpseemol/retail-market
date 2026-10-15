@@ -7,7 +7,7 @@ import {
     isRejected,
     type PayloadAction,
 } from "@reduxjs/toolkit";
-import { ApiError } from "@/lib/api";
+import { ApiError, apiFetch } from "@/lib/api";
 import {
     addCartItemApi,
     type CartMode,
@@ -30,6 +30,7 @@ export interface CartState {
     latestRequestId: string | null;
     error: string | null;
     couponCode: string | null;
+    /** Display-only fraction (0.1 = 10%); the order endpoint recomputes the discount from the code. */
     couponDiscount: number;
 }
 
@@ -145,6 +146,23 @@ export const removeOrderedLines = cartMutation<string[]>(
         mode === "guest" ? removeCartLinesApi("guest", productIds) : fetchCartApi("user"),
 );
 
+export type AppliedCoupon = { code: string; percent: number };
+
+export const applyCoupon = createAsyncThunk<AppliedCoupon, string, ThunkApi>(
+    "cart/applyCoupon",
+    async (code, { rejectWithValue }) => {
+        try {
+            const data = await apiFetch<{ coupon: AppliedCoupon }>("/api/customer/orders/coupon", {
+                method: "POST",
+                body: { code: code.trim() },
+            });
+            return data.coupon;
+        } catch (err) {
+            return rejectWithValue(errorMessage(err, "Could not check this coupon"));
+        }
+    },
+);
+
 export function cartSnapshot(product: ShopProduct): CartProductSnapshot {
     return {
         name: product.name,
@@ -202,21 +220,6 @@ const cartSlice = createSlice({
         clearCartError(state) {
             state.error = null;
         },
-        applyCoupon(state, action: PayloadAction<string>) {
-            const code = action.payload.trim().toUpperCase();
-            if (code === "SAVE10") {
-                state.couponCode = code;
-                state.couponDiscount = 0.1;
-                return;
-            }
-            if (code === "SAVE20") {
-                state.couponCode = code;
-                state.couponDiscount = 0.2;
-                return;
-            }
-            state.couponCode = null;
-            state.couponDiscount = 0;
-        },
         clearCoupon(state) {
             state.couponCode = null;
             state.couponDiscount = 0;
@@ -224,6 +227,14 @@ const cartSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
+            .addCase(applyCoupon.fulfilled, (state, action) => {
+                state.couponCode = action.payload.code;
+                state.couponDiscount = action.payload.percent / 100;
+            })
+            .addCase(applyCoupon.rejected, (state) => {
+                state.couponCode = null;
+                state.couponDiscount = 0;
+            })
             .addCase(syncCartForSession.pending, (state, action) => {
                 state.mode = action.meta.arg;
                 state.latestRequestId = action.meta.requestId;
@@ -318,7 +329,7 @@ const cartSlice = createSlice({
     },
 });
 
-export const { setCartMode, clearCartError, applyCoupon, clearCoupon } = cartSlice.actions;
+export const { setCartMode, clearCartError, clearCoupon } = cartSlice.actions;
 
 export default cartSlice.reducer;
 

@@ -11,6 +11,7 @@ import {
 } from "../lib/categoryImage.js";
 import { PRODUCT_IMAGES_DIR } from "../lib/productImage.js";
 import { prisma } from "../lib/prisma.js";
+import { parseBigIntId } from "../utils/ids.js";
 import { uniqueVendorSlug } from "../lib/slug.js";
 import { toPublicMedia } from "../lib/user.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
@@ -75,14 +76,7 @@ function brandTags(...slugs: (string | null | undefined)[]) {
   return tags;
 }
 
-function parseId(raw: string) {
-  if (!/^\d+$/.test(raw)) return null;
-  try {
-    return BigInt(raw);
-  } catch {
-    return null;
-  }
-}
+const parseId = parseBigIntId;
 
 function toPublicBrand(row: {
   id: bigint;

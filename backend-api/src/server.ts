@@ -1,6 +1,8 @@
 import "./lib/env.js";
 import path from "node:path";
 import express from "express";
+// Express 4 drops rejected promises from async handlers; this forwards them to the error middleware.
+import "express-async-errors";
 import cors from "cors";
 import { env } from "./lib/env.js";
 import { healthRouter } from "./routes/health.js";
@@ -105,6 +107,10 @@ app.use(
     res.status(500).json({ message: "Internal server error" });
   },
 );
+
+process.on("unhandledRejection", (reason) => {
+  console.error("[unhandledRejection]", reason);
+});
 
 app.listen(env.port, () => {
   console.log(`Server running on port ${env.port}`);

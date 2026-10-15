@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Dependency fix (DB-11)
+- Root `package.json` `pnpm.overrides` pins `source-map-js >=1.2.2` (pulled in by `@tailwindcss/vite`). No dashboard code changed.
+
+### Security re-audit
+- `SECURITY_AUDIT.md`: re-checked DB-01 – DB-07; all still open (DB-08 stays fixed). Added DB-11 (`source-map-js` via `@tailwindcss/vite`). Root `SECURITY_AUDIT.md` counts updated. No code changed.
+
 ### Categories: export / import with cover images
 - `src/pages/catalog/categories/CategoriesPage.tsx`: Export menu (ZIP with cover images, or CSV with image links; follows the current search / status filter), Import button and a notice bar. Shown according to `permissions` from `GET /api/dashboard/categories` (super_admin, admin, moderator).
 - `src/components/categories/CategoryImportDialog.tsx` (new): shadcn `Form` + Zod, accepts `.csv` or `.zip`, import mode, template download, dry-run preview with created / updated / new-cover counts and per-row errors, then a warning confirm before applying. Helper text says images are always resized on the server.

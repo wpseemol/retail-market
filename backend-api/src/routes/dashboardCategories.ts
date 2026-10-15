@@ -4,6 +4,7 @@ import path from "node:path";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
+import { parseBigIntId } from "../utils/ids.js";
 import { toPublicMedia } from "../lib/user.js";
 import { uniqueVendorSlug } from "../lib/slug.js";
 import { CATEGORY_ICON_CATALOG } from "../lib/categoryIconNames.js";
@@ -43,14 +44,7 @@ function canManageCategories(role: string) {
   return (ELEVATED as readonly string[]).includes(role);
 }
 
-function parseId(raw: string) {
-  if (!/^\d+$/.test(raw)) return null;
-  try {
-    return BigInt(raw);
-  } catch {
-    return null;
-  }
-}
+const parseId = parseBigIntId;
 
 function toPublicCategory(
   row: {

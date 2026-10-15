@@ -12,6 +12,7 @@ import {
   withSafeInput,
 } from "../validators/customerAuth.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { parseBigIntId } from "../utils/ids.js";
 
 export const publicProductsRouter = Router();
 
@@ -305,11 +306,15 @@ publicProductsRouter.get("/:idOrSlug", async (req, res) => {
 
   const key = parsed.data;
   const byId = /^\d+$/.test(key);
+  const id = byId ? parseBigIntId(key) : null;
+  if (byId && id == null) {
+    return res.status(404).json({ message: "Product not found" });
+  }
 
   const row = await prisma.product.findFirst({
     where: {
       AND: [
-        byId ? { id: BigInt(key) } : { slug: key },
+        id != null ? { id } : { slug: key },
         activeProductScope(),
       ],
     },

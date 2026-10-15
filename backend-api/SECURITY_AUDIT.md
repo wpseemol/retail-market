@@ -3,19 +3,19 @@
 Tracked from the root index: [`../SECURITY_AUDIT.md`](../SECURITY_AUDIT.md).
 Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD`) and log the fix in `CHANGELOG.md`.
 
-- **Last audit:** 2026-10-08
-- **Method:** `npm audit` + manual code review of `src/`
-- **Totals:** 1 Critical · 6 High · 7 Medium · 5 Low · 4 Info
+- **Last audit:** 2026-10-15 (re-check; no earlier item fixed yet)
+- **Method:** `pnpm audit` + manual code review of `src/`
+- **Totals:** 1 Critical · 7 High · 7 Medium · 6 Low · 4 Info (open: 0 Critical · 3 High · 7 Medium · 6 Low · 4 Info)
 
 ## Summary
 
 | ID | Severity | Title | Status |
 | --- | --- | --- | --- |
-| BE-01 | Critical | Client-controlled checkout discount | Open |
-| BE-02 | High | `sharp` < 0.35.5 (librsvg CVE-2026-96889) | Open |
-| BE-03 | High | JWT / encryption secret falls back to a hard-coded default | Open |
+| BE-01 | Critical | Client-controlled checkout discount | Fixed 2026-10-15 |
+| BE-02 | High | `sharp` < 0.35.5 (librsvg CVE-2026-96889) | Fixed 2026-10-15 |
+| BE-03 | High | JWT / encryption secret falls back to a hard-coded default | Fixed 2026-10-15 |
 | BE-04 | High | No rate limiting or lockout on login / register | Open |
-| BE-05 | High | Unhandled promise rejections crash the server (oversized ids) | Open |
+| BE-05 | High | Unhandled promise rejections crash the server (oversized ids) | Fixed 2026-10-15 |
 | BE-06 | High | Variant generation can exhaust memory / DB | Open |
 | BE-07 | High | Guest review "ownership" = knowing an email or phone | Open |
 | BE-08 | Medium | Social login account pre-hijacking | Open |
@@ -34,6 +34,8 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 | BE-21 | Info | Unbounded `page` allows huge OFFSET scans | Open |
 | BE-22 | Info | `withSafeInput` on passwords rejects valid passwords | Open |
 | BE-23 | Medium | Public product API exposes `cost_price` | Open |
+| BE-24 | High | Express deps: `proxy-addr` 2.0.7 (critical advisory) + `qs` 6.15.3 DoS ×2 | Fixed 2026-10-15 |
+| BE-25 | Low | `deepmerge-ts` < 8 via `prisma` CLI (stack exhaustion, build-time) | Open |
 
 ## Details
 
@@ -41,16 +43,19 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 - **Where:** `src/validators/order.ts:36`, `src/routes/customerOrders.ts:196-208`
 - **Issue:** `discount_amount` comes from the request body and is only capped at the subtotal (`Prisma.Decimal.min(requestedDiscount, subtotal)`). Sending `discount_amount: 999999` makes the order cost only the shipping fee. SSLCommerz validation still passes because it compares against the tampered total, so the order becomes `paid`.
 - **Fix:** Remove `discount_amount` from `placeOrderSchema`. Accept a `coupon_code` and compute the discount on the server from a coupon table (expiry, usage limits, scope). Frontend counterpart: FE-03.
+- **Status:** Fixed 2026-10-15 — `discount_amount` removed from the schema (stripped if sent); `coupon_code` is looked up in `src/lib/coupons.ts` and the discount is computed from the DB subtotal; unknown codes → `400 COUPON_INVALID`. New rate-limited `POST /api/customer/orders/coupon` for the storefront preview. Follow-up: move coupons to a DB table when expiry / usage limits are needed.
 
 ### BE-02 · High · Vulnerable `sharp`
 - **Where:** `package.json` (`"sharp": "^0.35.4"`)
 - **Issue:** `npm audit` reports GHSA-wq5f-xc86-pv6w (librsvg) for `sharp` < 0.35.5. Uploads are processed with sharp.
 - **Fix:** `pnpm up sharp@^0.35.5 --filter backend-api`, then re-run the audit.
+- **Status:** Fixed 2026-10-15 — `sharp@^0.35.5` in `package.json` plus a root `pnpm.overrides` entry (`sharp >=0.35.5`) so Next's copy is patched too.
 
 ### BE-03 · High · Hard-coded secret fallback
 - **Where:** `src/lib/env.ts:8-26`
 - **Issue:** A missing `JWT_SECRET` only logs a warning, then `"dev-only-change-me"` is used, even in production. Anyone could then sign a `super_admin` token and decrypt stored provider secrets (`settingsEncryptionKey` falls back the same way).
 - **Fix:** When `NODE_ENV=production`, exit at startup if `JWT_SECRET` or `SETTINGS_ENCRYPTION_KEY` is missing or shorter than 32 bytes. Don't fall back from the encryption key to the JWT secret.
+- **Status:** Fixed 2026-10-15 — `src/lib/env.ts` exits in production when either secret is under 32 bytes; the encryption key only falls back to `JWT_SECRET` in development.
 
 ### BE-04 · High · No login throttling
 - **Where:** `src/routes/dashboardAuth.ts:48`, `src/routes/customerAuth.ts:27-28`
@@ -61,6 +66,7 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 - **Where:** `src/routes/publicProducts.ts:219-233` (`BigInt(key)` inside a bare async handler); same pattern in `parseId` of `dashboardProducts.ts:44-51`, `dashboardVendors.ts:179-186`, `dashboardBrands.ts`, `dashboardCategories.ts`; `BigInt(String(req.params.id))` in `dashboardSiteSettings.ts:780,822,882`.
 - **Issue:** Express 4 doesn't catch rejected promises. `GET /api/products/99999999999999999999` makes Prisma throw, the rejection is unhandled, and Node exits.
 - **Fix:** Wrap every async handler in `asyncHandler` (or move to Express 5). Cap ids with `^\d{1,19}$` + max BIGINT check (reuse `productIdField`). Add a `process.on("unhandledRejection")` logger.
+- **Status:** Fixed 2026-10-15 — `express-async-errors` imported in `server.ts` sends every async rejection to the error middleware; `process.on("unhandledRejection")` logs anything else; new `src/utils/ids.ts` `parseBigIntId` (1–19 digits, ≤ max BIGINT) used by `publicProducts`, the dashboard `parseId` helpers, site settings and notifications.
 
 ### BE-06 · High · Variant explosion
 - **Where:** `src/routes/dashboardProducts.ts:56-62, 114, 192-208, 286-296`
@@ -133,6 +139,17 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 - **Issue:** Found 2026-10-08. Every product currently has it `null`, but once a vendor fills it in, anyone can read the store's purchase cost / margin.
 - **Fix:** Drop `cost_price` from `toPublicProduct` (keep it only in dashboard serializers).
 
+### BE-24 · High · Vulnerable Express dependencies
+- **Where:** `express@4.22.2` → `proxy-addr@2.0.7`, `qs@6.15.3` (`pnpm-lock.yaml`)
+- **Issue:** Found 2026-10-15. `proxy-addr` < 2.0.8 (GHSA-jqcg-44mw-7w3h, critical) lets IPv4-mapped IPv6 addresses match trusted subnets, so `req.ip` can be spoofed when `trust proxy` uses addresses/subnets. Today `trust proxy` is a hop count (`1`), which limits the impact, but the BE-10 fix moves to address-based trust. `qs` < 6.16.0 has an array-limit bypass (GHSA-x5fp-wj9c-mxmx) and an `isBuffer` DoS (GHSA-4mjr-xmp4-gh2g) on query-string parsing.
+- **Fix:** Update Express to the latest 4.x (or add `pnpm.overrides` for `proxy-addr@>=2.0.8` and `qs@>=6.16.0`), then re-run `pnpm audit`.
+- **Status:** Fixed 2026-10-15 — root `pnpm.overrides`; lockfile now resolves `proxy-addr@2.0.8`, `qs@6.16.0`.
+
+### BE-25 · Low · `deepmerge-ts` via Prisma
+- **Where:** `prisma` → `@prisma/config` → `deepmerge-ts` (GHSA-ggr8-5vv4-36mx)
+- **Issue:** Found 2026-10-15. Stack exhaustion on recursive objects; only reached by the Prisma CLI config loader, not request handling.
+- **Fix:** Upgrade `prisma` / `@prisma/client` when a release pulls `deepmerge-ts@>=8`, or override it.
+
 ## Done well
 - SSLCommerz settlement re-validates with the gateway (tran_id, amount, currency); fail/cancel only touch pending attempts.
 - Item prices and shipping always come from the DB (apart from BE-01).
@@ -148,3 +165,5 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 | --- | --- |
 | 2026-10-08 | Initial audit (BE-01 – BE-22). |
 | 2026-10-08 | Added BE-23 (found while adding `/api/products/price-range`). |
+| 2026-10-15 | Re-audit: BE-01 – BE-23 all still open in code (`sharp` still resolves to 0.35.4; `rateLimit` now keys on `req.ip`, but `userSession.ts` / `publicAnalytics.ts` still read raw `X-Forwarded-For`). Added BE-24, BE-25 from `pnpm audit`. |
+| 2026-10-15 | Fixed BE-01, BE-02, BE-03, BE-05, BE-24. Workspace `pnpm audit` down to 2 high (BE-25 `deepmerge-ts`, FE-02 `braces` — no patch yet). |

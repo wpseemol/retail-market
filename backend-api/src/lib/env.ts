@@ -3,6 +3,10 @@ import dotenv from "dotenv";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
+const isProduction = process.env.NODE_ENV === "production";
+const MIN_SECRET_BYTES = 32;
+const DEV_SECRET = "dev-only-change-me";
+
 const required = ["DATABASE_URL", "JWT_SECRET"] as const;
 
 for (const key of required) {
@@ -11,19 +15,32 @@ for (const key of required) {
   }
 }
 
+// A guessable signing key lets anyone mint a super_admin token, so production must not start without real secrets.
+if (isProduction) {
+  const weak = (["JWT_SECRET", "SETTINGS_ENCRYPTION_KEY"] as const).filter(
+    (key) => Buffer.byteLength(process.env[key]?.trim() ?? "", "utf8") < MIN_SECRET_BYTES,
+  );
+  if (weak.length > 0) {
+    console.error(
+      `[env] ${weak.join(", ")} must be set to at least ${MIN_SECRET_BYTES} bytes in production. Refusing to start.`,
+    );
+    process.exit(1);
+  }
+}
+
 export const env = {
   port: Number(process.env.PORT) || 8001,
   nodeEnv: process.env.NODE_ENV ?? "development",
   databaseUrl: process.env.DATABASE_URL ?? "",
-  jwtSecret: process.env.JWT_SECRET ?? "dev-only-change-me",
+  jwtSecret: process.env.JWT_SECRET?.trim() || DEV_SECRET,
   /**
    * Encrypts secrets stored in the DB (social login client secrets / keys).
-   * Falls back to JWT_SECRET; changing it makes stored secrets unreadable.
+   * Required in production; in development it falls back to JWT_SECRET.
+   * Changing it makes stored secrets unreadable.
    */
   settingsEncryptionKey:
     process.env.SETTINGS_ENCRYPTION_KEY?.trim() ||
-    process.env.JWT_SECRET ||
-    "dev-only-change-me",
+    (isProduction ? "" : process.env.JWT_SECRET?.trim() || DEV_SECRET),
   /** Short-lived access JWT (API Authorization header). Default / customers. */
   jwtAccessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? "1h",
   /** Long-lived refresh JWT — customers keep login ~1 year. */

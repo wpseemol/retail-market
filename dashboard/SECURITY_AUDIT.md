@@ -3,9 +3,9 @@
 Tracked from the root index: [`../SECURITY_AUDIT.md`](../SECURITY_AUDIT.md).
 Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD`) and log the fix in `CHANGELOG.md`.
 
-- **Last audit:** 2026-10-08
-- **Method:** `npm audit` (0 vulnerabilities) + manual review of `src/`, `nginx.conf`, `Dockerfile`, `vite.config.ts`
-- **Totals:** 0 Critical · 0 High · 3 Medium · 5 Low · 2 Info (open: 3 Medium · 4 Low)
+- **Last audit:** 2026-10-15 (re-check; only DB-08 fixed so far)
+- **Method:** `pnpm audit` + manual review of `src/`, `nginx.conf`, `Dockerfile`, `vite.config.ts`
+- **Totals:** 0 Critical · 0 High · 3 Medium · 6 Low · 2 Info (open: 3 Medium · 4 Low)
 
 ## Summary
 
@@ -21,6 +21,7 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 | DB-08 | Low | Login form skips shadcn Form + Zod (repo rule) | Fixed 2026-10-08 |
 | DB-09 | Info | UI role checks use editable `sessionStorage` (backend enforces) | OK |
 | DB-10 | Info | Print window opened without `noopener` (same-origin, escaped) | OK |
+| DB-11 | Low | `source-map-js` < 1.2.2 via `@tailwindcss/vite` (build-time DoS) | Fixed 2026-10-15 |
 
 ## Details
 
@@ -67,6 +68,11 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 ### DB-10 · Info · Print window
 - `src/components/orders/printInvoices.ts:100` needs the window handle; it's same-origin `about:blank` and every value goes through `escapeHtml`.
 
+### DB-11 · Low · `source-map-js` via Tailwind
+- **Where:** `@tailwindcss/vite` → `@tailwindcss/node` → `source-map-js` (GHSA-68fv-2mgg-jv7q)
+- **Issue:** Found 2026-10-15. Event-loop DoS on crafted source maps; build-time only.
+- **Fix:** Update Tailwind or add a `pnpm.overrides` entry `source-map-js@>=1.2.2` (also covers FE-02).
+
 ## Checked and clear
 - No `window.confirm` / `alert`; all deletes go through `useConfirm()`.
 - No open redirect after login (server-provided `data.home`; `reason` mapped to fixed text).
@@ -86,3 +92,5 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 | Date | Notes |
 | --- | --- |
 | 2026-10-08 | Initial audit (DB-01 – DB-10). |
+| 2026-10-15 | Re-audit: DB-01 – DB-07 still open (nginx has no headers, logout is client-only, `cn` + `package-lock.json` still present, nginx runs as root). Added DB-11 from `pnpm audit`. |
+| 2026-10-15 | DB-11 fixed via root `pnpm.overrides` (`source-map-js >=1.2.2`). |

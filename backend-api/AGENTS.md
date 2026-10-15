@@ -52,6 +52,9 @@ backend-api/
 ## Conventions
 
 - **Validation:** every mutating/list route parses body and query with a Zod schema from `src/validators/`. Wrap user strings with `withSafeInput` / `findUnsafeInputReason` (SQL, PHP, JS, HTML payloads are rejected).
+- **Async handlers & ids:** `express-async-errors` (imported in `server.ts`) forwards rejected async handlers to the error middleware; `asyncHandler` is still fine to use. Parse numeric route ids with `parseBigIntId` from `src/utils/ids.ts` (never raw `BigInt(req.params.id)` — oversized ids make Prisma throw).
+- **Secrets:** with `NODE_ENV=production` the API refuses to start unless `JWT_SECRET` and `SETTINGS_ENCRYPTION_KEY` are each 32+ bytes.
+- **Pricing:** discounts come only from `coupon_code` via `src/lib/coupons.ts`; never accept a client-sent amount.
 - **Errors:** respond `{ message, code?, errors? }`. Use 409 with a stable `code` for state conflicts (e.g. `ORDER_NOT_DELETABLE`, `ORDER_CHANGED`).
 - **Auth:** protected routes require `Authorization: Bearer <token>`. Dashboard catalog mutations require `super_admin | admin | moderator`; order deletion is `super_admin | admin` only.
 - **Reviews:** `ProductReview` (`product_reviews`) is the purchase-verified review model; the older `Review` model is unused legacy. Review eligibility = a `delivered` + `paid` order matching the email/phone/user that contains the product. Vendors are scoped to their own shop's products.
