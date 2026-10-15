@@ -107,15 +107,18 @@ Static files: `GET /uploads/*`
 
 ### `GET /api/health`
 
-No auth.
+No auth. Used by the Docker `HEALTHCHECK` and the dashboard header badge.
 
 **200**
 
 ```json
-{ "status": "ok", "service": "retail-market-api", "database": "up", "timestamp": "..." }
+{ "status": "ok", "service": "backend", "database": "connected", "timestamp": "..." }
 ```
 
-**503** if DB down: `"status": "degraded"`.
+**503** if the DB is down or doesn't answer within 3 s: `"status": "degraded"`, `"database": "disconnected"`.
+
+- The DB ping result is shared for 5 s, so polling never runs more than one `SELECT 1` per 5 s.
+- `Cache-Control: no-store`.
 
 ---
 

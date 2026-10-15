@@ -5,6 +5,9 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### API health badge hidden in production
+- `src/components/ApiHealthBadge.tsx`: renders nothing when `NODE_ENV=production`, so shoppers no longer see "API connected" on the login / sign-up and account pages and production doesn't poll `/api/health`. Still shown in `next dev`.
+
 ### Security fixes (FE-01, FE-03, FE-02 partly)
 - `package.json`: `next` and `eslint-config-next` 16.3.5 → 16.4.1 (RCE, SSRF and cache-poisoning advisories). `AGENTS.md` version updated. Root `pnpm.overrides` patches `sharp` and `source-map-js`.
 - `src/store/cartSlice.ts`: `applyCoupon` is now an async thunk that checks the code with `POST /api/customer/orders/coupon`; hard-coded `SAVE10` / `SAVE20` removed.

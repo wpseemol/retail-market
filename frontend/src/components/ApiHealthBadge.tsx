@@ -5,7 +5,13 @@ import { fetchHealth } from "@/lib/api";
 
 type HealthState = "checking" | "ok" | "down";
 
+/** Developer aid only — shoppers never see it, and production builds don't poll `/api/health`. */
 export default function ApiHealthBadge() {
+  if (process.env.NODE_ENV === "production") return null;
+  return <ApiHealthStatus />;
+}
+
+function ApiHealthStatus() {
   const [state, setState] = useState<HealthState>("checking");
   const [detail, setDetail] = useState("Checking API…");
 

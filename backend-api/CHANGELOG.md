@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Health check hardening
+- `src/routes/health.ts`: same path and response shape (Docker `HEALTHCHECK` still works), but the DB ping is shared for 5 s across requests, times out after 3 s (→ `503 degraded`), and responses send `Cache-Control: no-store`. Stops a public endpoint from turning every poll into a DB query.
+- `API.md`: corrected the documented response (`service: "backend"`, `database: "connected"`) and noted the cache / timeout.
+
 ### Security fixes (BE-01, BE-02, BE-03, BE-05, BE-24)
 - `src/lib/coupons.ts` (new), `src/validators/order.ts`, `src/routes/customerOrders.ts`: checkout no longer accepts `discount_amount`; it takes `coupon_code` and computes the discount on the server (unknown code → `400 COUPON_INVALID`). New `POST /api/customer/orders/coupon` (rate limit 20 / 10 min per IP) lets the storefront preview a code.
 - `src/lib/env.ts`, `.env.example`: production exits at startup unless `JWT_SECRET` and `SETTINGS_ENCRYPTION_KEY` are each 32+ bytes; the encryption key falls back to `JWT_SECRET` only in development. Existing deployments that never set `SETTINGS_ENCRYPTION_KEY` should set it to the current `JWT_SECRET` to keep stored provider secrets readable.

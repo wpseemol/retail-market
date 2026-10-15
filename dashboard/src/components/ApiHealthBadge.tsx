@@ -12,6 +12,7 @@ export function ApiHealthBadge() {
     let cancelled = false;
 
     async function check() {
+      if (document.visibilityState === "hidden") return;
       try {
         const health = await fetchHealth();
         if (cancelled) return;
@@ -31,9 +32,11 @@ export function ApiHealthBadge() {
 
     void check();
     const timer = window.setInterval(check, 30_000);
+    document.addEventListener("visibilitychange", check);
     return () => {
       cancelled = true;
       window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", check);
     };
   }, []);
 

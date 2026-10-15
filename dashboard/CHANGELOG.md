@@ -5,6 +5,9 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### API health badge polling
+- `src/components/ApiHealthBadge.tsx`: still shown to signed-in staff in production, but skips the 30 s check while the tab is hidden and re-checks when the tab becomes visible again.
+
 ### Dependency fix (DB-11)
 - Root `package.json` `pnpm.overrides` pins `source-map-js >=1.2.2` (pulled in by `@tailwindcss/vite`). No dashboard code changed.
 
