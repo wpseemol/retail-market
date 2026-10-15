@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { useToastMessages } from "@/hooks/use-toast-messages";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -70,6 +72,7 @@ export function ProductCreatePage() {
   const [slugTouched, setSlugTouched] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  useToastMessages(null, submitError);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
@@ -256,6 +259,7 @@ export function ProductCreatePage() {
         }
       }
 
+      toast.success("Product created");
       navigate(`/products/${data.product.id}`);
     } catch (err) {
       setSubmitError(

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useToastMessages } from "@/hooks/use-toast-messages";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -114,6 +115,7 @@ export function ShowcaseEditor({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  useToastMessages(success, error);
   const [tab, setTab] = useState<TabId>("branding");
   const [busy, setBusy] = useState<{ slot: MediaSlot["key"]; action: "upload" | "remove" } | null>(null);
 

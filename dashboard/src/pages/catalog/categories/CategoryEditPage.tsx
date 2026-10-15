@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import { useConfirm } from "@/components/providers/ConfirmProvider";
+import { useToastMessages } from "@/hooks/use-toast-messages";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { slugifyClient, type Category } from "@/lib/categories";
 import { getCategoryLucideIcon } from "@/lib/icons";
@@ -55,6 +56,7 @@ export function CategoryEditPage() {
   const [error, setError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  useToastMessages(saveSuccess, saveError);
 
   useEffect(() => {
     if (!token || !id) return;

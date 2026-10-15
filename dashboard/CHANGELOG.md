@@ -5,6 +5,29 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Toast notifications on save
+- `package.json`: added `sonner`.
+- `src/components/ui/sonner.tsx` (new): brand-themed `Toaster` using the dashboard's own colours, with a matching icon per type.
+  - Card colours, Poppins font and radius come from the dashboard theme. A green left border marks success, red marks errors.
+  - Shown top-right below the header, with a close button and a 4 s duration. It follows the light / dark theme.
+- `src/main.tsx`: mounts `<Toaster />`.
+- `src/hooks/use-toast-messages.ts` (new):
+  - `useToastMessages(success, error)` shows a toast whenever a page's message changes.
+  - `toastNotice({ tone, text })` is for list pages.
+- Save toasts (the inline messages stay as well):
+  - Edit pages: category, brand, product, store, user (including restrictions) and profile (photo, details, password).
+  - Content and settings: SEO, FAQ, Terms, the showcase editor, all site-settings tabs through `SiteSettingsLayout`, history, and the SMS, email, payment, social login and shipping panels.
+- Create pages (product, store, brand, category): a "… created" toast before redirecting, and an error toast when creating fails.
+- Orders, reviews, products and categories lists: the old notice banners are replaced by toasts. The duplicate auto-dismiss code and unused imports are gone.
+
+### Clearer category icon picker
+- `src/components/categories/CategoryIconPicker.tsx` (used on category create and edit):
+  - New "Selected icon" card at the top showing a large preview, the icon's name and group, "Show in list" and "Remove icon". When nothing is picked, it says so.
+  - Every tile now shows its name, and the selected tile is solid brand colour with a check.
+  - The list scrolls to the current icon when the page opens.
+  - A notice with "Show it" appears when the search or group filter hides the selected icon.
+  - The footer shows the icon's readable name instead of the internal one (e.g. `FolderTree`).
+
 ### Remove a category cover photo
 - `src/pages/catalog/categories/CategoryEditPage.tsx`: new "Remove photo" action on the cover dropzone. It asks for confirmation with `useConfirm`, then calls `DELETE /api/dashboard/categories/:id/image`, so the category goes back to using only its icon.
 - `src/components/categories/CategoryFormShell.tsx`: the dropzone's remove button is now styled as destructive, with a trash icon and the label "Remove photo". The create page uses the same button.

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toastNotice } from "@/hooks/use-toast-messages";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -120,38 +121,6 @@ function tabCount(counts: StatusCounts | undefined, key: TabKey) {
   if (!counts) return null;
   const tab = STATUS_TABS.find((t) => t.key === key)!;
   return tab.statuses.length === 0 ? counts.total : tab.statuses.reduce((n, s) => n + counts[s], 0);
-}
-
-type Notice = { tone: "success" | "error"; text: string } | null;
-
-function useNotice() {
-  const [notice, setNotice] = useState<Notice>(null);
-  useEffect(() => {
-    if (!notice) return;
-    const t = setTimeout(() => setNotice(null), notice.tone === "error" ? 8000 : 4500);
-    return () => clearTimeout(t);
-  }, [notice]);
-  return [notice, setNotice] as const;
-}
-
-function NoticeBar({ notice, onClose }: { notice: Notice; onClose: () => void }) {
-  if (!notice) return null;
-  return (
-    <div
-      role={notice.tone === "error" ? "alert" : "status"}
-      className={cn(
-        "flex items-start justify-between gap-3 rounded-xl border px-4 py-2.5 text-sm",
-        notice.tone === "error"
-          ? "border-destructive/30 bg-destructive/5 text-destructive"
-          : "border-brand-primary/30 bg-brand-tint/60 text-brand-deep",
-      )}
-    >
-      <p>{notice.text}</p>
-      <button type="button" onClick={onClose} className="shrink-0 opacity-70 hover:opacity-100" aria-label="Dismiss">
-        <X className="size-4" />
-      </button>
-    </div>
-  );
 }
 
 function KpiCard({
@@ -506,7 +475,7 @@ export function OrdersPage() {
   const [bulkBusy, setBulkBusy] = useState<OrderStatus | "delete" | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
-  const [notice, setNotice] = useNotice();
+  const setNotice = toastNotice;
 
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<OrderDetailResponse | null>(null);
@@ -801,8 +770,6 @@ export function OrdersPage() {
           </StaggerItem>
         ))}
       </Stagger>
-
-      <NoticeBar notice={notice} onClose={() => setNotice(null)} />
 
       <FadeUp>
         <section className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
@@ -1176,7 +1143,7 @@ export function OrderDetailPage() {
   const [detail, setDetail] = useState<OrderDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useNotice();
+  const setNotice = toastNotice;
 
   useEffect(() => {
     if (!token || !id) return;
@@ -1239,8 +1206,6 @@ export function OrderDetailPage() {
               : "Order details"}
         </p>
       </div>
-
-      <NoticeBar notice={notice} onClose={() => setNotice(null)} />
 
       {error ? (
         <p className="text-sm text-destructive" role="alert">{error}</p>

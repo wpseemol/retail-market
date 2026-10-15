@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useToastMessages } from "@/hooks/use-toast-messages";
 import { useFieldArray, useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown, ChevronsDownUp, ChevronsUpDown, ExternalLink, Plus, RotateCcw } from "lucide-react";
@@ -42,6 +43,7 @@ export function TermsPageEditor() {
   const { page, loadError, save, reset } = useContentPage("terms");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  useToastMessages(success, error);
   const [resetting, setResetting] = useState(false);
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [hydrated, setHydrated] = useState(false);

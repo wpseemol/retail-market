@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { useToastMessages } from "@/hooks/use-toast-messages";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -60,6 +62,7 @@ export function StoreCreatePage() {
   const [slugTouched, setSlugTouched] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  useToastMessages(null, submitError);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
@@ -252,6 +255,7 @@ export function StoreCreatePage() {
         );
       }
 
+      toast.success("Store created");
       navigate(`/stores/${data.shop.slug}`);
     } catch (err) {
       setSubmitError(

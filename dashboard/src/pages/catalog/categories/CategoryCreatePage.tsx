@@ -1,4 +1,6 @@
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { useToastMessages } from "@/hooks/use-toast-messages";
 import { Link, useNavigate } from "react-router-dom";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { slugifyClient, type Category } from "@/lib/categories";
@@ -47,6 +49,7 @@ export function CategoryCreatePage() {
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useToastMessages(null, error);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -172,6 +175,7 @@ export function CategoryCreatePage() {
         );
       }
 
+      toast.success("Category created");
       navigate(`/categories/${data.category.id}`);
     } catch (err) {
       setError(

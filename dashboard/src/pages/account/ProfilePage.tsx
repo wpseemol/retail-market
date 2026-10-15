@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useToastMessages } from "@/hooks/use-toast-messages";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Upload, UserRound } from "lucide-react";
@@ -110,6 +111,7 @@ function PhotoSection({
   const [presetSaving, setPresetSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  useToastMessages(success, error);
 
   async function handleFileChange(file: File | null) {
     if (!token || !file) return;
@@ -254,6 +256,7 @@ function AccountDetailsSection({
   const { token } = useAuthStore();
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  useToastMessages(saveSuccess, saveError);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -423,6 +426,7 @@ function PasswordSection() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  useToastMessages(saveSuccess, saveError);
 
   const form = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordFormSchema),

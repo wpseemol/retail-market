@@ -23,7 +23,7 @@ Talks to `backend-api` (port 8001) with Bearer auth.
 dashboard/
 ├── public/logo/niyenin-print.png   # wordmark used on printed invoices
 └── src/
-    ├── main.tsx                    # providers: Theme, Confirm, Router
+    ├── main.tsx                    # providers: Theme, Confirm, Router, Toaster
     ├── App.tsx                     # route tree, one ProtectedRoute block per RBAC domain
     ├── pages/                      # route pages grouped by feature domain; each folder has an index.ts barrel
     │   ├── auth/                   # LoginPage
@@ -74,6 +74,10 @@ dashboard/
 
 - **Forms:** create/edit forms use shadcn `Form` + react-hook-form + `zodResolver`, schemas in `src/lib/validators/`. Every string goes through the safe-input helper.
 - **Uploads:** pre-check type and size in the UI; helper text always says the image is resized on the server (e.g. `JPEG, PNG, WebP, or GIF · max 1 MB · always resized on the server`). Show the ratio hint from `imagePresets.ts`.
+- **Feedback toasts:** `<Toaster />` (`src/components/ui/sonner.tsx`, brand-themed) is mounted in `main.tsx`.
+  - Pages that keep `success` / `error` state call `useToastMessages(success, error)` from `src/hooks/use-toast-messages.ts`. Reset both to `null` before each request.
+  - List pages use `toastNotice({ tone, text })`, or call `toast.success()` / `toast.error()` from `sonner` directly.
+  - Never use `alert`.
 - **Destructive actions:** always `const confirm = useConfirm()` and `await confirm({ title, description, tone: "destructive" })`. Never `window.confirm`.
 - **Layout & motion:** pages use `PageHero`, `FormSection`, `StickyFormActions`. Animate with LazyMotion `m` via `useMotionSafe`; no layout animations or `AnimatePresence` on large tables.
 - **Roles:** catalog mutations are for `super_admin | admin | moderator`; hide or disable actions the current role cannot perform and show why (title tooltip).

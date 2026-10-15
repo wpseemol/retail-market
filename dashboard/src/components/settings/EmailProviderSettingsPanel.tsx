@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useToastMessages } from "@/hooks/use-toast-messages";
 import { useForm, type FieldPath } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Lock, Mail, Send } from "lucide-react";
@@ -237,6 +238,7 @@ export function EmailProviderSettingsPanel({ token }: { token: string }) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  useToastMessages(success, error);
   const [revealed, setRevealed] = useState(false);
   const [revealOpen, setRevealOpen] = useState(false);
   const hideTimer = useRef<number | null>(null);

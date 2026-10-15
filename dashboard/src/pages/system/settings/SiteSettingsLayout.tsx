@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useToastMessages } from "@/hooks/use-toast-messages";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
@@ -28,6 +29,7 @@ export function SiteSettingsLayout() {
     const [loadError, setLoadError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    useToastMessages(success, error);
 
     const form = useForm<SiteSettingsFormValues>({
         resolver: zodResolver(siteSettingsFormSchema),

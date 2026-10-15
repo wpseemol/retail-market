@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useToastMessages } from "@/hooks/use-toast-messages";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -80,6 +81,7 @@ export function ProductEditPage() {
   const [deleting, setDeleting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  useToastMessages(saveSuccess, submitError);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),

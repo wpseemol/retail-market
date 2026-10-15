@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toastNotice } from "@/hooks/use-toast-messages";
 import { Link } from "react-router-dom";
 import {
   ChevronDown,
@@ -13,7 +14,6 @@ import {
   ShoppingBag,
   Trash2,
   Upload,
-  X,
 } from "lucide-react";
 import { ApiError, apiDownload, apiFetch } from "@/lib/api";
 import {
@@ -50,8 +50,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-
-type Notice = { tone: "success" | "error"; text: string } | null;
 
 function SelectBox({
   checked,
@@ -98,7 +96,7 @@ export function ProductsPage() {
   const [reloadKey, setReloadKey] = useState(0);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [notice, setNotice] = useState<Notice>(null);
+  const setNotice = toastNotice;
   const [exporting, setExporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -318,28 +316,6 @@ export function ProductsPage() {
           </CardContent>
         </Card>
       </div>
-
-      {notice ? (
-        <div
-          role={notice.tone === "error" ? "alert" : "status"}
-          className={cn(
-            "flex items-start justify-between gap-3 rounded-xl border px-4 py-3 text-sm",
-            notice.tone === "error"
-              ? "border-destructive/30 bg-destructive/10 text-destructive"
-              : "border-brand-primary/30 bg-brand-tint/60 text-brand-deep",
-          )}
-        >
-          <span>{notice.text}</span>
-          <button
-            type="button"
-            onClick={() => setNotice(null)}
-            className="rounded p-0.5 opacity-70 hover:opacity-100"
-            aria-label="Dismiss"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-      ) : null}
 
       <Card>
         <CardHeader className="pb-4">

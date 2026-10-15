@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toastNotice } from "@/hooks/use-toast-messages";
 import {
   CheckCircle2,
   ChevronLeft,
@@ -85,38 +86,6 @@ const PAGE_SIZE = 20;
 
 const DELETE_BLOCKED_FOR_MODERATOR =
   "Moderators can't permanently delete reviews. Hide it instead, or flag it so an admin can decide.";
-
-type Notice = { tone: "success" | "error"; text: string } | null;
-
-function useNotice() {
-  const [notice, setNotice] = useState<Notice>(null);
-  useEffect(() => {
-    if (!notice) return;
-    const t = setTimeout(() => setNotice(null), notice.tone === "error" ? 8000 : 4500);
-    return () => clearTimeout(t);
-  }, [notice]);
-  return [notice, setNotice] as const;
-}
-
-function NoticeBar({ notice, onClose }: { notice: Notice; onClose: () => void }) {
-  if (!notice) return null;
-  return (
-    <div
-      role={notice.tone === "error" ? "alert" : "status"}
-      className={cn(
-        "flex items-start justify-between gap-3 rounded-xl border px-4 py-2.5 text-sm",
-        notice.tone === "error"
-          ? "border-destructive/30 bg-destructive/5 text-destructive"
-          : "border-brand-primary/30 bg-brand-tint/60 text-brand-deep",
-      )}
-    >
-      <p>{notice.text}</p>
-      <button type="button" onClick={onClose} className="shrink-0 opacity-70 hover:opacity-100" aria-label="Dismiss">
-        <X className="size-4" />
-      </button>
-    </div>
-  );
-}
 
 function heroCopy(role: StaffRole | undefined) {
   if (role === "vendor") {
@@ -393,7 +362,7 @@ export function ReviewsModerationPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [viewing, setViewing] = useState<ReviewRow | null>(null);
   const [replying, setReplying] = useState<ReviewRow | null>(null);
-  const [notice, setNotice] = useNotice();
+  const setNotice = toastNotice;
 
   useEffect(() => {
     const value = searchDraft;
@@ -543,8 +512,6 @@ export function ReviewsModerationPage() {
   return (
     <div className="flex flex-col gap-5">
       <PageHero eyebrow="Support & Quality" title="Product reviews" description={heroCopy(role)} />
-
-      <NoticeBar notice={notice} onClose={() => setNotice(null)} />
 
       <FadeUp>
         <section className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">

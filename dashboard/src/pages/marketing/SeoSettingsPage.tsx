@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useToastMessages } from "@/hooks/use-toast-messages";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ExternalLink, ShieldAlert, Trash2 } from "lucide-react";
@@ -72,6 +73,7 @@ export function SeoSettingsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  useToastMessages(success, error);
   const [uploading, setUploading] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [activePage, setActivePage] = useState<SeoPageKey>("home");

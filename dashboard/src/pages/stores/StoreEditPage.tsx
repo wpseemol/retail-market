@@ -1,4 +1,5 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
+import { useToastMessages } from "@/hooks/use-toast-messages";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { History, Palette, Trash2 } from "lucide-react";
 import { useConfirm } from "@/components/providers/ConfirmProvider";
@@ -83,6 +84,7 @@ export function StoreEditPage() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  useToastMessages(saveSuccess, saveError);
   const [logoUploading, setLogoUploading] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);

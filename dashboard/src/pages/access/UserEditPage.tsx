@@ -1,4 +1,5 @@
 import { type FormEvent, useEffect, useState } from "react";
+import { useToastMessages } from "@/hooks/use-toast-messages";
 import { Link, useParams } from "react-router-dom";
 import {
   Ban,
@@ -62,6 +63,7 @@ export function UserEditPage() {
 
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  useToastMessages(saveSuccess, saveError);
   const [saving, setSaving] = useState(false);
 
   const [restrictStatus, setRestrictStatus] = useState<
@@ -70,6 +72,7 @@ export function UserEditPage() {
   const [restrictReason, setRestrictReason] = useState("");
   const [restrictError, setRestrictError] = useState<string | null>(null);
   const [restrictSuccess, setRestrictSuccess] = useState<string | null>(null);
+  useToastMessages(restrictSuccess, restrictError);
   const [restricting, setRestricting] = useState(false);
 
   useEffect(() => {

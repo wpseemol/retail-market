@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toastNotice } from "@/hooks/use-toast-messages";
 import { Link } from "react-router-dom";
 import {
   ChevronDown,
@@ -11,7 +12,6 @@ import {
   Search,
   Layers,
   Upload,
-  X,
 } from "lucide-react";
 import { ApiError, apiDownload, apiFetch } from "@/lib/api";
 import {
@@ -21,7 +21,6 @@ import {
   type CategoryImportResult,
 } from "@/lib/categories";
 import { CATEGORY_ICONS } from "@/lib/categoryIcons";
-import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
 import { CategoryIconBadge } from "@/components/categories/CategoryIconPicker";
 import { CategoryImportDialog } from "@/components/categories/CategoryImportDialog";
@@ -47,8 +46,6 @@ import { Input } from "@/components/ui/input";
 
 const MANAGE_ROLES = ["super_admin", "admin", "moderator"] as const;
 
-type Notice = { tone: "success" | "error"; text: string } | null;
-
 export function CategoriesPage() {
   const { token, user } = useAuthStore();
   const canManage =
@@ -69,7 +66,7 @@ export function CategoriesPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const [exporting, setExporting] = useState<"csv" | "zip" | null>(null);
   const [importOpen, setImportOpen] = useState(false);
-  const [notice, setNotice] = useState<Notice>(null);
+  const setNotice = toastNotice;
 
   useEffect(() => {
     if (!token) return;
@@ -199,28 +196,6 @@ export function CategoriesPage() {
           ) : null}
         </div>
       </div>
-
-      {notice ? (
-        <div
-          role={notice.tone === "error" ? "alert" : "status"}
-          className={cn(
-            "flex items-start justify-between gap-3 rounded-xl border px-4 py-3 text-sm",
-            notice.tone === "error"
-              ? "border-destructive/30 bg-destructive/10 text-destructive"
-              : "border-brand-primary/30 bg-brand-tint/60 text-brand-deep",
-          )}
-        >
-          <span>{notice.text}</span>
-          <button
-            type="button"
-            onClick={() => setNotice(null)}
-            className="rounded p-0.5 opacity-70 hover:opacity-100"
-            aria-label="Dismiss"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Card className="border-border/80">

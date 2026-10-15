@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useToastMessages } from "@/hooks/use-toast-messages";
 import { History } from "lucide-react";
 import { useConfirm } from "@/components/providers/ConfirmProvider";
 import { ApiError, apiFetch } from "@/lib/api";
@@ -36,6 +37,7 @@ export function HistorySettingsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    useToastMessages(success, error);
     const [clearing, setClearing] = useState(false);
 
     useEffect(() => {

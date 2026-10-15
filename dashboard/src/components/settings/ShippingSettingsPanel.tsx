@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from "react";
+import { useToastMessages } from "@/hooks/use-toast-messages";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Info } from "lucide-react";
@@ -70,6 +71,7 @@ export function ShippingSettingsPanel({ token }: { token: string }) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  useToastMessages(success, error);
 
   const form = useForm<ShippingSettingsFormValues>({
     resolver: zodResolver(shippingSettingsFormSchema),
