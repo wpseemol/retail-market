@@ -5,6 +5,17 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Image dimension rule on dashboard uploads
+- `src/lib/imageOptimize.ts`: new `checkImageDimensions(buffer, preset)`.
+  - It reads the size with sharp, after applying EXIF rotation.
+  - Rejects images whose shape is more than 3% off the preset's (`IMAGE_WRONG_RATIO`) and images smaller than the preset (`IMAGE_TOO_SMALL`), with a message that gives the actual and required pixels.
+  - Avatars, review photos and `homeGeneric` are exempt.
+  - Also adds `formatRatio()`.
+- Where the check runs: `optimizeStoredUpload`, `src/lib/categoryImage.ts` (`finalizeCategoryImageBuffer`) and `src/lib/productImage.ts`, all before resizing.
+- Endpoints covered: products, categories, brands, stores (logo and banner), store/brand page media, SEO / site identity images, home hero and home blocks.
+- Category ZIP import reports a bad image as a row warning, as before.
+- `API.md`: new "Image dimensions" section with the preset table and error codes.
+
 ### Remove a category cover photo
 - `src/routes/dashboardCategories.ts`: new `DELETE /:id/image` for elevated roles. It clears `image_id` and deletes the media row and file, so the category falls back to its icon. The update only applies if the current `image_id` still matches; otherwise it returns `409 CATEGORY_IMAGE_CHANGED`.
 - `API.md`: documented the endpoint.

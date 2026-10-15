@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useToastMessages } from "@/hooks/use-toast-messages";
+import { checkImageDimensions } from "@/lib/imagePresets";
 import { Link, useNavigate } from "react-router-dom";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { slugifyClient, type Category } from "@/lib/categories";
@@ -103,10 +104,13 @@ export function CategoryCreatePage() {
     [parents, parentId],
   );
 
-  function onPickCover(file: File | null) {
+  async function onPickCover(file: File | null) {
     if (coverPreview) URL.revokeObjectURL(coverPreview);
     if (file) {
-      const checked = validateCategoryImageFile(file);
+      const typeCheck = validateCategoryImageFile(file);
+      const checked = typeCheck.ok
+        ? await checkImageDimensions(file, "category")
+        : typeCheck;
       if (!checked.ok) {
         setError(checked.message);
         setCoverFile(null);

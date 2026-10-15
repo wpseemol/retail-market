@@ -2,10 +2,13 @@ import { useRef } from "react";
 import { ImagePlus, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { ImagePresetKey } from "@/lib/imagePresets";
+import { ImageSizeBadge } from "@/components/dashboard/image-size-badge";
 
 /** One upload slot (logo / banner / share image) with optional remove. */
 export function ShowcaseImageField({
   title,
+  preset,
   description,
   previewUrl,
   previewClassName,
@@ -16,6 +19,7 @@ export function ShowcaseImageField({
   onRemove,
 }: {
   title: string;
+  preset?: ImagePresetKey;
   description: string;
   previewUrl?: string | null;
   previewClassName?: string;
@@ -36,14 +40,22 @@ export function ShowcaseImageField({
         )}
       >
         {previewUrl ? (
-          <img src={previewUrl} alt={`${title} preview`} className={cn("size-full object-contain", imgClassName)} />
+          <img
+            key={previewUrl}
+            src={previewUrl}
+            alt={`${title} preview`}
+            className={cn("size-full object-contain animate-in fade-in zoom-in-95 duration-300", imgClassName)}
+          />
         ) : (
           <ImagePlus className="size-6 text-muted-foreground" aria-hidden="true" />
         )}
       </div>
       <div className="min-w-0 flex-1 space-y-2">
         <div>
-          <p className="text-sm font-medium">{title}</p>
+          <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
+            {title}
+            {preset ? <ImageSizeBadge preset={preset} /> : null}
+          </p>
           <p className="text-xs text-muted-foreground">{description}</p>
         </div>
         <input

@@ -2,9 +2,12 @@ import type { RefObject } from "react";
 import { ImagePlus, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { ImagePresetKey } from "@/lib/imagePresets";
+import { ImageSizeBadge } from "@/components/dashboard/image-size-badge";
 
 export function BrandingImageDropzone({
     title,
+    preset,
     description,
     emptyLabel,
     previewUrl,
@@ -18,6 +21,7 @@ export function BrandingImageDropzone({
     onFile,
 }: {
     title: string;
+    preset?: ImagePresetKey;
     description: string;
     emptyLabel: string;
     previewUrl?: string | null;
@@ -48,7 +52,7 @@ export function BrandingImageDropzone({
                             key={displayUrl}
                             src={displayUrl}
                             alt={`${title} preview`}
-                            className={cn("size-full object-contain p-2", imgClassName)}
+                            className={cn("size-full object-contain p-2 animate-in fade-in zoom-in-95 duration-300", imgClassName)}
                         />
                     ) : (
                         <div className="flex flex-col items-center gap-1 text-muted-foreground">
@@ -61,7 +65,10 @@ export function BrandingImageDropzone({
                 </div>
                 <div className="min-w-0 flex-1 space-y-2">
                     <div>
-                        <p className="text-sm font-medium">{title}</p>
+                        <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                            {title}
+                            {preset ? <ImageSizeBadge preset={preset} /> : null}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                             {description}
                         </p>

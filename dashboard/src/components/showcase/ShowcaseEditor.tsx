@@ -25,7 +25,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
-import { imageUploadHint, type ImagePresetKey } from "@/lib/imagePresets";
+import {
+  checkImageDimensions,
+  imageUploadHint,
+  type ImagePresetKey,
+} from "@/lib/imagePresets";
 import { SEO_LIMITS, STOREFRONT_URL } from "@/lib/seo";
 import {
   ACCENT_SWATCHES,
@@ -178,7 +182,10 @@ export function ShowcaseEditor({
   }
 
   async function uploadMedia(slot: MediaSlot, file: File) {
-    const checked = validateShowcaseImageFile(file, slot.limit, slot.title);
+    const typeCheck = validateShowcaseImageFile(file, slot.limit, slot.title);
+    const checked = typeCheck.ok
+      ? await checkImageDimensions(file, slot.preset)
+      : typeCheck;
     if (!checked.ok) {
       report("error", checked.message);
       return;
@@ -264,6 +271,7 @@ export function ShowcaseEditor({
   const slotField = (slot: MediaSlot, extra?: { previewClassName?: string; imgClassName?: string; prefix?: string }) => (
     <ShowcaseImageField
       title={slot.title}
+      preset={slot.preset}
       description={imageUploadHint(slot.preset, SHOWCASE_IMAGE_MB[slot.limit], { prefix: extra?.prefix })}
       previewUrl={(slot.key === "logo" ? logo : slot.key === "banner" ? payload.banner : payload.og_image)?.path}
       previewClassName={extra?.previewClassName}

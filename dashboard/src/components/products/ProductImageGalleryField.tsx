@@ -3,7 +3,12 @@ import { ImagePlus, Star, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { imageUploadHint, recommendedSize } from "@/lib/imagePresets";
+import {
+  checkImageDimensions,
+  imageUploadHint,
+  recommendedSize,
+} from "@/lib/imagePresets";
+import { ImageSizeBadge } from "@/components/dashboard/image-size-badge";
 import type { ProductMedia } from "@/lib/products";
 import {
   PRODUCT_IMAGE_MAX_BYTES,
@@ -63,19 +68,26 @@ export function ProductImageGalleryField({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function addFiles(fileList: FileList | File[] | null) {
+  async function addFiles(fileList: FileList | File[] | null) {
     if (!fileList || disabled || remaining <= 0) return;
     const incoming = Array.from(fileList).slice(0, remaining);
     const accepted: File[] = [];
+    const rejected: string[] = [];
 
     for (const file of incoming) {
-      const checked = validateProductImageFile(file);
+      const typeCheck = validateProductImageFile(file);
+      const checked = typeCheck.ok
+        ? await checkImageDimensions(file, "product")
+        : typeCheck;
       if (!checked.ok) {
-        onError?.(checked.message);
+        rejected.push(
+          incoming.length > 1 ? `“${file.name}” — ${checked.message}` : checked.message,
+        );
         continue;
       }
       accepted.push(file);
     }
+    if (rejected.length > 0) onError?.(rejected.join("\n"));
 
     if (accepted.length === 0) return;
 
@@ -106,14 +118,17 @@ export function ProductImageGalleryField({
   function onDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     setDragging(false);
-    addFiles(event.dataTransfer.files);
+    void addFiles(event.dataTransfer.files);
   }
 
   return (
     <div className="space-y-3">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <Label>Product images</Label>
+          <Label className="flex flex-wrap items-center gap-2">
+            Product images
+            <ImageSizeBadge preset="product" />
+          </Label>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {imageUploadHint("product", maxMb, { each: true })} · up to{" "}
             {maxImages} files
@@ -149,7 +164,7 @@ export function ProductImageGalleryField({
               Drag & drop product photos
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Best at {recommendedSize("product")} · max {maxMb} MB · auto-optimized
+              At least {recommendedSize("product")} · max {maxMb} MB · always resized on the server
             </p>
           </div>
           <input
@@ -161,7 +176,7 @@ export function ProductImageGalleryField({
             className="hidden"
             disabled={disabled || remaining <= 0}
             onChange={(e) => {
-              addFiles(e.target.files);
+              void addFiles(e.target.files);
               e.target.value = "";
             }}
           />
@@ -194,7 +209,7 @@ export function ProductImageGalleryField({
                 <img
                   src={img.path}
                   alt=""
-                  className="size-full object-cover"
+                  className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/70 to-transparent p-2 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
                   <Button
@@ -240,14 +255,14 @@ export function ProductImageGalleryField({
               <li
                 key={img.key}
                 className={cn(
-                  "group relative aspect-square overflow-hidden rounded-xl border bg-muted",
+                  "group relative aspect-square overflow-hidden rounded-xl border bg-muted animate-in fade-in zoom-in-95 duration-300",
                   isPrimary && "ring-2 ring-brand-primary ring-offset-2",
                 )}
               >
                 <img
                   src={img.preview}
                   alt=""
-                  className="size-full object-cover"
+                  className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/70 to-transparent p-2 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
                   <Button

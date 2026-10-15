@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useToastMessages } from "@/hooks/use-toast-messages";
+import { checkImageDimensions } from "@/lib/imagePresets";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -96,10 +97,13 @@ export function BrandCreatePage() {
     };
   }, [imagePreview]);
 
-  function onPickImage(file: File | null) {
+  async function onPickImage(file: File | null) {
     if (imagePreview) URL.revokeObjectURL(imagePreview);
     if (file) {
-      const checked = validateBrandImageFile(file);
+      const typeCheck = validateBrandImageFile(file);
+      const checked = typeCheck.ok
+        ? await checkImageDimensions(file, "brand")
+        : typeCheck;
       if (!checked.ok) {
         setSubmitError(checked.message);
         setImageFile(null);

@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { imageUploadHint } from "@/lib/imagePresets";
+import { ImageSizeBadge } from "@/components/dashboard/image-size-badge";
 import type { ShopCreateStatus } from "@/lib/shops";
 
 export function StoreFormSection({
@@ -119,7 +120,12 @@ export function StoreImageDropzone({
           )}
         >
           {previewUrl ? (
-            <img src={previewUrl} alt="" className="size-full object-cover" />
+            <img
+              key={previewUrl}
+              src={previewUrl}
+              alt=""
+              className="size-full object-cover animate-in fade-in zoom-in-95 duration-300"
+            />
           ) : (
             <div className="flex flex-col items-center gap-1 text-muted-foreground">
               <ImagePlus className={isBanner ? "size-8" : "size-6"} />
@@ -131,7 +137,10 @@ export function StoreImageDropzone({
         </div>
         <div className="min-w-0 flex-1 space-y-2">
           <div>
-            <p className="text-sm font-medium">{label}</p>
+            <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
+              {label}
+              <ImageSizeBadge preset={isBanner ? "shopBanner" : "shopLogo"} />
+            </p>
             <p className="text-xs text-muted-foreground">{hint}</p>
           </div>
           <input

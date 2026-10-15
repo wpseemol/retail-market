@@ -67,16 +67,56 @@ export function homeBlockImagePreset(
   return HOME_BLOCK_PRESETS[`${blockKey}.${leaf}`] ?? "homeGeneric";
 }
 
+/** Presets with no size rule. Avatars are shared with storefront customers. */
+const FREE_FORM_PRESETS: ReadonlySet<ImagePresetKey> = new Set(["avatar", "homeGeneric"]);
+
+/** Allowed aspect-ratio difference; must match `IMAGE_RATIO_TOLERANCE` in the API. */
+export const IMAGE_RATIO_TOLERANCE = 0.03;
+
+export function isFreeFormPreset(preset: ImagePresetKey): boolean {
+  return FREE_FORM_PRESETS.has(preset);
+}
+
+function gcd(a: number, b: number): number {
+  return b === 0 ? a : gcd(b, a % b);
+}
+
+/** Reduced ratio for the user's own image, e.g. 1600×900 → "16:9", 1200×630 → "1.9:1". */
+export function formatRatio(width: number, height: number): string {
+  const d = gcd(width, height);
+  const w = width / d;
+  const h = height / d;
+  if (w <= 32 && h <= 32) return `${w}:${h}`;
+  return width >= height
+    ? `${(width / height).toFixed(2).replace(/\.?0+$/, "")}:1`
+    : `1:${(height / width).toFixed(2).replace(/\.?0+$/, "")}`;
+}
+
+/** Exact shape the upload must have; "~" presets are shown as their real ratio. */
+export function presetShape(preset: ImagePresetKey): string {
+  const p: ImagePreset = IMAGE_PRESETS[preset];
+  return p.ratio.startsWith("~") ? formatRatio(p.width, p.height) : p.ratio;
+}
+
 /** e.g. "1200 × 1200 px (1:1)" */
 export function recommendedSize(preset: ImagePresetKey): string {
   const p = IMAGE_PRESETS[preset];
   if (p.ratio === "any") return `up to ${p.width} × ${p.height} px`;
-  return `${p.width} × ${p.height} px (${p.ratio})`;
+  return `${p.width} × ${p.height} px (${presetShape(preset)})`;
+}
+
+/** Short label for field headers, e.g. "1200 × 1200 px · 1:1" or "Any size". */
+export function imageSizeLabel(preset: ImagePresetKey): string {
+  const p = IMAGE_PRESETS[preset];
+  if (isFreeFormPreset(preset)) {
+    return p.ratio === "any" ? "Any size" : `${p.width} × ${p.height} px · ${p.ratio}`;
+  }
+  return `${p.width} × ${p.height} px · ${presetShape(preset)}`;
 }
 
 /**
  * Standard upload helper text:
- * "Recommended 1200 × 1200 px (1:1) · JPEG, PNG, WebP, or GIF · max 5 MB · always resized & optimized to WebP on the server"
+ * "At least 1200 × 1200 px (1:1) · JPEG, PNG, WebP, or GIF · max 5 MB · always resized & optimized to WebP on the server"
  */
 export function imageUploadHint(
   preset: ImagePresetKey,
@@ -84,12 +124,78 @@ export function imageUploadHint(
   opts: { prefix?: string; each?: boolean } = {},
 ): string {
   const p: ImagePreset = IMAGE_PRESETS[preset];
+  const size = isFreeFormPreset(preset)
+    ? `Recommended ${recommendedSize(preset)}`
+    : `At least ${p.width} × ${p.height} px, ${presetShape(preset)} shape`;
   const parts = [
     opts.prefix,
-    `Recommended ${recommendedSize(preset)}${p.transparent ? ", transparent PNG/WebP works best" : ""}`,
+    `${size}${p.transparent ? ", transparent PNG/WebP works best" : ""}`,
     "JPEG, PNG, WebP, or GIF",
     `max ${maxMb} MB${opts.each ? " each" : ""}`,
     `always resized & optimized to ${p.format ?? "WebP"} on the server`,
   ];
   return parts.filter(Boolean).join(" · ");
+}
+
+export type ImageDimensionCheck =
+  | { ok: true; width: number; height: number }
+  | { ok: false; message: string; width?: number; height?: number };
+
+async function readImageSize(file: File): Promise<{ width: number; height: number }> {
+  if ("createImageBitmap" in window) {
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const size = { width: bitmap.width, height: bitmap.height };
+    bitmap.close();
+    return size;
+  }
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    return { width: img.naturalWidth, height: img.naturalHeight };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/**
+ * Same rule as the API: the image must have the preset's shape (within 3%) and be at least
+ * the preset size. Larger images are fine — the server shrinks them.
+ */
+export async function checkImageDimensions(
+  file: File,
+  preset: ImagePresetKey,
+): Promise<ImageDimensionCheck> {
+  let width: number;
+  let height: number;
+  try {
+    ({ width, height } = await readImageSize(file));
+  } catch {
+    return { ok: false, message: "Could not read this image. Try a different JPEG, PNG, or WebP file." };
+  }
+  if (isFreeFormPreset(preset)) return { ok: true, width, height };
+
+  const need = IMAGE_PRESETS[preset];
+  const needRatio = need.width / need.height;
+  const shape = presetShape(preset);
+  const needLabel = `${need.width} × ${need.height} px (${shape})`;
+
+  if (Math.abs(width / height - needRatio) / needRatio > IMAGE_RATIO_TOLERANCE) {
+    return {
+      ok: false,
+      width,
+      height,
+      message: `Wrong shape: your image is ${width} × ${height} px (${formatRatio(width, height)}), this spot needs ${shape} — e.g. ${needLabel}. Crop it to ${shape} and try again.`,
+    };
+  }
+  if (width < need.width || height < need.height) {
+    return {
+      ok: false,
+      width,
+      height,
+      message: `Too small: your image is ${width} × ${height} px, it must be at least ${needLabel} so it stays sharp.`,
+    };
+  }
+  return { ok: true, width, height };
 }

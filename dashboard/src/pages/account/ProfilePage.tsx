@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Upload, UserRound } from "lucide-react";
 import { ApiError, apiFetch, apiUpload, type StaffUser } from "@/lib/api";
 import { imageUploadHint } from "@/lib/imagePresets";
+import { ImageSizeBadge } from "@/components/dashboard/image-size-badge";
 import { useAuthStore } from "@/store/auth";
 import {
   passwordFormSchema,
@@ -171,7 +172,10 @@ function PhotoSection({
           <AvatarPreview user={user} size="lg" />
           <div className="min-w-0 flex-1 space-y-2">
             <div>
-              <p className="text-sm font-medium">Profile photo</p>
+              <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                Profile photo
+                <ImageSizeBadge preset="avatar" />
+              </p>
               <p className="text-xs text-muted-foreground">
                 {imageUploadHint("avatar", 5)}
               </p>

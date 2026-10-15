@@ -39,7 +39,7 @@ export function Toaster(props: ToasterProps) {
           loading: "border-l-brand-primary",
           icon: "mt-0.5 shrink-0",
           content: "min-w-0 flex-1",
-          title: "text-sm leading-snug font-semibold",
+          title: "text-sm leading-snug font-semibold whitespace-pre-line",
           description: "mt-0.5 text-xs leading-relaxed text-muted-foreground",
           actionButton:
             "ml-auto shrink-0 self-center rounded-md bg-brand-primary px-2.5 py-1 text-xs font-medium text-white hover:bg-brand-hover",

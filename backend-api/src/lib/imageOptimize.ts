@@ -68,6 +68,82 @@ export function homeBlockImagePreset(blockKey: string, fieldPath: string): Image
   return HOME_BLOCK_PRESETS[`${blockKey}.${leaf}`] ?? "homeGeneric";
 }
 
+/**
+ * Uploads with no dimension rule: customer photos (reviews, avatars — the avatar
+ * endpoint is shared with storefront customers) and free-form home images.
+ */
+const FREE_FORM_PRESETS: ReadonlySet<ImagePresetKey> = new Set(["review", "avatar", "homeGeneric"]);
+
+/** Allowed difference between the upload's aspect ratio and the preset's. Mirrors the dashboard. */
+export const IMAGE_RATIO_TOLERANCE = 0.03;
+
+function gcd(a: number, b: number): number {
+  return b === 0 ? a : gcd(b, a % b);
+}
+
+/** e.g. 1200×630 → "40:21" is unreadable, so large terms fall back to "1.9:1". */
+export function formatRatio(width: number, height: number): string {
+  const d = gcd(width, height);
+  const w = width / d;
+  const h = height / d;
+  if (w <= 32 && h <= 32) return `${w}:${h}`;
+  return width >= height
+    ? `${(width / height).toFixed(2).replace(/\.?0+$/, "")}:1`
+    : `1:${(height / width).toFixed(2).replace(/\.?0+$/, "")}`;
+}
+
+export type ImageDimensionResult =
+  | { ok: true; width: number; height: number }
+  | {
+      ok: false;
+      message: string;
+      code: "IMAGE_TOO_SMALL" | "IMAGE_WRONG_RATIO" | "IMAGE_PROCESS_FAILED";
+    };
+
+/**
+ * Dashboard uploads must have the preset's shape (within 3%) and be at least the preset
+ * size, so they are never stretched or upscaled on the storefront. Larger is fine.
+ */
+export async function checkImageDimensions(
+  buffer: Buffer,
+  preset: ImagePresetKey,
+): Promise<ImageDimensionResult> {
+  let width: number;
+  let height: number;
+  try {
+    const meta = await sharp(buffer, { animated: false }).metadata();
+    if (!meta.width || !meta.height) throw new Error("no size");
+    const rotated = (meta.orientation ?? 1) >= 5;
+    width = rotated ? meta.height : meta.width;
+    height = rotated ? meta.width : meta.height;
+  } catch {
+    return { ok: false, message: "Could not read the image size", code: "IMAGE_PROCESS_FAILED" };
+  }
+
+  if (FREE_FORM_PRESETS.has(preset)) return { ok: true, width, height };
+
+  const need = IMAGE_PRESETS[preset];
+  const needRatio = need.width / need.height;
+  const needLabel = `${need.width} × ${need.height} px (${formatRatio(need.width, need.height)})`;
+  const gotLabel = `${width} × ${height} px`;
+
+  if (Math.abs(width / height - needRatio) / needRatio > IMAGE_RATIO_TOLERANCE) {
+    return {
+      ok: false,
+      code: "IMAGE_WRONG_RATIO",
+      message: `Image is ${gotLabel} (${formatRatio(width, height)}) but this spot needs a ${formatRatio(need.width, need.height)} shape — e.g. ${needLabel}. Crop it to ${formatRatio(need.width, need.height)} and upload again.`,
+    };
+  }
+  if (width < need.width || height < need.height) {
+    return {
+      ok: false,
+      code: "IMAGE_TOO_SMALL",
+      message: `Image is ${gotLabel} — too small. It must be at least ${needLabel} so it stays sharp.`,
+    };
+  }
+  return { ok: true, width, height };
+}
+
 export type OptimizedImage = {
   output: Buffer;
   mime: AvatarMime;
@@ -135,7 +211,13 @@ export async function optimizeStoredUpload(
 
   let optimized: OptimizedImage | null;
   try {
-    optimized = await optimizeImageWithin(fs.readFileSync(stored.absolutePath), preset, maxBytes);
+    const buffer = fs.readFileSync(stored.absolutePath);
+    const dims = await checkImageDimensions(buffer, preset);
+    if (!dims.ok) {
+      remove(stored.absolutePath);
+      return dims;
+    }
+    optimized = await optimizeImageWithin(buffer, preset, maxBytes);
   } catch {
     remove(stored.absolutePath);
     return { ok: false, message: "Failed to process image", code: "IMAGE_PROCESS_FAILED" };

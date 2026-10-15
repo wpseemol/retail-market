@@ -9,6 +9,7 @@ import {
 import {
   fadeIn,
   fadeUp,
+  pageEnter,
   reducedVariants,
   staggerContainer,
   staggerItem,
@@ -30,6 +31,7 @@ export function useMotionSafe() {
     reduce: !!reduce,
     fadeUp: reduce ? reducedVariants : fadeUp,
     fadeIn: reduce ? reducedVariants : fadeIn,
+    pageEnter: reduce ? reducedVariants : pageEnter,
     staggerContainer: reduce ? reducedVariants : staggerContainer,
     staggerItem: reduce ? reducedVariants : staggerItem,
   };

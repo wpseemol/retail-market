@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import { useConfirm } from "@/components/providers/ConfirmProvider";
 import { useToastMessages } from "@/hooks/use-toast-messages";
+import { checkImageDimensions } from "@/lib/imagePresets";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { slugifyClient, type Category } from "@/lib/categories";
 import { getCategoryLucideIcon } from "@/lib/icons";
@@ -161,7 +162,10 @@ export function CategoryEditPage() {
 
   async function onUploadCover(file: File | null) {
     if (!token || !id || !file) return;
-    const checked = validateCategoryImageFile(file);
+    const typeCheck = validateCategoryImageFile(file);
+    const checked = typeCheck.ok
+      ? await checkImageDimensions(file, "category")
+      : typeCheck;
     if (!checked.ok) {
       setSaveError(checked.message);
       setSaveSuccess(null);

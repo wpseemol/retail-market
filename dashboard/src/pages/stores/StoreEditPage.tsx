@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { History, Palette, Trash2 } from "lucide-react";
 import { useConfirm } from "@/components/providers/ConfirmProvider";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
-import { imageUploadHint } from "@/lib/imagePresets";
+import { checkImageDimensions, imageUploadHint } from "@/lib/imagePresets";
 import {
   slugifyClient,
   shopStatusLabel,
@@ -195,9 +195,14 @@ export function StoreEditPage() {
 
   async function onLogoChange(file: File | null) {
     if (!file || !token || !routeSlug) return;
-    const checked = validateShopImageFile(file);
+    const typeCheck = validateShopImageFile(file);
+    const checked = typeCheck.ok
+      ? await checkImageDimensions(file, "shopLogo")
+      : typeCheck;
     if (!checked.ok) {
       setSaveError(checked.message);
+      setSaveSuccess(null);
+      if (fileRef.current) fileRef.current.value = "";
       return;
     }
     setLogoUploading(true);
@@ -226,9 +231,13 @@ export function StoreEditPage() {
 
   async function onBannerChange(file: File | null) {
     if (!file || !token || !routeSlug) return;
-    const checked = validateShopImageFile(file);
+    const typeCheck = validateShopImageFile(file);
+    const checked = typeCheck.ok
+      ? await checkImageDimensions(file, "shopBanner")
+      : typeCheck;
     if (!checked.ok) {
       setSaveError(checked.message);
+      setSaveSuccess(null);
       return;
     }
     setBannerUploading(true);

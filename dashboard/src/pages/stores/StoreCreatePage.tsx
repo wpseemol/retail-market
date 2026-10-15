@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useToastMessages } from "@/hooks/use-toast-messages";
+import { checkImageDimensions } from "@/lib/imagePresets";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -179,10 +180,13 @@ export function StoreCreatePage() {
     };
   }, [logoPreview]);
 
-  function onPickLogo(file: File | null) {
+  async function onPickLogo(file: File | null) {
     if (logoPreview) URL.revokeObjectURL(logoPreview);
     if (file) {
-      const checked = validateShopImageFile(file);
+      const typeCheck = validateShopImageFile(file);
+      const checked = typeCheck.ok
+        ? await checkImageDimensions(file, "shopLogo")
+        : typeCheck;
       if (!checked.ok) {
         setSubmitError(checked.message);
         setLogoFile(null);

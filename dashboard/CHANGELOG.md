@@ -5,6 +5,31 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Image dimensions on every upload
+- `src/lib/imagePresets.ts`:
+  - New `checkImageDimensions(file, preset)`, which follows the API's rule: shape within 3% and at least the preset size.
+  - Also adds `imageSizeLabel()`, `presetShape()` and `formatRatio()`. "~" presets now show their real shape (e.g. 1920 × 500 is shown as 3.84:1, not "4:1").
+  - Hint text now says "At least 1200 × 1200 px, 1:1 shape" instead of "Recommended".
+  - Error messages give the actual and required size, e.g. "Wrong shape: your image is 1920 × 1080 px (16:9), this spot needs 1:1 … Crop it to 1:1 and try again."
+- `src/components/dashboard/image-size-badge.tsx` (new): `ImageSizeBadge`, a ruler badge with the required size shown beside every image label.
+- The check runs before upload, and the badge is shown, on:
+  - category create and edit, brand create and edit, store create and edit (logo and banner)
+  - the product gallery, which lists each rejected file on its own line
+  - the store / brand page designer (logo, banner, share image)
+  - SEO share image, login logo and favicon
+  - home hero slots and home-block images
+  - profile photo: badge only, since avatars have no size rule
+- Shared fields updated: `CategoryFormShell`, `BrandFormShell`, `ShopFormShell`, `ShowcaseImageField`, `BrandingImageDropzone`, `HomeImageField`, `HeroBannerSettingsPanel`, `ProductImageGalleryField`.
+- `src/components/ui/sonner.tsx`: toast titles keep line breaks, so multi-file errors are readable.
+
+### Animations
+- `package.json` + `src/index.css`: added `tw-animate-css`. It was missing, so dialogs, the confirm popup, sheets, dropdowns, selects and tooltips had no open / close animation even though they use its `animate-in` classes.
+- `src/index.css`: `prefers-reduced-motion` turns animations and transitions off everywhere; loading spinners keep spinning.
+- `src/layouts/DashboardLayout.tsx` + `src/lib/motion.ts`: route changes fade and rise in (0.25 s, `pageEnter` preset, reduced-motion safe).
+- `src/components/ui/button.tsx`: buttons shrink slightly while pressed (`active:scale-[0.97]`); link buttons don't.
+- Uploaded image previews fade and zoom in when added or replaced. Product gallery thumbnails zoom on hover.
+- `CategoryIconPicker`: the selected icon pops in, and tiles lift on hover and press down when clicked.
+
 ### Toast notifications on save
 - `package.json`: added `sonner`.
 - `src/components/ui/sonner.tsx` (new): brand-themed `Toaster` using the dashboard's own colours, with a matching icon per type.

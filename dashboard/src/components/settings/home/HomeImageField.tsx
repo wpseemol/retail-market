@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { ImagePlus, Upload } from "lucide-react";
 import { ApiError, API_URL, apiUpload } from "@/lib/api";
-import { homeBlockImagePreset, imageUploadHint } from "@/lib/imagePresets";
+import {
+  checkImageDimensions,
+  homeBlockImagePreset,
+  imageUploadHint,
+} from "@/lib/imagePresets";
+import { ImageSizeBadge } from "@/components/dashboard/image-size-badge";
 import {
   HOME_BLOCK_IMAGE_MAX_BYTES,
   validateHomeBlockImageFile,
@@ -81,7 +86,10 @@ export function HomeImageField({
 
   async function onFile(file: File | null) {
     if (!file) return;
-    const checked = validateHomeBlockImageFile(file);
+    const typeCheck = validateHomeBlockImageFile(file);
+    const checked = typeCheck.ok
+      ? await checkImageDimensions(file, homeBlockImagePreset(blockKey, fieldPath))
+      : typeCheck;
     if (!checked.ok) {
       onError(checked.message);
       if (inputRef.current) inputRef.current.value = "";
@@ -115,7 +123,7 @@ export function HomeImageField({
             key={preview}
             src={preview}
             alt=""
-            className="size-full object-contain p-1.5"
+            className="size-full object-contain p-1.5 animate-in fade-in zoom-in-95 duration-300"
             onError={() => setBroken(true)}
             onLoad={() => setBroken(false)}
           />
@@ -136,8 +144,9 @@ export function HomeImageField({
 
       <div className="min-w-0 flex-1 space-y-2">
         <div>
-          <p className="text-sm font-semibold tracking-tight text-foreground">
+          <p className="flex flex-wrap items-center gap-2 text-sm font-semibold tracking-tight text-foreground">
             {label}
+            <ImageSizeBadge preset={homeBlockImagePreset(blockKey, fieldPath)} />
           </p>
           {description ? (
             <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">

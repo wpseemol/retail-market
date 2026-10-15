@@ -1,7 +1,7 @@
 import { useRef, useState, type RefObject } from "react";
 import { Globe } from "lucide-react";
 import { ApiError, apiUpload } from "@/lib/api";
-import { imageUploadHint } from "@/lib/imagePresets";
+import { checkImageDimensions, imageUploadHint } from "@/lib/imagePresets";
 import {
     applyFaviconHref,
     FALLBACK_FAVICON,
@@ -38,7 +38,10 @@ export function IdentitySettingsPage() {
 
     async function upload(kind: UploadKind, file: File | null, input: RefObject<HTMLInputElement | null>) {
         if (!file) return;
-        const checked = kind === "favicon" ? validateFaviconFile(file) : validateLoginLogoFile(file);
+        const typeCheck = kind === "favicon" ? validateFaviconFile(file) : validateLoginLogoFile(file);
+        const checked = typeCheck.ok
+            ? await checkImageDimensions(file, kind === "favicon" ? "favicon" : "loginLogo")
+            : typeCheck;
         if (!checked.ok) {
             showError(checked.message);
             if (input.current) input.current.value = "";
@@ -100,6 +103,7 @@ export function IdentitySettingsPage() {
                 <div className="grid gap-4 lg:grid-cols-2">
                     <BrandingImageDropzone
                         title="Login logo"
+                        preset="loginLogo"
                         emptyLabel="Login"
                         description={imageUploadHint("loginLogo", 1, {
                             prefix: "Shown on the dashboard sign-in screen",
@@ -115,6 +119,7 @@ export function IdentitySettingsPage() {
                     />
                     <BrandingImageDropzone
                         title="Favicon"
+                        preset="favicon"
                         emptyLabel="Favicon"
                         description={imageUploadHint("favicon", 1, {
                             prefix: "Browser tab icon for the dashboard and storefront",

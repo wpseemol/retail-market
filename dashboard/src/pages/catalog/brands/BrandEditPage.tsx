@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useToastMessages } from "@/hooks/use-toast-messages";
+import { checkImageDimensions } from "@/lib/imagePresets";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -137,7 +138,10 @@ export function BrandEditPage() {
 
   async function onUploadImage(file: File | null) {
     if (!token || !id || !file) return;
-    const checked = validateBrandImageFile(file);
+    const typeCheck = validateBrandImageFile(file);
+    const checked = typeCheck.ok
+      ? await checkImageDimensions(file, "brand")
+      : typeCheck;
     if (!checked.ok) {
       setSubmitError(checked.message);
       setSaveSuccess(null);

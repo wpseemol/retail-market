@@ -7,7 +7,11 @@ import {
   type FinalizedAvatarOk,
   type FinalizedAvatarResult,
 } from "./avatarImage.js";
-import { optimizeImageWithin, type ImagePresetKey } from "./imageOptimize.js";
+import {
+  checkImageDimensions,
+  optimizeImageWithin,
+  type ImagePresetKey,
+} from "./imageOptimize.js";
 import { PRODUCT_IMAGES_DIR, PRODUCT_IMAGES_RELATIVE } from "./productImage.js";
 
 /** Category cover images — max 1 MB before/after processing. */
@@ -130,6 +134,9 @@ export async function finalizeCategoryImageBuffer(
 ): Promise<FinalizedAvatarResult> {
   const validated = validateCategoryBuffer(buffer, declaredMime);
   if (!validated.ok) return validated;
+
+  const dims = await checkImageDimensions(buffer, preset);
+  if (!dims.ok) return dims;
 
   try {
     const optimized = await optimizeImageWithin(buffer, preset, CATEGORY_IMAGE_MAX_BYTES);

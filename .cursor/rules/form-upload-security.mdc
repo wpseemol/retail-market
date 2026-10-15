@@ -39,6 +39,10 @@ Apply to names, slugs, descriptions, search `q`, filenames metadata, etc.
 - Sanitize stored original filenames; never use user filename as disk path.
 - Document multipart **field names** and max bytes in `backend-api/API.md` when adding endpoints.
 - Mirror size/type checks on the **UI** before upload.
+- **Image dimensions:** every image field has a preset (`dashboard/src/lib/imagePresets.ts` ↔ `backend-api/src/lib/imageOptimize.ts`).
+  - Check dimensions on the UI (`checkImageDimensions(file, preset)`) and the API (`checkImageDimensions(buffer, preset)`).
+  - The rule: shape within 3% and at least the preset size. Show the actual vs required px in the error.
+  - Show `<ImageSizeBadge preset=… />` next to the field label.
 - Upload fields inside create/edit pages still sit inside the same shadcn `Form` where practical.
 
 ## Always resize images (API + UI copy)
@@ -61,7 +65,7 @@ Whenever you add or edit an **image upload** (brand, category, product, shop, av
 1. shadcn Form + react-hook-form + zodResolver on UI create/edit
 2. Zod schema on API + UI
 3. Safe-input guards on every string field
-4. Upload limits + type sniff + UI pre-check
+4. Upload limits + type sniff + dimension check (UI + API) + size badge on the label
 5. Server-side **image resize** + size check after resize; UI/API copy mentions resize
 6. Clear error `message` / optional `code` / field `errors` (FormMessage on UI)
 7. Update `backend-api/API.md` if a public API changed

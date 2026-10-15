@@ -16,6 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { imageUploadHint } from "@/lib/imagePresets";
+import { ImageSizeBadge } from "@/components/dashboard/image-size-badge";
+import { ImageFieldError } from "@/components/dashboard/image-field-error";
 
 type CategoryFormSectionProps = {
   step: string;
@@ -223,6 +225,7 @@ type CategoryCoverDropzoneProps = {
   onClear?: () => void;
   inputRef: RefObject<HTMLInputElement | null>;
   onFile: (file: File | null) => void;
+  error?: string | null;
 };
 
 export function CategoryCoverDropzone({
@@ -233,16 +236,23 @@ export function CategoryCoverDropzone({
   onClear,
   inputRef,
   onFile,
+  error,
 }: CategoryCoverDropzoneProps) {
   return (
-    <div className="overflow-hidden rounded-xl border border-dashed border-border bg-gradient-to-br from-muted/40 via-background to-brand-tint/20">
+    <div
+      className={cn(
+        "overflow-hidden rounded-xl border border-dashed bg-gradient-to-br from-muted/40 via-background to-brand-tint/20 transition-colors",
+        error ? "border-destructive/60" : "border-border",
+      )}
+    >
       <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
         <div className="relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background shadow-sm">
           {previewUrl ? (
             <img
+              key={previewUrl}
               src={previewUrl}
               alt=""
-              className="size-full object-cover"
+              className="size-full object-cover animate-in fade-in zoom-in-95 duration-300"
             />
           ) : (
             <div className="flex flex-col items-center gap-1 text-muted-foreground">
@@ -255,7 +265,10 @@ export function CategoryCoverDropzone({
         </div>
         <div className="min-w-0 flex-1 space-y-2">
           <div>
-            <p className="text-sm font-medium">Cover photo</p>
+            <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
+              Cover photo
+              <ImageSizeBadge preset="category" />
+            </p>
             <p className="text-xs text-muted-foreground">
               {imageUploadHint("category", 1, { prefix: "Optional" })}
             </p>
@@ -292,6 +305,7 @@ export function CategoryCoverDropzone({
               </Button>
             ) : null}
           </div>
+          <ImageFieldError message={error} />
         </div>
       </div>
     </div>

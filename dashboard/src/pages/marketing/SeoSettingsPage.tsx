@@ -26,7 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
-import { imageUploadHint } from "@/lib/imagePresets";
+import { checkImageDimensions, imageUploadHint } from "@/lib/imagePresets";
 import {
   applyTitleTemplate,
   SEO_LIMITS,
@@ -138,7 +138,10 @@ export function SeoSettingsPage() {
 
   async function onOgFile(file: File | null) {
     if (!file) return;
-    const checked = validateSeoOgImageFile(file);
+    const typeCheck = validateSeoOgImageFile(file);
+    const checked = typeCheck.ok
+      ? await checkImageDimensions(file, "ogImage")
+      : typeCheck;
     if (!checked.ok) {
       report("error", checked.message);
       if (fileRef.current) fileRef.current.value = "";
@@ -369,6 +372,7 @@ export function SeoSettingsPage() {
               <FormSection step="03" title="Social sharing" description="Open Graph and X (Twitter) cards for Facebook, WhatsApp, Messenger, LinkedIn and X.">
                 <BrandingImageDropzone
                   title="Default share image"
+                  preset="ogImage"
                   emptyLabel="Share"
                   description={imageUploadHint("ogImage", 1, {
                     prefix: "Used when a page has no image of its own",

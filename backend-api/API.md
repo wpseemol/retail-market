@@ -1428,6 +1428,34 @@ Includes: `id`, `vendor_id`, `category_id`, `brand_id`, `thumbnail_id`, `name`, 
 Allowed MIME (all image uploads): `image/jpeg`, `image/png`, `image/webp`, `image/gif`.  
 Do **not** upload SVG.
 
+### Image dimensions (dashboard uploads)
+
+Every dashboard image upload must match its preset's **shape** (aspect ratio within **3%**) and be **at least** the preset size. Larger images are accepted and shrunk on the server. EXIF rotation is applied before checking. The check runs in `checkImageDimensions()` (`src/lib/imageOptimize.ts`) before resizing; the dashboard runs the same rule before uploading.
+
+| Preset | Minimum size | Shape | Used by |
+|--------|--------------|-------|---------|
+| `product` | 1200 × 1200 | 1:1 | product thumbnail / images |
+| `category` | 400 × 400 | 1:1 | category cover |
+| `brand` | 600 × 300 | 2:1 | brand logo |
+| `shopLogo` | 512 × 512 | 1:1 | store logo |
+| `shopBanner` / `brandBanner` | 1920 × 640 | 3:1 | store / brand banner |
+| `ogImage` | 1200 × 630 | 1.9:1 | share images (SEO, store, brand) |
+| `loginLogo` | 480 × 120 | 4:1 | dashboard login logo |
+| `favicon` | 512 × 512 | 1:1 | favicon |
+| `heroMainBg` · `heroMainProduct` · `heroSideBg` · `heroSideProduct` | 1600 × 700 · 880 × 700 · 800 × 700 · 440 × 480 | 16:7 · 5:4 · 8:7 · 11:12 | home hero slots |
+| home blocks | see `HOME_BLOCK_PRESETS` | — | `/api/dashboard/home-blocks/:key/images` |
+
+No dimension rule: customer and staff avatars (`/auth/me/avatar`, shared with storefront customers), review photos, and free-form home images (`homeGeneric`).
+
+Errors (`400`):
+
+```json
+{ "message": "Image is 800 × 800 px — too small. It must be at least 1200 × 1200 px (1:1) so it stays sharp.", "code": "IMAGE_TOO_SMALL" }
+{ "message": "Image is 1920 × 1080 px (16:9) but this spot needs a 1:1 shape — e.g. 1200 × 1200 px (1:1). Crop it to 1:1 and upload again.", "code": "IMAGE_WRONG_RATIO" }
+```
+
+Some routes prefix the code (e.g. `BANNER_TOO_SMALL`, `OG_IMAGE_WRONG_RATIO`) and swap the leading word ("Banner is …"). Category ZIP import keeps the row and reports the image as a warning.
+
 ---
 
 ## Public media object

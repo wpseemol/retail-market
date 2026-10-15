@@ -73,6 +73,10 @@ dashboard/
 ## Conventions
 
 - **Forms:** create/edit forms use shadcn `Form` + react-hook-form + `zodResolver`, schemas in `src/lib/validators/`. Every string goes through the safe-input helper.
+- **Image dimensions:** every image field shows `<ImageSizeBadge preset=… />` next to its label.
+  - Before uploading, run `await checkImageDimensions(file, preset)` from `src/lib/imagePresets.ts` after the type / size check, and show its `message`.
+  - The rule (shape within 3%, at least the preset size) matches the API.
+  - Never add an image field without a preset.
 - **Uploads:** pre-check type and size in the UI; helper text always says the image is resized on the server (e.g. `JPEG, PNG, WebP, or GIF · max 1 MB · always resized on the server`). Show the ratio hint from `imagePresets.ts`.
 - **Feedback toasts:** `<Toaster />` (`src/components/ui/sonner.tsx`, brand-themed) is mounted in `main.tsx`.
   - Pages that keep `success` / `error` state call `useToastMessages(success, error)` from `src/hooks/use-toast-messages.ts`. Reset both to `null` before each request.
@@ -80,6 +84,9 @@ dashboard/
   - Never use `alert`.
 - **Destructive actions:** always `const confirm = useConfirm()` and `await confirm({ title, description, tone: "destructive" })`. Never `window.confirm`.
 - **Layout & motion:** pages use `PageHero`, `FormSection`, `StickyFormActions`. Animate with LazyMotion `m` via `useMotionSafe`; no layout animations or `AnimatePresence` on large tables.
+  - Route changes already fade in through `DashboardLayout`.
+  - For small enter effects, use the `tw-animate-css` classes (`animate-in fade-in zoom-in-95 duration-300`, with `key={url}` to replay on change).
+  - `prefers-reduced-motion` is handled globally in `index.css`.
 - **Roles:** catalog mutations are for `super_admin | admin | moderator`; hide or disable actions the current role cannot perform and show why (title tooltip).
 - **Stores, brands & SEO:** `STORE_ROLES` (list + page design: super_admin, admin, vendor), `STORE_MANAGE_ROLES` (create / settings: super_admin, vendor), `STORE_DELETE_ROLES` (super_admin), `SEO_ROLES` (global SEO: super_admin, admin), `BRAND_SHOWCASE_ROLES` (brand page: super_admin, admin, linked vendor — the API checks the link), `BRAND_OWNER_ROLES` (link a brand to a store: super_admin, admin). Brand detail returns `permissions { manage, assign_owner, showcase }`; use it instead of guessing from the role. The products list likewise returns `permissions { export, import, bulk_edit, bulk_edit_pricing, bulk_delete, all_stores }` for the CSV and bulk tools.
 - **Dependencies:** the repo is a pnpm workspace — add packages with `pnpm add <pkg> --filter dashboard` (never `npm install`, it breaks the `.pnpm` links).

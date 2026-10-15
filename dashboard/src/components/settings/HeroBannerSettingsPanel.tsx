@@ -24,7 +24,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { imageUploadHint, type ImagePresetKey } from "@/lib/imagePresets";
+import {
+  checkImageDimensions,
+  imageUploadHint,
+  type ImagePresetKey,
+} from "@/lib/imagePresets";
+import { ImageSizeBadge } from "@/components/dashboard/image-size-badge";
 import { WhereItShows } from "@/components/settings/home/HomeEditorChrome";
 import { resolveHomeImagePreview } from "@/components/settings/home/HomeImageField";
 
@@ -153,7 +158,7 @@ function HeroImageSlot({
           src={src}
           alt={`${label} — currently on storefront`}
           className={cn(
-            "size-full",
+            "size-full animate-in fade-in duration-300",
             slot.endsWith("_bg") ? "object-cover opacity-80" : "object-contain p-3",
           )}
         />
@@ -175,7 +180,10 @@ function HeroImageSlot({
       </div>
       <div className="space-y-2 border-t border-border p-3">
         <div>
-          <p className="text-sm font-semibold tracking-tight">{label}</p>
+          <p className="flex flex-wrap items-center gap-2 text-sm font-semibold tracking-tight">
+            {label}
+            <ImageSizeBadge preset={HERO_SLOT_PRESET[slot]} />
+          </p>
           <p className="text-[11px] text-muted-foreground">
             {isCustom
               ? "Custom upload is live on the storefront. Replace anytime."
@@ -439,7 +447,10 @@ export function HeroBannerSettingsPanel({
 
   async function onImageFile(slot: HomeHeroImageSlot, file: File | null) {
     if (!file) return;
-    const checked = validateHomeHeroImageFile(file);
+    const typeCheck = validateHomeHeroImageFile(file);
+    const checked = typeCheck.ok
+      ? await checkImageDimensions(file, HERO_SLOT_PRESET[slot])
+      : typeCheck;
     if (!checked.ok) {
       onError(checked.message);
       const input = fileRefs.current[slot];

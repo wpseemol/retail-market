@@ -103,7 +103,11 @@ export function CategoryIconPicker({
               : "border-dashed border-border bg-background text-muted-foreground",
           )}
         >
-          <SelectedIcon className="size-7" strokeWidth={1.75} />
+          <SelectedIcon
+            key={value ?? "none"}
+            className="size-7 animate-in fade-in zoom-in-50 duration-300"
+            strokeWidth={1.75}
+          />
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -235,7 +239,7 @@ export function CategoryIconPicker({
                     disabled={disabled}
                     onClick={() => onChange(item.name)}
                     className={cn(
-                      "relative flex flex-col items-center justify-center gap-1.5 rounded-lg border px-1 py-2.5 transition-all",
+                      "relative flex flex-col items-center justify-center gap-1.5 rounded-lg border px-1 py-2.5 transition-all duration-150 hover:-translate-y-0.5 active:scale-95",
                       active
                         ? "border-brand-primary bg-brand-primary text-white shadow-sm ring-2 ring-brand-primary/30"
                         : "border-transparent bg-muted/40 text-muted-foreground hover:border-brand-primary/40 hover:bg-brand-tint hover:text-brand-deep",
@@ -246,7 +250,7 @@ export function CategoryIconPicker({
                       {item.label}
                     </span>
                     {active ? (
-                      <span className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-white text-brand-primary">
+                      <span className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-white text-brand-primary animate-in zoom-in-50 duration-200">
                         <Check className="size-3" strokeWidth={3} />
                       </span>
                     ) : null}

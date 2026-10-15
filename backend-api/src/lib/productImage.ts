@@ -7,7 +7,7 @@ import {
   type FinalizedAvatarOk,
   type FinalizedAvatarResult,
 } from "./avatarImage.js";
-import { IMAGE_PRESETS, optimizeImageWithin } from "./imageOptimize.js";
+import { checkImageDimensions, IMAGE_PRESETS, optimizeImageWithin } from "./imageOptimize.js";
 
 /** Disk folder for all product / variant / category catalog images. */
 export const PRODUCT_IMAGES_DIR = path.resolve(
@@ -127,6 +127,16 @@ export async function finalizeProductImageUpload(
       /* ignore */
     }
     return validated;
+  }
+
+  const dims = await checkImageDimensions(buffer, "product");
+  if (!dims.ok) {
+    try {
+      fs.unlinkSync(tempPath);
+    } catch {
+      /* ignore */
+    }
+    return dims;
   }
 
   try {
