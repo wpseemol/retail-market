@@ -10,6 +10,7 @@ import { ShowcaseTheme } from "@/components/showcase/ShowcaseTheme";
 import { format, LOCALE_TAGS } from "@/i18n/config";
 import { getDictionary, getLocale } from "@/i18n/server";
 import { brandText, fetchBrandBySlug } from "@/lib/brands";
+import { localizeProduct } from "@/lib/products";
 import { brandJsonLd, breadcrumbJsonLd, buildMetadata, getSeoDefaults, itemListJsonLd } from "@/lib/seo";
 import { fetchShowcaseReviews, parseSort } from "@/lib/showcase";
 
@@ -158,11 +159,11 @@ export default async function BrandDetailPage({ params, searchParams }: PageProp
           name={display.name}
           dict={dict}
           intlLocale={LOCALE_TAGS[locale].intl}
-          featured={data.featured_products}
+          featured={data.featured_products.map((p) => localizeProduct(p, locale))}
           reviews={reviews}
           hideBrand
           grid={{
-            products,
+            products: products.map((p) => localizeProduct(p, locale)),
             total: pagination.total,
             page: pagination.page,
             totalPages: pagination.total_pages,

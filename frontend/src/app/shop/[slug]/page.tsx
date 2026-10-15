@@ -10,9 +10,11 @@ import {
 import { CURRENCY_CODE } from "@/lib/money";
 import {
   fetchProductByIdOrSlug,
+  localizeProduct,
   toShopProduct,
   type ApiProduct,
 } from "@/lib/products";
+import { getLocale } from "@/i18n/server";
 import {
   fetchProductReviews,
   reviewsJsonLd,
@@ -158,18 +160,22 @@ export default async function ProductPage({ params }: ProductPageProps) {
     redirect(`/shop/${data.product.slug}`);
   }
 
-  const reviews = await fetchProductReviews(data.product.slug);
+  const [reviews, locale] = await Promise.all([
+    fetchProductReviews(data.product.slug),
+    getLocale(),
+  ]);
   const product = {
-    ...toShopProduct(data.product),
+    ...toShopProduct(data.product, locale),
     rating: reviews.summary.average,
     reviewCount: reviews.summary.count,
   };
-  const related = data.related.map(toShopProduct);
+  const related = data.related.map((p) => toShopProduct(p, locale));
+  const vendor = localizeProduct(data.product, locale).vendor;
   const store =
-    data.product.vendor != null
+    vendor != null
       ? {
-          name: data.product.vendor.shop_name,
-          slug: data.product.vendor.slug,
+          name: vendor.shop_name,
+          slug: vendor.slug,
         }
       : null;
 

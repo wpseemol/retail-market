@@ -21,9 +21,11 @@ import {
   productFormSchema,
   toProductApiBody,
   validateProductImages,
+  PRODUCT_BANGLA_DEFAULTS,
   PRODUCT_IMAGE_MAX_COUNT,
   type ProductFormValues,
 } from "@/lib/validators/product";
+import { ProductBanglaSection } from "@/components/products/ProductBanglaSection";
 import {
   ProductFormHeader,
   ProductFormSection,
@@ -84,6 +86,7 @@ export function ProductCreatePage() {
       slug: "",
       short_description: "",
       description: "",
+      ...PRODUCT_BANGLA_DEFAULTS,
       type: "simple",
       status: "draft",
       price: 0,
@@ -605,10 +608,12 @@ export function ProductCreatePage() {
               <ProductShippingField />
             </ProductFormSection>
 
-            {/* 04 Variants */}
+            <ProductBanglaSection step="04" disabled={form.formState.isSubmitting} />
+
+            {/* 05 Variants */}
             {type === "variable" && (
               <ProductFormSection
-                step="04"
+                step="05"
                 title="Options & variants"
                 description="Define option axes (Size, Color). Value combinations become variant rows."
               >

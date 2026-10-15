@@ -5,6 +5,7 @@ import { siteConfig } from "@/config/site";
 import { fetchProducts, toShopProduct } from "@/lib/products";
 import { buildIndexMetadata } from "@/lib/seo";
 import { getSiteSettings } from "@/lib/siteSettings";
+import { getLocale } from "@/i18n/server";
 
 type ShopSearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -45,7 +46,7 @@ export default async function ShopPage({
   const perPageParam = firstParam(params.per_page);
   const initialPerPage = /^\d{1,2}$/.test(perPageParam) ? Number(perPageParam) : null;
 
-  const [data, settings] = await Promise.all([
+  const [data, settings, locale] = await Promise.all([
     fetchProducts({
       limit: 48,
       sort: "default",
@@ -54,8 +55,9 @@ export default async function ShopPage({
       brand: brand || undefined,
     }),
     getSiteSettings(),
+    getLocale(),
   ]);
-  const products = data.products.map(toShopProduct);
+  const products = data.products.map((p) => toShopProduct(p, locale));
   const tags = Array.from(
     new Set(
       products.flatMap((p) => p.tags).filter((t) => t && t !== "featured"),

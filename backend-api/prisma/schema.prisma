@@ -447,6 +447,11 @@ model Product {
   brand               String?       @db.VarChar(120)
   description         String?       @db.Text
   short_description   String?       @db.VarChar(500)
+  /// Optional Bangla copy; the storefront falls back to the English field when empty. Slug is shared.
+  name_bn              String?      @db.VarChar(255)
+  short_description_bn String?      @db.VarChar(500)
+  /// Sanitized TipTap HTML, same rules as `description`.
+  description_bn       String?      @db.Text
   type                ProductType   @default(simple)
   price               Decimal       @db.Decimal(12, 2)
   compare_at_price    Decimal?      @db.Decimal(12, 2)

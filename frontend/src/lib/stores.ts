@@ -57,14 +57,17 @@ export type StorefrontProduct = {
   price: number;
   compare_at_price: number | null;
   short_description: string | null;
+  name_bn?: string | null;
+  short_description_bn?: string | null;
   is_featured: boolean;
   brand_name: string | null;
   brand_banned?: boolean;
   thumbnail: StoreMedia;
-  category: { id: string; name: string; slug: string } | null;
+  category: { id: string; name: string; name_bn?: string | null; slug: string } | null;
   brand: {
     id: string | null;
     name: string;
+    name_bn?: string | null;
     slug: string | null;
     is_active?: boolean;
   } | null;

@@ -1,5 +1,6 @@
 import { API_URL, apiFetch } from "@/lib/api";
 import type { ShopProduct } from "@/components/shop/types";
+import type { Locale } from "@/i18n/config";
 
 export type ApiProductMedia = {
   id: string;
@@ -19,20 +20,78 @@ export type ApiProduct = {
   stock_qty: number;
   short_description: string | null;
   description: string | null;
+  name_bn?: string | null;
+  short_description_bn?: string | null;
+  description_bn?: string | null;
   is_featured: boolean;
   brand_name: string | null;
   brand_banned?: boolean;
   thumbnail: ApiProductMedia;
   gallery?: NonNullable<ApiProductMedia>[];
-  category: { id: string; name: string; slug: string } | null;
+  category: { id: string; name: string; name_bn?: string | null; slug: string } | null;
   brand: {
     id: string | null;
     name: string;
+    name_bn?: string | null;
     slug: string | null;
     is_active?: boolean;
   } | null;
-  vendor: { id: string; shop_name: string; slug: string } | null;
+  vendor: { id: string; shop_name: string; shop_name_bn?: string | null; slug: string } | null;
 };
+
+type LocalizableProduct = {
+  name: string;
+  name_bn?: string | null;
+  short_description: string | null;
+  short_description_bn?: string | null;
+  description?: string | null;
+  description_bn?: string | null;
+  brand_name: string | null;
+  category: { name: string; name_bn?: string | null } | null;
+  brand: { name: string; name_bn?: string | null } | null;
+  vendor?: { shop_name: string; shop_name_bn?: string | null } | null;
+};
+
+/** TipTap HTML has visible text (an empty editor still yields `<p></p>`). */
+function hasRichText(html: string | null | undefined): html is string {
+  return Boolean(html && html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim());
+}
+
+/**
+ * Copy of the product with Bangla text swapped in for `bn` shoppers. Each field (name, short
+ * description, description, category / brand / store name) falls back to English on its own.
+ * Keep SEO metadata and JSON-LD on the original English product.
+ */
+export function localizeProduct<P extends LocalizableProduct>(product: P, locale: Locale): P {
+  if (locale !== "bn") return product;
+  const pick = (bn: string | null | undefined, en: string) => bn?.trim() || en;
+  const brandBn = product.brand?.name_bn?.trim();
+  return {
+    ...product,
+    name: pick(product.name_bn, product.name),
+    short_description: product.short_description_bn?.trim() || product.short_description,
+    ...(product.description !== undefined
+      ? {
+          description: hasRichText(product.description_bn)
+            ? product.description_bn
+            : product.description,
+        }
+      : {}),
+    brand_name: brandBn || product.brand_name,
+    category: product.category
+      ? { ...product.category, name: pick(product.category.name_bn, product.category.name) }
+      : product.category,
+    brand: product.brand ? { ...product.brand, name: brandBn || product.brand.name } : product.brand,
+    ...(product.vendor
+      ? {
+          vendor: {
+            ...product.vendor,
+            shop_name: pick(product.vendor.shop_name_bn, product.vendor.shop_name),
+          },
+        }
+      : {}),
+  };
+}
 
 export type ProductDetailPayload = {
   product: ApiProduct;
@@ -62,7 +121,8 @@ export type ProductsListPayload = {
   };
 };
 
-export function toShopProduct(product: ApiProduct): ShopProduct {
+export function toShopProduct(apiProduct: ApiProduct, locale: Locale = "en"): ShopProduct {
+  const product = localizeProduct(apiProduct, locale);
   const thumb =
     product.thumbnail?.path ||
     product.gallery?.[0]?.path ||

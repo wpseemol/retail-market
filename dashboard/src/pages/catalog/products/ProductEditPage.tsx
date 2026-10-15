@@ -22,9 +22,12 @@ import {
   productFormSchema,
   toProductApiBody,
   validateProductImages,
+  productBanglaValues,
+  PRODUCT_BANGLA_DEFAULTS,
   PRODUCT_IMAGE_MAX_COUNT,
   type ProductFormValues,
 } from "@/lib/validators/product";
+import { ProductBanglaSection } from "@/components/products/ProductBanglaSection";
 import {
   ProductFormHeader,
   ProductFormSection,
@@ -93,6 +96,7 @@ export function ProductEditPage() {
       slug: "",
       short_description: "",
       description: "",
+      ...PRODUCT_BANGLA_DEFAULTS,
       type: "simple",
       status: "draft",
       price: 0,
@@ -145,6 +149,7 @@ export function ProductEditPage() {
           slug: p.slug,
           short_description: p.short_description ?? "",
           description: p.description ?? "",
+          ...productBanglaValues(p),
           type: p.type,
           status: p.status === "active" ? "active" : "draft",
           price: p.price ?? 0,
@@ -717,10 +722,25 @@ export function ProductEditPage() {
               <ProductShippingField />
             </ProductFormSection>
 
-            {/* 04 Variants */}
+            <ProductBanglaSection
+              step="04"
+              disabled={form.formState.isSubmitting}
+              onBeforeDisable={async () => {
+                const v = productBanglaValues(form.getValues());
+                if (!v.bn_enabled) return true;
+                return confirm({
+                  title: `Remove the Bangla version of “${product?.name ?? form.getValues("name")}”?`,
+                  description:
+                    "The Bangla name, short description and description are cleared when you save, and Bangla shoppers see the English text instead. This cannot be undone after saving.",
+                  confirmLabel: "Remove Bangla",
+                });
+              }}
+            />
+
+            {/* 05 Variants */}
             {type === "variable" && (
               <ProductFormSection
-                step="04"
+                step="05"
                 title="Options & variants"
                 description="Define option axes (Size, Color). Value combinations become variant rows."
               >

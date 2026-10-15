@@ -99,6 +99,7 @@ export function toPublicProduct(row: ProductRow) {
     brand_id: row.brand_id?.toString() ?? null,
     thumbnail_id: row.thumbnail_id?.toString() ?? null,
     name: row.name,
+    name_bn: row.name_bn,
     slug: row.slug,
     sku: row.sku,
     barcode: row.barcode,
@@ -107,6 +108,7 @@ export function toPublicProduct(row: ProductRow) {
       ? {
           id: row.brandRef.id.toString(),
           name: row.brandRef.name,
+          name_bn: row.brandRef.name_bn,
           slug: row.brandRef.slug,
           is_active: row.brandRef.is_active,
         }
@@ -114,6 +116,7 @@ export function toPublicProduct(row: ProductRow) {
         ? {
             id: null as string | null,
             name: row.brand,
+            name_bn: null as string | null,
             slug: null as string | null,
             is_active: true,
           }
@@ -122,6 +125,8 @@ export function toPublicProduct(row: ProductRow) {
     brand_banned: row.brandRef ? !row.brandRef.is_active : false,
     description: row.description,
     short_description: row.short_description,
+    description_bn: row.description_bn,
+    short_description_bn: row.short_description_bn,
     type: row.type as ProductType,
     price: decimalToNumber(row.price) ?? 0,
     compare_at_price: decimalToNumber(row.compare_at_price),
@@ -139,6 +144,7 @@ export function toPublicProduct(row: ProductRow) {
       ? {
           id: row.category.id.toString(),
           name: row.category.name,
+          name_bn: row.category.name_bn,
           slug: row.category.slug,
         }
       : null,
@@ -146,6 +152,7 @@ export function toPublicProduct(row: ProductRow) {
       ? {
           id: row.vendor.id.toString(),
           shop_name: row.vendor.shop_name,
+          shop_name_bn: row.vendor.shop_name_bn,
           slug: row.vendor.slug,
         }
       : null,

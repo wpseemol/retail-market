@@ -44,6 +44,9 @@ export type Product = {
   brand?: { id: string | null; name: string; slug: string | null } | null;
   description?: string | null;
   short_description?: string | null;
+  name_bn?: string | null;
+  short_description_bn?: string | null;
+  description_bn?: string | null;
   type: ProductType;
   price: number;
   compare_at_price?: number | null;

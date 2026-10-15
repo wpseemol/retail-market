@@ -69,6 +69,31 @@ const variantInputSchema = z.object({
   is_default: z.boolean().optional(),
 });
 
+/** TipTap HTML: `""`/null clears, otherwise sanitized (rejects unsafe markup). */
+function richTextSchema() {
+  return z
+    .union([z.string().trim().max(20_000), z.null()])
+    .optional()
+    .transform((value, ctx) => {
+      if (value === undefined) return undefined;
+      if (value === null || value === "") return null;
+      const sanitized = sanitizeProductDescriptionHtml(value);
+      if (!sanitized.ok) {
+        ctx.addIssue({ code: "custom", message: sanitized.message });
+        return z.NEVER;
+      }
+      return sanitized.html || null;
+    });
+}
+
+/** Optional Bangla plain text; `""`/null clears it. */
+function bnTextSchema(max: number) {
+  return z
+    .union([withSafeInput(z.string().trim().max(max)), z.null()])
+    .transform((v) => (v ? v : null))
+    .optional();
+}
+
 const productBodySchema = z.object({
   vendor_id: z.string().regex(/^\d+$/).optional(),
   category_id: z.string().regex(/^\d+$/),
@@ -86,22 +111,13 @@ const productBodySchema = z.object({
       ),
   ).optional(),
   brand: withSafeInput(z.string().trim().max(120)).optional().nullable(),
-  description: z
-    .union([z.string().trim().max(20_000), z.null()])
-    .optional()
-    .transform((value, ctx) => {
-      if (value === undefined) return undefined;
-      if (value === null || value === "") return null;
-      const sanitized = sanitizeProductDescriptionHtml(value);
-      if (!sanitized.ok) {
-        ctx.addIssue({ code: "custom", message: sanitized.message });
-        return z.NEVER;
-      }
-      return sanitized.html || null;
-    }),
+  description: richTextSchema(),
   short_description: withSafeInput(z.string().trim().max(500))
     .optional()
     .nullable(),
+  name_bn: bnTextSchema(255),
+  short_description_bn: bnTextSchema(500),
+  description_bn: richTextSchema(),
   type: z.enum(PRODUCT_TYPES).default("simple"),
   status: z.enum(PRODUCT_STATUSES).default("draft"),
   price: z.coerce.number().min(0).max(99_999_999).optional(),
@@ -495,6 +511,9 @@ dashboardProductsRouter.post("/", async (req, res) => {
           brand: brandName,
           description: data.description ?? null,
           short_description: data.short_description ?? null,
+          name_bn: data.name_bn ?? null,
+          short_description_bn: data.short_description_bn ?? null,
+          description_bn: data.description_bn ?? null,
           type,
           status,
           price,
@@ -650,6 +669,9 @@ dashboardProductsRouter.patch("/:id", async (req, res) => {
           data.short_description === undefined
             ? undefined
             : data.short_description,
+        name_bn: data.name_bn,
+        short_description_bn: data.short_description_bn,
+        description_bn: data.description_bn,
         type: data.type,
         status: data.status,
         price: data.price,

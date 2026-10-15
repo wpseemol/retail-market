@@ -113,10 +113,13 @@ function catalogWhere(filters: {
         ? {
             OR: [
               { name: { contains: q } },
+              { name_bn: { contains: q } },
               { short_description: { contains: q } },
               { brand: { contains: q } },
               { brandRef: { name: { contains: q } } },
+              { brandRef: { name_bn: { contains: q } } },
               { category: { name: { contains: q } } },
+              { category: { name_bn: { contains: q } } },
             ],
           }
         : {},

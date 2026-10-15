@@ -11,6 +11,8 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { addCartItem, cartSnapshot } from "@/store/cartSlice";
 import { selectWishlistIds, selectWishlistLoaded } from "@/store/wishlistSlice";
 import type { ShopProduct } from "@/components/shop/types";
+import { useI18n } from "@/components/providers/LocaleProvider";
+import type { Locale } from "@/i18n/config";
 
 type WishlistResponse = {
     items: { added_at: string; product: ApiProduct }[];
@@ -20,12 +22,12 @@ type WishlistResponse = {
 type WishlistRow = { addedAt: string; product: ShopProduct; comparePrice: number | null };
 
 /** Rows on success, or an error message. */
-async function fetchWishlistRows(): Promise<WishlistRow[] | string> {
+async function fetchWishlistRows(locale: Locale): Promise<WishlistRow[] | string> {
     try {
         const data = await apiFetch<WishlistResponse>("/api/customer/wishlist");
         return data.items.map((item) => ({
             addedAt: item.added_at,
-            product: toShopProduct(item.product),
+            product: toShopProduct(item.product, locale),
             comparePrice:
                 item.product.compare_at_price &&
                 Number(item.product.compare_at_price) > Number(item.product.price)
@@ -73,6 +75,7 @@ export default function WishlistPageContent() {
     const wishlistIds = useAppSelector(selectWishlistIds);
     const wishlistLoaded = useAppSelector(selectWishlistLoaded);
     const { toggle, isPending, error: toggleError } = useWishlist();
+    const { locale } = useI18n();
     const [rows, setRows] = useState<WishlistRow[] | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [addedId, setAddedId] = useState<number | null>(null);
@@ -88,18 +91,18 @@ export default function WishlistPageContent() {
     }, []);
 
     const load = useCallback(async () => {
-        applyResult(await fetchWishlistRows());
-    }, [applyResult]);
+        applyResult(await fetchWishlistRows(locale));
+    }, [applyResult, locale]);
 
     useEffect(() => {
         let cancelled = false;
-        void fetchWishlistRows().then((result) => {
+        void fetchWishlistRows(locale).then((result) => {
             if (!cancelled) applyResult(result);
         });
         return () => {
             cancelled = true;
         };
-    }, [applyResult]);
+    }, [applyResult, locale]);
 
     const visibleRows =
         rows && wishlistLoaded

@@ -11,6 +11,7 @@ import { format, LOCALE_TAGS } from "@/i18n/config";
 import { getDictionary, getLocale } from "@/i18n/server";
 import { breadcrumbJsonLd, buildMetadata, getSeoDefaults, itemListJsonLd, storeJsonLd } from "@/lib/seo";
 import { fetchShowcaseReviews, parseSort, type StorefrontSort } from "@/lib/showcase";
+import { localizeProduct } from "@/lib/products";
 import { fetchStoreBySlug, storeText } from "@/lib/stores";
 
 type PageProps = {
@@ -161,10 +162,10 @@ export default async function StoreDetailPage({ params, searchParams }: PageProp
           name={display.name}
           dict={dict}
           intlLocale={LOCALE_TAGS[locale].intl}
-          featured={data.featured_products ?? []}
+          featured={(data.featured_products ?? []).map((p) => localizeProduct(p, locale))}
           reviews={reviews}
           grid={{
-            products,
+            products: products.map((p) => localizeProduct(p, locale)),
             total: pagination.total,
             page: pagination.page,
             totalPages: pagination.total_pages,

@@ -18,6 +18,8 @@ type CopyProps = {
   /** e.g. "Shoppers using Bangla see this name; …" */
   help: string;
   nameLabel?: string;
+  descriptionLabel?: string;
+  descriptionRows?: number;
   nameMax: number;
   descriptionMax: number;
   namePlaceholder: string;
@@ -69,6 +71,8 @@ export function BanglaVersionFields({
   onDescriptionBnChange,
   help,
   nameLabel = "Bangla name",
+  descriptionLabel = "Bangla description",
+  descriptionRows = 3,
   nameMax,
   descriptionMax,
   namePlaceholder,
@@ -118,13 +122,15 @@ export function BanglaVersionFields({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description_bn">Bangla description {optional}</Label>
+            <Label htmlFor="description_bn">
+              {descriptionLabel} {optional}
+            </Label>
             <Textarea
               id="description_bn"
               lang="bn"
               value={descriptionBn}
               onChange={(e) => onDescriptionBnChange(e.target.value)}
-              rows={3}
+              rows={descriptionRows}
               maxLength={descriptionMax}
               placeholder={descriptionPlaceholder}
               disabled={disabled}
@@ -141,9 +147,13 @@ export function BanglaVersionFormFields<T extends FieldValues>({
   enabledField,
   nameField,
   descriptionField,
+  extraFields = [],
+  children,
   onBeforeDisable,
   help,
   nameLabel = "Bangla name",
+  descriptionLabel = "Bangla description",
+  descriptionRows = 3,
   nameMax,
   descriptionMax,
   namePlaceholder,
@@ -154,6 +164,10 @@ export function BanglaVersionFormFields<T extends FieldValues>({
   enabledField: Path<T>;
   nameField: Path<T>;
   descriptionField: Path<T>;
+  /** Other Bangla string fields rendered via `children`; cleared with the rest when switched off. */
+  extraFields?: Path<T>[];
+  /** Extra Bangla inputs shown below the built-in ones while the switch is on. */
+  children?: ReactNode;
   /** Return false to keep the switch on (e.g. the user cancelled a confirm). */
   onBeforeDisable?: () => Promise<boolean>;
 }) {
@@ -185,9 +199,11 @@ export function BanglaVersionFormFields<T extends FieldValues>({
                     }
                     if (!next) {
                       const blank = "" as T[Path<T>];
-                      form.setValue(nameField, blank, { shouldDirty: true });
-                      form.setValue(descriptionField, blank, { shouldDirty: true });
-                      form.clearErrors([nameField, descriptionField]);
+                      const fields = [nameField, descriptionField, ...extraFields];
+                      for (const name of fields) {
+                        form.setValue(name, blank, { shouldDirty: true });
+                      }
+                      form.clearErrors(fields);
                     }
                     field.onChange(next);
                   }}
@@ -226,11 +242,13 @@ export function BanglaVersionFormFields<T extends FieldValues>({
             name={descriptionField}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Bangla description {optional}</FormLabel>
+                <FormLabel>
+                  {descriptionLabel} {optional}
+                </FormLabel>
                 <FormControl>
                   <Textarea
                     lang="bn"
-                    rows={3}
+                    rows={descriptionRows}
                     maxLength={descriptionMax}
                     placeholder={descriptionPlaceholder}
                     disabled={disabled}
@@ -241,6 +259,7 @@ export function BanglaVersionFormFields<T extends FieldValues>({
               </FormItem>
             )}
           />
+          {children}
         </div>
       ) : null}
     </div>

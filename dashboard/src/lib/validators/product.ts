@@ -74,6 +74,15 @@ export const productFormSchema = z
     ),
     short_description: withSafeInput(z.string().trim().max(500)),
     description: withSafeRichText(z.string().max(20_000)),
+    /** UI-only switch; when off the Bangla fields are sent as null. */
+    bn_enabled: z.boolean(),
+    name_bn: withSafeInput(
+      z.string().trim().max(255, "Bangla name must be at most 255 characters"),
+    ),
+    short_description_bn: withSafeInput(
+      z.string().trim().max(500, "Bangla short description must be at most 500 characters"),
+    ),
+    description_bn: withSafeRichText(z.string().max(20_000)),
     type: z.enum(["simple", "variable"]),
     status: z.enum(["draft", "active"]),
     price: z.number().min(0).max(99_999_999),
@@ -111,6 +120,44 @@ export const productFormSchema = z
 
 export type ProductFormValues = z.infer<typeof productFormSchema>;
 
+/** Form defaults for the Bangla fields (spread into `defaultValues` / `reset`). */
+export const PRODUCT_BANGLA_DEFAULTS = {
+  bn_enabled: false,
+  name_bn: "",
+  short_description_bn: "",
+  description_bn: "",
+};
+
+/** True when TipTap HTML has visible text (an empty editor still yields `<p></p>`). */
+function hasRichText(html: string) {
+  return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim().length > 0;
+}
+
+function bnOrNull(enabled: boolean, value: string): string | null {
+  if (!enabled) return null;
+  const v = value.trim();
+  return v && hasRichText(v) ? v : null;
+}
+
+/** Bangla form values from a loaded product; the switch starts on when any Bangla text exists. */
+export function productBanglaValues(product: {
+  name_bn?: string | null;
+  short_description_bn?: string | null;
+  description_bn?: string | null;
+}) {
+  const name_bn = product.name_bn ?? "";
+  const short_description_bn = product.short_description_bn ?? "";
+  const description_bn = product.description_bn ?? "";
+  return {
+    bn_enabled: Boolean(
+      name_bn || short_description_bn || hasRichText(description_bn),
+    ),
+    name_bn,
+    short_description_bn,
+    description_bn,
+  };
+}
+
 export function toProductApiBody(
   values: ProductFormValues,
   opts: { includeVendor: boolean },
@@ -124,6 +171,9 @@ export function toProductApiBody(
       ? values.short_description.trim()
       : null,
     description: values.description.trim() ? values.description.trim() : null,
+    name_bn: bnOrNull(values.bn_enabled, values.name_bn),
+    short_description_bn: bnOrNull(values.bn_enabled, values.short_description_bn),
+    description_bn: bnOrNull(values.bn_enabled, values.description_bn),
     type: values.type,
     status: values.status,
     price: values.price,
