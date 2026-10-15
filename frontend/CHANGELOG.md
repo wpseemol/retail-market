@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Bangla store names on the storefront
+- `src/lib/stores.ts`: `shop_name_bn` / `description_bn` on store types, `name_bn` on the store page's brand list, and a new `storeText(store, locale)` helper. In Bangla it returns the Bangla name and description when they are set; each one falls back to English on its own.
+- `src/app/stores/[slug]/page.tsx`: the store page hero (name and description), breadcrumb, page sections and "brands from this store" chips use the Bangla text. SEO metadata and JSON-LD stay on the English name because the URL is the same for both languages.
+- `src/app/stores/page.tsx`, `src/components/store/StoresPageContent.tsx`: directory cards show the Bangla name and description; the page now passes `locale` to the cards.
+
 ### Bangla brand names on the storefront
 - `src/lib/brands.ts`: `name_bn` / `description_bn` on brand types, plus a new `brandText(brand, locale)` helper. In Bangla it returns the Bangla name and description when they are set; each one falls back to English on its own.
 - `src/app/brands/[slug]/page.tsx`: the brand page hero (name and description), breadcrumb, "Shop all" button and page sections use the localized text. SEO metadata and JSON-LD stay on the English name because the URL is the same for both languages.

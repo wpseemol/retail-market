@@ -144,7 +144,7 @@ Query: `page` (default 1), `limit` (default 24, max 48), `q?` (search name/slug/
 
 **200** → `{ stores, pagination }`
 
-`stores[]`: `id`, `shop_name`, `slug`, `description`, `logo`, `banner`, storefront layout fields, `products_count`
+`stores[]`: `id`, `shop_name`, `shop_name_bn`, `slug`, `description`, `description_bn`, `logo`, `banner`, storefront layout fields, `products_count`
 
 ### `GET /api/shops/:slug`
 
@@ -152,7 +152,7 @@ Query: `page` (default 1), `limit?` (falls back to store `products_per_page`, ma
 
 **200** → `{ store, products, featured_products, sort, pagination }`
 
-`store` includes: `logo`, `banner`, `tagline`, `accent_color`, `storefront_theme` (`classic`|`marketplace`|`showcase`), `products_per_page`, `featured_products_count`, `show_banned_brands`, `product_sort`, plus the [showcase payload](#showcase-payload), `brands[]` (active brands linked to this store: `id`, `name`, `slug`, `image`) and `review_summary` (`average`, `count`, `breakdown`).  
+`store` includes: `shop_name_bn` / `description_bn` (optional Bangla, `null` when unset), `logo`, `banner`, `tagline`, `accent_color`, `storefront_theme` (`classic`|`marketplace`|`showcase`), `products_per_page`, `featured_products_count`, `show_banned_brands`, `product_sort`, plus the [showcase payload](#showcase-payload), `brands[]` (active brands linked to this store: `id`, `name`, `name_bn`, `slug`, `image`) and `review_summary` (`average`, `count`, `breakdown`).  
 `products[]` include `brand_banned` when linked brand is inactive  
 `featured_products`: up to `featured_products_count` featured products
 
@@ -1017,8 +1017,8 @@ Auth: Bearer **`super_admin`**, **`admin`** or **`vendor`**.
 | GET | `/:idOrSlug` | Detail (numeric id **or** slug) |
 | GET | `/:idOrSlug/history` | Audit log |
 | DELETE | `/:idOrSlug/history` | Clear audit log (DB delete) · super or owner |
-| POST | `/` | Create (`shop_name`, `slug?`, `description?`, `user_id?` required for super, `status?`) · admin → 403 |
-| PATCH | `/:idOrSlug` | Update settings · super or owner |
+| POST | `/` | Create (`shop_name`, `slug?`, `description?`, `shop_name_bn?`, `description_bn?`, `user_id?` required for super, `status?`) · admin → 403 |
+| PATCH | `/:idOrSlug` | Update settings (incl. `shop_name_bn?`, `description_bn?`) · super or owner. Bangla edits are logged in history |
 | POST | `/:idOrSlug/logo` | Multipart **`logo`** · max **5 MB** · always resized |
 | POST | `/:idOrSlug/banner` | Multipart **`banner`** · max **5 MB** · always resized |
 | GET | `/:idOrSlug/showcase` | Page design for the editor: `shop_name`, `logo`, `banner`, `tagline`, `accent_color`, `seo_*`, `noindex`, `og_image`, full `showcase` (incl. disabled sections), `owned_by_actor` |
@@ -1031,7 +1031,9 @@ Auth: Bearer **`super_admin`**, **`admin`** or **`vendor`**.
 
 Store edits call the storefront's `POST /api/revalidate` (tags `stores`, `store:<slug>`) when `REVALIDATE_SECRET` is set.
 
-**Shop object:** `id`, `user_id`, `logo_id`, `shop_name`, `slug`, `description`, `status` (`pending`\|`active`\|…), timestamps, `logo`, `user?`.
+**Bangla fields:** `shop_name_bn` (≤200) and `description_bn` (≤5000) are optional and safe-text checked; `""`/`null` clears them. The slug is shared by both languages, and the storefront falls back to the English text when they are empty.
+
+**Shop object:** `id`, `user_id`, `logo_id`, `shop_name`, `shop_name_bn`, `slug`, `description`, `description_bn`, `status` (`pending`\|`active`\|…), timestamps, `logo`, `user?`.
 
 Dashboard UI uses **`/stores/{slug}`** (not id).
 

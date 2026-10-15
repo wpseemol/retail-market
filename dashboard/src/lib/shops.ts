@@ -27,8 +27,10 @@ export type Shop = {
   logo_id?: string | null;
   banner_id?: string | null;
   shop_name: string;
+  shop_name_bn?: string | null;
   slug: string;
   description?: string | null;
+  description_bn?: string | null;
   status: ShopStatus;
   storefront_theme?: StorefrontTheme;
   products_per_page?: number;

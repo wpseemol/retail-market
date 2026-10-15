@@ -48,8 +48,10 @@ const listQuerySchema = z.object({
 function toStorefrontShop(vendor: {
   id: bigint;
   shop_name: string;
+  shop_name_bn: string | null;
   slug: string;
   description: string | null;
+  description_bn: string | null;
   storefront_theme: string;
   products_per_page: number;
   featured_products_count: number;
@@ -66,8 +68,10 @@ function toStorefrontShop(vendor: {
   return {
     id: vendor.id.toString(),
     shop_name: vendor.shop_name,
+    shop_name_bn: vendor.shop_name_bn,
     slug: vendor.slug,
     description: vendor.description,
+    description_bn: vendor.description_bn,
     tagline: vendor.tagline ?? null,
     accent_color: vendor.accent_color ?? null,
     logo: toPublicMedia(vendor.logo),
@@ -257,6 +261,7 @@ publicShopsRouter.get("/:slug", async (req, res) => {
       brands: vendor.brands.map((b) => ({
         id: b.id.toString(),
         name: b.name,
+        name_bn: b.name_bn,
         slug: b.slug,
         image: toPublicMedia(b.image),
       })),

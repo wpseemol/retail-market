@@ -9,6 +9,7 @@ import { Search, X } from "lucide-react";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { slugifyClient, type Shop } from "@/lib/shops";
 import {
+  STORE_BANGLA_COPY,
   shopCreateFormSchema,
   toShopCreateApiBody,
   validateShopImageFile,
@@ -22,6 +23,7 @@ import {
   StoreLivePreview,
   StoreStickyActions,
 } from "@/components/shops/ShopFormShell";
+import { BanglaVersionFormFields } from "@/components/dashboard/bangla-version-fields";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -79,6 +81,9 @@ export function StoreCreatePage() {
       shop_name: "",
       slug: "",
       description: "",
+      bn_enabled: false,
+      shop_name_bn: "",
+      description_bn: "",
       status: "draft",
       user_id: "",
     },
@@ -499,6 +504,21 @@ export function StoreCreatePage() {
                   )}
                 </div>
               ) : null}
+            </StoreFormSection>
+
+            <StoreFormSection
+              step="03"
+              title="Bangla version"
+              description="Optional — skip it and the storefront shows the English text in Bangla too."
+            >
+              <BanglaVersionFormFields<ShopCreateFormValues>
+                {...STORE_BANGLA_COPY}
+                enabledField="bn_enabled"
+                nameField="shop_name_bn"
+                descriptionField="description_bn"
+                englishName={shopName.trim()}
+                disabled={form.formState.isSubmitting}
+              />
             </StoreFormSection>
 
             <StoreStickyActions

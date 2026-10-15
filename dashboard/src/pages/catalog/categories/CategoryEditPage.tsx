@@ -14,7 +14,7 @@ import {
 } from "@/lib/validators/category";
 import { useAuthStore } from "@/store/auth";
 import { CategoryIconPicker } from "@/components/categories/CategoryIconPicker";
-import { CategoryBanglaFields } from "@/components/categories/CategoryBanglaFields";
+import { BanglaVersionFields } from "@/components/dashboard/bangla-version-fields";
 import {
   CategoryCoverDropzone,
   CategoryFormHeader,
@@ -434,7 +434,12 @@ export function CategoryEditPage() {
             title="Bangla version"
             description="Optional — when empty the storefront shows the English name in Bangla too."
           >
-            <CategoryBanglaFields
+            <BanglaVersionFields
+              help="Optional. Shoppers using Bangla see this name; if it is empty they see the English name. The slug stays the same."
+              nameMax={150}
+              descriptionMax={5000}
+              namePlaceholder="ইলেকট্রনিক্স"
+              descriptionPlaceholder="ক্যাটালগে দেখানো ছোট বিবরণ"
               enabled={bnEnabled}
               onEnabledChange={(next) => void onToggleBangla(next)}
               nameBn={nameBn}

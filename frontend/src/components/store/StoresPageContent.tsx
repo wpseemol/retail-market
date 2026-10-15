@@ -3,13 +3,14 @@ import type { CSSProperties } from "react";
 import { DirectoryPage } from "@/components/showcase/DirectoryPage";
 import { readableTextOn } from "@/components/showcase/ShowcaseTheme";
 import type { Dictionary } from "@/i18n/dictionaries";
-import { format } from "@/i18n/config";
-import type { StorefrontStore } from "@/lib/stores";
+import { format, type Locale } from "@/i18n/config";
+import { storeText, type StorefrontStore } from "@/lib/stores";
 
 type T = Dictionary["showcase"];
 
-function StoreCard({ store, t }: { store: StorefrontStore; t: T }) {
+function StoreCard({ store, t, locale }: { store: StorefrontStore; t: T; locale: Locale }) {
   const count = store.products_count ?? 0;
+  const display = storeText(store, locale);
   const accent = store.accent_color && /^#[0-9a-f]{6}$/i.test(store.accent_color) ? store.accent_color : null;
   const style = accent
     ? ({ "--showcase-accent": accent, "--showcase-on-accent": readableTextOn(accent) } as CSSProperties)
@@ -33,20 +34,20 @@ function StoreCard({ store, t }: { store: StorefrontStore; t: T }) {
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={store.logo.path}
-                alt={store.logo.alt_text ?? store.shop_name}
+                alt={store.logo.alt_text ?? display.name}
                 loading="lazy"
                 decoding="async"
                 className="size-full object-contain"
               />
             ) : (
-              store.shop_name.charAt(0).toUpperCase()
+              display.name.charAt(0).toUpperCase()
             )}
           </div>
           <h2 className="mt-3 truncate text-[16px] font-semibold text-text-primary group-hover:text-sc-accent-text">
-            {store.shop_name}
+            {display.name}
           </h2>
           <p className="mt-1 line-clamp-2 min-h-[2.5rem] text-[13px] leading-relaxed text-text-secondary">
-            {store.tagline || store.description?.trim() || "\u00a0"}
+            {store.tagline || display.description?.trim() || "\u00a0"}
           </p>
           <div className="mt-3 flex items-center justify-between border-t border-border-default pt-3 text-[12px]">
             <span className="text-text-secondary">
@@ -67,6 +68,7 @@ export default function StoresPageContent({
   totalPages,
   q,
   t,
+  locale,
 }: {
   stores: StorefrontStore[];
   total: number;
@@ -74,6 +76,7 @@ export default function StoresPageContent({
   totalPages: number;
   q?: string;
   t: T;
+  locale: Locale;
 }) {
   return (
     <DirectoryPage
@@ -93,7 +96,7 @@ export default function StoresPageContent({
     >
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {stores.map((store) => (
-          <StoreCard key={store.id} store={store} t={t} />
+          <StoreCard key={store.id} store={store} t={t} locale={locale} />
         ))}
       </div>
     </DirectoryPage>

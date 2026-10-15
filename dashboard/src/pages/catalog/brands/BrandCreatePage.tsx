@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { slugifyClient, type Brand } from "@/lib/brands";
 import {
+  BRAND_BANGLA_COPY,
   brandFormSchema,
   toBrandApiBody,
   validateBrandImageFile,
@@ -21,7 +22,7 @@ import {
   BrandLivePreview,
   BrandStickyActions,
 } from "@/components/brands/BrandFormShell";
-import { BrandBanglaFields } from "@/components/brands/BrandBanglaFields";
+import { BanglaVersionFormFields } from "@/components/dashboard/bangla-version-fields";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -310,7 +311,14 @@ export function BrandCreatePage() {
               title="Bangla version"
               description="Optional — skip it and the storefront shows the English text in Bangla too."
             >
-              <BrandBanglaFields disabled={form.formState.isSubmitting} />
+              <BanglaVersionFormFields<BrandFormValues>
+                {...BRAND_BANGLA_COPY}
+                enabledField="bn_enabled"
+                nameField="name_bn"
+                descriptionField="description_bn"
+                englishName={name.trim()}
+                disabled={form.formState.isSubmitting}
+              />
             </BrandFormSection>
 
             <BrandStickyActions

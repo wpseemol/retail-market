@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Optional Bangla version for stores + shared Bangla fields
+- New `src/components/dashboard/bangla-version-fields.tsx` with two versions of the "Add Bangla version" switch plus Bangla name and description fields: `BanglaVersionFields` (controlled, for `useState` pages) and `BanglaVersionFormFields` (shadcn `FormField`s, for react-hook-form pages). It replaces `components/categories/CategoryBanglaFields.tsx` and `components/brands/BrandBanglaFields.tsx`, which were deleted, and the category and brand pages now use it.
+- `src/pages/stores/StoreCreatePage.tsx`: new step 03 "Bangla version", off by default so it can be skipped. Sends `shop_name_bn` / `description_bn` only when the switch is on.
+- `src/pages/stores/StoreEditPage.tsx`: new step 02 "Bangla version". "Storefront layout" is now step 03 and "Change history" step 04. The switch starts on when the store already has Bangla text, and turning it off with text present asks for confirmation (`useConfirm`). The Bangla fields are checked with Zod and safe input before saving.
+- `src/lib/validators/shop.ts`: `bn_enabled`, `shop_name_bn`, `description_bn` in the create schema; new `shopBanglaSchema`, `STORE_BANGLA_COPY` and `bnOrNull()`. `src/lib/validators/brand.ts`: new `BRAND_BANGLA_COPY`.
+- `src/lib/shops.ts`: `shop_name_bn` / `description_bn` on `Shop`.
+
 ### Optional Bangla version for brands
 - New `src/components/brands/BrandBanglaFields.tsx`: shadcn `FormField`s (via `useFormContext`) for an "Add Bangla version" switch plus optional Bangla name and description. Turning the switch off clears both fields.
 - `src/pages/catalog/brands/BrandCreatePage.tsx`: new step 03 "Bangla version", off by default so it can be skipped.

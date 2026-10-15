@@ -11,7 +11,7 @@ import { format, LOCALE_TAGS } from "@/i18n/config";
 import { getDictionary, getLocale } from "@/i18n/server";
 import { breadcrumbJsonLd, buildMetadata, getSeoDefaults, itemListJsonLd, storeJsonLd } from "@/lib/seo";
 import { fetchShowcaseReviews, parseSort, type StorefrontSort } from "@/lib/showcase";
-import { fetchStoreBySlug } from "@/lib/stores";
+import { fetchStoreBySlug, storeText } from "@/lib/stores";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -63,6 +63,7 @@ export default async function StoreDetailPage({ params, searchParams }: PageProp
   const reviews = content.sections.includes("reviews") ? await fetchShowcaseReviews("shops", store.slug) : null;
   const defaultSort = (parseSort(store.product_sort) ?? "featured_first") as StorefrontSort;
   const path = `/stores/${store.slug}`;
+  const display = storeText(store, locale);
   const crumbs = [
     { name: t.home, path: "/" },
     { name: t.stores, path: "/stores" },
@@ -99,14 +100,14 @@ export default async function StoreDetailPage({ params, searchParams }: PageProp
         <AnnouncementBar announcement={content.announcement} />
         <ShowcaseBreadcrumb
           label={t.breadcrumb}
-          items={[{ name: t.home, href: "/" }, { name: t.stores, href: "/stores" }, { name: store.shop_name }]}
+          items={[{ name: t.home, href: "/" }, { name: t.stores, href: "/stores" }, { name: display.name }]}
         />
         <ShowcaseHero
           style={content.hero_style}
           kicker={t.storeKicker}
-          name={store.shop_name}
+          name={display.name}
           tagline={store.tagline}
-          description={store.description}
+          description={display.description}
           logo={store.logo}
           banner={store.banner ?? null}
           rating={{
@@ -146,7 +147,7 @@ export default async function StoreDetailPage({ params, searchParams }: PageProp
                           brand.name.charAt(0).toUpperCase()
                         )}
                       </span>
-                      {brand.name}
+                      {(locale === "bn" && brand.name_bn?.trim()) || brand.name}
                     </Link>
                   </li>
                 ))}
@@ -157,7 +158,7 @@ export default async function StoreDetailPage({ params, searchParams }: PageProp
 
         <ShowcaseSections
           content={content}
-          name={store.shop_name}
+          name={display.name}
           dict={dict}
           intlLocale={LOCALE_TAGS[locale].intl}
           featured={data.featured_products ?? []}

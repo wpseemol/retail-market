@@ -1,4 +1,5 @@
 import { API_URL } from "@/lib/api";
+import type { Locale } from "@/i18n/config";
 import type { ShowcaseMedia, ShowcasePayload, StorefrontSort } from "@/lib/showcase";
 
 export type StoreMedia = ShowcaseMedia;
@@ -8,8 +9,10 @@ export type StorefrontTheme = "classic" | "marketplace" | "showcase";
 export type StorefrontStore = {
   id: string;
   shop_name: string;
+  shop_name_bn?: string | null;
   slug: string;
   description: string | null;
+  description_bn?: string | null;
   tagline?: string | null;
   accent_color?: string | null;
   logo: StoreMedia;
@@ -27,8 +30,25 @@ export type StorefrontStore = {
 /** `GET /api/shops/:slug` store: profile + page design + linked brands. */
 export type StoreDetail = StorefrontStore &
   ShowcasePayload & {
-    brands: { id: string; name: string; slug: string; image: StoreMedia }[];
+    brands: { id: string; name: string; name_bn?: string | null; slug: string; image: StoreMedia }[];
   };
+
+/** Display name / description for the shopper's language; each Bangla field falls back to English on its own. */
+export function storeText(
+  store: {
+    shop_name: string;
+    shop_name_bn?: string | null;
+    description: string | null;
+    description_bn?: string | null;
+  },
+  locale: Locale,
+): { name: string; description: string | null } {
+  if (locale !== "bn") return { name: store.shop_name, description: store.description };
+  return {
+    name: store.shop_name_bn?.trim() || store.shop_name,
+    description: store.description_bn?.trim() || store.description,
+  };
+}
 
 export type StorefrontProduct = {
   id: string;

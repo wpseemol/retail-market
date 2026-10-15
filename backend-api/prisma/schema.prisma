@@ -367,8 +367,12 @@ model Vendor {
   /// Wide storefront banner (uploads/shops/).
   banner_id               BigInt?         @unique @db.UnsignedBigInt
   shop_name               String          @db.VarChar(200)
+  /// Optional Bangla store name; the storefront falls back to `shop_name` when empty.
+  shop_name_bn            String?         @db.VarChar(200)
   slug                    String          @unique @db.VarChar(220)
   description             String?         @db.Text
+  /// Optional Bangla description; falls back to `description` when empty.
+  description_bn          String?         @db.Text
   status                  UserStatus      @default(pending)
   /// Customer /stores/[slug] layout theme.
   storefront_theme        StorefrontTheme @default(classic)

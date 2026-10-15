@@ -19,7 +19,14 @@ import {
   STOREFRONT_THEMES,
   PRODUCT_SORTS,
 } from "@/lib/shops";
-import { validateShopImageFile } from "@/lib/validators/shop";
+import {
+  STORE_BANGLA_COPY,
+  bnOrNull,
+  firstZodError,
+  shopBanglaSchema,
+  validateShopImageFile,
+} from "@/lib/validators/shop";
+import { BanglaVersionFields } from "@/components/dashboard/bangla-version-fields";
 import { useAuthStore } from "@/store/auth";
 import {
   StoreFormHeader,
@@ -71,6 +78,9 @@ export function StoreEditPage() {
   const [shopName, setShopName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
+  const [bnEnabled, setBnEnabled] = useState(false);
+  const [shopNameBn, setShopNameBn] = useState("");
+  const [descriptionBn, setDescriptionBn] = useState("");
   const [status, setStatus] = useState<ShopStatus>("pending");
   const [ownerId, setOwnerId] = useState("");
   const [vendors, setVendors] = useState<VendorOption[]>([]);
@@ -140,6 +150,9 @@ export function StoreEditPage() {
     setShopName(next.shop_name);
     setSlug(next.slug);
     setDescription(next.description ?? "");
+    setShopNameBn(next.shop_name_bn ?? "");
+    setDescriptionBn(next.description_bn ?? "");
+    setBnEnabled(Boolean(next.shop_name_bn || next.description_bn));
     setStatus(next.status);
     setOwnerId(next.user_id);
     setTheme(next.storefront_theme ?? "classic");
@@ -149,9 +162,35 @@ export function StoreEditPage() {
     setProductSort(next.product_sort ?? "featured_first");
   }
 
+  async function onToggleBangla(next: boolean) {
+    if (!next && (shopNameBn.trim() || descriptionBn.trim())) {
+      const ok = await confirm({
+        title: `Remove the Bangla version of “${shop?.shop_name ?? shopName}”?`,
+        description:
+          "The Bangla store name and description are cleared when you save, and Bangla shoppers see the English text instead. This cannot be undone after saving.",
+        confirmLabel: "Remove Bangla",
+      });
+      if (!ok) return;
+      setShopNameBn("");
+      setDescriptionBn("");
+    }
+    setBnEnabled(next);
+  }
+
   async function onSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token || !routeSlug) return;
+    if (bnEnabled) {
+      const bn = shopBanglaSchema.safeParse({
+        shop_name_bn: shopNameBn,
+        description_bn: descriptionBn,
+      });
+      if (!bn.success) {
+        setSaveError(firstZodError(bn.error));
+        setSaveSuccess(null);
+        return;
+      }
+    }
     setSaving(true);
     setSaveError(null);
     setSaveSuccess(null);
@@ -166,6 +205,8 @@ export function StoreEditPage() {
             shop_name: shopName.trim(),
             slug: slug.trim(),
             description: description.trim() || null,
+            shop_name_bn: bnOrNull(bnEnabled, shopNameBn),
+            description_bn: bnOrNull(bnEnabled, descriptionBn),
             storefront_theme: theme,
             products_per_page: productsPerPage,
             featured_products_count: featuredCount,
@@ -479,6 +520,24 @@ export function StoreEditPage() {
 
           <StoreFormSection
             step="02"
+            title="Bangla version"
+            description="Optional — when empty the storefront shows the English text in Bangla too."
+          >
+            <BanglaVersionFields
+              {...STORE_BANGLA_COPY}
+              enabled={bnEnabled}
+              onEnabledChange={(next) => void onToggleBangla(next)}
+              nameBn={shopNameBn}
+              onNameBnChange={setShopNameBn}
+              descriptionBn={descriptionBn}
+              onDescriptionBnChange={setDescriptionBn}
+              englishName={shopName.trim()}
+              disabled={saving}
+            />
+          </StoreFormSection>
+
+          <StoreFormSection
+            step="03"
             title="Storefront layout"
             description="How this store appears on the customer site."
           >
@@ -611,7 +670,7 @@ export function StoreEditPage() {
           </StoreStickyActions>
 
           <StoreFormSection
-            step="03"
+            step="04"
             title="Change history"
             description="Tracks create, edits, media uploads, and deletes. Clear removes rows from the database."
           >

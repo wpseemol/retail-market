@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { JsonLd } from "@/components/seo/JsonLd";
 import StoresPageContent from "@/components/store/StoresPageContent";
 import { format } from "@/i18n/config";
-import { getDictionary } from "@/i18n/server";
+import { getDictionary, getLocale } from "@/i18n/server";
 import { breadcrumbJsonLd, buildIndexMetadata, getSeoDefaults, itemListJsonLd } from "@/lib/seo";
 import { fetchStores } from "@/lib/stores";
 
@@ -24,7 +24,12 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 }
 
 export default async function StoresPage({ searchParams }: PageProps) {
-  const [query, dict, seo] = await Promise.all([searchParams, getDictionary(), getSeoDefaults()]);
+  const [query, dict, seo, locale] = await Promise.all([
+    searchParams,
+    getDictionary(),
+    getSeoDefaults(),
+    getLocale(),
+  ]);
   const t = dict.showcase;
   const page = Math.max(1, Number(query.page) || 1);
   const q = query.q?.trim().slice(0, 100) || undefined;
@@ -56,6 +61,7 @@ export default async function StoresPage({ searchParams }: PageProps) {
         totalPages={data.pagination.total_pages}
         q={q}
         t={t}
+        locale={locale}
       />
     </main>
   );

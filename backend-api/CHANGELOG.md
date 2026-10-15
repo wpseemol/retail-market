@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Optional Bangla name / description for stores
+- `prisma/schema.prisma` + `prisma/migrations/20261015140000_store_bangla/`: new nullable `vendors.shop_name_bn` (VARCHAR 200) and `description_bn` (TEXT). The slug stays shared.
+- `src/routes/dashboardVendors.ts`: create and update accept `shop_name_bn` (≤200) and `description_bn` (≤5000), safe-input checked, with `""`/`null` clearing them. Changes are recorded in the store history, and the shop object includes both fields.
+- `src/routes/publicShops.ts`: the store list and store detail include `shop_name_bn` / `description_bn`. The store page `brands[]` include `name_bn`.
+- `API.md`: documented the new fields.
+
 ### Optional Bangla name / description for brands
 - `prisma/schema.prisma` + `prisma/migrations/20261015130000_brand_bangla/`: new nullable `brands.name_bn` (VARCHAR 120) and `description_bn` (VARCHAR 500). The slug stays shared.
 - `src/validators/brand.ts`: `name_bn` (≤120) and `description_bn` (≤500) are optional and safe-input checked. `""` or `null` clears them.

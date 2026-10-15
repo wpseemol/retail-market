@@ -7,10 +7,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Palette, Trash2 } from "lucide-react";
 import { useConfirm } from "@/components/providers/ConfirmProvider";
 import { BrandLinkedStoreCard } from "@/components/brands/BrandLinkedStoreCard";
-import { BrandBanglaFields } from "@/components/brands/BrandBanglaFields";
+import { BanglaVersionFormFields } from "@/components/dashboard/bangla-version-fields";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { slugifyClient, type Brand, type BrandPermissions } from "@/lib/brands";
 import {
+  BRAND_BANGLA_COPY,
   brandFormSchema,
   toBrandApiBody,
   validateBrandImageFile,
@@ -385,7 +386,12 @@ export function BrandEditPage() {
               title="Bangla version"
               description="Optional — when empty the storefront shows the English text in Bangla too."
             >
-              <BrandBanglaFields
+              <BanglaVersionFormFields<BrandFormValues>
+                {...BRAND_BANGLA_COPY}
+                enabledField="bn_enabled"
+                nameField="name_bn"
+                descriptionField="description_bn"
+                englishName={form.watch("name").trim()}
                 disabled={form.formState.isSubmitting}
                 onBeforeDisable={async () => {
                   const { name_bn, description_bn } = form.getValues();

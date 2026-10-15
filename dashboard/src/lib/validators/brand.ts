@@ -44,6 +44,15 @@ export const brandFormSchema = z.object({
 
 export type BrandFormValues = z.infer<typeof brandFormSchema>;
 
+/** Copy for the shared Bangla version fields; limits match the schema above. */
+export const BRAND_BANGLA_COPY = {
+  help: "Optional. Shoppers using Bangla see this name and description on the brand page and lists; if empty they see the English text. The slug stays the same.",
+  nameMax: 120,
+  descriptionMax: 500,
+  namePlaceholder: "হ্যান্ডমেড",
+  descriptionPlaceholder: "ব্র্যান্ড সম্পর্কে ছোট বিবরণ (সর্বোচ্চ ৫০০ অক্ষর)",
+};
+
 export function toBrandApiBody(values: BrandFormValues) {
   const nameBn = values.bn_enabled ? values.name_bn.trim() : "";
   const descriptionBn = values.bn_enabled ? values.description_bn.trim() : "";

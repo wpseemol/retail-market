@@ -65,6 +65,18 @@ const PRODUCT_SORTS = [
   "price_desc",
 ] as const;
 
+/** Optional Bangla copy; empty string or null clears it. */
+const bnFields = {
+  shop_name_bn: z
+    .union([withSafeInput(z.string().trim().max(200)), z.null()])
+    .transform((v) => (v ? v : null))
+    .optional(),
+  description_bn: z
+    .union([withSafeInput(z.string().trim().max(5000)), z.null()])
+    .transform((v) => (v ? v : null))
+    .optional(),
+};
+
 const createShopSchema = z.object({
   shop_name: withSafeInput(z.string().trim().min(2).max(200)),
   slug: withSafeInput(
@@ -79,6 +91,7 @@ const createShopSchema = z.object({
       ),
   ).optional(),
   description: withSafeInput(z.string().trim().max(5000)).optional().nullable(),
+  ...bnFields,
   user_id: z.string().regex(/^\d+$/).optional(),
   status: z.enum(CREATE_SHOP_STATUSES).optional(),
 });
@@ -97,6 +110,7 @@ const updateShopSchema = z.object({
       ),
   ).optional(),
   description: withSafeInput(z.string().trim().max(5000)).optional().nullable(),
+  ...bnFields,
   status: z.enum(SHOP_STATUSES as [UserStatus, ...UserStatus[]]).optional(),
   user_id: z.string().regex(/^\d+$/).optional(),
   storefront_theme: z.enum(STOREFRONT_THEMES).optional(),
@@ -139,8 +153,10 @@ function toPublicShop(
     logo_id?: bigint | null;
     banner_id?: bigint | null;
     shop_name: string;
+    shop_name_bn: string | null;
     slug: string;
     description: string | null;
+    description_bn: string | null;
     status: UserStatus;
     storefront_theme?: string;
     products_per_page?: number;
@@ -161,8 +177,10 @@ function toPublicShop(
     logo_id: vendor.logo_id?.toString() ?? null,
     banner_id: vendor.banner_id?.toString() ?? null,
     shop_name: vendor.shop_name,
+    shop_name_bn: vendor.shop_name_bn,
     slug: vendor.slug,
     description: vendor.description,
+    description_bn: vendor.description_bn,
     status: vendor.status,
     storefront_theme: vendor.storefront_theme ?? "classic",
     products_per_page: vendor.products_per_page ?? 12,
@@ -466,6 +484,8 @@ dashboardVendorsRouter.post("/", async (req, res) => {
       shop_name: data.shop_name,
       slug,
       description: data.description ?? null,
+      shop_name_bn: data.shop_name_bn ?? null,
+      description_bn: data.description_bn ?? null,
       status,
     },
     include: shopInclude,
@@ -580,6 +600,21 @@ dashboardVendorsRouter.patch("/:idOrSlug", async (req, res) => {
       to: data.description,
     };
   }
+  if (
+    data.shop_name_bn !== undefined &&
+    data.shop_name_bn !== existing.shop_name_bn
+  ) {
+    changes.shop_name_bn = { from: existing.shop_name_bn, to: data.shop_name_bn };
+  }
+  if (
+    data.description_bn !== undefined &&
+    data.description_bn !== existing.description_bn
+  ) {
+    changes.description_bn = {
+      from: existing.description_bn,
+      to: data.description_bn,
+    };
+  }
   if (isSuper && data.status !== undefined && data.status !== existing.status) {
     changes.status = { from: existing.status, to: data.status };
   }
@@ -645,6 +680,8 @@ dashboardVendorsRouter.patch("/:idOrSlug", async (req, res) => {
       slug: data.slug,
       description:
         data.description === undefined ? undefined : data.description,
+      shop_name_bn: data.shop_name_bn,
+      description_bn: data.description_bn,
       status: isSuper ? data.status : undefined,
       user_id: nextUserId,
       storefront_theme: data.storefront_theme,
