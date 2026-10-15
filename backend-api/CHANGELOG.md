@@ -5,6 +5,14 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Optional Bangla version for products
+
+- `prisma/schema.prisma` + migration `20261015150000_product_bangla`: nullable `name_bn`, `short_description_bn`, `description_bn` on `products`.
+- `src/routes/dashboardProducts.ts`: create / update accept the three fields (safe text; `description_bn` goes through the same HTML sanitizer as `description`); `""`/`null` clears.
+- `src/lib/productCatalog.ts`: `toPublicProduct` returns the product Bangla fields plus `category.name_bn`, `brand.name_bn`, `vendor.shop_name_bn`.
+- `src/routes/publicProducts.ts`: search `q` also matches Bangla product, brand and category names.
+- `API.md`: documented the new fields.
+
 ### Optional Bangla name / description for stores
 - `prisma/schema.prisma` + `prisma/migrations/20261015140000_store_bangla/`: new nullable `vendors.shop_name_bn` (VARCHAR 200) and `description_bn` (TEXT). The slug stays shared.
 - `src/routes/dashboardVendors.ts`: create and update accept `shop_name_bn` (≤200) and `description_bn` (≤5000), safe-input checked, with `""`/`null` clearing them. Changes are recorded in the store history, and the shop object includes both fields.

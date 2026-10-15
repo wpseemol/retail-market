@@ -315,6 +315,8 @@ Query: `page`, `limit` (max 48), `q?`, `category?` (slug), `brand?` (slug), `sor
 
 **200** → `{ products, facets, pagination }`
 
+Every public product (list, detail, related, wishlist, store / brand pages) also carries the optional Bangla text: `name_bn`, `short_description_bn`, `description_bn`, `category.name_bn`, `brand.name_bn`, `vendor.shop_name_bn` (`null` when unset). Bangla shoppers see each one when set and the English field otherwise. `q` also matches the Bangla product, brand and category names.
+
 `facets.categories` / `facets.brands`: `{ id, label, count }[]`. Both also have `label_bn` (Bangla name or `null`).  
 `facets.price`: `{ min, max }` — lowest / highest `price` of active products matching `q`, `category` and `brand` (not the whole catalog).
 
@@ -1325,6 +1327,9 @@ Auth: STAFF. Vendors are scoped to their own shop. Elevated may pass `vendor_id`
 | `status` | `draft` \| `active` \| `archived` \| `out_of_stock` |
 | `description` | Safe HTML subset (no script/PHP) · ≤20_000 |
 | `short_description` | ≤500 plain text |
+| `name_bn` | Optional Bangla name · ≤255 · safe text · `""`/`null` clears. The slug is shared by both languages |
+| `short_description_bn` | Optional Bangla short description · ≤500 plain text · `""`/`null` clears |
+| `description_bn` | Optional Bangla description · same safe HTML subset as `description` · ≤20_000 · `""`/`null` clears |
 | `options` / `variants` | Required for meaningful variable products |
 | `shipping_fee` | Optional · number 0–1,000,000 or `null` (use site default) · `0` = free · ignored for vendors when `shipping_vendor_override` is off |
 
@@ -1405,7 +1410,7 @@ products only (variable products are listed in `skipped`). `brand_id: null` remo
 
 ### Product object (detail)
 
-Includes: `id`, `vendor_id`, `category_id`, `brand_id`, `thumbnail_id`, `name`, `slug`, `description`, `short_description`, `type`, `price`, `stock_qty`, `status`, `thumbnail`, `gallery`, `category`, `vendor`, `brand`, `options`, `variants`, …
+Includes: `id`, `vendor_id`, `category_id`, `brand_id`, `thumbnail_id`, `name`, `slug`, `description`, `short_description`, `name_bn`, `short_description_bn`, `description_bn`, `type`, `price`, `stock_qty`, `status`, `thumbnail`, `gallery`, `category`, `vendor`, `brand`, `options`, `variants`, …
 
 ---
 

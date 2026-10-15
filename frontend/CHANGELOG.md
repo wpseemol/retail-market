@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Bangla product text on the storefront
+
+- `src/lib/products.ts`: Bangla fields on `ApiProduct`; new `localizeProduct(product, locale)` swaps in the Bangla name, short / full description and category / brand / store names (each falls back to English). `toShopProduct` takes a `locale`.
+- `src/lib/stores.ts`: Bangla fields on `StorefrontProduct`.
+- `src/app/shop/page.tsx`, `src/app/shop/[slug]/page.tsx`, `src/components/wishlist/WishlistPageContent.tsx`, `src/app/stores/[slug]/page.tsx`, `src/app/brands/[slug]/page.tsx`: products are localized for Bangla shoppers. Metadata and JSON-LD stay English (shared URL).
+
 ### Bangla store names on the storefront
 - `src/lib/stores.ts`: `shop_name_bn` / `description_bn` on store types, `name_bn` on the store page's brand list, and a new `storeText(store, locale)` helper. In Bangla it returns the Bangla name and description when they are set; each one falls back to English on its own.
 - `src/app/stores/[slug]/page.tsx`: the store page hero (name and description), breadcrumb, page sections and "brands from this store" chips use the Bangla text. SEO metadata and JSON-LD stay on the English name because the URL is the same for both languages.
