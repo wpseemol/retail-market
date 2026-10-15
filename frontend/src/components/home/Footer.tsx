@@ -315,7 +315,7 @@ export default function Footer() {
                                             alt={product.title}
                                             width={60}
                                             height={60}
-                                            className="object-contain"
+                                            className="object-contain transition-transform duration-300 group-hover:scale-105"
                                         />
                                     </div>
                                     <div className="flex flex-col">

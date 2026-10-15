@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-15
 
+### Hover animations back
+- `src/app/globals.css`: the site-wide "no motion" rule (added 2026-09-29) also set `transition: none !important` on every element, which killed all hover / focus transitions. Transitions are allowed again; they are still turned off for visitors with `prefers-reduced-motion: reduce`. Keyframe animations stay off (spinners excepted) and `DisableMotion` (framer-motion) is unchanged.
+- `src/components/shop/ShopProductCard.tsx`: restored the hover classes removed in the wishlist commit — grid card lift + shadow, image zoom (grid and list view), action icons sliding in, purchase panel slide-down, button press / icon pop, saved-heart fade. All respect `motion-reduce`.
+- Home: `HeroBanner`, `LaptopRepairBanner`, `PromoBannerSlider`, `BottomBanners`, `BestSellerSection`, `DealsOfTheDay/DealsLeftPromo` (CTA arrows slide on hover); `DealsBannerSection`, `LatestProducts/LatestProductsSection`, `LatestProducts/LatestItemsSidebar`, `ProductGroupsSection`, `Footer` (image zoom); `FeaturedSection`, `TopBrandsSection` (item lift); `TopBar` (social icon scale).
+- `src/components/shop/ShopSidebar.tsx`: colour swatches scale on hover.
+- `src/components/store/StoresPageContent.tsx`: store cards lift and the banner zooms on hover.
+
 ### API health badge hidden in production
 - `src/components/ApiHealthBadge.tsx`: renders nothing when `NODE_ENV=production`, so shoppers no longer see "API connected" on the login / sign-up and account pages and production doesn't poll `/api/health`. Still shown in `next dev`.
 

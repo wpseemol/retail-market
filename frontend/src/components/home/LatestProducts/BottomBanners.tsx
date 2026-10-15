@@ -39,6 +39,7 @@ export default function BottomBanners() {
                         <span>SHOP NOW</span>
                         <span
                             aria-hidden="true"
+                            className="transition-transform group-hover:translate-x-1"
                         >
                             &rarr;
                         </span>
@@ -51,7 +52,7 @@ export default function BottomBanners() {
                         alt="Smart Watches Splash"
                         fill
                         sizes="170px"
-                        className="object-contain drop-shadow-md"
+                        className="object-contain drop-shadow-md transition-transform duration-300 group-hover:scale-105"
                     />
                 </div>
             </article>
@@ -103,6 +104,7 @@ export default function BottomBanners() {
                         <span>SHOP NOW</span>
                         <span
                             aria-hidden="true"
+                            className="transition-transform group-hover:translate-x-1"
                         >
                             &rarr;
                         </span>
@@ -115,7 +117,7 @@ export default function BottomBanners() {
                         alt="PC Component Cooler"
                         fill
                         sizes="170px"
-                        className="object-contain drop-shadow-md"
+                        className="object-contain drop-shadow-md transition-transform duration-300 group-hover:scale-105"
                     />
                 </div>
             </article>

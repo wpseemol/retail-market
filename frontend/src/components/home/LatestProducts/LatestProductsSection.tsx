@@ -353,7 +353,7 @@ export default function LatestProductsSection(_props: {
                                                         alt={product.alt}
                                                         fill
                                                         sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
-                                                        className="object-contain p-2"
+                                                        className="object-contain p-2 transition-transform duration-300 group-hover:scale-105"
                                                     />
                                                 </div>
 

@@ -18,13 +18,13 @@ function StoreCard({ store, t }: { store: StorefrontStore; t: T }) {
   return (
     <article
       style={style}
-      className="showcase-theme group overflow-hidden rounded-xl border border-border-default bg-bg-surface hover:border-sc-accent"
+      className="showcase-theme group overflow-hidden rounded-xl border border-border-default bg-bg-surface transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:border-sc-accent"
     >
       <Link href={`/stores/${store.slug}`} className="block">
         <div className="relative aspect-[16/7] bg-gradient-to-br from-sc-accent-deep to-sc-accent">
           {store.banner?.path ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={store.banner.path} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
+            <img src={store.banner.path} alt="" loading="lazy" decoding="async" className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
           ) : null}
         </div>
         <div className="relative px-4 pb-4">

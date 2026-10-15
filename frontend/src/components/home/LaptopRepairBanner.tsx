@@ -94,7 +94,9 @@ export default function LaptopRepairBanner({
             >
               <span>{c.cta_label}</span>
               <span
-                aria-hidden="true"              >
+                aria-hidden="true"
+                className="transition-transform group-hover:translate-x-1"
+              >
                 &rarr;
               </span>
             </Link>

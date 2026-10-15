@@ -112,18 +112,29 @@
   }
 }
 
-/* Site-wide: no motion. Loading spinners are kept as a status indicator. */
+/*
+ * Site-wide: no keyframe / page animations. Short hover & focus transitions are allowed
+ * (they are the hover feedback), except for visitors who ask for reduced motion.
+ * Loading spinners are kept as a status indicator.
+ */
 @layer base {
   *,
   *::before,
   *::after {
-    transition: none !important;
     animation: none !important;
     scroll-behavior: auto !important;
   }
 
   .animate-spin {
     animation: spin 1s linear infinite !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition: none !important;
+    }
   }
 }
 
