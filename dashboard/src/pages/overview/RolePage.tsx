@@ -38,8 +38,10 @@ type RoleConfig = {
   title: string;
   subtitle: string;
   icon: LucideIcon;
-  accent: string;
-  heroClass: string;
+  /** Solid banner fill — fixed hex so white text stays readable in dark mode. */
+  heroBg: string;
+  /** Text colour for the white button sitting on the banner. */
+  heroInk: string;
   badge: string;
   focus: string;
   capabilities: Capability[];
@@ -53,8 +55,8 @@ const ROLE_CONFIG: Record<RolePageKey, RoleConfig> = {
     subtitle:
       "Full platform access — users, site settings, stores, and the entire catalog.",
     icon: Shield,
-    accent: "from-brand-deep via-[#0a4a10] to-brand-primary",
-    heroClass: "shadow-brand-primary/20",
+    heroBg: "bg-[#14361c]",
+    heroInk: "text-[#14361c]",
     badge: "Highest privilege",
     focus: "Own the platform end to end",
     capabilities: [
@@ -114,8 +116,8 @@ const ROLE_CONFIG: Record<RolePageKey, RoleConfig> = {
     subtitle:
       "Day-to-day catalog and store operations without user or site-settings access.",
     icon: ShieldCheck,
-    accent: "from-[#0b3d12] via-[#11661a] to-brand-primary",
-    heroClass: "shadow-brand-primary/15",
+    heroBg: "bg-[#1e4a2a]",
+    heroInk: "text-[#1e4a2a]",
     badge: "Catalog ops",
     focus: "Keep the catalog healthy",
     capabilities: [
@@ -169,8 +171,8 @@ const ROLE_CONFIG: Record<RolePageKey, RoleConfig> = {
     subtitle:
       "Review and maintain catalog quality — products, categories, and brands.",
     icon: UserCog,
-    accent: "from-[#143018] via-[#1a5c22] to-[#2c742f]",
-    heroClass: "shadow-black/10",
+    heroBg: "bg-[#33483a]",
+    heroInk: "text-[#33483a]",
     badge: "Review workspace",
     focus: "Protect listing quality",
     capabilities: [
@@ -224,8 +226,8 @@ const ROLE_CONFIG: Record<RolePageKey, RoleConfig> = {
     subtitle:
       "Run your shop — products, store profile, and catalog items tied to your account.",
     icon: Store,
-    accent: "from-[#002603] via-[#0d4a14] to-brand-primary",
-    heroClass: "shadow-brand-primary/20",
+    heroBg: "bg-[#1f4740]",
+    heroInk: "text-[#1f4740]",
     badge: "Seller workspace",
     focus: "Grow your storefront",
     capabilities: [
@@ -303,14 +305,11 @@ export function RolePage({ role }: { role: RolePageKey }) {
       {/* Hero */}
       <section
         className={cn(
-          "relative overflow-hidden rounded-2xl bg-gradient-to-br text-white shadow-lg",
-          config.accent,
-          config.heroClass,
+          "overflow-hidden rounded-2xl border border-black/5 text-white shadow-sm",
+          config.heroBg,
         )}
       >
-        <div className="pointer-events-none absolute -right-16 -top-16 size-56 rounded-full bg-white/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 left-1/3 size-48 rounded-full bg-white/5 blur-2xl" />
-        <div className="relative flex flex-col gap-6 px-5 py-6 sm:px-7 sm:py-8 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-6 px-5 py-6 sm:px-7 sm:py-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0 max-w-2xl">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/85">
@@ -324,7 +323,7 @@ export function RolePage({ role }: { role: RolePageKey }) {
                 {config.badge}
               </Badge>
               {isOwnRole ? (
-                <Badge className="bg-white text-brand-deep hover:bg-white">
+                <Badge className={cn("bg-white hover:bg-white", config.heroInk)}>
                   Your role
                 </Badge>
               ) : null}
@@ -347,7 +346,7 @@ export function RolePage({ role }: { role: RolePageKey }) {
             <Button
               asChild
               size="sm"
-              className="bg-white text-brand-deep hover:bg-white/90"
+              className={cn("bg-white hover:bg-white/90", config.heroInk)}
             >
               <Link to={config.links[0]?.to ?? "/profile"}>
                 {config.links[0]?.label ?? "Open workspace"}

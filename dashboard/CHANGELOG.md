@@ -3,6 +3,12 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-15
+
+### Solid role banners instead of gradients
+- `src/pages/overview/RolePage.tsx`: the Super Admin / Admin / Moderator / Vendor hero is now one solid, muted green per role (`#14361c`, `#1e4a2a`, `#33483a`, `#1f4740`) instead of a three-stop gradient with blurred glow circles. Config fields `accent` / `heroClass` replaced by `heroBg` / `heroInk`; the white "Your role" badge and primary button use the matching banner colour for text (they used `text-brand-deep`, which turns light green in dark mode).
+- `src/components/dashboard/page-shell.tsx`: `PageHero` uses the same solid `#14361c` with a thin border and soft shadow; glow circle removed.
+
 ## 2026-10-08
 
 ### Login page redesign
