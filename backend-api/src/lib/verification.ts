@@ -2,12 +2,15 @@ import crypto from "node:crypto";
 import type { VerificationChannel } from "@prisma/client";
 import { env } from "./env.js";
 import { prisma } from "./prisma.js";
-import { sendEmail, sendSms } from "./messaging.js";
+import { sendEmail, sendSms, sendWhatsAppOtp, WhatsAppSendError } from "./messaging.js";
 
 const CODE_TTL_MS = 10 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
 const MAX_ATTEMPTS = 5;
 const MAX_SENDS_PER_HOUR = 5;
+
+/** How a phone OTP is delivered. Confirm still uses the `sms` verification channel. */
+export type PhoneDelivery = "sms" | "whatsapp";
 
 export class VerificationError extends Error {
   constructor(
@@ -35,8 +38,10 @@ export async function sendVerificationCode(
   userId: bigint,
   channel: VerificationChannel,
   target: string,
+  options: { phoneDelivery?: PhoneDelivery } = {},
 ) {
   const now = Date.now();
+  const phoneDelivery: PhoneDelivery = options.phoneDelivery ?? "sms";
 
   const latest = await prisma.verificationCode.findFirst({
     where: { user_id: userId, channel },
@@ -90,6 +95,8 @@ export async function sendVerificationCode(
         text: `Your ${env.appName} verification code is ${code}.\nIt expires in 10 minutes. If you did not request this, ignore this email.`,
         html: `<p>Your ${env.appName} verification code is:</p><p style="font-size:24px;font-weight:700;letter-spacing:4px">${code}</p><p>It expires in 10 minutes. If you did not request this, ignore this email.</p>`,
       });
+    } else if (phoneDelivery === "whatsapp") {
+      await sendWhatsAppOtp(target, code);
     } else {
       await sendSms(
         target,
@@ -98,17 +105,30 @@ export async function sendVerificationCode(
     }
   } catch (err) {
     await prisma.verificationCode.delete({ where: { id: row.id } }).catch(() => undefined);
-    console.error(`[verification] ${channel} send failed`, err);
+    console.error(`[verification] ${channel}/${phoneDelivery} send failed`, err);
+    if (err instanceof WhatsAppSendError) {
+      throw new VerificationError(
+        502,
+        err.code,
+        err.message,
+      );
+    }
     throw new VerificationError(
       502,
       "SEND_FAILED",
       channel === "email"
         ? "Could not send the email. Try again shortly."
-        : "Could not send the SMS. Try again shortly.",
+        : phoneDelivery === "whatsapp"
+          ? "Could not send the WhatsApp code. Try SMS or try again shortly."
+          : "Could not send the SMS. Try again shortly.",
     );
   }
 
-  return { expiresInSeconds: CODE_TTL_MS / 1000, resendInSeconds: RESEND_COOLDOWN_MS / 1000 };
+  return {
+    expiresInSeconds: CODE_TTL_MS / 1000,
+    resendInSeconds: RESEND_COOLDOWN_MS / 1000,
+    phoneDelivery,
+  };
 }
 
 /** Returns the verified target (email / E.164 phone) when the code matches. */

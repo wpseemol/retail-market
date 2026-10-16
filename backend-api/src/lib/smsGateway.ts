@@ -52,6 +52,15 @@ export function isRowReady(provider: SmsProvider, row: Pick<Row, "api_key_enc" |
   return SMS_REQUIRED_FIELDS[provider].every((f) => has[f]);
 }
 
+/** True when an SMS OTP path is configured (dashboard or env). */
+export async function isSmsDeliveryReady(): Promise<boolean> {
+  try {
+    return (await getActiveSmsConfig()) !== null;
+  } catch {
+    return false;
+  }
+}
+
 /** Dashboard-configured gateway, or the SMS_* env fallback, or null (console/dev). */
 export async function getActiveSmsConfig(): Promise<SmsGatewayConfig | null> {
   const rows = await loadRows();

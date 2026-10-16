@@ -2,6 +2,13 @@ import nodemailer, { type Transporter } from "nodemailer";
 import { env } from "./env.js";
 import { getActiveEmailConfig, type EmailTransportConfig } from "./emailProvider.js";
 import { getActiveSmsConfig, sendViaGateway } from "./smsGateway.js";
+import {
+  getActiveWhatsAppConfig,
+  sendViaWhatsAppGateway,
+  WhatsAppSendError,
+} from "./whatsappGateway.js";
+
+export { WhatsAppSendError };
 
 type EmailInput = { to: string; subject: string; text: string; html?: string };
 
@@ -58,4 +65,23 @@ export async function sendSms(to: string, message: string) {
     return;
   }
   await sendViaGateway(cfg, to, message);
+}
+
+/**
+ * Sends a phone OTP through WhatsApp (approved template).
+ * Uses Dashboard → Settings → WhatsApp, else WHATSAPP_* env vars.
+ * `to` must be E.164; `code` is the 6-digit OTP.
+ */
+export async function sendWhatsAppOtp(to: string, code: string) {
+  const cfg = await getActiveWhatsAppConfig();
+  if (!cfg) {
+    if (env.nodeEnv === "production") {
+      throw new Error(
+        "WhatsApp gateway is not configured (Dashboard → Settings → WhatsApp)",
+      );
+    }
+    console.info(`[whatsapp:dev] to=${to} code=${code}`);
+    return;
+  }
+  await sendViaWhatsAppGateway(cfg, to, code);
 }

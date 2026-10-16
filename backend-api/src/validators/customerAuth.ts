@@ -190,6 +190,12 @@ export const updateProfileSchema = z
 export const sendPhoneCodeSchema = z.object({
   /** Optional: verify a new number (saved to the profile only after the code is confirmed). */
   phone: phoneField.optional(),
+  /**
+   * Delivery channel for the OTP. `whatsapp` uses the configured WhatsApp gateway
+   * (Meta Cloud / Twilio); confirm still uses the same phone verification flow.
+   * Default `sms`.
+   */
+  via: z.enum(["sms", "whatsapp"]).optional().default("sms"),
 });
 
 export const confirmCodeSchema = z.object({

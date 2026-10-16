@@ -103,4 +103,21 @@ export const env = {
     senderId: process.env.SMS_SENDER_ID ?? "",
     apiUrl: process.env.SMS_API_URL ?? "https://bulksmsbd.net/api/smsapi",
   },
+  /**
+   * WhatsApp OTP (Meta Cloud API or Twilio WhatsApp).
+   * `console` logs codes (dev); set WHATSAPP_PROVIDER=meta_cloud with token + phone number id + template.
+   */
+  whatsapp: {
+    provider: (process.env.WHATSAPP_PROVIDER ?? "console") as
+      | "console"
+      | "meta_cloud"
+      | "twilio_whatsapp",
+    accessToken: process.env.WHATSAPP_ACCESS_TOKEN ?? "",
+    phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID ?? "",
+    accountSid: process.env.WHATSAPP_ACCOUNT_SID ?? "",
+    templateName: process.env.WHATSAPP_TEMPLATE_NAME ?? "",
+    templateLanguage: process.env.WHATSAPP_TEMPLATE_LANGUAGE ?? "en",
+    apiVersion: process.env.WHATSAPP_API_VERSION ?? "v21.0",
+    templateButtonParam: process.env.WHATSAPP_TEMPLATE_BUTTON_PARAM !== "false",
+  },
 };

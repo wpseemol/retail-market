@@ -9,6 +9,7 @@ export { SocialShareSettingsPage } from "./storefront/SocialShareSettingsPage";
 
 export { SocialLoginSettingsPage } from "./integrations/SocialLoginSettingsPage";
 export { SmsGatewaySettingsPage } from "./integrations/SmsGatewaySettingsPage";
+export { WhatsAppGatewaySettingsPage } from "./integrations/WhatsAppGatewaySettingsPage";
 export { EmailProviderSettingsPage } from "./integrations/EmailProviderSettingsPage";
 export { PaymentSettingsPage } from "./integrations/PaymentSettingsPage";
 export { ShippingSettingsPage } from "./integrations/ShippingSettingsPage";

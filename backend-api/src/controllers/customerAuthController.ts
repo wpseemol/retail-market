@@ -34,11 +34,14 @@ import {
 import { optimizeStoredUpload } from "../lib/imageOptimize.js";
 import { claimGuestOrders, countPendingGuestOrders } from "../lib/guestOrders.js";
 import { maskEmail, maskPhone, normalizePhone } from "../lib/phone.js";
+import { isSmsDeliveryReady } from "../lib/smsGateway.js";
+import { isWhatsAppDeliveryReady } from "../lib/whatsappGateway.js";
 import {
   confirmVerificationCode,
   sendVerificationCode,
   VerificationError,
 } from "../lib/verification.js";
+import { env } from "../lib/env.js";
 import {
   appleAuthSchema,
   confirmCodeSchema,
@@ -743,16 +746,26 @@ async function loadAuthUser(userId: bigint) {
   });
 }
 
-/** Verified flags + guest orders waiting for verification. */
+/** Verified flags + guest orders waiting for verification + available phone OTP channels. */
 export async function getVerificationStatus(req: Request, res: Response) {
   const user = await loadAuthUser(req.auth!.userId);
   const pending = await countPendingGuestOrders(user);
+  const [smsReady, whatsappReady] = await Promise.all([
+    isSmsDeliveryReady(),
+    isWhatsAppDeliveryReady(),
+  ]);
+  // In development without gateways, both channels still work (codes logged to console).
+  const phoneChannels = {
+    sms: smsReady || env.nodeEnv !== "production",
+    whatsapp: whatsappReady || env.nodeEnv !== "production",
+  };
   return res.json({
     email: user.email,
     email_verified: Boolean(user.email_verified_at),
     phone: user.phone,
     phone_verified: Boolean(user.phone_verified_at),
     pending_guest_orders: pending,
+    phone_channels: phoneChannels,
   });
 }
 
@@ -847,11 +860,34 @@ export async function sendPhoneCode(req: Request, res: Response) {
     });
   }
 
+  const via = parsed.data.via;
+  if (via === "whatsapp") {
+    const ready = await isWhatsAppDeliveryReady();
+    if (!ready && env.nodeEnv === "production") {
+      return res.status(503).json({
+        message: "WhatsApp verification is not configured",
+        code: "WHATSAPP_UNAVAILABLE",
+      });
+    }
+  } else {
+    const ready = await isSmsDeliveryReady();
+    if (!ready && env.nodeEnv === "production") {
+      return res.status(503).json({
+        message: "SMS verification is not configured",
+        code: "SMS_UNAVAILABLE",
+      });
+    }
+  }
+
   try {
-    const result = await sendVerificationCode(user.id, "sms", target);
+    const result = await sendVerificationCode(user.id, "sms", target, {
+      phoneDelivery: via,
+    });
+    const viaLabel = via === "whatsapp" ? "WhatsApp" : "SMS";
     return res.json({
-      message: `Code sent to ${maskPhone(target)}`,
+      message: `Code sent via ${viaLabel} to ${maskPhone(target)}`,
       phone: target,
+      via,
       expires_in: result.expiresInSeconds,
       resend_in: result.resendInSeconds,
     });

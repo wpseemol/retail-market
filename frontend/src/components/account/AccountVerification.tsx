@@ -11,6 +11,7 @@ import {
 } from "@/lib/validators/checkout";
 
 type Channel = "email" | "phone";
+type PhoneVia = "sms" | "whatsapp";
 
 type VerificationStatus = {
   email: string;
@@ -18,6 +19,7 @@ type VerificationStatus = {
   phone: string | null;
   phone_verified: boolean;
   pending_guest_orders: { email: number; phone: number };
+  phone_channels?: { sms: boolean; whatsapp: boolean };
 };
 
 type ConfirmResponse = { message: string; user: ApiUser; claimed_orders: number };
@@ -65,12 +67,18 @@ function VerifiedBadge({ verified }: { verified: boolean }) {
   );
 }
 
+function preferredPhoneVia(channels: { sms: boolean; whatsapp: boolean } | undefined): PhoneVia {
+  if (channels?.whatsapp) return "whatsapp";
+  return "sms";
+}
+
 function VerifyRow({
   channel,
   label,
   value,
   verified,
   pendingOrders,
+  phoneChannels,
   onVerified,
 }: {
   channel: Channel;
@@ -78,6 +86,7 @@ function VerifyRow({
   value: string | null;
   verified: boolean;
   pendingOrders: number;
+  phoneChannels?: { sms: boolean; whatsapp: boolean };
   onVerified: (res: ConfirmResponse) => Promise<void>;
 }) {
   const [phoneInput, setPhoneInput] = useState(toLocalMobile(value));
@@ -87,16 +96,27 @@ function VerifyRow({
     setPhoneInput(toLocalMobile(value));
   }
   const [codeSent, setCodeSent] = useState(false);
+  const [sentVia, setSentVia] = useState<PhoneVia | null>(null);
+  const [via, setVia] = useState<PhoneVia>(() => preferredPhoneVia(phoneChannels));
+  const [prevChannels, setPrevChannels] = useState(phoneChannels);
+  if (prevChannels !== phoneChannels) {
+    setPrevChannels(phoneChannels);
+    setVia(preferredPhoneVia(phoneChannels));
+  }
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [resendIn, setResendIn] = useCountdown();
 
-  const sendCode = async () => {
+  const smsAvailable = phoneChannels?.sms !== false;
+  const whatsappAvailable = Boolean(phoneChannels?.whatsapp);
+  const showViaPicker = channel === "phone" && whatsappAvailable && smsAvailable;
+
+  const sendCode = async (delivery: PhoneVia = via) => {
     setError(null);
     setInfo(null);
-    let body: { phone?: string } | undefined;
+    let body: { phone?: string; via?: PhoneVia } | undefined;
     if (channel === "phone") {
       if (!BD_LOCAL_MOBILE.test(phoneInput)) {
         setError("Enter an 11-digit mobile number starting with 01 (e.g. 01712345678)");
@@ -108,21 +128,28 @@ function VerifyRow({
         setError(parsed.error.issues[0]?.message ?? "Invalid number");
         return;
       }
-      body = { phone: normalizePhone(full) ?? full };
+      body = { phone: normalizePhone(full) ?? full, via: delivery };
     }
 
     setBusy(true);
     try {
-      const res = await apiFetch<{ message: string; resend_in: number }>(
+      const res = await apiFetch<{ message: string; resend_in: number; via?: PhoneVia }>(
         `/api/auth/me/verify/${channel}/send`,
         { method: "POST", body: body ?? {} },
       );
       setCodeSent(true);
+      setSentVia(res.via ?? delivery);
+      setVia(res.via ?? delivery);
       setInfo(res.message);
       setResendIn(res.resend_in);
     } catch (err) {
       if (err instanceof ApiError && err.code === "RESEND_TOO_SOON") setCodeSent(true);
-      setError(errorMessage(err, "Could not send the code"));
+      if (err instanceof ApiError && err.code === "NOT_ON_WHATSAPP" && smsAvailable) {
+        setError(`${errorMessage(err, "WhatsApp unavailable")}. You can send an SMS code instead.`);
+        setVia("sms");
+      } else {
+        setError(errorMessage(err, "Could not send the code"));
+      }
     } finally {
       setBusy(false);
     }
@@ -143,6 +170,7 @@ function VerifyRow({
         body: parsed.data,
       });
       setCodeSent(false);
+      setSentVia(null);
       setCode("");
       setInfo(
         res.claimed_orders > 0
@@ -155,6 +183,16 @@ function VerifyRow({
     } finally {
       setBusy(false);
     }
+  };
+
+  const sendLabel = () => {
+    if (resendIn > 0) return `Resend in ${resendIn}s`;
+    if (channel === "email") return codeSent ? "Resend code" : "Send code to email";
+    if (codeSent) {
+      return sentVia === "whatsapp" ? "Resend via WhatsApp" : "Resend SMS code";
+    }
+    if (via === "whatsapp") return "Send WhatsApp code";
+    return "Send SMS code";
   };
 
   return (
@@ -202,6 +240,43 @@ function VerifyRow({
             </label>
           ) : null}
 
+          {showViaPicker && !codeSent ? (
+            <fieldset className="m-0 min-w-0 border-0 p-0">
+              <legend className="mb-1.5 text-[13px] font-medium text-text-primary">
+                Send code via
+              </legend>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setVia("whatsapp")}
+                  disabled={busy}
+                  className={`h-9 rounded-md px-3 text-[13px] font-semibold transition-colors cursor-pointer ${
+                    via === "whatsapp"
+                      ? "bg-[#25D366] text-white"
+                      : "border border-border-default bg-bg-surface text-text-primary hover:border-[#25D366]/60"
+                  }`}
+                >
+                  WhatsApp
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVia("sms")}
+                  disabled={busy}
+                  className={`h-9 rounded-md px-3 text-[13px] font-semibold transition-colors cursor-pointer ${
+                    via === "sms"
+                      ? "bg-brand-primary text-white"
+                      : "border border-border-default bg-bg-surface text-text-primary hover:border-brand-primary/60"
+                  }`}
+                >
+                  SMS
+                </button>
+              </div>
+              <p className="m-0 mt-1.5 text-[12px] text-text-secondary">
+                WhatsApp works if this number uses WhatsApp. Otherwise choose SMS.
+              </p>
+            </fieldset>
+          ) : null}
+
           {codeSent ? (
             <form onSubmit={confirm} className="flex flex-col gap-2 sm:flex-row sm:items-end">
               <label className="flex flex-1 flex-col gap-1.5">
@@ -229,23 +304,28 @@ function VerifyRow({
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
-              onClick={sendCode}
+              onClick={() => void sendCode(via)}
               disabled={busy || resendIn > 0}
               className="h-10 rounded-md border border-brand-primary/60 bg-brand-primary/5 px-4 text-[13px] font-semibold text-brand-primary transition-colors hover:bg-brand-primary hover:text-white disabled:opacity-60 disabled:hover:bg-brand-primary/5 disabled:hover:text-brand-primary cursor-pointer"
             >
-              {resendIn > 0
-                ? `Resend in ${resendIn}s`
-                : codeSent
-                  ? "Resend code"
-                  : channel === "email"
-                    ? "Send code to email"
-                    : "Send SMS code"}
+              {sendLabel()}
             </button>
+            {codeSent && channel === "phone" && showViaPicker && sentVia === "whatsapp" && smsAvailable ? (
+              <button
+                type="button"
+                onClick={() => void sendCode("sms")}
+                disabled={busy || resendIn > 0}
+                className="text-[13px] font-medium text-text-secondary hover:text-brand-primary cursor-pointer disabled:opacity-60"
+              >
+                Send via SMS instead
+              </button>
+            ) : null}
             {codeSent && channel === "phone" ? (
               <button
                 type="button"
                 onClick={() => {
                   setCodeSent(false);
+                  setSentVia(null);
                   setCode("");
                 }}
                 className="text-[13px] font-medium text-text-secondary hover:text-brand-primary cursor-pointer"
@@ -349,6 +429,7 @@ export default function AccountVerification({
           value={user.phone}
           verified={phoneVerified}
           pendingOrders={status?.pending_guest_orders.phone ?? 0}
+          phoneChannels={status?.phone_channels}
           onVerified={handleVerified}
         />
       </div>

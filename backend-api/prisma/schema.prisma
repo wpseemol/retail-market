@@ -1008,6 +1008,32 @@ model SmsGatewayProvider {
   @@map("sms_gateway_providers")
 }
 
+/// WhatsApp OTP credentials managed from Dashboard → Settings → WhatsApp (super_admin).
+/// At most one row is active; with none active, sending falls back to WHATSAPP_* env vars.
+model WhatsAppGatewayProvider {
+  /// meta_cloud | twilio_whatsapp
+  provider              String   @id @db.VarChar(20)
+  is_active             Boolean  @default(false)
+  /// Meta permanent/system-user token or Twilio Auth Token (AES-256-GCM).
+  access_token_enc      String?  @db.Text
+  /// Meta Phone number ID, or Twilio WhatsApp From (`whatsapp:+E.164`).
+  phone_number_id       String?  @db.VarChar(64)
+  /// Meta WABA id (optional docs) / Twilio Account SID.
+  account_sid           String?  @db.VarChar(255)
+  /// Approved AUTHENTICATION (or utility) template name used for OTP.
+  template_name         String?  @db.VarChar(100)
+  /// Template language code (e.g. en, en_US, bn).
+  template_language     String   @default("en") @db.VarChar(12)
+  /// Graph API version for Meta (e.g. v21.0). Ignored by Twilio.
+  api_version           String   @default("v21.0") @db.VarChar(16)
+  /// When true, send the OTP as the URL button parameter (Meta auth templates).
+  template_button_param Boolean  @default(true)
+  updated_by            BigInt?  @db.UnsignedBigInt
+  updated_at            DateTime @updatedAt
+
+  @@map("whatsapp_gateway_providers")
+}
+
 /// Online payment gateway credentials managed from dashboard settings.
 model PaymentGateway {
   /// sslcommerz

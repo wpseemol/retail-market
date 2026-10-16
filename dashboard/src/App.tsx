@@ -38,6 +38,7 @@ import {
   SmsGatewaySettingsPage,
   SocialLoginSettingsPage,
   SocialShareSettingsPage,
+  WhatsAppGatewaySettingsPage,
 } from "./pages/system/settings";
 import { useAuthStore } from "./store/auth";
 import type { StaffRole } from "./lib/api";
@@ -130,6 +131,7 @@ export default function App() {
               <Route path="social" element={<SocialShareSettingsPage />} />
               <Route path="social-login" element={<SocialLoginSettingsPage />} />
               <Route path="sms" element={<SmsGatewaySettingsPage />} />
+              <Route path="whatsapp" element={<WhatsAppGatewaySettingsPage />} />
               <Route path="email" element={<EmailProviderSettingsPage />} />
               <Route path="payment" element={<PaymentSettingsPage />} />
               <Route path="shipping" element={<ShippingSettingsPage />} />
