@@ -8,5 +8,11 @@ export default function AuthSessionProvider({
 }: {
   children: ReactNode;
 }) {
-  return <SessionProvider>{children}</SessionProvider>;
+  // Avoid focus/reconnect session polls flipping RefreshTokenError ↔ ok and
+  // bouncing middleware between /account and /login?next=/account.
+  return (
+    <SessionProvider refetchOnWindowFocus={false} refetchWhenOffline={false}>
+      {children}
+    </SessionProvider>
+  );
 }

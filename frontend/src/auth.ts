@@ -250,6 +250,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return token;
       }
 
+      // Sticky failure: do not keep retrying refresh (that flipped middleware
+      // between /account and /login?next=/account on intermittent API errors).
+      if (token.error === "RefreshTokenError") {
+        return token;
+      }
+
       if (
         typeof token.accessTokenExpires === "number" &&
         Date.now() < token.accessTokenExpires

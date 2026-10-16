@@ -49,13 +49,33 @@ type AccountProfileProps = {
   initialUser: ApiUser;
 };
 
+/** Stable fingerprint so SSR/HMR re-renders with a new object don't loop setState. */
+function userFingerprint(u: ApiUser) {
+  return [
+    u.id,
+    u.email,
+    u.first_name,
+    u.last_name,
+    u.phone ?? "",
+    u.gender ?? "",
+    u.date_of_birth ?? "",
+    u.email_verified_at ?? "",
+    u.phone_verified_at ?? "",
+    u.avatar_id ?? "",
+    u.avatar?.path ?? "",
+  ].join("|");
+}
+
 export default function AccountProfile({ initialUser }: AccountProfileProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [user, setLocalUser] = useState(initialUser);
-  const [prevInitialUser, setPrevInitialUser] = useState(initialUser);
-  if (prevInitialUser !== initialUser) {
-    setPrevInitialUser(initialUser);
+  const [prevFingerprint, setPrevFingerprint] = useState(() =>
+    userFingerprint(initialUser),
+  );
+  const nextFingerprint = userFingerprint(initialUser);
+  if (prevFingerprint !== nextFingerprint) {
+    setPrevFingerprint(nextFingerprint);
     setLocalUser(initialUser);
   }
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +91,7 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
   // Keep Redux / header in sync without waiting on client session fetch.
   useEffect(() => {
     dispatch(setSessionUser(initialUser));
-  }, [dispatch, initialUser]);
+  }, [dispatch, nextFingerprint]); // eslint-disable-line react-hooks/exhaustive-deps -- fingerprint tracks meaningful user changes
 
   const applyUser = (next: ApiUser) => {
     setLocalUser(next);

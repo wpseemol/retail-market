@@ -9,17 +9,22 @@ import { hydrateAuth, setSessionUser } from "@/store/authSlice";
 export default function AuthHydrator() {
   const dispatch = useAppDispatch();
   const { data, status } = useSession();
+  const backendUser = data?.backendUser;
+  const userKey = backendUser
+    ? `${backendUser.id}|${backendUser.email_verified_at ?? ""}|${backendUser.phone_verified_at ?? ""}|${backendUser.avatar_id ?? ""}`
+    : "";
 
   useEffect(() => {
     if (status === "loading") return;
 
     dispatch(hydrateAuth());
-    if (status === "authenticated" && data?.backendUser) {
-      dispatch(setSessionUser(data.backendUser));
+    if (status === "authenticated" && backendUser) {
+      dispatch(setSessionUser(backendUser));
     } else {
       dispatch(setSessionUser(null));
     }
-  }, [dispatch, data, status]);
+    // userKey tracks meaningful profile fields; avoid depending on session object identity.
+  }, [dispatch, status, userKey]); // eslint-disable-line react-hooks/exhaustive-deps -- backendUser via userKey
 
   return null;
 }

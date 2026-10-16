@@ -13,13 +13,15 @@ import {
 type Channel = "email" | "phone";
 type PhoneVia = "sms" | "whatsapp";
 
+type PhoneChannels = { sms: boolean; whatsapp: boolean };
+
 type VerificationStatus = {
   email: string;
   email_verified: boolean;
   phone: string | null;
   phone_verified: boolean;
   pending_guest_orders: { email: number; phone: number };
-  phone_channels?: { sms: boolean; whatsapp: boolean };
+  phone_channels?: PhoneChannels;
 };
 
 type ConfirmResponse = { message: string; user: ApiUser; claimed_orders: number };
@@ -40,6 +42,11 @@ function errorMessage(err: unknown, fallback: string) {
     return field ?? err.message;
   }
   return fallback;
+}
+
+function preferredPhoneVia(channels: PhoneChannels | undefined): PhoneVia {
+  if (channels?.whatsapp) return "whatsapp";
+  return "sms";
 }
 
 function useCountdown() {
@@ -67,11 +74,6 @@ function VerifiedBadge({ verified }: { verified: boolean }) {
   );
 }
 
-function preferredPhoneVia(channels: { sms: boolean; whatsapp: boolean } | undefined): PhoneVia {
-  if (channels?.whatsapp) return "whatsapp";
-  return "sms";
-}
-
 function VerifyRow({
   channel,
   label,
@@ -86,28 +88,33 @@ function VerifyRow({
   value: string | null;
   verified: boolean;
   pendingOrders: number;
-  phoneChannels?: { sms: boolean; whatsapp: boolean };
+  phoneChannels?: PhoneChannels;
   onVerified: (res: ConfirmResponse) => Promise<void>;
 }) {
-  const [phoneInput, setPhoneInput] = useState(toLocalMobile(value));
-  const [prevValue, setPrevValue] = useState(value);
-  if (prevValue !== value) {
-    setPrevValue(value);
-    setPhoneInput(toLocalMobile(value));
-  }
+  const [phoneInput, setPhoneInput] = useState(() => toLocalMobile(value));
   const [codeSent, setCodeSent] = useState(false);
   const [sentVia, setSentVia] = useState<PhoneVia | null>(null);
   const [via, setVia] = useState<PhoneVia>(() => preferredPhoneVia(phoneChannels));
-  const [prevChannels, setPrevChannels] = useState(phoneChannels);
-  if (prevChannels !== phoneChannels) {
-    setPrevChannels(phoneChannels);
-    setVia(preferredPhoneVia(phoneChannels));
-  }
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [resendIn, setResendIn] = useCountdown();
+
+  // Sync local mobile field when the profile phone changes (string compare — stable).
+  useEffect(() => {
+    setPhoneInput(toLocalMobile(value));
+  }, [value]);
+
+  // Prefer WhatsApp only when channel *flags* change — not on every new object reference
+  // from a verification status refetch (that caused a render loop).
+  const smsFlag = phoneChannels?.sms;
+  const whatsappFlag = phoneChannels?.whatsapp;
+  useEffect(() => {
+    if (channel !== "phone") return;
+    if (smsFlag === undefined && whatsappFlag === undefined) return;
+    setVia(preferredPhoneVia({ sms: Boolean(smsFlag), whatsapp: Boolean(whatsappFlag) }));
+  }, [channel, smsFlag, whatsappFlag]);
 
   const smsAvailable = phoneChannels?.sms !== false;
   const whatsappAvailable = Boolean(phoneChannels?.whatsapp);
@@ -209,7 +216,8 @@ function VerifyRow({
 
       {!verified && pendingOrders > 0 ? (
         <p className="m-0 mt-3 rounded-md bg-brand-primary/5 px-3 py-2 text-[12.5px] text-text-primary">
-          {pendingOrders} guest order{pendingOrders > 1 ? "s" : ""} placed with this {channel === "email" ? "email" : "number"} will be added to your account once verified.
+          {pendingOrders} guest order{pendingOrders > 1 ? "s" : ""} placed with this{" "}
+          {channel === "email" ? "email" : "number"} will be added to your account once verified.
         </p>
       ) : null}
 
@@ -218,8 +226,8 @@ function VerifyRow({
           {channel === "phone" && !codeSent ? (
             <label className="flex flex-col gap-1.5">
               <span className="text-[13px] font-medium text-text-primary">Mobile number</span>
-              <div className="flex h-11 overflow-hidden rounded-md border border-border-default bg-bg-surface focus-within:border-brand-primary">
-                <span className="flex items-center border-r border-border-default bg-bg-base px-3 text-[14px] font-medium text-text-secondary select-none">
+              <div className="flex h-11 w-full overflow-hidden rounded border border-border-default bg-bg-surface transition-colors focus-within:border-brand-primary">
+                <span className="flex shrink-0 items-center border-r border-border-default bg-bg-base px-3 text-sm font-medium text-text-secondary select-none">
                   {BD_PREFIX}
                 </span>
                 <input
@@ -231,7 +239,7 @@ function VerifyRow({
                   onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, "").slice(0, 11))}
                   placeholder="01712345678"
                   aria-describedby="mobile-hint"
-                  className="min-w-0 flex-1 bg-transparent px-3.5 text-[14px] text-text-primary outline-none"
+                  className="min-w-0 flex-1 bg-transparent px-3.5 text-sm text-text-primary outline-none"
                 />
               </div>
               <span id="mobile-hint" className="text-[12px] text-text-secondary">
@@ -278,26 +286,30 @@ function VerifyRow({
           ) : null}
 
           {codeSent ? (
-            <form onSubmit={confirm} className="flex flex-col gap-2 sm:flex-row sm:items-end">
-              <label className="flex flex-1 flex-col gap-1.5">
-                <span className="text-[13px] font-medium text-text-primary">6-digit code</span>
+            <form onSubmit={confirm} className="flex flex-col gap-1.5">
+              <label htmlFor={`verify-code-${channel}`} className="text-[13px] font-medium text-text-primary">
+                6-digit code
+              </label>
+              <div className="flex w-full items-stretch gap-2">
                 <input
+                  id={`verify-code-${channel}`}
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   maxLength={6}
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                  placeholder="••••••"
-                  className="h-11 rounded-md border border-border-default bg-bg-surface px-3.5 text-[18px] tracking-[0.4em] text-text-primary outline-none focus:border-brand-primary"
+                  placeholder="000000"
+                  aria-label="6-digit verification code"
+                  className="min-w-0 flex-1 h-11 rounded border border-border-default bg-bg-surface px-3 text-center text-base font-semibold tracking-[0.25em] text-text-primary outline-none transition-colors focus:border-brand-primary placeholder:tracking-[0.25em] placeholder:font-normal placeholder:text-text-secondary/50"
                 />
-              </label>
-              <button
-                type="submit"
-                disabled={busy || code.length !== 6}
-                className="h-11 rounded-md bg-brand-primary px-5 text-[14px] font-semibold text-white transition-colors hover:bg-brand-hover disabled:opacity-60 cursor-pointer"
-              >
-                {busy ? "Checking…" : "Verify"}
-              </button>
+                <button
+                  type="submit"
+                  disabled={busy || code.length !== 6}
+                  className="h-11 shrink-0 rounded-md bg-brand-primary px-4 text-[13px] font-semibold text-white transition-colors hover:bg-brand-hover disabled:opacity-60 cursor-pointer sm:px-5"
+                >
+                  {busy ? "Checking…" : "Verify"}
+                </button>
+              </div>
             </form>
           ) : null}
 
@@ -306,7 +318,7 @@ function VerifyRow({
               type="button"
               onClick={() => void sendCode(via)}
               disabled={busy || resendIn > 0}
-              className="h-10 rounded-md border border-brand-primary/60 bg-brand-primary/5 px-4 text-[13px] font-semibold text-brand-primary transition-colors hover:bg-brand-primary hover:text-white disabled:opacity-60 disabled:hover:bg-brand-primary/5 disabled:hover:text-brand-primary cursor-pointer"
+              className="inline-flex h-11 items-center justify-center rounded-md border border-brand-primary/60 bg-brand-primary/5 px-4 text-[13px] font-semibold text-brand-primary transition-colors hover:bg-brand-primary hover:text-white disabled:opacity-60 disabled:hover:bg-brand-primary/5 disabled:hover:text-brand-primary cursor-pointer"
             >
               {sendLabel()}
             </button>

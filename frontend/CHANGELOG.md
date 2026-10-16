@@ -5,6 +5,22 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-16
 
+### Fix verification code input + Verify button layout
+
+- `src/components/account/AccountVerification.tsx`: code field and Verify button share one equal-height row (`flex` + `shrink-0`) so they no longer break inside the half-width email/mobile cards; lighter tracking, matched border radius with profile inputs; send-code control height aligned to `h-11`.
+
+### Stop frontend reload / login↔account bounce
+
+- Killed duplicate Next.js processes that were fighting on port 3000 (continuous `✓ Compiled`).
+- `src/components/account/AccountProfile.tsx`: sync `initialUser` by field fingerprint, not object reference (SSR/HMR new objects no longer loop setState).
+- `src/components/providers/AuthSessionProvider.tsx`: `refetchOnWindowFocus={false}` / `refetchWhenOffline={false}` so session polls don’t flip auth.
+- `src/auth.ts`: once `RefreshTokenError` is set, stop retrying refresh (stopped middleware bouncing `/account` ↔ `/login?next=/account`).
+- `src/components/providers/AuthHydrator.tsx`: depend on a stable user key instead of the whole session object.
+
+### Fix account page reload loop from WhatsApp channel sync
+
+- `src/components/account/AccountVerification.tsx`: stopped syncing `via` from `phone_channels` with setState-during-render + object reference compare (that re-fired whenever verification status refreshed). Channel preference now updates in a `useEffect` on the `sms` / `whatsapp` flags only.
+
 ### WhatsApp option for mobile verification
 
 - `src/components/account/AccountVerification.tsx`: phone OTP can be sent via WhatsApp or SMS when the API reports `phone_channels`. Prefers WhatsApp when configured; offers “Send via SMS instead” if WhatsApp returns `NOT_ON_WHATSAPP`.
