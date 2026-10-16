@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-16
 
+### Fix phone OTP channel flags when only one gateway is configured
+
+- `src/controllers/customerAuthController.ts`: `phone_channels` no longer marks WhatsApp (or SMS) available in development just because `NODE_ENV !== production`. Console fallback is only advertised when **neither** gateway is set up. Sending `via: "whatsapp"` while only SMS is live (or the reverse) now returns `503 *_UNAVAILABLE` instead of logging a fake send.
+
 ### WhatsApp OTP for phone verification
 
 - `prisma/schema.prisma` + migration `20261016090000_whatsapp_gateway_providers`: table `whatsapp_gateway_providers` (Meta Cloud + Twilio WhatsApp), encrypted access token, phone number id, template name/language, Graph API version, optional button param.

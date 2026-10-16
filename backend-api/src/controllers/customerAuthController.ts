@@ -754,10 +754,13 @@ export async function getVerificationStatus(req: Request, res: Response) {
     isSmsDeliveryReady(),
     isWhatsAppDeliveryReady(),
   ]);
-  // In development without gateways, both channels still work (codes logged to console).
+  // Report real gateway readiness. Only when *neither* is configured (and not
+  // production) advertise both console fallbacks so local OTP testing still works.
+  const allowDevConsole =
+    env.nodeEnv !== "production" && !smsReady && !whatsappReady;
   const phoneChannels = {
-    sms: smsReady || env.nodeEnv !== "production",
-    whatsapp: whatsappReady || env.nodeEnv !== "production",
+    sms: smsReady || allowDevConsole,
+    whatsapp: whatsappReady || allowDevConsole,
   };
   return res.json({
     email: user.email,
@@ -861,22 +864,24 @@ export async function sendPhoneCode(req: Request, res: Response) {
   }
 
   const via = parsed.data.via;
+  const [smsReady, whatsappReady] = await Promise.all([
+    isSmsDeliveryReady(),
+    isWhatsAppDeliveryReady(),
+  ]);
+  // Console fallback is only for local dev when that channel has no gateway.
+  // Do not silently "send WhatsApp" to the console when SMS is the live gateway.
   if (via === "whatsapp") {
-    const ready = await isWhatsAppDeliveryReady();
-    if (!ready && env.nodeEnv === "production") {
+    if (!whatsappReady && (env.nodeEnv === "production" || smsReady)) {
       return res.status(503).json({
         message: "WhatsApp verification is not configured",
         code: "WHATSAPP_UNAVAILABLE",
       });
     }
-  } else {
-    const ready = await isSmsDeliveryReady();
-    if (!ready && env.nodeEnv === "production") {
-      return res.status(503).json({
-        message: "SMS verification is not configured",
-        code: "SMS_UNAVAILABLE",
-      });
-    }
+  } else if (!smsReady && (env.nodeEnv === "production" || whatsappReady)) {
+    return res.status(503).json({
+      message: "SMS verification is not configured",
+      code: "SMS_UNAVAILABLE",
+    });
   }
 
   try {
