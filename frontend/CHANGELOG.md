@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-16
 
+### Fix VerifyRow setState-in-effect + harden WhatsApp via
+
+- `src/components/account/AccountVerification.tsx`: removed `useEffect` sync for phone / `via` (React “setState in effect” cascading-render error). Profile phone adjusts during render; delivery channel is derived from `phone_channels` + optional user override and clamped to available gateways. Client never posts `via: "whatsapp"` unless WhatsApp is advertised; handles `WHATSAPP_UNAVAILABLE`.
+
 ### Fix verification code input + Verify button layout
 
 - `src/components/account/AccountVerification.tsx`: code field and Verify button share one equal-height row (`flex` + `shrink-0`) so they no longer break inside the half-width email/mobile cards; lighter tracking, matched border radius with profile inputs; send-code control height aligned to `h-11`.

@@ -863,21 +863,26 @@ export async function sendPhoneCode(req: Request, res: Response) {
     });
   }
 
-  const via = parsed.data.via;
+  // Only the Zod enum reaches here — still pin to a local union so a bad call site cannot widen it.
+  const via: "sms" | "whatsapp" = parsed.data.via === "whatsapp" ? "whatsapp" : "sms";
   const [smsReady, whatsappReady] = await Promise.all([
     isSmsDeliveryReady(),
     isWhatsAppDeliveryReady(),
   ]);
-  // Console fallback is only for local dev when that channel has no gateway.
-  // Do not silently "send WhatsApp" to the console when SMS is the live gateway.
-  if (via === "whatsapp") {
-    if (!whatsappReady && (env.nodeEnv === "production" || smsReady)) {
-      return res.status(503).json({
-        message: "WhatsApp verification is not configured",
-        code: "WHATSAPP_UNAVAILABLE",
-      });
-    }
-  } else if (!smsReady && (env.nodeEnv === "production" || whatsappReady)) {
+  // Console fallback only when *neither* gateway is ready (local OTP testing).
+  // Never honour a client `via` for a channel that is not actually available.
+  const allowDevConsole =
+    env.nodeEnv !== "production" && !smsReady && !whatsappReady;
+  const whatsappAllowed = whatsappReady || allowDevConsole;
+  const smsAllowed = smsReady || allowDevConsole;
+
+  if (via === "whatsapp" && !whatsappAllowed) {
+    return res.status(503).json({
+      message: "WhatsApp verification is not configured",
+      code: "WHATSAPP_UNAVAILABLE",
+    });
+  }
+  if (via === "sms" && !smsAllowed) {
     return res.status(503).json({
       message: "SMS verification is not configured",
       code: "SMS_UNAVAILABLE",

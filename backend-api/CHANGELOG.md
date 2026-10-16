@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-16
 
+### Harden phone OTP `via` (WhatsApp / SMS) against abuse
+
+- `src/validators/customerAuth.ts`: `sendPhoneCodeSchema` is `.strict()`; `via` stays enum-only (`sms` | `whatsapp`).
+- `src/controllers/customerAuthController.ts`: honour `via` only when that gateway is ready (or the shared local console fallback when neither is); pin `via` to the union before send.
+- `src/lib/verification.ts`: coerce unknown `phoneDelivery` to `sms`.
+- `src/routes/customerAuth.ts`: IP rate limits on verify send (20/h) and confirm (40/h).
+
 ### Fix phone OTP channel flags when only one gateway is configured
 
 - `src/controllers/customerAuthController.ts`: `phone_channels` no longer marks WhatsApp (or SMS) available in development just because `NODE_ENV !== production`. Console fallback is only advertised when **neither** gateway is set up. Sending `via: "whatsapp"` while only SMS is live (or the reverse) now returns `503 *_UNAVAILABLE` instead of logging a fake send.

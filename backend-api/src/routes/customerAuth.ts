@@ -19,10 +19,26 @@ import {
 import { requireAuth, requireRoles } from "../middleware/auth.js";
 import { avatarUpload } from "../middleware/upload.js";
 import { AVATAR_MAX_BYTES } from "../lib/avatarImage.js";
+import { rateLimit } from "../lib/rateLimit.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import multer from "multer";
 
 export const customerAuthRouter = Router();
+
+/** Extra IP throttle on top of per-target send caps in verification.ts. */
+const verifySendLimiter = rateLimit({
+  name: "VERIFY_SEND",
+  max: 20,
+  windowMs: 60 * 60 * 1000,
+  message: "Too many verification codes requested. Please try again later.",
+});
+
+const verifyConfirmLimiter = rateLimit({
+  name: "VERIFY_CONFIRM",
+  max: 40,
+  windowMs: 60 * 60 * 1000,
+  message: "Too many verification attempts. Please try again later.",
+});
 
 customerAuthRouter.post("/register", asyncHandler(register));
 customerAuthRouter.post("/login", asyncHandler(login));
@@ -51,21 +67,25 @@ customerAuthRouter.get(
 customerAuthRouter.post(
   "/me/verify/email/send",
   ...customerOnly,
+  verifySendLimiter,
   asyncHandler(sendEmailCode),
 );
 customerAuthRouter.post(
   "/me/verify/email/confirm",
   ...customerOnly,
+  verifyConfirmLimiter,
   asyncHandler(confirmEmailCode),
 );
 customerAuthRouter.post(
   "/me/verify/phone/send",
   ...customerOnly,
+  verifySendLimiter,
   asyncHandler(sendPhoneCode),
 );
 customerAuthRouter.post(
   "/me/verify/phone/confirm",
   ...customerOnly,
+  verifyConfirmLimiter,
   asyncHandler(confirmPhoneCode),
 );
 

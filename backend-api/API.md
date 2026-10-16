@@ -504,8 +504,9 @@ Google sign-in marks the email as verified automatically.
 
 - Codes: 6 digits, stored hashed (HMAC-SHA256), valid **10 min**, max **5** wrong attempts.
 - Resend cooldown **60 s** per channel (`429 RESEND_TOO_SOON`, `retry_after`); max **5** codes per target per hour (`429 TOO_MANY_CODES`).
-- `phone/send` without `phone` uses the profile number; with `phone`, the number is saved to the profile only after the code is confirmed (`409 PHONE_IN_USE` if another account owns it).
-- `via` defaults to `sms`. `via: "whatsapp"` uses the active WhatsApp gateway (Dashboard → Settings → WhatsApp). Confirm is the same for both. `phone_channels` tells the storefront which buttons to show.
+- IP rate limits: **20** send / **40** confirm requests per hour (`429 VERIFY_SEND_RATE_LIMITED` / `VERIFY_CONFIRM_RATE_LIMITED`).
+- `phone/send` body is **strict** (unknown keys → 400). Without `phone` uses the profile number; with `phone`, the number is saved to the profile only after the code is confirmed (`409 PHONE_IN_USE` if another account owns it).
+- `via` defaults to `sms` and must be exactly `"sms"` | `"whatsapp"`. `via: "whatsapp"` is accepted only when the WhatsApp gateway is ready (or shared local console fallback when neither gateway is configured). Otherwise `503 WHATSAPP_UNAVAILABLE` / `SMS_UNAVAILABLE`. Confirm is the same for both. `phone_channels` tells the storefront which buttons to show.
 - Error codes: `ALREADY_VERIFIED`, `PHONE_REQUIRED`, `CODE_EXPIRED`, `INVALID_CODE` (+ `attempts_left`), `TOO_MANY_ATTEMPTS`, `SEND_FAILED`, `TARGET_CHANGED`, `NOT_ON_WHATSAPP`, `WHATSAPP_REJECTED`, `WHATSAPP_UNAVAILABLE`, `SMS_UNAVAILABLE`.
 - Delivery: `SMTP_*` env for email; SMS gateway (dashboard or `SMS_*` env); WhatsApp gateway (dashboard or `WHATSAPP_*` env). In development without config, codes are logged to the backend console; in production a missing config returns `502 SEND_FAILED` / `503 *_UNAVAILABLE`.
 

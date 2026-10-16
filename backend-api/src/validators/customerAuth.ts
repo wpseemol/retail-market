@@ -187,16 +187,18 @@ export const updateProfileSchema = z
     { message: "At least one field is required" },
   );
 
-export const sendPhoneCodeSchema = z.object({
-  /** Optional: verify a new number (saved to the profile only after the code is confirmed). */
-  phone: phoneField.optional(),
-  /**
-   * Delivery channel for the OTP. `whatsapp` uses the configured WhatsApp gateway
-   * (Meta Cloud / Twilio); confirm still uses the same phone verification flow.
-   * Default `sms`.
-   */
-  via: z.enum(["sms", "whatsapp"]).optional().default("sms"),
-});
+export const sendPhoneCodeSchema = z
+  .object({
+    /** Optional: verify a new number (saved to the profile only after the code is confirmed). */
+    phone: phoneField.optional(),
+    /**
+     * Delivery channel for the OTP. `whatsapp` uses the configured WhatsApp gateway
+     * (Meta Cloud / Twilio); confirm still uses the same phone verification flow.
+     * Default `sms`. Rejects any other string (no coercion from truthy junk).
+     */
+    via: z.enum(["sms", "whatsapp"]).optional().default("sms"),
+  })
+  .strict();
 
 export const confirmCodeSchema = z.object({
   code: z

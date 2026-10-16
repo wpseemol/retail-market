@@ -41,7 +41,9 @@ export async function sendVerificationCode(
   options: { phoneDelivery?: PhoneDelivery } = {},
 ) {
   const now = Date.now();
-  const phoneDelivery: PhoneDelivery = options.phoneDelivery ?? "sms";
+  // Ignore anything outside the known union (defensive — callers must pass sms|whatsapp).
+  const phoneDelivery: PhoneDelivery =
+    options.phoneDelivery === "whatsapp" ? "whatsapp" : "sms";
 
   const latest = await prisma.verificationCode.findFirst({
     where: { user_id: userId, channel },

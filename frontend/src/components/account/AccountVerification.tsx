@@ -92,35 +92,49 @@ function VerifyRow({
   onVerified: (res: ConfirmResponse) => Promise<void>;
 }) {
   const [phoneInput, setPhoneInput] = useState(() => toLocalMobile(value));
+  const [phoneSource, setPhoneSource] = useState(value);
+  // Adjust during render when the profile phone prop changes (no effect setState).
+  if (value !== phoneSource) {
+    setPhoneSource(value);
+    setPhoneInput(toLocalMobile(value));
+  }
+
   const [codeSent, setCodeSent] = useState(false);
   const [sentVia, setSentVia] = useState<PhoneVia | null>(null);
-  const [via, setVia] = useState<PhoneVia>(() => preferredPhoneVia(phoneChannels));
+  /** User pick / last successful send — null means follow server channel preference. */
+  const [viaOverride, setViaOverride] = useState<PhoneVia | null>(null);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [resendIn, setResendIn] = useCountdown();
 
-  // Sync local mobile field when the profile phone changes (string compare — stable).
-  useEffect(() => {
-    setPhoneInput(toLocalMobile(value));
-  }, [value]);
-
-  // Prefer WhatsApp only when channel *flags* change — not on every new object reference
-  // from a verification status refetch (that caused a render loop).
-  const smsFlag = phoneChannels?.sms;
-  const whatsappFlag = phoneChannels?.whatsapp;
-  useEffect(() => {
-    if (channel !== "phone") return;
-    if (smsFlag === undefined && whatsappFlag === undefined) return;
-    setVia(preferredPhoneVia({ sms: Boolean(smsFlag), whatsapp: Boolean(whatsappFlag) }));
-  }, [channel, smsFlag, whatsappFlag]);
-
   const smsAvailable = phoneChannels?.sms !== false;
   const whatsappAvailable = Boolean(phoneChannels?.whatsapp);
   const showViaPicker = channel === "phone" && whatsappAvailable && smsAvailable;
 
-  const sendCode = async (delivery: PhoneVia = via) => {
+  const preferredVia = preferredPhoneVia(
+    phoneChannels
+      ? { sms: Boolean(phoneChannels.sms), whatsapp: Boolean(phoneChannels.whatsapp) }
+      : undefined,
+  );
+  // Derive delivery channel — never trust a stale override for an unavailable gateway.
+  let via: PhoneVia = viaOverride ?? preferredVia;
+  if (via === "whatsapp" && !whatsappAvailable) via = smsAvailable ? "sms" : preferredVia;
+  else if (via === "sms" && !smsAvailable && whatsappAvailable) via = "whatsapp";
+
+  /** Only allow sms|whatsapp when that gateway is advertised; never invent a channel. */
+  function resolveDelivery(requested: PhoneVia): PhoneVia | null {
+    if (requested !== "sms" && requested !== "whatsapp") return null;
+    if (requested === "whatsapp") {
+      if (whatsappAvailable) return "whatsapp";
+      return smsAvailable ? "sms" : null;
+    }
+    if (smsAvailable) return "sms";
+    return whatsappAvailable ? "whatsapp" : null;
+  }
+
+  const sendCode = async (requested: PhoneVia = via) => {
     setError(null);
     setInfo(null);
     let body: { phone?: string; via?: PhoneVia } | undefined;
@@ -135,6 +149,11 @@ function VerifyRow({
         setError(parsed.error.issues[0]?.message ?? "Invalid number");
         return;
       }
+      const delivery = resolveDelivery(requested);
+      if (!delivery) {
+        setError("Phone verification is not available right now");
+        return;
+      }
       body = { phone: normalizePhone(full) ?? full, via: delivery };
     }
 
@@ -145,15 +164,23 @@ function VerifyRow({
         { method: "POST", body: body ?? {} },
       );
       setCodeSent(true);
-      setSentVia(res.via ?? delivery);
-      setVia(res.via ?? delivery);
+      const usedVia =
+        res.via === "sms" || res.via === "whatsapp"
+          ? res.via
+          : (body?.via ?? requested);
+      setSentVia(channel === "phone" ? usedVia : null);
+      if (channel === "phone") setViaOverride(usedVia);
       setInfo(res.message);
       setResendIn(res.resend_in);
     } catch (err) {
       if (err instanceof ApiError && err.code === "RESEND_TOO_SOON") setCodeSent(true);
-      if (err instanceof ApiError && err.code === "NOT_ON_WHATSAPP" && smsAvailable) {
+      if (
+        err instanceof ApiError &&
+        (err.code === "NOT_ON_WHATSAPP" || err.code === "WHATSAPP_UNAVAILABLE") &&
+        smsAvailable
+      ) {
         setError(`${errorMessage(err, "WhatsApp unavailable")}. You can send an SMS code instead.`);
-        setVia("sms");
+        setViaOverride("sms");
       } else {
         setError(errorMessage(err, "Could not send the code"));
       }
@@ -256,9 +283,9 @@ function VerifyRow({
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={() => setVia("whatsapp")}
-                  disabled={busy}
-                  className={`h-9 rounded-md px-3 text-[13px] font-semibold transition-colors cursor-pointer ${
+                  onClick={() => setViaOverride("whatsapp")}
+                  disabled={busy || !whatsappAvailable}
+                  className={`h-9 rounded-md px-3 text-[13px] font-semibold transition-colors cursor-pointer disabled:opacity-60 ${
                     via === "whatsapp"
                       ? "bg-[#25D366] text-white"
                       : "border border-border-default bg-bg-surface text-text-primary hover:border-[#25D366]/60"
@@ -268,9 +295,9 @@ function VerifyRow({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setVia("sms")}
-                  disabled={busy}
-                  className={`h-9 rounded-md px-3 text-[13px] font-semibold transition-colors cursor-pointer ${
+                  onClick={() => setViaOverride("sms")}
+                  disabled={busy || !smsAvailable}
+                  className={`h-9 rounded-md px-3 text-[13px] font-semibold transition-colors cursor-pointer disabled:opacity-60 ${
                     via === "sms"
                       ? "bg-brand-primary text-white"
                       : "border border-border-default bg-bg-surface text-text-primary hover:border-brand-primary/60"
