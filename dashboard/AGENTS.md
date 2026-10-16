@@ -37,7 +37,7 @@ dashboard/
     │   ├── support/                # ReviewsModerationPage (Support & Quality, all staff, role-limited actions)
     │   └── system/settings/        # super_admin only: SiteSettingsLayout + context/tabs, then
     │       ├── storefront/         #   identity, header, footer, home, shop, social share
-    │       ├── integrations/       #   credentials: social login, SMS, email, payment, shipping
+    │       ├── integrations/       #   credentials: social login, SMS, WhatsApp, email, payment, shipping
     │       ├── tracking/           #   analytics, pixels
     │       └── audit/              #   history
     ├── layouts/

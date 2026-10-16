@@ -3,6 +3,12 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-16
+
+### WhatsApp option for mobile verification
+
+- `src/components/account/AccountVerification.tsx`: phone OTP can be sent via WhatsApp or SMS when the API reports `phone_channels`. Prefers WhatsApp when configured; offers “Send via SMS instead” if WhatsApp returns `NOT_ON_WHATSAPP`.
+
 ## 2026-10-15
 
 ### Bangla product text on the storefront

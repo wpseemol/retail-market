@@ -44,7 +44,8 @@ backend-api/
     │                        # contentPages (FAQ / Terms defaults + public shaping),
     │                        # productCsv (product CSV parse / export, header aliases, limits),
     │                        # categoryCsv (category CSV / ZIP import file, image refs),
-    │                        # zipArchive (size-capped ZIP reader for imports)
+    │                        # zipArchive (size-capped ZIP reader for imports),
+    │                        # smsGateway + whatsappGateway (OTP delivery, encrypted credentials)
     ├── utils/
     └── data/
 ```

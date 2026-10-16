@@ -496,17 +496,18 @@ Google sign-in marks the email as verified automatically.
 
 | Method | Path | Body | Response |
 |--------|------|------|----------|
-| GET | `/api/auth/me/verification` | — | `{ email, email_verified, phone, phone_verified, pending_guest_orders: { email, phone } }` |
+| GET | `/api/auth/me/verification` | — | `{ email, email_verified, phone, phone_verified, pending_guest_orders: { email, phone }, phone_channels: { sms, whatsapp } }` |
 | POST | `/api/auth/me/verify/email/send` | — | `{ message, expires_in, resend_in }` |
 | POST | `/api/auth/me/verify/email/confirm` | `{ "code": "123456" }` | `{ message, user, claimed_orders }` |
-| POST | `/api/auth/me/verify/phone/send` | `{ "phone"?: "01712345678" }` | `{ message, phone, expires_in, resend_in }` |
+| POST | `/api/auth/me/verify/phone/send` | `{ "phone"?: "01712345678", "via"?: "sms" \| "whatsapp" }` | `{ message, phone, via, expires_in, resend_in }` |
 | POST | `/api/auth/me/verify/phone/confirm` | `{ "code": "123456" }` | `{ message, user, claimed_orders }` |
 
 - Codes: 6 digits, stored hashed (HMAC-SHA256), valid **10 min**, max **5** wrong attempts.
 - Resend cooldown **60 s** per channel (`429 RESEND_TOO_SOON`, `retry_after`); max **5** codes per target per hour (`429 TOO_MANY_CODES`).
 - `phone/send` without `phone` uses the profile number; with `phone`, the number is saved to the profile only after the code is confirmed (`409 PHONE_IN_USE` if another account owns it).
-- Error codes: `ALREADY_VERIFIED`, `PHONE_REQUIRED`, `CODE_EXPIRED`, `INVALID_CODE` (+ `attempts_left`), `TOO_MANY_ATTEMPTS`, `SEND_FAILED`, `TARGET_CHANGED`.
-- Delivery: `SMTP_*` env for email, `SMS_PROVIDER=bulksmsbd` + `SMS_API_KEY` + `SMS_SENDER_ID` for SMS. In development without config, codes are logged to the backend console; in production a missing config returns `502 SEND_FAILED`.
+- `via` defaults to `sms`. `via: "whatsapp"` uses the active WhatsApp gateway (Dashboard → Settings → WhatsApp). Confirm is the same for both. `phone_channels` tells the storefront which buttons to show.
+- Error codes: `ALREADY_VERIFIED`, `PHONE_REQUIRED`, `CODE_EXPIRED`, `INVALID_CODE` (+ `attempts_left`), `TOO_MANY_ATTEMPTS`, `SEND_FAILED`, `TARGET_CHANGED`, `NOT_ON_WHATSAPP`, `WHATSAPP_REJECTED`, `WHATSAPP_UNAVAILABLE`, `SMS_UNAVAILABLE`.
+- Delivery: `SMTP_*` env for email; SMS gateway (dashboard or `SMS_*` env); WhatsApp gateway (dashboard or `WHATSAPP_*` env). In development without config, codes are logged to the backend console; in production a missing config returns `502 SEND_FAILED` / `503 *_UNAVAILABLE`.
 
 ---
 
@@ -901,6 +902,22 @@ Fields: omit → keep · `null` → remove · string → replace. Activating wit
 
 | Method | Path | Notes |
 |--------|------|--------|
+| GET | `/whatsapp-gateway` | `{ active_provider, env_fallback, providers }` · per provider `is_active`, `has_access_token`, `has_phone_number_id`, `has_account_sid`, `has_template_name`, `template_language`, `api_version`, `template_button_param`, `ready` · secrets are **never** returned here |
+| PATCH | `/whatsapp-gateway` | Body `{ active_provider?, meta_cloud?, twilio_whatsapp? }` — see below |
+| POST | `/whatsapp-gateway/reveal` | Body `{ password }` · same re-auth + rate limit as SMS · returns decrypted credentials · logged to history |
+| POST | `/whatsapp-gateway/test` | Body `{ phone }` · sends OTP template with code `000000` · 1 per 30 s → 429 `TEST_TOO_SOON` · gateway error → 502 `WHATSAPP_TEST_FAILED` |
+
+**WhatsApp gateway** (table `whatsapp_gateway_providers`, `access_token` AES-256-GCM encrypted). Used when `POST /api/auth/me/verify/phone/send` has `via: "whatsapp"`. At most one active; `active_provider: null` → falls back to `WHATSAPP_PROVIDER` / `WHATSAPP_ACCESS_TOKEN` / `WHATSAPP_PHONE_NUMBER_ID` / `WHATSAPP_TEMPLATE_NAME` (+ optional `WHATSAPP_ACCOUNT_SID`, `WHATSAPP_TEMPLATE_LANGUAGE`, `WHATSAPP_API_VERSION`) env, else console log (dev only — production throws). OTP **must** use an approved AUTHENTICATION / Content template — free-form WhatsApp text cannot open a cold conversation.
+
+| Provider | Fields (required to activate in **bold**) |
+|----------|--------|
+| `meta_cloud` | **`access_token`**, **`phone_number_id`**, **`template_name`**, `template_language` (default `en`), `api_version` (default `v21.0`), `account_sid` (optional WABA id), `template_button_param` (default `true` — URL/copy-code button param) — `POST graph.facebook.com/{version}/{phone_number_id}/messages` |
+| `twilio_whatsapp` | **`access_token`** (auth token), **`phone_number_id`** (`whatsapp:+E.164` From), **`account_sid`**, **`template_name`** (Content SID `HX…`) — Twilio Messages API with `ContentSid` |
+
+Fields: omit → keep · `null` → remove · string → replace. Activating without required fields → 400 `WHATSAPP_GATEWAY_INCOMPLETE`. History actions `whatsapp_gateway_updated` / `whatsapp_secrets_revealed`. Meta undeliverable / not-on-WhatsApp → `502 NOT_ON_WHATSAPP` on phone send.
+
+| Method | Path | Notes |
+|--------|------|--------|
 | GET | `/email-provider` | `{ active_provider, env_fallback, providers }` · per provider `host`, `port`, `secure`, `username`, `from_email`, `from_name`, `has_password`, `ready` · password is **never** returned here |
 | PATCH | `/email-provider` | Body `{ active_provider?, gmail?, zoho?, sendgrid?, brevo?, mailgun?, smtp? }` — each `{ host?, port?, secure?, username?, password?, from_email?, from_name? }` |
 | POST | `/email-provider/reveal` | Body `{ password }` · shared re-auth + rate limit · returns decrypted `password` per provider · logged to history |
@@ -949,7 +966,7 @@ Callback URLs are built from `PUBLIC_API_URL` (not editable in the dashboard). W
 **Analytics IDs:** Google Analytics (`G-…`), GTM (`GTM-…`), Hotjar, Plerdy
 **Pixels:** Google Ads (`AW-…`), TikTok, LinkedIn, Twitter/X, Meta (Facebook)
 
-Dashboard UI: `/settings/:tab` (shadcn Form + Zod), one page per tab — `identity`, `header`, `footer`, `home`, `shop`, `social`, `social-login`, `sms`, `email`, `payment`, `shipping`, `analytics`, `pixels`, `history`. `/settings` redirects to `identity`.
+Dashboard UI: `/settings/:tab` (shadcn Form + Zod), one page per tab — `identity`, `header`, `footer`, `home`, `shop`, `social`, `social-login`, `sms`, `whatsapp`, `email`, `payment`, `shipping`, `analytics`, `pixels`, `history`. `/settings` redirects to `identity`.
 
 ---
 

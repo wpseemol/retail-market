@@ -3,6 +3,14 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-16
+
+### WhatsApp gateway settings
+
+- New Settings tab `/settings/whatsapp` (`WhatsAppGatewaySettingsPage` + `WhatsAppGatewaySettingsPanel`): configure Meta Cloud API or Twilio WhatsApp for phone OTP (encrypted token, reveal with password, test send).
+- `src/lib/validators/whatsappGateway.ts`: Zod form schema + API body helpers.
+- `settingsTabs.ts` / `App.tsx` / settings barrel: WhatsApp tab next to SMS gateway.
+
 ## 2026-10-15
 
 ### Optional Bangla version for products

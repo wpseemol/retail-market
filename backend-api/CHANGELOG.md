@@ -3,6 +3,16 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-16
+
+### WhatsApp OTP for phone verification
+
+- `prisma/schema.prisma` + migration `20261016090000_whatsapp_gateway_providers`: table `whatsapp_gateway_providers` (Meta Cloud + Twilio WhatsApp), encrypted access token, phone number id, template name/language, Graph API version, optional button param.
+- `src/lib/whatsappGateway.ts`, `src/validators/whatsappGateway.ts`, `src/routes/dashboardWhatsAppGateway.ts`: dashboard GET/PATCH/reveal/test under `/api/dashboard/site-settings/whatsapp-gateway` (mirrors SMS gateway).
+- `src/lib/messaging.ts` + `src/lib/verification.ts`: `sendWhatsAppOtp`; phone send accepts `phoneDelivery: "sms" | "whatsapp"` (confirm still uses the `sms` verification channel).
+- `src/validators/customerAuth.ts` + `src/controllers/customerAuthController.ts`: `via` on phone send; `phone_channels` on verification status; `NOT_ON_WHATSAPP` when Meta/Twilio say the number is not on WhatsApp.
+- `src/lib/env.ts`: `WHATSAPP_*` env fallback. `API.md` updated.
+
 ## 2026-10-15
 
 ### Optional Bangla version for products

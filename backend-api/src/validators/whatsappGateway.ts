@@ -67,15 +67,10 @@ const templateNameField = z
         .trim()
         .max(100)
         .regex(
-          /^[A-Za-z0-9_]+$/,
-          "Template name: letters, numbers and underscores only (Meta) or Content SID (HX…)",
+          /^([A-Za-z0-9_]+|HX[0-9a-fA-F]{32})$/,
+          "Template name (letters/underscores) or Twilio Content SID (HX…)",
         ),
     ),
-    // Twilio Content SIDs look like HX…
-    z
-      .string()
-      .trim()
-      .regex(/^HX[0-9a-fA-F]{32}$/, "Twilio Content SID starts with HX"),
     z.literal(""),
     z.null(),
   ])
