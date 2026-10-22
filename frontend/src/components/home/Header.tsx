@@ -326,7 +326,7 @@ export default function Header({
 
             {/* ================= 2. Search on Tablets & Mobile ================= */}
             <div className="lg:hidden px-4 pb-3">
-                <HeaderSearch variant="mobile" />
+                <HeaderSearch variant="mobile" categories={categories} />
             </div>
 
             {/* ================= 3. Desktop Navigation Menu Bar ================= */}
@@ -422,7 +422,7 @@ export default function Header({
                     </ul>
 
                     {/* Desktop Search Field */}
-                    <HeaderSearch variant="desktop" />
+                    <HeaderSearch variant="desktop" categories={categories} />
 
                     {/* Account menu — login CTA or avatar when signed in */}
                     <AccountMenu />

@@ -14,6 +14,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { formatPrice } from "@/lib/money";
 import {
+    categoryName,
+    categoryShopHref,
+    type PublicCategory,
+} from "@/lib/categories";
+import {
+    fetchCategoryCovers,
     fetchSearchSuggestions,
     fetchSuggestedProducts,
     normalizeSearchQuery,
@@ -41,8 +47,19 @@ type Variant = "desktop" | "mobile";
 
 type FlatItem = { key: string; href: string };
 
+const CATEGORY_TILES = 10;
+
 function subscribeToNothing() {
     return () => {};
+}
+
+function placeUnderSearch(
+    panel: HTMLDivElement | null,
+    root: HTMLDivElement | null,
+) {
+    if (!panel || !root) return;
+    const rect = root.getBoundingClientRect();
+    panel.style.top = `${rect.bottom + 8}px`;
 }
 
 function Highlight({ text, query }: { text: string; query: string }) {
@@ -68,11 +85,11 @@ function Thumb({
     label: string;
     large?: boolean;
 }) {
-    const box = large ? "size-16" : "size-10";
+    const box = large ? "size-[72px]" : "size-10";
     if (!src) {
         return (
             <span
-                className={`flex ${box} shrink-0 items-center justify-center rounded-md bg-bg-subtle text-xs font-semibold uppercase text-text-secondary`}
+                className={`flex ${box} shrink-0 items-center justify-center rounded-md bg-bg-subtle text-sm font-semibold uppercase text-text-secondary`}
             >
                 {label.slice(0, 1)}
             </span>
@@ -84,7 +101,7 @@ function Thumb({
             src={src}
             alt=""
             loading="lazy"
-            className={`${box} shrink-0 rounded-md border border-border-default bg-white object-contain p-0.5`}
+            className={`${box} shrink-0 rounded-md bg-bg-subtle object-contain`}
         />
     );
 }
@@ -107,18 +124,23 @@ function ImageSearchIcon() {
     );
 }
 
-export default function HeaderSearch({ variant }: { variant: Variant }) {
+export default function HeaderSearch({
+    variant,
+    categories = [],
+}: {
+    variant: Variant;
+    categories?: PublicCategory[];
+}) {
     const router = useRouter();
     const pathname = usePathname();
-    const { t } = useI18n();
+    const { locale, t } = useI18n();
     const listboxId = useId();
     const rootRef = useRef<HTMLDivElement | null>(null);
     const panelRef = useRef<HTMLDivElement | null>(null);
     const inputRef = useRef<HTMLInputElement | null>(null);
-    const overlayInputRef = useRef<HTMLInputElement | null>(null);
     const fileRef = useRef<HTMLInputElement | null>(null);
     const previewRef = useRef<string | null>(null);
-    const wasOpen = useRef(false);
+    const ignoreOutsideRef = useRef(false);
 
     const [query, setQuery] = useState("");
     const [openOnPath, setOpenOnPath] = useState<string | null>(null);
@@ -142,6 +164,8 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
     );
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [imageError, setImageError] = useState<SearchImageCode | null>(null);
+    const [tilePage, setTilePage] = useState(0);
+    const [covers, setCovers] = useState<Record<string, string>>({});
 
     const debounced = useDebouncedValue(query, 300);
     const normalized = normalizeSearchQuery(debounced);
@@ -182,6 +206,19 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
     }, [normalized]);
 
     useEffect(() => {
+        if (!open) return;
+        const controller = new AbortController();
+        fetchCategoryCovers(controller.signal)
+            .then((next) => {
+                if (!controller.signal.aborted) setCovers(next);
+            })
+            .catch(() => {
+                if (!controller.signal.aborted) setCovers({});
+            });
+        return () => controller.abort();
+    }, [open]);
+
+    useEffect(() => {
         if (!open || recentProducts.length > 0) return;
         const controller = new AbortController();
         fetchSuggestedProducts(controller.signal)
@@ -193,16 +230,14 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
     }, [open, recentProducts.length]);
 
     useEffect(() => {
-        if (open && !wasOpen.current) overlayInputRef.current?.focus();
-        wasOpen.current = open;
-    }, [open]);
-
-    useEffect(() => {
         if (!open) return;
-        const previous = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
+        const place = () => placeUnderSearch(panelRef.current, rootRef.current);
+        place();
+        window.addEventListener("resize", place);
+        window.addEventListener("scroll", place, true);
         return () => {
-            document.body.style.overflow = previous;
+            window.removeEventListener("resize", place);
+            window.removeEventListener("scroll", place, true);
         };
     }, [open]);
 
@@ -215,8 +250,14 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
     useEffect(() => {
         function onPointerDown(e: PointerEvent) {
             const node = e.target as Node;
-            if (rootRef.current?.contains(node)) return;
-            if (panelRef.current?.contains(node)) return;
+            const inside =
+                rootRef.current?.contains(node) ||
+                panelRef.current?.contains(node);
+            if (ignoreOutsideRef.current) {
+                ignoreOutsideRef.current = false;
+                if (!inside) return;
+            }
+            if (inside) return;
             setOpenOnPath(null);
         }
         document.addEventListener("pointerdown", onPointerDown);
@@ -224,28 +265,44 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
     }, []);
 
     const products = data?.products ?? [];
-    const categories = data?.categories ?? [];
+    const matchedCategories = data?.categories ?? [];
     const shops = data?.shops ?? [];
     const hasResults =
-        products.length > 0 || categories.length > 0 || shops.length > 0;
+        products.length > 0 ||
+        matchedCategories.length > 0 ||
+        shops.length > 0;
     const trimmed = query.trim();
     const browsing = !normalized && !issue;
     const browseProducts =
         recentProducts.length > 0 ? recentProducts : (suggested ?? []);
+    const categoryPages = Math.max(
+        1,
+        Math.ceil(categories.length / CATEGORY_TILES),
+    );
+    const visibleCategories = categories.slice(
+        tilePage * CATEGORY_TILES,
+        tilePage * CATEGORY_TILES + CATEGORY_TILES,
+    );
 
     const flat: FlatItem[] = browsing
-        ? browseProducts.map((p) => ({
-              key: `p-${p.id}`,
-              href: `/shop/${p.slug}`,
-          }))
+        ? [
+              ...browseProducts.map((p) => ({
+                  key: `p-${p.id}`,
+                  href: `/shop/${p.slug}`,
+              })),
+              ...visibleCategories.map((c) => ({
+                  key: `c-${c.id}`,
+                  href: categoryShopHref(c.slug),
+              })),
+          ]
         : [
               ...products.map((p) => ({
                   key: `p-${p.id}`,
                   href: `/shop/${p.slug}`,
               })),
-              ...categories.map((c) => ({
+              ...matchedCategories.map((c) => ({
                   key: `c-${c.id}`,
-                  href: `/shop?category=${encodeURIComponent(c.slug)}`,
+                  href: categoryShopHref(c.slug),
               })),
               ...shops.map((s) => ({
                   key: `s-${s.id}`,
@@ -307,11 +364,19 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
         }
     }
 
+    function openImagePicker() {
+        ignoreOutsideRef.current = true;
+        setOpen(true);
+        setImageError(null);
+        fileRef.current?.click();
+    }
+
     async function onImageChosen(file: File | undefined) {
         setOpen(true);
         setImageError(null);
         const checked = await validateSearchImage(file);
         if (!checked.ok) {
+            replacePreview(null);
             setImageError(checked.code);
             return;
         }
@@ -320,6 +385,7 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
             queryFromImageFileName(file?.name ?? "") ?? "",
         );
         if (fromName) setQuery(fromName);
+        inputRef.current?.focus();
     }
 
     function clearImage() {
@@ -329,8 +395,10 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
     }
 
     const itemClass = (key: string) =>
-        `flex items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${
-            activeKey === key ? "bg-bg-subtle" : "hover:bg-bg-subtle"
+        `block w-full truncate rounded px-1 py-1 text-left text-sm transition-colors ${
+            activeKey === key
+                ? "bg-bg-subtle text-brand-primary"
+                : "text-text-secondary hover:text-brand-primary"
         }`;
 
     const isDesktop = variant === "desktop";
@@ -341,483 +409,504 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
               ? t.search.unsafe
               : null;
 
-    const fileInput = (
-        <input
-            ref={fileRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
-            className="sr-only"
-            tabIndex={-1}
-            aria-label={t.search.imageSearch}
-            onChange={(e) => {
-                const file = e.target.files?.[0];
-                e.target.value = "";
-                void onImageChosen(file);
-            }}
-        />
-    );
+    const discoverLabel =
+        recentProducts.length > 0 ? t.search.recentProducts : t.search.discover;
 
-    const overlay =
+    const panel =
         open && mounted
             ? createPortal(
                   <div
-                      ref={panelRef}
+                      ref={(node) => {
+                          panelRef.current = node;
+                          placeUnderSearch(node, rootRef.current);
+                      }}
                       role="dialog"
-                      aria-modal="true"
                       aria-label={t.search.placeholderLong}
-                      className="fixed inset-0 z-90 flex flex-col bg-bg-base"
+                      data-lenis-prevent
+                      className="fixed left-[10vw] z-[80] flex max-h-[70vh] w-[80vw] flex-col overflow-hidden rounded-md border border-border-default bg-bg-base shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
                   >
-                      <form
-                          role="search"
-                          onSubmit={(e) => {
-                              e.preventDefault();
-                              if (activeIndex >= 0 && flat[activeIndex]) {
-                                  const target = flat[activeIndex];
-                                  const product = [
-                                      ...browseProducts,
-                                      ...products,
-                                  ].find(
-                                      (item) => target.key === `p-${item.id}`,
-                                  );
-                                  if (product) visitProduct(product);
-                                  else close();
-                                  router.push(target.href);
-                                  return;
-                              }
-                              goToAllResults();
-                          }}
-                          className="border-b border-border-default bg-bg-base"
-                      >
-                          <div className="container mx-auto flex items-center gap-2 px-4 py-4 sm:px-6">
-                              <div className="flex min-w-0 flex-1 items-center rounded-full border border-brand-primary bg-bg-base px-4 py-2.5">
-                                  <input
-                                      ref={overlayInputRef}
-                                      type="search"
-                                      name="q"
-                                      value={query}
-                                      maxLength={SEARCH_MAX_CHARS}
-                                      autoComplete="off"
-                                      placeholder={t.search.placeholderLong}
-                                      role="combobox"
-                                      aria-expanded={open}
-                                      aria-controls={listboxId}
-                                      aria-autocomplete="list"
-                                      aria-invalid={issue !== null}
-                                      aria-activedescendant={
-                                          activeKey
-                                              ? `${listboxId}-${activeKey}`
-                                              : undefined
-                                      }
-                                      onChange={(e) => setQuery(e.target.value)}
-                                      onKeyDown={onKeyDown}
-                                      className="w-full bg-transparent text-[15px] text-text-primary outline-none placeholder:text-text-secondary"
-                                  />
+                      <div className="flex items-start justify-between gap-3 px-5 pt-4">
+                          <h2 className="text-sm font-semibold text-text-primary">
+                              {browsing && recentSearches.length > 0
+                                  ? t.search.history
+                                  : browsing
+                                    ? discoverLabel
+                                    : null}
+                          </h2>
+                          <div className="flex shrink-0 items-center gap-3">
+                              {browsing && recentSearches.length > 0 ? (
                                   <button
                                       type="button"
-                                      onClick={() => fileRef.current?.click()}
-                                      aria-label={t.search.imageSearch}
-                                      title={t.search.imageHint}
-                                      className="ml-2 shrink-0 cursor-pointer text-text-secondary hover:text-brand-primary"
+                                      onClick={() => {
+                                          clearRecentSearches();
+                                          setRecentSearches([]);
+                                      }}
+                                      className="cursor-pointer text-sm text-brand-primary"
                                   >
-                                      <ImageSearchIcon />
+                                      {t.search.clearAll}
                                   </button>
-                              </div>
-                              <button
-                                  type="submit"
-                                  aria-label={t.search.submit}
-                                  className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-brand-primary text-white"
-                              >
-                                  <Image
-                                      src="/icons/search.svg"
-                                      alt=""
-                                      width={16}
-                                      height={16}
-                                      aria-hidden="true"
-                                      className="brightness-0 invert"
-                                  />
-                              </button>
+                              ) : null}
                               <button
                                   type="button"
                                   onClick={close}
                                   aria-label={t.search.close}
-                                  className="shrink-0 cursor-pointer px-2 text-sm font-medium text-text-secondary hover:text-text-primary"
+                                  className="cursor-pointer text-lg leading-none text-text-secondary hover:text-text-primary"
                               >
-                                  {t.search.close}
+                                  ×
                               </button>
                           </div>
-                          <p className="container mx-auto px-4 pb-3 text-[12px] text-text-secondary sm:px-6">
-                              {t.search.imageHint}
-                          </p>
-                      </form>
+                      </div>
 
-                      <div
-                          id={listboxId}
-                          role="listbox"
-                          data-lenis-prevent
-                          className="min-h-0 flex-1 overflow-y-auto"
-                      >
-                          <div className="container mx-auto flex flex-col gap-6 px-4 py-6 sm:px-6">
-                              {imagePreview ? (
-                                  <div className="flex items-center gap-3 rounded-xl border border-border-default p-3">
-                                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                                      <img
-                                          src={imagePreview}
-                                          alt=""
-                                          className="size-16 rounded-md border border-border-default object-contain"
-                                      />
-                                      <p className="min-w-0 flex-1 text-sm text-text-secondary">
-                                          {t.search.imageReady}
-                                      </p>
-                                      <button
-                                          type="button"
-                                          onClick={clearImage}
-                                          className="shrink-0 cursor-pointer text-sm font-medium text-brand-primary"
+                      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5">
+                          {browsing && recentSearches.length > 0 ? (
+                              <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                                  {recentSearches.map((item) => (
+                                      <li
+                                          key={item}
+                                          className="flex items-center gap-1"
                                       >
-                                          {t.search.imageRemove}
-                                      </button>
-                                  </div>
-                              ) : null}
-
-                              {imageError ? (
-                                  <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-                                      {t.search.imageErrors[imageError]}
-                                  </p>
-                              ) : null}
-
-                              {queryIssue ? (
-                                  <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-                                      {queryIssue}
-                                  </p>
-                              ) : null}
-
-                              {browsing && recentSearches.length > 0 ? (
-                                  <section aria-label={t.search.recent}>
-                                      <div className="mb-3 flex items-center justify-between">
-                                          <h2 className="text-[13px] font-semibold uppercase tracking-wide text-text-secondary">
-                                              {t.search.recent}
-                                          </h2>
                                           <button
                                               type="button"
-                                              onClick={() => {
-                                                  clearRecentSearches();
-                                                  setRecentSearches([]);
-                                              }}
-                                              className="cursor-pointer text-sm text-brand-primary"
+                                              onClick={() => setQuery(item)}
+                                              className="cursor-pointer text-sm text-text-secondary hover:text-brand-primary"
                                           >
-                                              {t.search.clearRecent}
+                                              {item}
                                           </button>
-                                      </div>
-                                      <ul className="flex flex-wrap gap-2">
-                                          {recentSearches.map((item) => (
-                                              <li
-                                                  key={item}
-                                                  className="flex items-center rounded-full border border-border-default bg-bg-subtle"
-                                              >
-                                                  <button
-                                                      type="button"
-                                                      onClick={() =>
-                                                          setQuery(item)
-                                                      }
-                                                      className="cursor-pointer px-3 py-1.5 text-sm text-text-primary"
-                                                  >
-                                                      {item}
-                                                  </button>
-                                                  <button
-                                                      type="button"
-                                                      aria-label={format(
-                                                          t.search.removeRecent,
-                                                          { query: item },
-                                                      )}
-                                                      onClick={() =>
-                                                          setRecentSearches(
-                                                              removeRecentSearch(
-                                                                  item,
-                                                              ),
-                                                          )
-                                                      }
-                                                      className="cursor-pointer pr-2 text-text-secondary hover:text-text-primary"
-                                                  >
-                                                      ×
-                                                  </button>
-                                              </li>
-                                          ))}
-                                      </ul>
-                                  </section>
-                              ) : null}
+                                          <button
+                                              type="button"
+                                              aria-label={format(
+                                                  t.search.removeRecent,
+                                                  { query: item },
+                                              )}
+                                              onClick={() =>
+                                                  setRecentSearches(
+                                                      removeRecentSearch(item),
+                                                  )
+                                              }
+                                              className="cursor-pointer text-text-secondary hover:text-text-primary"
+                                          >
+                                              ×
+                                          </button>
+                                      </li>
+                                  ))}
+                              </ul>
+                          ) : null}
 
-                              {browsing ? (
-                                  <section
-                                      aria-label={
-                                          recentProducts.length > 0
-                                              ? t.search.recentProducts
-                                              : t.search.suggested
-                                      }
+                          {imagePreview ? (
+                              <div className="mt-3 flex items-center gap-3 rounded-md border border-border-default p-2">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                      src={imagePreview}
+                                      alt=""
+                                      className="size-14 rounded-md bg-bg-subtle object-contain"
+                                  />
+                                  <p className="min-w-0 flex-1 text-sm text-text-secondary">
+                                      {live ? trimmed : t.search.imageReady}
+                                  </p>
+                                  <button
+                                      type="button"
+                                      onClick={clearImage}
+                                      className="shrink-0 cursor-pointer text-sm font-medium text-brand-primary"
                                   >
-                                      <h2 className="mb-3 text-[13px] font-semibold uppercase tracking-wide text-text-secondary">
-                                          {recentProducts.length > 0
-                                              ? t.search.recentProducts
-                                              : t.search.suggested}
-                                      </h2>
+                                      {t.search.imageRemove}
+                                  </button>
+                              </div>
+                          ) : null}
+
+                          {imageError ? (
+                              <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                                  {t.search.imageErrors[imageError]}
+                              </p>
+                          ) : null}
+
+                          {queryIssue ? (
+                              <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                                  {queryIssue}
+                              </p>
+                          ) : null}
+
+                          {browsing ? (
+                              <div className="mt-4 flex flex-col gap-5 sm:flex-row">
+                                  <section
+                                      aria-label={discoverLabel}
+                                      className="w-full shrink-0 sm:w-52 sm:border-r sm:border-border-default sm:pr-4"
+                                  >
+                                      {recentSearches.length > 0 ? (
+                                          <h3 className="mb-2 text-sm font-semibold text-text-primary">
+                                              {discoverLabel}
+                                          </h3>
+                                      ) : null}
                                       {suggested === null &&
                                       recentProducts.length === 0 ? (
                                           <p className="text-sm text-text-secondary">
                                               {t.search.searching}
                                           </p>
                                       ) : (
-                                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                          <ul
+                                              id={listboxId}
+                                              role="listbox"
+                                              className="max-h-72 space-y-0.5 overflow-y-auto"
+                                          >
                                               {browseProducts.map((product) => {
                                                   const key = `p-${product.id}`;
                                                   return (
-                                                      <Link
-                                                          key={key}
-                                                          id={`${listboxId}-${key}`}
-                                                          role="option"
-                                                          aria-selected={
-                                                              activeKey === key
-                                                          }
-                                                          href={`/shop/${product.slug}`}
-                                                          onMouseEnter={() =>
-                                                              setActiveIndex(
-                                                                  indexOf(key),
-                                                              )
-                                                          }
-                                                          onClick={() =>
-                                                              visitProduct(
-                                                                  product,
-                                                              )
-                                                          }
-                                                          className={`${itemClass(key)} border border-border-default`}
-                                                      >
-                                                          <Thumb
-                                                              src={
-                                                                  product.thumbnail
+                                                      <li key={key}>
+                                                          <Link
+                                                              id={`${listboxId}-${key}`}
+                                                              role="option"
+                                                              aria-selected={
+                                                                  activeKey ===
+                                                                  key
                                                               }
-                                                              label={
-                                                                  product.name
+                                                              href={`/shop/${product.slug}`}
+                                                              onMouseEnter={() =>
+                                                                  setActiveIndex(
+                                                                      indexOf(
+                                                                          key,
+                                                                      ),
+                                                                  )
                                                               }
-                                                              large
-                                                          />
-                                                          <span className="min-w-0 flex-1">
-                                                              <span className="block truncate text-sm text-text-primary">
-                                                                  {product.name}
+                                                              onClick={() =>
+                                                                  visitProduct(
+                                                                      product,
+                                                                  )
+                                                              }
+                                                              className={itemClass(
+                                                                  key,
+                                                              )}
+                                                          >
+                                                              {product.name}
+                                                          </Link>
+                                                      </li>
+                                                  );
+                                              })}
+                                          </ul>
+                                      )}
+                                  </section>
+
+                                  <section
+                                      aria-label={t.search.categories}
+                                      className="min-w-0 flex-1"
+                                  >
+                                      <div className="mb-3 flex items-center justify-between gap-3">
+                                          <h3 className="text-sm font-semibold text-text-primary">
+                                              {t.search.categories}
+                                          </h3>
+                                          {categories.length > CATEGORY_TILES ? (
+                                              <button
+                                                  type="button"
+                                                  onClick={() =>
+                                                      setTilePage(
+                                                          (page) =>
+                                                              (page + 1) %
+                                                              categoryPages,
+                                                      )
+                                                  }
+                                                  className="cursor-pointer text-sm text-brand-primary"
+                                              >
+                                                  {t.search.other}
+                                              </button>
+                                          ) : (
+                                              <Link
+                                                  href="/shop"
+                                                  onClick={close}
+                                                  className="text-sm text-brand-primary"
+                                              >
+                                                  {t.search.other}
+                                              </Link>
+                                          )}
+                                      </div>
+                                      {visibleCategories.length === 0 ? (
+                                          <p className="text-sm text-text-secondary">
+                                              {t.search.searching}
+                                          </p>
+                                      ) : (
+                                          <ul className="grid grid-cols-3 gap-4 sm:grid-cols-5">
+                                              {visibleCategories.map(
+                                                  (category) => {
+                                                      const key = `c-${category.id}`;
+                                                      const name = categoryName(
+                                                          category,
+                                                          locale,
+                                                      );
+                                                      return (
+                                                          <li key={key}>
+                                                              <Link
+                                                                  id={`${listboxId}-${key}`}
+                                                                  role="option"
+                                                                  aria-selected={
+                                                                      activeKey ===
+                                                                      key
+                                                                  }
+                                                                  href={categoryShopHref(
+                                                                      category.slug,
+                                                                  )}
+                                                                  onMouseEnter={() =>
+                                                                      setActiveIndex(
+                                                                          indexOf(
+                                                                              key,
+                                                                          ),
+                                                                      )
+                                                                  }
+                                                                  onClick={close}
+                                                                  className={`flex flex-col items-center gap-2 rounded-md px-1 py-1 text-center ${
+                                                                      activeKey ===
+                                                                      key
+                                                                          ? "bg-bg-subtle"
+                                                                          : "hover:bg-bg-subtle"
+                                                                  }`}
+                                                              >
+                                                                  <Thumb
+                                                                      src={
+                                                                          category
+                                                                              .image
+                                                                              ?.path ??
+                                                                          covers[
+                                                                              category
+                                                                                  .slug
+                                                                          ] ??
+                                                                          null
+                                                                      }
+                                                                      label={
+                                                                          name
+                                                                      }
+                                                                      large
+                                                                  />
+                                                                  <span className="line-clamp-2 text-xs text-text-primary">
+                                                                      {name}
+                                                                  </span>
+                                                              </Link>
+                                                          </li>
+                                                      );
+                                                  },
+                                              )}
+                                          </ul>
+                                      )}
+                                  </section>
+                              </div>
+                          ) : null}
+
+                          {!browsing && error !== null ? (
+                              <p className="mt-3 text-sm text-red-600">
+                                  {error || t.search.failed}
+                              </p>
+                          ) : null}
+                          {!browsing && loading && !data ? (
+                              <p className="mt-3 text-sm text-text-secondary">
+                                  {t.search.searching}
+                              </p>
+                          ) : null}
+                          {!browsing && !hasResults && data && !queryIssue ? (
+                              <p className="mt-3 text-sm text-text-secondary">
+                                  {format(t.search.noResults, {
+                                      query: trimmed,
+                                  })}
+                              </p>
+                          ) : null}
+
+                          {!browsing && hasResults ? (
+                              <div
+                                  id={listboxId}
+                                  role="listbox"
+                                  className="mt-4 flex flex-col gap-5 sm:flex-row"
+                              >
+                                  {matchedCategories.length > 0 ||
+                                  shops.length > 0 ? (
+                                      <div className="w-full shrink-0 space-y-4 sm:w-52 sm:border-r sm:border-border-default sm:pr-4">
+                                          {matchedCategories.length > 0 ? (
+                                              <section
+                                                  aria-label={
+                                                      t.search.categories
+                                                  }
+                                              >
+                                                  <h3 className="mb-2 text-sm font-semibold text-text-primary">
+                                                      {t.search.categories}
+                                                  </h3>
+                                                  <ul className="space-y-0.5">
+                                                      {matchedCategories.map(
+                                                          (category) => {
+                                                              const key = `c-${category.id}`;
+                                                              return (
+                                                                  <li key={key}>
+                                                                      <Link
+                                                                          id={`${listboxId}-${key}`}
+                                                                          role="option"
+                                                                          aria-selected={
+                                                                              activeKey ===
+                                                                              key
+                                                                          }
+                                                                          href={categoryShopHref(
+                                                                              category.slug,
+                                                                          )}
+                                                                          onMouseEnter={() =>
+                                                                              setActiveIndex(
+                                                                                  indexOf(
+                                                                                      key,
+                                                                                  ),
+                                                                              )
+                                                                          }
+                                                                          onClick={
+                                                                              close
+                                                                          }
+                                                                          className={itemClass(
+                                                                              key,
+                                                                          )}
+                                                                      >
+                                                                          <Highlight
+                                                                              text={
+                                                                                  category.name
+                                                                              }
+                                                                              query={
+                                                                                  trimmed
+                                                                              }
+                                                                          />
+                                                                      </Link>
+                                                                  </li>
+                                                              );
+                                                          },
+                                                      )}
+                                                  </ul>
+                                              </section>
+                                          ) : null}
+                                          {shops.length > 0 ? (
+                                              <section
+                                                  aria-label={t.search.shops}
+                                              >
+                                                  <h3 className="mb-2 text-sm font-semibold text-text-primary">
+                                                      {t.search.shops}
+                                                  </h3>
+                                                  <ul className="space-y-0.5">
+                                                      {shops.map((shop) => {
+                                                          const key = `s-${shop.id}`;
+                                                          return (
+                                                              <li key={key}>
+                                                                  <Link
+                                                                      id={`${listboxId}-${key}`}
+                                                                      role="option"
+                                                                      aria-selected={
+                                                                          activeKey ===
+                                                                          key
+                                                                      }
+                                                                      href={`/stores/${shop.slug}`}
+                                                                      onMouseEnter={() =>
+                                                                          setActiveIndex(
+                                                                              indexOf(
+                                                                                  key,
+                                                                              ),
+                                                                          )
+                                                                      }
+                                                                      onClick={
+                                                                          close
+                                                                      }
+                                                                      className={itemClass(
+                                                                          key,
+                                                                      )}
+                                                                  >
+                                                                      <Highlight
+                                                                          text={
+                                                                              shop.name
+                                                                          }
+                                                                          query={
+                                                                              trimmed
+                                                                          }
+                                                                      />
+                                                                  </Link>
+                                                              </li>
+                                                          );
+                                                      })}
+                                                  </ul>
+                                              </section>
+                                          ) : null}
+                                      </div>
+                                  ) : null}
+
+                                  {products.length > 0 ? (
+                                      <section
+                                          aria-label={t.search.products}
+                                          className="min-w-0 flex-1"
+                                      >
+                                          <div className="mb-3 flex items-center justify-between gap-3">
+                                              <h3 className="text-sm font-semibold text-text-primary">
+                                                  {t.search.products}
+                                              </h3>
+                                              {data && data.product_total > 0 ? (
+                                                  <button
+                                                      type="button"
+                                                      onClick={goToAllResults}
+                                                      className="cursor-pointer text-sm text-brand-primary"
+                                                  >
+                                                      {format(t.search.seeAll, {
+                                                          count: data.product_total,
+                                                          query: trimmed,
+                                                      })}
+                                                  </button>
+                                              ) : null}
+                                          </div>
+                                          <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                                              {products.map((product) => {
+                                                  const key = `p-${product.id}`;
+                                                  return (
+                                                      <li key={key}>
+                                                          <Link
+                                                              id={`${listboxId}-${key}`}
+                                                              role="option"
+                                                              aria-selected={
+                                                                  activeKey ===
+                                                                  key
+                                                              }
+                                                              href={`/shop/${product.slug}`}
+                                                              onMouseEnter={() =>
+                                                                  setActiveIndex(
+                                                                      indexOf(
+                                                                          key,
+                                                                      ),
+                                                                  )
+                                                              }
+                                                              onClick={() =>
+                                                                  visitProduct(
+                                                                      product,
+                                                                  )
+                                                              }
+                                                              className={`flex flex-col items-center gap-2 rounded-md px-1 py-1 text-center ${
+                                                                  activeKey ===
+                                                                  key
+                                                                      ? "bg-bg-subtle"
+                                                                      : "hover:bg-bg-subtle"
+                                                              }`}
+                                                          >
+                                                              <Thumb
+                                                                  src={
+                                                                      product.thumbnail
+                                                                  }
+                                                                  label={
+                                                                      product.name
+                                                                  }
+                                                                  large
+                                                              />
+                                                              <span className="line-clamp-2 text-xs text-text-primary">
+                                                                  <Highlight
+                                                                      text={
+                                                                          product.name
+                                                                      }
+                                                                      query={
+                                                                          trimmed
+                                                                      }
+                                                                  />
                                                               </span>
-                                                              <span className="mt-1 block text-sm font-semibold text-brand-primary">
+                                                              <span className="text-xs font-semibold text-brand-primary">
                                                                   {formatPrice(
                                                                       product.price,
                                                                   )}
                                                               </span>
-                                                          </span>
-                                                      </Link>
+                                                          </Link>
+                                                      </li>
                                                   );
                                               })}
-                                          </div>
-                                      )}
-                                  </section>
-                              ) : null}
-
-                              {!browsing && error !== null ? (
-                                  <p className="text-sm text-red-600">
-                                      {error || t.search.failed}
-                                  </p>
-                              ) : null}
-                              {!browsing && loading && !data ? (
-                                  <p className="text-sm text-text-secondary">
-                                      {t.search.searching}
-                                  </p>
-                              ) : null}
-                              {!browsing &&
-                              !hasResults &&
-                              data &&
-                              !queryIssue ? (
-                                  <p className="text-sm text-text-secondary">
-                                      {format(t.search.noResults, {
-                                          query: trimmed,
-                                      })}
-                                  </p>
-                              ) : null}
-
-                              {products.length > 0 ? (
-                                  <section aria-label={t.search.products}>
-                                      <h2 className="mb-3 text-[13px] font-semibold uppercase tracking-wide text-text-secondary">
-                                          {t.search.products}
-                                      </h2>
-                                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                          {products.map((product) => {
-                                              const key = `p-${product.id}`;
-                                              return (
-                                                  <Link
-                                                      key={key}
-                                                      id={`${listboxId}-${key}`}
-                                                      role="option"
-                                                      aria-selected={
-                                                          activeKey === key
-                                                      }
-                                                      href={`/shop/${product.slug}`}
-                                                      onMouseEnter={() =>
-                                                          setActiveIndex(
-                                                              indexOf(key),
-                                                          )
-                                                      }
-                                                      onClick={() =>
-                                                          visitProduct(product)
-                                                      }
-                                                      className={`${itemClass(key)} border border-border-default`}
-                                                  >
-                                                      <Thumb
-                                                          src={
-                                                              product.thumbnail
-                                                          }
-                                                          label={product.name}
-                                                          large
-                                                      />
-                                                      <span className="min-w-0 flex-1">
-                                                          <span className="block text-sm text-text-primary">
-                                                              <Highlight
-                                                                  text={
-                                                                      product.name
-                                                                  }
-                                                                  query={
-                                                                      trimmed
-                                                                  }
-                                                              />
-                                                          </span>
-                                                          <span className="block truncate text-[12px] text-text-secondary">
-                                                              {[
-                                                                  product.category,
-                                                                  product.shop,
-                                                              ]
-                                                                  .filter(
-                                                                      Boolean,
-                                                                  )
-                                                                  .join(" · ")}
-                                                          </span>
-                                                          <span className="mt-1 block text-sm font-semibold text-brand-primary">
-                                                              {formatPrice(
-                                                                  product.price,
-                                                              )}
-                                                          </span>
-                                                      </span>
-                                                  </Link>
-                                              );
-                                          })}
-                                      </div>
-                                  </section>
-                              ) : null}
-
-                              {categories.length > 0 ? (
-                                  <section
-                                      aria-label={t.search.categories}
-                                      className="border-t border-border-default pt-4"
-                                  >
-                                      <h2 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-text-secondary">
-                                          {t.search.categories}
-                                      </h2>
-                                      {categories.map((category) => {
-                                          const key = `c-${category.id}`;
-                                          return (
-                                              <Link
-                                                  key={key}
-                                                  id={`${listboxId}-${key}`}
-                                                  role="option"
-                                                  aria-selected={
-                                                      activeKey === key
-                                                  }
-                                                  href={`/shop?category=${encodeURIComponent(category.slug)}`}
-                                                  onMouseEnter={() =>
-                                                      setActiveIndex(
-                                                          indexOf(key),
-                                                      )
-                                                  }
-                                                  onClick={close}
-                                                  className={itemClass(key)}
-                                              >
-                                                  <span className="min-w-0 flex-1 truncate text-sm text-text-primary">
-                                                      <Highlight
-                                                          text={category.name}
-                                                          query={trimmed}
-                                                      />
-                                                  </span>
-                                                  <span className="shrink-0 text-[12px] text-text-secondary">
-                                                      {format(
-                                                          t.search.itemsCount,
-                                                          {
-                                                              count: category.products_count,
-                                                          },
-                                                      )}
-                                                  </span>
-                                              </Link>
-                                          );
-                                      })}
-                                  </section>
-                              ) : null}
-
-                              {shops.length > 0 ? (
-                                  <section
-                                      aria-label={t.search.shops}
-                                      className="border-t border-border-default pt-4"
-                                  >
-                                      <h2 className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-text-secondary">
-                                          {t.search.shops}
-                                      </h2>
-                                      {shops.map((shop) => {
-                                          const key = `s-${shop.id}`;
-                                          return (
-                                              <Link
-                                                  key={key}
-                                                  id={`${listboxId}-${key}`}
-                                                  role="option"
-                                                  aria-selected={
-                                                      activeKey === key
-                                                  }
-                                                  href={`/stores/${shop.slug}`}
-                                                  onMouseEnter={() =>
-                                                      setActiveIndex(
-                                                          indexOf(key),
-                                                      )
-                                                  }
-                                                  onClick={close}
-                                                  className={itemClass(key)}
-                                              >
-                                                  <Thumb
-                                                      src={shop.logo}
-                                                      label={shop.name}
-                                                  />
-                                                  <span className="min-w-0 flex-1">
-                                                      <span className="block truncate text-sm text-text-primary">
-                                                          <Highlight
-                                                              text={shop.name}
-                                                              query={trimmed}
-                                                          />
-                                                      </span>
-                                                      <span className="block text-[12px] text-text-secondary">
-                                                          {format(
-                                                              t.search
-                                                                  .productsCount,
-                                                              {
-                                                                  count: shop.products_count,
-                                                              },
-                                                          )}
-                                                      </span>
-                                                  </span>
-                                              </Link>
-                                          );
-                                      })}
-                                  </section>
-                              ) : null}
-
-                              {data && data.product_total > 0 ? (
-                                  <button
-                                      type="button"
-                                      onClick={goToAllResults}
-                                      className="w-full rounded-lg border border-border-default px-3 py-3 text-center text-sm font-medium text-brand-primary hover:bg-bg-subtle"
-                                  >
-                                      {format(t.search.seeAll, {
-                                          count: data.product_total,
-                                          query: trimmed,
-                                      })}
-                                  </button>
-                              ) : null}
-                          </div>
+                                          </ul>
+                                      </section>
+                                  ) : null}
+                              </div>
+                          ) : null}
                       </div>
                   </div>,
                   document.body,
@@ -857,6 +946,9 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
                     aria-controls={listboxId}
                     aria-autocomplete="list"
                     aria-invalid={issue !== null}
+                    aria-activedescendant={
+                        activeKey ? `${listboxId}-${activeKey}` : undefined
+                    }
                     onChange={(e) => {
                         setQuery(e.target.value);
                         setOpen(true);
@@ -875,7 +967,7 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
                 ) : null}
                 <button
                     type="button"
-                    onClick={() => fileRef.current?.click()}
+                    onClick={openImagePicker}
                     aria-label={t.search.imageSearch}
                     title={t.search.imageHint}
                     className="ml-1 shrink-0 cursor-pointer text-text-secondary hover:text-brand-primary"
@@ -896,9 +988,21 @@ export default function HeaderSearch({ variant }: { variant: Variant }) {
                         className="opacity-70 hover:opacity-100"
                     />
                 </button>
-                {fileInput}
+                <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.jpe,.jfif,.png,.webp,.gif"
+                    className="sr-only"
+                    tabIndex={-1}
+                    aria-label={t.search.imageSearch}
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = "";
+                        void onImageChosen(file);
+                    }}
+                />
             </form>
-            {overlay}
+            {panel}
         </div>
     );
 }

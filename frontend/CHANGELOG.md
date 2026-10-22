@@ -5,6 +5,14 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-22
 
+### AliExpress-style search dropdown
+
+- `src/components/home/HeaderSearch.tsx`: focusing search opens an 80% wide dropdown under the bar (search history, a discover list, and category image tiles). Typed results stay in that panel. The full-screen overlay is gone.
+- `src/components/home/Header.tsx`: passes catalog categories into both search fields. Category tiles use the category image, or a product photo from that category when none is uploaded.
+- `src/lib/validators/searchImage.ts`: image search trusts file bytes, accepts common JPEG labels and `.jfif`, and allows photos up to 5 MB. The file still stays in the browser. The panel stays open when the file dialog closes.
+- `src/lib/search.ts`: suggestion requests ask for 8 products so the result grid can fill the panel.
+- `src/i18n/dictionaries/en.ts` and `bn.ts`: labels for search history, discover, other recommendations, and the 5 MB image note.
+
 ### Stop header search effects from setting state immediately
 
 - `src/components/home/HeaderSearch.tsx`: client mount uses `useSyncExternalStore` instead of `setState` in an effect. Recent searches and products are read when the panel opens, not inside an effect.

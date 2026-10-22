@@ -148,6 +148,30 @@ type CatalogProduct = {
   vendor: { shop_name?: string | null } | null;
 };
 
+/** One product photo per category, used when the category itself has no image. */
+export async function fetchCategoryCovers(
+  signal?: AbortSignal,
+): Promise<Record<string, string>> {
+  const res = await fetch("/api/backend/products?limit=48&sort=newest", {
+    signal,
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) return {};
+  const data = (await res.json()) as {
+    products?: {
+      category?: { slug?: string | null } | null;
+      thumbnail?: { path?: string | null } | null;
+    }[];
+  };
+  const covers: Record<string, string> = {};
+  for (const product of data.products ?? []) {
+    const slug = product.category?.slug;
+    const path = product.thumbnail?.path;
+    if (slug && path && !covers[slug]) covers[slug] = path;
+  }
+  return covers;
+}
+
 /** Featured/newest products for the empty search window. */
 export async function fetchSuggestedProducts(
   signal?: AbortSignal,
@@ -174,7 +198,7 @@ export async function fetchSearchSuggestions(
   signal?: AbortSignal,
 ): Promise<SearchSuggestPayload> {
   const res = await fetch(
-    `/api/backend/search/suggest?q=${encodeURIComponent(q)}`,
+    `/api/backend/search/suggest?q=${encodeURIComponent(q)}&limit=8`,
     { signal, headers: { Accept: "application/json" } },
   );
   if (!res.ok) {
