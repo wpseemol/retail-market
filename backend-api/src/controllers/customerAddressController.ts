@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import type { CustomerAddress } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
+import { parseBigIntId } from "../utils/ids.js";
 import {
   createAddressSchema,
   updateAddressSchema,
@@ -118,13 +119,8 @@ export async function createAddress(req: Request, res: Response) {
 }
 
 export async function updateAddress(req: Request, res: Response) {
-  let id: bigint;
-  try {
-    id = BigInt(String(req.params.id ?? ""));
-  } catch {
-    return res.status(400).json({ message: "Invalid address id" });
-  }
-  if (id <= 0n) {
+  const id = parseBigIntId(req.params.id);
+  if (!id) {
     return res.status(400).json({ message: "Invalid address id" });
   }
 
@@ -192,13 +188,8 @@ export async function updateAddress(req: Request, res: Response) {
 }
 
 export async function deleteAddress(req: Request, res: Response) {
-  let id: bigint;
-  try {
-    id = BigInt(String(req.params.id ?? ""));
-  } catch {
-    return res.status(400).json({ message: "Invalid address id" });
-  }
-  if (id <= 0n) {
+  const id = parseBigIntId(req.params.id);
+  if (!id) {
     return res.status(400).json({ message: "Invalid address id" });
   }
 

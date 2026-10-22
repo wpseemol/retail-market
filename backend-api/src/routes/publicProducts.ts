@@ -40,8 +40,8 @@ const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(48).default(24),
   q: searchQuerySchema,
-  category: z.string().trim().max(140).optional(),
-  brand: z.string().trim().max(140).optional(),
+  category: searchQuerySchema,
+  brand: searchQuerySchema,
   sort: z
     .enum(["default", "price-asc", "price-desc", "name-asc", "newest"])
     .default("default"),

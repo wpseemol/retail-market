@@ -4,6 +4,7 @@ import type { Prisma, UserRole, UserStatus } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { toPublicUser, userWithAvatarInclude } from "../lib/user.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
+import { parseBigIntId } from "../utils/ids.js";
 import { findUnsafeInputReason } from "../validators/customerAuth.js";
 
 export const dashboardUsersRouter = Router();
@@ -33,11 +34,21 @@ const ALL_STATUSES: UserStatus[] = [
   "banned",
 ];
 
+const safeQueryText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .superRefine((value, ctx) => {
+      const reason = findUnsafeInputReason(value);
+      if (reason) ctx.addIssue({ code: "custom", message: reason });
+    });
+
 const listQuerySchema = z.object({
-  q: z.string().trim().max(120).optional(),
+  q: safeQueryText(120).optional(),
   role: z.enum(ALL_ROLES as [UserRole, ...UserRole[]]).optional(),
   /** Comma-separated roles, e.g. `super_admin,admin,moderator,vendor`. */
-  roles: z.string().trim().max(120).optional(),
+  roles: safeQueryText(120).optional(),
   status: z.enum(ALL_STATUSES as [UserStatus, ...UserStatus[]]).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -104,12 +115,7 @@ async function revokeUserSessions(userId: bigint) {
 }
 
 function parseUserId(raw: string) {
-  if (!/^\d+$/.test(raw)) return null;
-  try {
-    return BigInt(raw);
-  } catch {
-    return null;
-  }
+  return parseBigIntId(raw);
 }
 
 dashboardUsersRouter.get("/", async (req, res) => {

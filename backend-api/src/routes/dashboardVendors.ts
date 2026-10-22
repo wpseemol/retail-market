@@ -265,30 +265,57 @@ function storeTags(...slugs: string[]) {
   return ["stores", "brands", ...slugs.map((s) => `store:${s}`)];
 }
 
+const shopListQuerySchema = z.object({
+  q: z
+    .string()
+    .trim()
+    .max(120)
+    .optional()
+    .superRefine((value, ctx) => {
+      if (!value) return;
+      const reason = findUnsafeInputReason(value);
+      if (reason) ctx.addIssue({ code: "custom", message: reason });
+    }),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+
 dashboardVendorsRouter.get("/slug-preview", async (req, res) => {
-  const name = String(req.query.name ?? "").trim();
-  if (name.length < 2) {
-    return res.status(400).json({ message: "Shop name is required" });
+  const parsed = z
+    .object({
+      name: withSafeInput(z.string().trim().min(2).max(200)),
+    })
+    .safeParse({ name: String(req.query.name ?? "") });
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: parsed.error.issues[0]?.message ?? "Shop name is required",
+    });
   }
 
   const excludeId = req.query.exclude_id
     ? parseId(String(req.query.exclude_id))
     : null;
 
-  const slug = await uniqueVendorSlug(name, (s) =>
+  const slug = await uniqueVendorSlug(parsed.data.name, (s) =>
     slugTaken(s, excludeId ?? undefined),
   );
   return res.json({
     slug,
-    base: slugify(name) || "shop",
+    base: slugify(parsed.data.name) || "shop",
   });
 });
 
 dashboardVendorsRouter.get("/", async (req, res) => {
+  const parsed = shopListQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: parsed.error.issues[0]?.message ?? "Invalid query",
+      errors: parsed.error.flatten().fieldErrors,
+    });
+  }
+
   const isSuper = ["super_admin", "admin"].includes(req.auth!.role);
-  const q = String(req.query.q ?? "").trim();
-  const page = Math.max(1, Number(req.query.page) || 1);
-  const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+  const { q, page, limit } = parsed.data;
 
   const where: Prisma.VendorWhereInput = {
     deleted_at: null,

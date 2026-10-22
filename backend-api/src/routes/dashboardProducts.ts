@@ -413,11 +413,17 @@ dashboardProductsRouter.get("/shipping-defaults", async (req, res) => {
 });
 
 dashboardProductsRouter.get("/slug-preview", async (req, res) => {
-  const name = String(req.query.name ?? "").trim();
-  if (name.length < 2) {
-    return res.status(400).json({ message: "Name is required" });
+  const parsed = z
+    .object({
+      name: withSafeInput(z.string().trim().min(2).max(255)),
+    })
+    .safeParse({ name: String(req.query.name ?? "") });
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: parsed.error.issues[0]?.message ?? "Name is required",
+    });
   }
-  const slug = await uniqueVendorSlug(name, (s) => slugTaken(s));
+  const slug = await uniqueVendorSlug(parsed.data.name, (s) => slugTaken(s));
   return res.json({ slug });
 });
 

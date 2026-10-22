@@ -10,5 +10,11 @@ export const productIdField = z
     z
       .string()
       .regex(/^\d{1,19}$/, "Invalid product id")
-      .refine((value) => BigInt(value) <= MAX_BIGINT_ID, "Invalid product id"),
+      .refine((value) => {
+        try {
+          return BigInt(value) > 0n && BigInt(value) <= MAX_BIGINT_ID;
+        } catch {
+          return false;
+        }
+      }, "Invalid product id"),
   );

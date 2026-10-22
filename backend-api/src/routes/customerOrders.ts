@@ -42,7 +42,14 @@ customerOrdersRouter.post(
   couponLimiter,
   asyncHandler(async (req, res) => {
     const parsed = couponCheckSchema.safeParse(req.body);
-    const coupon = parsed.success ? findCoupon(parsed.data.code) : null;
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: parsed.error.issues[0]?.message ?? "Validation failed",
+        errors: parsed.error.flatten().fieldErrors,
+        code: "VALIDATION_FAILED",
+      });
+    }
+    const coupon = findCoupon(parsed.data.code);
     if (!coupon) {
       return res.status(404).json({
         message: "This coupon code is not valid.",

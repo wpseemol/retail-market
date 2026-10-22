@@ -3,6 +3,18 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-22
+
+### Reject unsafe input and oversized ids before they reach the database
+
+- `src/validators/productId.ts`: a non-numeric product id no longer throws inside Zod (cart resolve and wishlist were returning 500).
+- `src/routes/dashboardUsers.ts`: user search `q` / `roles` go through the safe-input check; ids that do not fit a MySQL bigint return 400.
+- `src/controllers/customerAddressController.ts`: address update and delete use `parseBigIntId`.
+- `src/routes/dashboardVendors.ts`: shop list query and slug preview use Zod and reject script, PHP, and SQL-like text.
+- `src/routes/dashboardProducts.ts`: product slug preview uses the same safe-input check as categories and brands.
+- `src/routes/publicProducts.ts`: catalog `category` and `brand` filters reject unsafe text instead of ignoring it.
+- `src/routes/customerOrders.ts`: a malformed coupon body returns 400, not a fake “invalid coupon”.
+
 ## 2026-10-16
 
 ### Harden phone OTP `via` (WhatsApp / SMS) against abuse
