@@ -5,6 +5,17 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-22
 
+### Stop header search effects from setting state immediately
+
+- `src/components/home/HeaderSearch.tsx`: client mount uses `useSyncExternalStore` instead of `setState` in an effect. Recent searches and products are read when the panel opens, not inside an effect.
+
+### Full-window header search with recent results and image check
+
+- `src/components/home/HeaderSearch.tsx`: focusing the header search opens a full-window panel with recent searches, recently viewed or suggested products (with images), and live results. Short or unsafe queries show a validation message and are not sent.
+- `src/lib/search.ts`: recent-search storage and the suggested-product fetch.
+- `src/lib/validators/searchImage.ts`: image search accepts only JPEG, PNG, WebP, or GIF up to 1 MB, checked by magic bytes. The file stays in the browser.
+- `src/i18n/dictionaries/en.ts` and `bn.ts`: copy for the new search states.
+
 ### Open footer Sell & Manage links in a new tab
 
 - `src/components/home/Footer.tsx`: `FooterNavLink` sets `target="_blank"` and `rel="noopener noreferrer"` on external links (dashboard logins and other off-site hrefs). In-site footer links stay in the same tab.
