@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useSyncExternalStore } from "react";
+import React, { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 const noopSubscribe = () => () => {};
 import Image from "next/image";
@@ -99,7 +99,8 @@ export default function Header({
         () => true,
         () => false,
     );
-    const [isSticky, setIsSticky] = useState(false);
+    const menuRef = useRef<HTMLElement | null>(null);
+    const menuSpacerRef = useRef<HTMLDivElement | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const cartCount = useAppSelector(selectCartItemCount);
@@ -117,12 +118,26 @@ export default function Header({
     const isCart = linkActive("/cart");
 
     useEffect(() => {
-        const handleScroll = () => {
-            setIsSticky(window.scrollY > 48);
+        const menu = menuRef.current;
+        const spacer = menuSpacerRef.current;
+        if (!menu || !spacer) return;
+        let threshold = 0;
+        const mark = () => {
+            if (!menu.hasAttribute("data-stuck")) {
+                threshold = menu.getBoundingClientRect().top + window.scrollY;
+            }
+            const stuck = window.scrollY > threshold;
+            if (stuck) menu.setAttribute("data-stuck", "");
+            else menu.removeAttribute("data-stuck");
+            spacer.style.height = stuck ? `${menu.offsetHeight}px` : "0px";
         };
-        handleScroll();
-        window.addEventListener("scroll", handleScroll, { passive: true });
-        return () => window.removeEventListener("scroll", handleScroll);
+        mark();
+        window.addEventListener("scroll", mark, { passive: true });
+        window.addEventListener("resize", mark);
+        return () => {
+            window.removeEventListener("scroll", mark);
+            window.removeEventListener("resize", mark);
+        };
     }, []);
 
     // Prevent background scroll when mobile drawer is open
@@ -148,47 +163,13 @@ export default function Header({
     const isDark = mounted && theme === "dark";
 
     return (
-        <header
-            role="banner"
-            className={`sticky top-0 left-0 w-full border-b border-border-default bg-bg-base z-50 ${
-                isSticky
-                    ? "shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
-                    : ""
-            }`}
-        >
+        <header role="banner" className="w-full bg-bg-base">
             {/* ================= 1. Middle Main Section ================= */}
             <section
                 aria-label={t.header.mainInfo}
                 className="w-full py-2.5 sm:py-3"
             >
                 <div className="container mx-auto flex items-center justify-between gap-2 sm:gap-4 px-4 sm:px-6">
-                    {/* Mobile Hamburger Button */}
-                    <button
-                        type="button"
-                        aria-label={t.header.toggleMenu}
-                        aria-expanded={isMobileMenuOpen}
-                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        className="lg:hidden p-2 rounded-md text-text-primary hover:bg-bg-subtle transition-colors focus:outline-none"
-                    >
-                        <svg
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            aria-hidden="true"
-                        >
-                            {isMobileMenuOpen ? (
-                                <path d="M18 6L6 18M6 6l12 12" />
-                            ) : (
-                                <path d="M4 6h16M4 12h16M4 18h16" />
-                            )}
-                        </svg>
-                    </button>
-
                     {/* Brand Logo */}
                     <Link
                         href="/"
@@ -324,17 +305,43 @@ export default function Header({
                 </div>
             </section>
 
-            {/* ================= 2. Search on Tablets & Mobile ================= */}
-            <div className="lg:hidden px-4 pb-3">
-                <HeaderSearch variant="mobile" categories={categories} />
-            </div>
-
-            {/* ================= 3. Desktop Navigation Menu Bar ================= */}
+            {/* Menu stays fixed. Logo, promo, cart, and theme scroll away. */}
             <nav
+                ref={menuRef}
                 aria-label={t.header.primaryNav}
-                className="hidden lg:block w-full bg-bg-base py-2.5 border-t border-border-default/50"
+                className="relative z-50 w-full border-y border-border-default/50 bg-bg-base data-[stuck]:fixed data-[stuck]:inset-x-0 data-[stuck]:top-0 data-[stuck]:shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:data-[stuck]:shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
             >
-                <div className="container mx-auto flex items-center justify-between gap-4 px-6">
+                <div className="flex items-center gap-2 px-4 py-2 lg:hidden">
+                    <button
+                        type="button"
+                        aria-label={t.header.toggleMenu}
+                        aria-expanded={isMobileMenuOpen}
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="shrink-0 rounded-md p-2 text-text-primary hover:bg-bg-subtle focus:outline-none"
+                    >
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                        >
+                            {isMobileMenuOpen ? (
+                                <path d="M18 6L6 18M6 6l12 12" />
+                            ) : (
+                                <path d="M4 6h16M4 12h16M4 18h16" />
+                            )}
+                        </svg>
+                    </button>
+                    <div className="min-w-0 flex-1">
+                        <HeaderSearch variant="mobile" categories={categories} />
+                    </div>
+                </div>
+                <div className="container mx-auto hidden items-center justify-between gap-4 px-6 py-2.5 lg:flex">
                     {/* Browse Categories Button */}
                     <CategoryBrowseMenu categories={categories} />
 
@@ -428,10 +435,11 @@ export default function Header({
                     <AccountMenu />
                 </div>
             </nav>
+            <div ref={menuSpacerRef} aria-hidden="true" />
 
             {/* ================= 4. Mobile & Tablet Slide-over Drawer ================= */}
             <div
-                className={`lg:hidden fixed inset-0 z-50 bg-black/50 ${
+                className={`lg:hidden fixed inset-0 z-[70] bg-black/50 ${
                     isMobileMenuOpen ? "block" : "hidden"
                 }`}
                 onClick={() => setIsMobileMenuOpen(false)}

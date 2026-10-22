@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-22
 
+### Keep only the menu bar sticky
+
+- `src/components/home/Header.tsx`: the logo row (logo, promo, wishlist, cart, theme) scrolls away. The menu bar stays fixed, including the phone menu button and search.
+
 ### Empty search shows recent queries, categories, and popular keywords
 
 - `src/components/home/HeaderSearch.tsx`: with an empty query, the left side lists recent searches and categories. The right side lists popular keywords for the selected category and related products with photos. Typed results are unchanged. A photo can be chosen, dropped, or pasted; its preview sits in the search field and a useful file name still runs search.
