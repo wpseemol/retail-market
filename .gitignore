@@ -10,6 +10,7 @@ dashboard/dist/
 .env
 .env.*
 !.env.example
+!.env.production.example
 
 # Tools/other
 .pnpm-store

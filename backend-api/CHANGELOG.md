@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-22
 
+### Production Docker stack
+
+- `Dockerfile` and `docker-entrypoint.sh`: the process drops to user `nodejs` after fixing the uploads directory. Migrations still run on boot. The health check uses Node (`wget` is not in the image).
+- `src/server.ts`: the API listens on `0.0.0.0` so the published Docker port accepts connections.
+- Root `docker-compose.prod.yml` and `.env.production.example`: production secrets, CORS, `PUBLIC_API_URL`, and `FRONTEND_URL` come from one env file. MySQL and uploads use their own volumes and MySQL is not published on the host.
+
 ### Reject unsafe input and oversized ids before they reach the database
 
 - `src/validators/productId.ts`: a non-numeric product id no longer throws inside Zod (cart resolve and wishlist were returning 500).

@@ -3,7 +3,7 @@
 Vite + React + TypeScript + shadcn/ui admin panel for the Niyenin retail market.
 Talks to `backend-api` (port 8001) with Bearer auth.
 
-- **Port:** 5173 (`vite --port 5173 --strictPort`)
+- **Port:** 5173 (`vite --port 5173 --strictPort`). Production image serves `dist` with nginx on port 80 (`docker-compose.prod.yml`).
 - **API reference:** [`../backend-api/API.md`](../backend-api/API.md)
 - **Change log:** [`CHANGELOG.md`](./CHANGELOG.md) — append every change you make here.
 - **Security audit:** [`SECURITY_AUDIT.md`](./SECURITY_AUDIT.md) — mark items `Fixed YYYY-MM-DD` when resolved and update the root [`../SECURITY_AUDIT.md`](../SECURITY_AUDIT.md) counts.

@@ -3,7 +3,7 @@
 Express + Prisma 6 + MySQL REST API for the Niyenin retail market. Serves the
 storefront (`frontend/`, port 3000) and the admin dashboard (`dashboard/`, port 5173).
 
-- **Port:** 8001 (`PORT` in `backend-api/.env`)
+- **Port:** 8001 (`PORT` in `backend-api/.env`). Production: root `docker-compose.prod.yml` (see `README.md`).
 - **Package name:** `backend-api` (pnpm workspace member)
 - **Public API reference:** [`API.md`](./API.md) — update it whenever an endpoint changes.
 - **Change log:** [`CHANGELOG.md`](./CHANGELOG.md) — append every change you make here.

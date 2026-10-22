@@ -1186,7 +1186,7 @@ function SimpleChromeForm<T extends Record<string, unknown>>({
   form,
   token,
   blockKey,
-  onError,
+  onError: _onError,
   onSuccess,
   onSubmit,
   onReset,

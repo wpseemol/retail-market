@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-22
 
+### Production Docker stack
+
+- `Dockerfile`: the health check uses Node, because the Alpine image has no `wget`.
+- `next.config.ts`: `outputFileTracingRoot` is the repo root so the image runs `node frontend/server.js`.
+- Root `docker-compose.prod.yml`, `.env.production.example`, and `README.md`: production compose with public URLs, `AUTH_SECRET`, and `REVALIDATE_SECRET`. MySQL is not published.
+
 ### Top loading bar on reload and page changes
 
 - `src/components/providers/NavigationProgress.tsx`: `nextjs-toploader` draws a green bar at the top when a storefront link changes the page.

@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-22
 
+### Production Docker stack
+
+- `nginx.conf`: gzip, no cache on `index.html`, long cache on hashed `/assets/`, and basic response headers.
+- `package.json`: `@types/geojson` and `@types/topojson-specification` are direct dependencies so the production image type-check can see them. `HomeComponentsEditor.tsx`: the unused `onError` argument no longer fails `tsc`.
+- Root `docker-compose.prod.yml` and `.env.production.example`: the dashboard image is built with `VITE_API_URL` / `VITE_APP_URL` / `VITE_STOREFRONT_URL` from the public production URLs.
+
 ### Top loading bar on reload and page changes
 
 - `src/components/providers/NavigationProgress.tsx`: `react-top-loading-bar` shows a green bar at the top when the dashboard reloads and when the route changes. Mounted in `src/main.tsx`.
