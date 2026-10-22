@@ -3,6 +3,12 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-22
+
+### Open footer Sell & Manage links in a new tab
+
+- `src/components/home/Footer.tsx`: `FooterNavLink` sets `target="_blank"` and `rel="noopener noreferrer"` on external links (dashboard logins and other off-site hrefs). In-site footer links stay in the same tab.
+
 ## 2026-10-16
 
 ### Fix VerifyRow setState-in-effect + harden WhatsApp via

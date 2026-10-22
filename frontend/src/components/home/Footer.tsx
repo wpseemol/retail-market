@@ -63,7 +63,12 @@ function FooterNavLink({ link }: { link: FooterLink }) {
 
     if (external) {
         return (
-            <a href={resolved.href} className={className}>
+            <a
+                href={resolved.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={className}
+            >
                 {link.label}
             </a>
         );
@@ -141,7 +146,10 @@ export default function Footer() {
                     {/* Column 1: Brand, Description, Contact, Apps (Col span 3) */}
                     <div className="lg:col-span-3 flex flex-col items-start">
                         {/* Dark / Light Mode Logo Toggle */}
-                        <Link href="/" className="relative mb-4 inline-block h-[50px] w-[180px]">
+                        <Link
+                            href="/"
+                            className="relative mb-4 inline-block h-12.5 w-45"
+                        >
                             <Image
                                 src="/logo/niyenin-white.png"
                                 alt={logoAlt}
@@ -246,7 +254,8 @@ export default function Footer() {
                             {findLinks.map((link) => (
                                 <li
                                     key={
-                                        "id" in link && typeof link.id === "string"
+                                        "id" in link &&
+                                        typeof link.id === "string"
                                             ? link.id
                                             : link.label
                                     }
@@ -266,7 +275,8 @@ export default function Footer() {
                             {careLinks.map((link) => (
                                 <li
                                     key={
-                                        "id" in link && typeof link.id === "string"
+                                        "id" in link &&
+                                        typeof link.id === "string"
                                             ? link.id
                                             : link.label
                                     }
@@ -286,7 +296,8 @@ export default function Footer() {
                             {sellLinks.map((link) => (
                                 <li
                                     key={
-                                        "id" in link && typeof link.id === "string"
+                                        "id" in link &&
+                                        typeof link.id === "string"
                                             ? link.id
                                             : link.label
                                     }
@@ -341,11 +352,24 @@ export default function Footer() {
                             {chrome.siteName}
                         </strong>
                         . {t.footer.rights}
-                        <span aria-hidden="true" className="mx-2 text-border-default">|</span>
-                        <Link href="/terms" className="hover:text-brand-primary">
+                        <span
+                            aria-hidden="true"
+                            className="mx-2 text-border-default"
+                        >
+                            |
+                        </span>
+                        <Link
+                            href="/terms"
+                            className="hover:text-brand-primary"
+                        >
                             {t.footer.links.terms}
                         </Link>
-                        <span aria-hidden="true" className="mx-2 text-border-default">|</span>
+                        <span
+                            aria-hidden="true"
+                            className="mx-2 text-border-default"
+                        >
+                            |
+                        </span>
                         <Link href="/faq" className="hover:text-brand-primary">
                             {t.footer.links.faq}
                         </Link>
