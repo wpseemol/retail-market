@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Hind_Siliguri, Poppins } from "next/font/google";
+import Script from "next/script";
 import "lenis/dist/lenis.css";
 import "./globals.css";
 import TopBar from "@/components/home/TopBar";
@@ -24,6 +25,8 @@ import { getLocale } from "@/i18n/server";
 import { LOCALE_TAGS } from "@/i18n/config";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getSeoDefaults, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
+import { BOOT_PROGRESS_SCRIPT } from "@/components/providers/bootProgress";
+import NavigationProgress from "@/components/providers/NavigationProgress";
 
 const poppins = Poppins({
     variable: "--font-poppins",
@@ -175,6 +178,12 @@ export default async function RootLayout({
             <body
                 className="min-h-full flex flex-col font-sans"
             >
+                <Script
+                    id="boot-progress"
+                    strategy="beforeInteractive"
+                    dangerouslySetInnerHTML={{ __html: BOOT_PROGRESS_SCRIPT }}
+                />
+                <NavigationProgress />
                 <JsonLd
                     id="site-jsonld"
                     data={[

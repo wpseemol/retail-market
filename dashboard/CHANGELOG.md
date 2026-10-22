@@ -3,6 +3,12 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-22
+
+### Top loading bar on reload and page changes
+
+- `src/components/providers/NavigationProgress.tsx`: `react-top-loading-bar` shows a green bar at the top when the dashboard reloads and when the route changes. Mounted in `src/main.tsx`.
+
 ## 2026-10-16
 
 ### WhatsApp gateway settings

@@ -5,6 +5,7 @@ import { ConfirmProvider } from "@/components/providers/ConfirmProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { NavigationProgress } from "@/components/providers/NavigationProgress";
 import { SiteBrandingHydrator } from "@/lib/siteBranding";
 import App from "./App";
 import "./index.css";
@@ -15,6 +16,7 @@ createRoot(document.getElementById("root")!).render(
       <TooltipProvider>
         <ConfirmProvider>
           <BrowserRouter>
+            <NavigationProgress />
             <SiteBrandingHydrator />
             <App />
           </BrowserRouter>

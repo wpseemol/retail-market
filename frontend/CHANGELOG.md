@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-22
 
+### Top loading bar on reload and page changes
+
+- `src/components/providers/NavigationProgress.tsx`: `nextjs-toploader` draws a green bar at the top when a storefront link changes the page.
+- `src/components/providers/bootProgress.ts` and `src/app/layout.tsx`: a small script shows the same bar on a full reload, before React starts.
+
 ### Keep only the menu bar sticky
 
 - `src/components/home/Header.tsx`: the logo row (logo, promo, wishlist, cart, theme) scrolls away. The menu bar stays fixed, including the phone menu button and search.
