@@ -1,3 +1,4 @@
+# Local Docker stack (phpMyAdmin + published MySQL). For a server, use docker-compose.prod.yml.
 services:
   mysql:
     image: mysql:8.0

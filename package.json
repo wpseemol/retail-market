@@ -12,7 +12,8 @@
     "build:dashboard": "npm run build --prefix dashboard",
     "build:backend": "npm run build --prefix backend-api",
     "lint": "concurrently -n frontend,dashboard -c cyan,magenta \"npm run lint --prefix frontend\" \"npm run lint --prefix dashboard\"",
-    "type-check": "concurrently -n frontend,dashboard,backend-api -c cyan,magenta,yellow \"npm run type-check --prefix frontend\" \"npm run type-check --prefix dashboard\" \"npm run type-check --prefix backend-api\""
+    "type-check": "concurrently -n frontend,dashboard,backend-api -c cyan,magenta,yellow \"npm run type-check --prefix frontend\" \"npm run type-check --prefix dashboard\" \"npm run type-check --prefix backend-api\"",
+    "docker:prod": "docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

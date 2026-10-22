@@ -1,4 +1,8 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
+
+const appDir = path.dirname(fileURLToPath(import.meta.url));
 
 const apiUrl = new URL(
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8001",
@@ -17,6 +21,8 @@ const toPattern = (url: URL) => ({
 const nextConfig: NextConfig = {
   reactCompiler: true,
   output: "standalone",
+  // Monorepo root, so the production image runs `node frontend/server.js`.
+  outputFileTracingRoot: path.join(appDir, ".."),
   images: {
     remotePatterns: [toPattern(apiUrl), ...(mediaUrl ? [toPattern(mediaUrl)] : [])],
     // Next 16 refuses to optimize images from private IPs (localhost) unless allowed.
