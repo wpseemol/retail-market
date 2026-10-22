@@ -65,6 +65,9 @@ const bn: Dictionary = {
         removeRecent: "“{query}” সরান",
         recentProducts: "সম্প্রতি দেখা পণ্য",
         discover: "আরও দেখুন",
+        popular: "জনপ্রিয় খোঁজ",
+        related: "সম্পর্কিত পণ্য",
+        emptyCategory: "এই ক্যাটাগরিতে এখনো কোনো পণ্য নেই।",
         other: "অন্যান্য সুপারিশ",
         suggested: "পণ্য",
         typeMore: "কমপক্ষে ২ অক্ষর লিখুন।",
@@ -72,7 +75,7 @@ const bn: Dictionary = {
         close: "খোঁজ বন্ধ করুন",
         imageSearch: "ছবি দিয়ে খুঁজুন",
         imageHint: "JPEG, PNG, WebP, বা GIF · সর্বোচ্চ ৫ MB · এই ডিভাইসেই থাকে",
-        imageReady: "ছবি প্রস্তুত। ফাইলের নামে পণ্যের নাম থাকলে সেটি খোঁজা হয়, না হলে পণ্যের নাম লিখুন।",
+        imageReady: "ছবি যোগ হয়েছে। জনপ্রিয় খোঁজ বেছে নিন, অথবা ছবিতে যা আছে তা লিখুন।",
         imageRemove: "ছবি সরান",
         imageErrors: {
             empty: "খোঁজার জন্য একটি ছবি বেছে নিন।",

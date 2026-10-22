@@ -148,6 +148,134 @@ type CatalogProduct = {
   vendor: { shop_name?: string | null } | null;
 };
 
+export type BrowseShelfProduct = SearchSuggestProduct & {
+  categorySlug: string | null;
+};
+
+export type BrowseShelf = {
+  products: BrowseShelfProduct[];
+  keywords: string[];
+  keywordsBySlug: Record<string, string[]>;
+  covers: Record<string, string>;
+};
+
+const KEYWORD_SKIP =
+  /^(the|and|with|for|from|new|pro|max|plus|mini|lite|inch|wireless|smart|hd|4k|gb|mp|lte|android|official|black|white)$/i;
+
+function rememberKeyword(
+  map: Map<string, { label: string; n: number }>,
+  raw: string | null | undefined,
+  weight: number,
+) {
+  const label = (raw ?? "").replace(/\s+/g, " ").trim();
+  if (label.length < 2 || label.length > 32 || KEYWORD_SKIP.test(label)) return;
+  if (searchQueryIssue(label)) return;
+  const key = label.toLowerCase();
+  const prev = map.get(key);
+  if (prev) prev.n += weight;
+  else map.set(key, { label, n: weight });
+}
+
+function topKeywords(
+  map: Map<string, { label: string; n: number }>,
+  limit = 10,
+): string[] {
+  return [...map.values()]
+    .sort((a, b) => b.n - a.n || a.label.localeCompare(b.label))
+    .slice(0, limit)
+    .map((item) => item.label);
+}
+
+function keywordsFromProducts(
+  products: {
+    name: string;
+    brand?: string | null;
+    category?: string | null;
+  }[],
+): string[] {
+  const map = new Map<string, { label: string; n: number }>();
+  for (const product of products) {
+    rememberKeyword(map, product.brand, 3);
+    rememberKeyword(map, product.category, 2);
+    const words = product.name
+      .split(/[^A-Za-z0-9]+/)
+      .map((word) => word.trim())
+      .filter((word) => word.length >= 3 && !KEYWORD_SKIP.test(word) && !/^\d+$/.test(word));
+    if (words[0]) rememberKeyword(map, words[0], 2);
+    if (words[1]) rememberKeyword(map, `${words[0]} ${words[1]}`, 1);
+  }
+  return topKeywords(map);
+}
+
+/** Popular keywords, product photos, and a cover image per category for the empty search panel. */
+export async function fetchBrowseShelf(
+  signal?: AbortSignal,
+): Promise<BrowseShelf> {
+  const res = await fetch("/api/backend/products?limit=48&sort=newest", {
+    signal,
+    headers: { Accept: "application/json" },
+  });
+  const empty: BrowseShelf = {
+    products: [],
+    keywords: [],
+    keywordsBySlug: {},
+    covers: {},
+  };
+  if (!res.ok) return empty;
+  const data = (await res.json()) as {
+    products?: {
+      id: string;
+      name: string;
+      slug: string;
+      price: number;
+      thumbnail?: { path?: string | null } | null;
+      category?: { name?: string | null; slug?: string | null } | null;
+      brand_name?: string | null;
+      vendor?: { shop_name?: string | null } | null;
+    }[];
+  };
+  const products: BrowseShelfProduct[] = [];
+  const covers: Record<string, string> = {};
+  const keywordRows: { name: string; brand?: string | null; category?: string | null }[] = [];
+  const bySlug = new Map<string, { name: string; brand?: string | null; category?: string | null }[]>();
+  for (const product of data.products ?? []) {
+    const slug = product.category?.slug ?? null;
+    const thumb = product.thumbnail?.path ?? null;
+    products.push({
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: product.price,
+      thumbnail: thumb,
+      category: product.category?.name ?? null,
+      shop: product.vendor?.shop_name ?? null,
+      categorySlug: slug,
+    });
+    if (slug && thumb && !covers[slug]) covers[slug] = thumb;
+    const keywordRow = {
+      name: product.name,
+      brand: product.brand_name,
+      category: product.category?.name,
+    };
+    keywordRows.push(keywordRow);
+    if (slug) {
+      const bucket = bySlug.get(slug) ?? [];
+      bucket.push(keywordRow);
+      bySlug.set(slug, bucket);
+    }
+  }
+  const keywordsBySlug: Record<string, string[]> = {};
+  for (const [slug, rows] of bySlug) {
+    keywordsBySlug[slug] = keywordsFromProducts(rows);
+  }
+  return {
+    products,
+    keywords: keywordsFromProducts(keywordRows),
+    keywordsBySlug,
+    covers,
+  };
+}
+
 /** One product photo per category, used when the category itself has no image. */
 export async function fetchCategoryCovers(
   signal?: AbortSignal,

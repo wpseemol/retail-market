@@ -63,6 +63,9 @@ const en = {
         removeRecent: "Remove “{query}”",
         recentProducts: "Recently viewed",
         discover: "Discover more",
+        popular: "Popular searches",
+        related: "Related products",
+        emptyCategory: "No products in this category yet.",
         other: "Other recommendations",
         suggested: "Products",
         typeMore: "Type at least 2 characters.",
@@ -70,7 +73,7 @@ const en = {
         close: "Close search",
         imageSearch: "Search by image",
         imageHint: "JPEG, PNG, WebP, or GIF · max 5 MB · stays on this device",
-        imageReady: "Image ready. A descriptive file name is searched; otherwise type the product name.",
+        imageReady: "Photo added. Choose a popular search, or type what the photo shows.",
         imageRemove: "Remove image",
         imageErrors: {
             empty: "Choose an image to search with.",

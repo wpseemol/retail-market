@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-22
 
+### Empty search shows recent queries, categories, and popular keywords
+
+- `src/components/home/HeaderSearch.tsx`: with an empty query, the left side lists recent searches and categories. The right side lists popular keywords for the selected category and related products with photos. Typed results are unchanged. A photo can be chosen, dropped, or pasted; its preview sits in the search field and a useful file name still runs search.
+- `src/lib/search.ts`: loads one product shelf for keywords, related photos, and category covers.
+- `src/i18n/dictionaries/en.ts` and `bn.ts`: popular searches, related products, and empty-category copy.
+
 ### AliExpress-style search dropdown
 
 - `src/components/home/HeaderSearch.tsx`: focusing search opens an 80% wide dropdown under the bar (search history, a discover list, and category image tiles). Typed results stay in that panel. The full-screen overlay is gone.
