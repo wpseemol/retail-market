@@ -47,6 +47,7 @@ export type OrderItem = {
 export type OrderRow = {
   id: string;
   order_number: string;
+  kind?: "retail" | "wholesale";
   status: OrderStatus;
   payment_status: PaymentStatus;
   payment_method: string;

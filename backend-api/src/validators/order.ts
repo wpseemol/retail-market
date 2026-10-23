@@ -51,6 +51,20 @@ export const placeOrderSchema = z.object({
 
 export type PlaceOrderInput = z.infer<typeof placeOrderSchema>;
 
+/** Wholesale lines can be larger than a shop-cart line. Stock is still checked on the server. */
+export const BULK_ORDER_MAX_LINES = 100;
+export const BULK_ORDER_MAX_QTY = 5000;
+
+export const bulkOrderItemSchema = placeOrderItemSchema.extend({
+  quantity: z.coerce.number().int().min(1).max(BULK_ORDER_MAX_QTY),
+});
+
+export const bulkOrderSchema = placeOrderSchema.extend({
+  items: z.array(bulkOrderItemSchema).min(1).max(BULK_ORDER_MAX_LINES),
+});
+
+export type BulkOrderInput = z.infer<typeof bulkOrderSchema>;
+
 export const shippingQuoteSchema = z.object({
   items: z
     .array(

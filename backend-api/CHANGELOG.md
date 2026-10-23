@@ -5,6 +5,14 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-23
 
+### Wholesale bulk orders
+
+- `prisma/schema.prisma` and `prisma/migrations/20261023170000_order_kind`: `orders.kind` is `retail` or `wholesale` (default `retail`).
+- `src/validators/order.ts`: `bulkOrderSchema` allows 100 lines and quantity up to 5000. Shop checkout stays at 50 lines and quantity 99.
+- `src/routes/customerOrders.ts`: `POST /api/customer/orders/bulk` uses the same pricing, stock, coupon, and shipping rules as shop checkout and stores `kind: wholesale`. Responses and the customer order list include `kind`.
+- `src/routes/dashboardOrders.ts`: order JSON includes `kind`.
+- `API.md` documents the bulk endpoint.
+
 ### S3-compatible media storage (MinIO, Cloudflare R2, AWS S3)
 
 - `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner` added. `multer`, `sharp`, and `@types/multer` were already present.

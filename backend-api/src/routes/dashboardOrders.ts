@@ -119,6 +119,7 @@ function toPublicOrder(order: ListRow | DetailRow) {
   return {
     id: order.id.toString(),
     order_number: order.order_number,
+    kind: order.kind,
     status: order.status,
     payment_status: order.payment_status,
     payment_method: order.payment_method,

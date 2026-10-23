@@ -426,6 +426,18 @@ export default function Header({
                                 </li>
                             );
                         })}
+                        <li>
+                            <Link
+                                href="/bulk-order"
+                                className={`hover:text-brand-hover transition-colors ${
+                                    linkActive("/bulk-order")
+                                        ? "text-brand-primary font-semibold"
+                                        : "text-text-secondary hover:text-brand-primary"
+                                }`}
+                            >
+                                {t.nav.wholesale}
+                            </Link>
+                        </li>
                     </ul>
 
                     {/* Desktop Search Field */}
@@ -598,6 +610,17 @@ export default function Header({
                                     </Link>
                                 );
                             })}
+                            <Link
+                                href="/bulk-order"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className={`px-3 py-2 rounded-md hover:bg-bg-subtle ${
+                                    linkActive("/bulk-order")
+                                        ? "text-brand-primary font-semibold"
+                                        : "text-text-primary"
+                                }`}
+                            >
+                                {t.nav.wholesale}
+                            </Link>
                             <Link
                                 href="/wishlist"
                                 onClick={() => setIsMobileMenuOpen(false)}

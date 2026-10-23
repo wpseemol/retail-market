@@ -203,6 +203,9 @@ function CustomerCell({ order }: { order: OrderRow }) {
       <div className="min-w-0">
         <p className="truncate text-sm font-medium">
           {order.customer.name}
+          {order.kind === "wholesale" ? (
+            <span className="ml-1.5 text-[10px] font-semibold uppercase text-brand-deep">Wholesale</span>
+          ) : null}
           {order.is_guest ? <span className="ml-1.5 text-[10px] font-normal text-muted-foreground uppercase">Guest</span> : null}
         </p>
         <p className="truncate text-xs text-muted-foreground tabular-nums">{formatBdPhone(order.customer.phone)}</p>
@@ -980,6 +983,9 @@ export function OrdersPage() {
                               className="font-mono text-[13px] font-semibold tracking-tight text-foreground hover:text-brand-primary hover:underline"
                             >
                               #{order.order_number}
+                              {order.kind === "wholesale" ? (
+                                <span className="ml-1.5 text-[10px] font-semibold uppercase text-brand-deep">Wholesale</span>
+                              ) : null}
                             </button>
                           </td>
                           <td className="px-3 py-3 whitespace-nowrap">
@@ -1050,6 +1056,9 @@ export function OrdersPage() {
                             <div className="min-w-0">
                               <button type="button" onClick={h.onView} className="font-mono text-[13px] font-semibold hover:text-brand-primary">
                                 #{order.order_number}
+                                {order.kind === "wholesale" ? (
+                                  <span className="ml-1.5 text-[10px] font-semibold uppercase text-brand-deep">Wholesale</span>
+                                ) : null}
                               </button>
                               <p className="text-xs text-muted-foreground">
                                 {placed.date} · {placed.time} · {order.item_count} item{order.item_count === 1 ? "" : "s"}

@@ -20,11 +20,14 @@ import {
 import { couponDiscount, findCoupon, publicCoupon } from "../lib/coupons.js";
 import { rateLimit } from "../lib/rateLimit.js";
 import {
+  bulkOrderSchema,
   couponCheckSchema,
   customerOrdersQuerySchema,
   placeOrderSchema,
+  type PlaceOrderInput,
   shippingQuoteSchema,
 } from "../validators/order.js";
+import type { Request, Response } from "express";
 
 export const customerOrdersRouter = Router();
 
@@ -137,12 +140,16 @@ function orderNumber() {
   return `NIY-${y}${m}${day}-${rand}`;
 }
 
-/** Guest checkout (no token) or customer checkout (Bearer token). */
-customerOrdersRouter.post(
-  "/",
-  optionalAuth,
-  asyncHandler(async (req, res) => {
-    const parsed = placeOrderSchema.safeParse(req.body);
+/**
+ * Guest checkout (no token) or customer checkout (Bearer token).
+ * `retail` is the shop cart. `wholesale` is a পাইকারি bulk order (more lines, larger quantities).
+ */
+async function placeStorefrontOrder(
+  req: Request,
+  res: Response,
+  kind: "retail" | "wholesale",
+) {
+    const parsed = (kind === "wholesale" ? bulkOrderSchema : placeOrderSchema).safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({
         message: "Validation failed",
@@ -157,7 +164,7 @@ customerOrdersRouter.post(
       });
     }
 
-    const input = parsed.data;
+    const input = parsed.data as PlaceOrderInput;
     const customer = req.auth?.user ?? null;
     const userId = req.auth?.userId ?? null;
     const contactEmail = input.email ?? customer?.email.toLowerCase() ?? null;
@@ -286,6 +293,7 @@ customerOrdersRouter.post(
           customer_email: contactEmail,
           customer_phone: contactPhone,
           order_number: number,
+          kind,
           status: "pending",
           payment_status: "pending",
           payment_method: input.payment_method,
@@ -397,6 +405,7 @@ customerOrdersRouter.post(
       order: {
         id: order.id.toString(),
         order_number: order.order_number,
+        kind: order.kind,
         status: order.status,
         payment_status: order.payment_status,
         payment_method: order.payment_method,
@@ -410,7 +419,20 @@ customerOrdersRouter.post(
         is_guest: userId == null,
       },
     });
-  }),
+}
+
+/** Wholesale / পাইকারি: up to 100 products, quantity up to 5000. Same pricing rules as the shop cart. */
+customerOrdersRouter.post(
+  "/bulk",
+  optionalAuth,
+  asyncHandler((req, res) => placeStorefrontOrder(req, res, "wholesale")),
+);
+
+/** Everyday shop-cart checkout. */
+customerOrdersRouter.post(
+  "/",
+  optionalAuth,
+  asyncHandler((req, res) => placeStorefrontOrder(req, res, "retail")),
 );
 
 /** Logged-in customer's orders (includes guest orders claimed after verification). */
@@ -444,6 +466,7 @@ customerOrdersRouter.get(
       orders: rows.map((order) => ({
         id: order.id.toString(),
         order_number: order.order_number,
+        kind: order.kind,
         status: order.status,
         payment_status: order.payment_status,
         payment_method: order.payment_method,

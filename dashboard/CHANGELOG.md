@@ -3,6 +3,13 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-23
+
+### Show wholesale orders
+
+- `src/lib/orders.ts`: `OrderRow.kind` is `retail` or `wholesale`.
+- `src/pages/orders/OrdersPage.tsx`: wholesale orders show a Wholesale label next to the order number and the customer name.
+
 ## 2026-10-22
 
 ### Production Docker stack

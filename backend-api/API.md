@@ -587,7 +587,23 @@ Placing an order creates inbox notifications for `super_admin` / `admin` / `mode
 
 `payment_method`: `sslcommerz` (bKash, Nagad, Rocket, cards via SSLCOMMERZ) | `cash_on_delivery`. Anything else → `400`.
 
-**201** → `{ message, order: { id, order_number, total, …, is_guest }, payment? }`
+**201** → `{ message, order: { id, order_number, kind, total, …, is_guest }, payment? }`
+
+`kind` is `retail` for this endpoint.
+
+### `POST /api/customer/orders/bulk` — wholesale (পাইকারি)
+
+Same body, auth, pricing, stock, coupon, and shipping rules as `POST /api/customer/orders`. The order is stored with `kind: "wholesale"`.
+
+- `items`: 1–100 lines (shop checkout stays at 50).
+- `items[].quantity`: 1–5000 (shop checkout stays at 99). Stock is still enforced (`409 ITEM_UNAVAILABLE`).
+- Prices, shipping, and the coupon discount come from the server. A client `shipping_fee` is ignored.
+- Guest checkout needs `email`. Staff tokens return `403 STAFF_CANNOT_ORDER`.
+- Logged-in customers have the ordered products removed from their shop cart in the same transaction. The shop cart itself is unchanged for products that were not in this order.
+
+**201** → same shape as shop checkout, with `order.kind: "wholesale"`.
+
+`GET /api/customer/orders` includes `kind` (`retail` | `wholesale`) on each order. Dashboard order JSON includes it too.
 
 **Online payment (`payment_method: "sslcommerz"`)**
 

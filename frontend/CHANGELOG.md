@@ -5,6 +5,14 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-23
 
+### Wholesale order page
+
+- `src/app/bulk-order/page.tsx` and `src/components/bulk/BulkOrderPageContent.tsx`: customers can search products, set quantities, and place one wholesale order. The shop cart and checkout are unchanged.
+- `src/lib/validators/bulkOrder.ts`: shadcn Form schema (safe strings, phone, up to 100 lines).
+- `src/i18n/dictionaries/en.ts` and `bn.ts`: `nav.wholesale` and `bulk` copy.
+- `src/components/home/Header.tsx`: Wholesale / পাইকারি link in the desktop and phone menus.
+- `src/app/account/orders/page.tsx`: wholesale orders show a Wholesale label.
+
 ### Allow Next.js to optimize object-storage images
 
 - `next.config.ts`: `NEXT_PUBLIC_MEDIA_URL` is no longer limited to `/uploads/**`. The allowed path is the URL's own prefix (for example `/niyenin-media/**` when media is on MinIO or R2). API uploads stay on `/uploads/**`.

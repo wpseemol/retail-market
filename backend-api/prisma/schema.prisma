@@ -672,6 +672,12 @@ model WishlistItem {
 
 // ─── Orders ─────────────────────────────────────────────────────
 
+/// `retail` is the shop cart. `wholesale` is a পাইকারি bulk order.
+enum OrderKind {
+  retail
+  wholesale
+}
+
 model Order {
   id              BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
   /// Null for guest checkout until claimed by a verified account.
@@ -683,6 +689,7 @@ model Order {
   /// Set when a guest order is attached to an account after verification.
   claimed_at      DateTime?
   order_number    String        @unique @db.VarChar(40)
+  kind            OrderKind     @default(retail)
   status          OrderStatus   @default(pending)
   payment_status  PaymentStatus @default(pending)
   payment_method  PaymentMethod @default(cash_on_delivery)
@@ -713,6 +720,7 @@ model Order {
   @@index([user_id])
   @@index([customer_email])
   @@index([customer_phone])
+  @@index([kind])
   @@index([status])
   @@index([payment_status])
   @@index([payment_method, payment_channel])

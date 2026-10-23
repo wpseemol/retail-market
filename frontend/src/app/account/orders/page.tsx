@@ -9,6 +9,7 @@ import { formatPrice } from "@/lib/money";
 type CustomerOrder = {
   id: string;
   order_number: string;
+  kind?: "retail" | "wholesale";
   status: string;
   payment_status: string;
   payment_method: string;
@@ -120,6 +121,11 @@ export default function OrdersPage() {
                     <div className="min-w-0">
                       <p className="m-0 text-[15px] font-semibold text-text-primary">
                         {order.order_number}
+                        {order.kind === "wholesale" ? (
+                          <span className="ml-2 text-[11px] font-semibold uppercase text-brand-primary">
+                            Wholesale
+                          </span>
+                        ) : null}
                       </p>
                       <p className="m-0 mt-0.5 text-[12.5px] text-text-secondary">
                         {new Date(order.placed_at).toLocaleDateString(undefined, {
