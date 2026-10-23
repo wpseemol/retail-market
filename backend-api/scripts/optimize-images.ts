@@ -10,6 +10,7 @@
  * link to it. Once those caches have expired, run again with `--prune-orphans` to delete it.
  * Home-block images are stored as URLs inside `home_block_contents.content`, so those URLs are
  * rewritten too. Trade licenses (documents) and already-optimized files are left alone.
+ * Only `medias.disk = public` (files under uploads/). S3/R2 objects are not rewritten here.
  */
 import fs from "node:fs";
 import path from "node:path";

@@ -1,8 +1,9 @@
-import fs from "node:fs";
-import path from "node:path";
 import type { NextFunction, Request, Response } from "express";
 import type { Media } from "@prisma/client";
 import type multer from "multer";
+import { currentMediaDisk } from "../config/storage.config.js";
+import { deleteMediaFile } from "./storage/files.js";
+import { discardTempUpload, uploadBytes } from "../middleware/upload.js";
 import {
   CATEGORY_IMAGE_MAX_BYTES,
   finalizeCategoryImageUpload,
@@ -11,8 +12,6 @@ import {
 } from "./categoryImage.js";
 import { prisma } from "./prisma.js";
 import { finalizeShopImageUpload, SHOP_IMAGES_RELATIVE } from "./shopImage.js";
-
-const UPLOADS_ROOT = path.resolve(process.cwd(), "uploads");
 
 /** Runs a single-file multer upload and turns its errors into `400 { message, code }`. */
 export function singleImageUpload(
@@ -43,26 +42,13 @@ export function singleImageUpload(
 }
 
 export function discardUpload(file: Express.Multer.File | undefined) {
-  if (!file?.path) return;
-  try {
-    fs.unlinkSync(file.path);
-  } catch {
-    /* ignore */
-  }
+  discardTempUpload(file);
 }
 
-/** Deletes a media row and its file under `uploads/<file_path>/`. */
+/** Deletes a media row and its object (S3) or file under `uploads/`. */
 export async function removeStoredMedia(media: Pick<Media, "id" | "file_name" | "file_path"> | null | undefined) {
   if (!media) return;
-  const relative = media.file_path ?? "";
-  const full = path.resolve(UPLOADS_ROOT, relative, media.file_name);
-  if (full.startsWith(UPLOADS_ROOT + path.sep)) {
-    try {
-      if (fs.existsSync(full)) fs.unlinkSync(full);
-    } catch {
-      /* ignore */
-    }
-  }
+  await deleteMediaFile(media.file_path, media.file_name);
   await prisma.media.delete({ where: { id: media.id } }).catch(() => undefined);
 }
 
@@ -89,8 +75,8 @@ export async function storeShowcaseImage(input: {
   const { file, kind } = input;
   const finalized =
     kind === "og"
-      ? await finalizeCategoryImageUpload(file.path, file.mimetype, "ogImage")
-      : await finalizeShopImageUpload(file.path, file.mimetype, "brandBanner");
+      ? await finalizeCategoryImageUpload(uploadBytes(file), file.mimetype, "ogImage")
+      : await finalizeShopImageUpload(uploadBytes(file), file.mimetype, "brandBanner");
   if (!finalized.ok) {
     const label = kind === "og" ? "Share image" : "Banner";
     return {
@@ -104,7 +90,7 @@ export async function storeShowcaseImage(input: {
     const media = await prisma.media.create({
       data: {
         user_id: input.actorId,
-        disk: "public",
+        disk: currentMediaDisk(),
         file_name: finalized.fileName,
         original_name: sanitizeOriginalName(file.originalname),
         file_path: kind === "og" ? PRODUCT_IMAGES_RELATIVE : SHOP_IMAGES_RELATIVE,
@@ -120,11 +106,10 @@ export async function storeShowcaseImage(input: {
     });
     return { ok: true, media };
   } catch (err) {
-    try {
-      fs.unlinkSync(finalized.absolutePath);
-    } catch {
-      /* ignore */
-    }
+    await deleteMediaFile(
+      kind === "og" ? PRODUCT_IMAGES_RELATIVE : SHOP_IMAGES_RELATIVE,
+      finalized.fileName,
+    );
     throw err;
   }
 }

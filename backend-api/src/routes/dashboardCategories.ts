@@ -1,7 +1,6 @@
 import { Router } from "express";
-import fs from "node:fs";
-import path from "node:path";
 import { z } from "zod";
+import { currentMediaDisk } from "../config/storage.config.js";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { parseBigIntId } from "../utils/ids.js";
@@ -14,9 +13,9 @@ import {
   PRODUCT_IMAGES_RELATIVE,
   sanitizeOriginalName,
 } from "../lib/categoryImage.js";
-import { PRODUCT_IMAGES_DIR } from "../lib/productImage.js";
+import { deleteMediaFile } from "../lib/storage/files.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
-import { categoryImageUpload } from "../middleware/upload.js";
+import { categoryImageUpload, discardTempUpload, uploadBytes } from "../middleware/upload.js";
 import {
   categoryBulkPermissions,
   dashboardCategoriesBulkRouter,
@@ -253,16 +252,12 @@ dashboardCategoriesRouter.post(
       include: { image: true },
     });
     if (!existing) {
-      try {
-        fs.unlinkSync(file.path);
-      } catch {
-        /* ignore */
-      }
+      discardTempUpload(file);
       return res.status(404).json({ message: "Category not found" });
     }
 
     const finalized = await finalizeCategoryImageUpload(
-      file.path,
+      uploadBytes(file),
       file.mimetype,
     );
     if (!finalized.ok) {
@@ -276,7 +271,7 @@ dashboardCategoriesRouter.post(
       const media = await prisma.media.create({
         data: {
           user_id: req.auth!.userId,
-          disk: "public",
+          disk: currentMediaDisk(),
           file_name: finalized.fileName,
           original_name: sanitizeOriginalName(file.originalname),
           file_path: PRODUCT_IMAGES_RELATIVE,
@@ -298,12 +293,7 @@ dashboardCategoriesRouter.post(
       });
 
       if (existing.image && existing.image.id !== media.id) {
-        const oldPath = path.join(PRODUCT_IMAGES_DIR, existing.image.file_name);
-        try {
-          if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-        } catch {
-          /* ignore */
-        }
+        await deleteMediaFile(existing.image.file_path, existing.image.file_name);
         await prisma.media
           .delete({ where: { id: existing.image.id } })
           .catch(() => undefined);
@@ -314,11 +304,7 @@ dashboardCategoriesRouter.post(
         category: toPublicCategory(row),
       });
     } catch (err) {
-      try {
-        fs.unlinkSync(path.join(PRODUCT_IMAGES_DIR, finalized.fileName));
-      } catch {
-        /* ignore */
-      }
+      await deleteMediaFile(PRODUCT_IMAGES_RELATIVE, finalized.fileName);
       throw err;
     }
   },
@@ -355,12 +341,7 @@ dashboardCategoriesRouter.delete("/:id/image", async (req, res) => {
     }
 
     if (existing.image) {
-      const oldPath = path.join(PRODUCT_IMAGES_DIR, existing.image.file_name);
-      try {
-        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-      } catch {
-        /* ignore */
-      }
+      await deleteMediaFile(existing.image.file_path, existing.image.file_name);
       await prisma.media
         .delete({ where: { id: existing.image.id } })
         .catch(() => undefined);

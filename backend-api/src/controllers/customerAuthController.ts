@@ -1,6 +1,5 @@
 import type { Request, Response } from "express";
-import fs from "node:fs";
-import path from "node:path";
+import { currentMediaDisk } from "../config/storage.config.js";
 import { prisma } from "../lib/prisma.js";
 import { verifyGoogleCredential } from "../lib/googleAuth.js";
 import {
@@ -23,9 +22,11 @@ import {
   type UserWithAvatar,
 } from "../lib/user.js";
 import {
+  uploadBytes,
   USER_PHOTOS_DIR,
   USER_PHOTOS_RELATIVE,
 } from "../middleware/upload.js";
+import { deleteMediaFile } from "../lib/storage/files.js";
 import {
   AVATAR_MAX_BYTES,
   finalizeAvatarUpload,
@@ -625,7 +626,7 @@ export async function updateMe(req: Request, res: Response) {
 
 /**
  * Upload / replace profile photo.
- * Files are stored under `uploads/users/photos/` and linked via `medias` + `users.avatar_id`.
+ * The resized file is stored by the active storage driver and linked via `medias` + `users.avatar_id`.
  * Multipart field name: `avatar`.
  *
  * Security: multer size/MIME filter + magic-byte sniff + rename to UUID+real ext,
@@ -640,10 +641,12 @@ export async function uploadAvatar(req: Request, res: Response) {
     });
   }
 
-  const tempPath = file.path;
-  const validated = finalizeAvatarUpload(tempPath, file.mimetype);
+  const validated = finalizeAvatarUpload(uploadBytes(file), file.mimetype);
   const finalized = validated.ok
-    ? await optimizeStoredUpload(validated, "avatar", AVATAR_MAX_BYTES)
+    ? await optimizeStoredUpload(validated, "avatar", AVATAR_MAX_BYTES, {
+        absoluteDir: USER_PHOTOS_DIR,
+        relativeDir: USER_PHOTOS_RELATIVE,
+      })
     : validated;
   if (!finalized.ok) {
     return res.status(400).json({
@@ -654,7 +657,6 @@ export async function uploadAvatar(req: Request, res: Response) {
 
   const {
     fileName,
-    absolutePath,
     size: fileSize,
     detected,
   } = finalized;
@@ -666,11 +668,7 @@ export async function uploadAvatar(req: Request, res: Response) {
   });
 
   if (!previous) {
-    try {
-      fs.unlinkSync(absolutePath);
-    } catch {
-      /* ignore */
-    }
+    await deleteMediaFile(USER_PHOTOS_RELATIVE, fileName);
     return res.status(401).json({ message: "User not found" });
   }
 
@@ -678,7 +676,7 @@ export async function uploadAvatar(req: Request, res: Response) {
     const media = await prisma.media.create({
       data: {
         user_id: userId,
-        disk: "public",
+        disk: currentMediaDisk(),
         file_name: fileName,
         original_name: sanitizeOriginalName(file.originalname),
         file_path: USER_PHOTOS_RELATIVE,
@@ -703,12 +701,7 @@ export async function uploadAvatar(req: Request, res: Response) {
 
     const oldAvatar = previous.avatar;
     if (oldAvatar && oldAvatar.id !== media.id) {
-      const oldPath = path.join(USER_PHOTOS_DIR, oldAvatar.file_name);
-      try {
-        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-      } catch {
-        /* ignore */
-      }
+      await deleteMediaFile(oldAvatar.file_path, oldAvatar.file_name);
       await prisma.media
         .delete({ where: { id: oldAvatar.id } })
         .catch(() => undefined);
@@ -719,11 +712,7 @@ export async function uploadAvatar(req: Request, res: Response) {
       user: toPublicUser(user),
     });
   } catch (err) {
-    try {
-      fs.unlinkSync(absolutePath);
-    } catch {
-      /* ignore */
-    }
+    await deleteMediaFile(USER_PHOTOS_RELATIVE, fileName);
     throw err;
   }
 }

@@ -1,4 +1,5 @@
 import type { Media, Prisma, ProductStatus, ProductType } from "@prisma/client";
+import { currentMediaDisk } from "../config/storage.config.js";
 import { prisma } from "./prisma.js";
 import { toPublicMedia } from "./user.js";
 import {
@@ -18,14 +19,14 @@ type CreateProductMediaInput = {
   sortOrder?: number;
 };
 
-/** Persist a product image row in `medias` (files live under uploads/products/). */
+/** Persist a product image row in `medias`. The file is already stored by the active driver. */
 export async function createProductMedia(
   input: CreateProductMediaInput,
 ): Promise<Media> {
   return prisma.media.create({
     data: {
       user_id: input.userId,
-      disk: "public",
+      disk: currentMediaDisk(),
       file_name: input.fileName,
       original_name: sanitizeOriginalName(input.originalName ?? undefined),
       file_path: PRODUCT_IMAGES_RELATIVE,

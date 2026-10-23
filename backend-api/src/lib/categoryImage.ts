@@ -1,5 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
 import { randomUUID } from "node:crypto";
 import {
   detectAvatarImageType,
@@ -13,6 +11,12 @@ import {
   type ImagePresetKey,
 } from "./imageOptimize.js";
 import { PRODUCT_IMAGES_DIR, PRODUCT_IMAGES_RELATIVE } from "./productImage.js";
+import {
+  discardUploadSource,
+  readUploadSource,
+  saveMediaFile,
+  StorageError,
+} from "./storage/files.js";
 
 /** Category cover images — max 1 MB before/after processing. */
 export const CATEGORY_IMAGE_MAX_BYTES = 1 * 1024 * 1024;
@@ -25,8 +29,6 @@ export const CATEGORY_IMAGE_ALLOWED_MIMES = [
 ] as const;
 
 export type CategoryImageMime = (typeof CATEGORY_IMAGE_ALLOWED_MIMES)[number];
-
-fs.mkdirSync(PRODUCT_IMAGES_DIR, { recursive: true });
 
 export { PRODUCT_IMAGES_RELATIVE, sanitizeOriginalName };
 
@@ -90,17 +92,17 @@ function validateCategoryBuffer(
 }
 
 /**
- * Validate (≤1 MB), resize into the preset box, re-encode (WebP), store under uploads/products/.
+ * Validate (≤1 MB), resize into the preset box, re-encode (WebP), then store.
  * Shared by categories, brands, site identity, home hero and home blocks.
  */
 export async function finalizeCategoryImageUpload(
-  tempPath: string,
+  source: Buffer | string,
   declaredMime?: string | null,
   preset: ImagePresetKey = "category",
 ): Promise<FinalizedAvatarResult> {
   let buffer: Buffer;
   try {
-    buffer = fs.readFileSync(tempPath);
+    buffer = readUploadSource(source);
   } catch {
     return {
       ok: false,
@@ -112,11 +114,7 @@ export async function finalizeCategoryImageUpload(
   try {
     return await finalizeCategoryImageBuffer(buffer, declaredMime, preset);
   } finally {
-    try {
-      fs.unlinkSync(tempPath);
-    } catch {
-      /* ignore */
-    }
+    discardUploadSource(source);
   }
 }
 
@@ -150,17 +148,29 @@ export async function finalizeCategoryImageBuffer(
     const { output, mime, ext } = optimized;
 
     const fileName = `${randomUUID()}${ext}`;
-    const absolutePath = path.join(PRODUCT_IMAGES_DIR, fileName);
-    fs.writeFileSync(absolutePath, output);
+    const saved = await saveMediaFile({
+      absoluteDir: PRODUCT_IMAGES_DIR,
+      relativeDir: PRODUCT_IMAGES_RELATIVE,
+      fileName,
+      body: output,
+      contentType: mime,
+    });
 
     return {
       ok: true,
       detected: { mime, ext },
       size: output.length,
       fileName,
-      absolutePath,
+      absolutePath: saved.absolutePath,
     } satisfies FinalizedAvatarOk;
-  } catch {
+  } catch (error) {
+    if (error instanceof StorageError) {
+      return {
+        ok: false,
+        message: "Failed to store category image",
+        code: "CATEGORY_IMAGE_STORE_FAILED",
+      };
+    }
     return {
       ok: false,
       message: "Failed to process category image",

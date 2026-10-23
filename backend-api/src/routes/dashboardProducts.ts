@@ -1,6 +1,4 @@
 import { Router } from "express";
-import fs from "node:fs";
-import path from "node:path";
 import { z } from "zod";
 import { Prisma, type ProductStatus, type ProductType } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
@@ -12,14 +10,12 @@ import {
   toPublicProductDetail,
   createProductMedia,
 } from "../lib/productCatalog.js";
-import {
-  finalizeProductImageUpload,
-  PRODUCT_IMAGES_DIR,
-} from "../lib/productImage.js";
+import { finalizeProductImageUpload } from "../lib/productImage.js";
+import { deleteMediaFile } from "../lib/storage/files.js";
 import { sanitizeProductDescriptionHtml } from "../lib/richHtml.js";
 import { uniqueVendorSlug } from "../lib/slug.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
-import { productImageUpload } from "../middleware/upload.js";
+import { discardTempUpload, productImageUpload, uploadBytes } from "../middleware/upload.js";
 import { findUnsafeInputReason } from "../validators/customerAuth.js";
 import {
   dashboardProductsBulkRouter,
@@ -788,11 +784,7 @@ dashboardProductsRouter.post(
       include: { thumbnail: true },
     });
     if (!existing) {
-      try {
-        fs.unlinkSync(file.path);
-      } catch {
-        /* ignore */
-      }
+      discardTempUpload(file);
       return res.status(404).json({ message: "Product not found" });
     }
 
@@ -803,15 +795,11 @@ dashboardProductsRouter.post(
         req.auth!.role,
       ))
     ) {
-      try {
-        fs.unlinkSync(file.path);
-      } catch {
-        /* ignore */
-      }
+      discardTempUpload(file);
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 
-    const finalized = await finalizeProductImageUpload(file.path, file.mimetype);
+    const finalized = await finalizeProductImageUpload(uploadBytes(file), file.mimetype);
     if (!finalized.ok) {
       return res.status(400).json({
         message: finalized.message,
@@ -875,13 +863,7 @@ dashboardProductsRouter.post(
       select: { id: true, vendor_id: true, name: true, thumbnail_id: true },
     });
     if (!existing) {
-      for (const file of files) {
-        try {
-          fs.unlinkSync(file.path);
-        } catch {
-          /* ignore */
-        }
-      }
+      for (const file of files) discardTempUpload(file);
       return res.status(404).json({ message: "Product not found" });
     }
 
@@ -892,13 +874,7 @@ dashboardProductsRouter.post(
         req.auth!.role,
       ))
     ) {
-      for (const file of files) {
-        try {
-          fs.unlinkSync(file.path);
-        } catch {
-          /* ignore */
-        }
-      }
+      for (const file of files) discardTempUpload(file);
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 
@@ -906,7 +882,7 @@ dashboardProductsRouter.post(
     let firstCreatedId: bigint | null = null;
 
     for (const file of files) {
-      const finalized = await finalizeProductImageUpload(file.path, file.mimetype);
+      const finalized = await finalizeProductImageUpload(uploadBytes(file), file.mimetype);
       if (!finalized.ok) {
         return res.status(400).json({
           message: finalized.message,
@@ -1038,12 +1014,7 @@ dashboardProductsRouter.delete("/:id/images/:mediaId", async (req, res) => {
     });
   }
 
-  const diskPath = path.join(PRODUCT_IMAGES_DIR, media.file_name);
-  try {
-    if (fs.existsSync(diskPath)) fs.unlinkSync(diskPath);
-  } catch {
-    /* ignore */
-  }
+  await deleteMediaFile(media.file_path, media.file_name);
   await prisma.media.delete({ where: { id: media.id } }).catch(() => undefined);
 
   const full = await prisma.product.findFirstOrThrow({

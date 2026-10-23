@@ -1,6 +1,6 @@
-import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { discardUploadSource, readUploadSource } from "./storage/files.js";
 
 /** Shared avatar upload policy (enforced on multer + controller). */
 export const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -176,58 +176,42 @@ export type FinalizedAvatarOk = {
   detected: DetectedAvatarImage;
   size: number;
   fileName: string;
+  /** Local path, `s3://bucket/key`, or empty when the bytes are still only in `body`. */
   absolutePath: string;
+  /** Original sniffed bytes, before the resize step stores the file. */
+  body?: Buffer;
 };
 
 export type FinalizedAvatarResult = FinalizedAvatarOk | AvatarValidationErr;
 
 /**
- * After multer writes a temp file: sniff bytes, rename to UUID+real ext, or delete + error.
+ * Sniff a multer temp file or in-memory upload. Does not write the public file;
+ * the caller resizes and then stores the result.
  */
 export function finalizeAvatarUpload(
-  tempPath: string,
+  source: Buffer | string,
   declaredMime?: string | null,
 ): FinalizedAvatarResult {
-  const buffer = fs.readFileSync(tempPath);
-  const validated = validateAvatarBuffer(buffer, declaredMime);
-
-  if (!validated.ok) {
-    try {
-      fs.unlinkSync(tempPath);
-    } catch {
-      /* ignore */
-    }
-    return validated;
-  }
-
-  const finalName = `${randomUUID()}${validated.detected.ext}`;
-  const finalPath = path.join(path.dirname(tempPath), finalName);
-
+  let buffer: Buffer;
   try {
-    fs.renameSync(tempPath, finalPath);
+    buffer = readUploadSource(source);
   } catch {
-    try {
-      fs.writeFileSync(finalPath, buffer);
-      fs.unlinkSync(tempPath);
-    } catch {
-      try {
-        fs.unlinkSync(tempPath);
-      } catch {
-        /* ignore */
-      }
-      return {
-        ok: false,
-        message: "Failed to store image",
-        code: "AVATAR_STORE_FAILED",
-      };
-    }
+    return {
+      ok: false,
+      message: "Failed to read uploaded image",
+      code: "AVATAR_READ_FAILED",
+    };
   }
+  discardUploadSource(source);
+  const validated = validateAvatarBuffer(buffer, declaredMime);
+  if (!validated.ok) return validated;
 
   return {
     ok: true,
     detected: validated.detected,
     size: validated.size,
-    fileName: finalName,
-    absolutePath: finalPath,
+    fileName: `${randomUUID()}${validated.detected.ext}`,
+    absolutePath: "",
+    body: buffer,
   };
 }

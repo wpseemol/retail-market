@@ -4,6 +4,7 @@ import express from "express";
 // Express 4 drops rejected promises from async handlers; this forwards them to the error middleware.
 import "express-async-errors";
 import cors from "cors";
+import { storageConfig } from "./config/storage.config.js";
 import { env } from "./lib/env.js";
 import { healthRouter } from "./routes/health.js";
 import { customerAuthRouter } from "./routes/customerAuth.js";
@@ -113,5 +114,9 @@ process.on("unhandledRejection", (reason) => {
 });
 
 app.listen(env.port, "0.0.0.0", () => {
-  console.log(`Server running on port ${env.port}`);
+  const storage =
+    storageConfig.driver === "s3"
+      ? `s3 bucket ${storageConfig.bucket}`
+      : "local uploads/";
+  console.log(`Server running on port ${env.port} (storage: ${storage})`);
 });

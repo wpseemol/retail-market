@@ -248,7 +248,7 @@ dashboardReviewsRouter.delete(
       prisma.productReview.delete({ where: { id: review.id } }),
     ]);
 
-    removeReviewMediaFiles(media);
+    await removeReviewMediaFiles(media);
     return res.json({ message: "Review permanently deleted", id: review.id.toString() });
   }),
 );

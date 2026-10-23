@@ -1,7 +1,6 @@
-import fs from "node:fs";
-import path from "node:path";
 import type { Media, Prisma, ProductReview } from "@prisma/client";
 import { prisma } from "./prisma.js";
+import { deleteMediaFile } from "./storage/files.js";
 import { mediaPublicUrl } from "./user.js";
 import { maskEmail, maskPhone } from "./phone.js";
 import type { ReviewContact } from "../validators/productReview.js";
@@ -111,14 +110,8 @@ export function publicAuthorName(fullName: string) {
   return fullName.trim().replace(/\s+/g, " ") || "Verified buyer";
 }
 
-export function removeReviewMediaFiles(rows: Pick<Media, "file_path" | "file_name">[]) {
-  for (const row of rows) {
-    try {
-      fs.unlinkSync(path.resolve(process.cwd(), "uploads", row.file_path, row.file_name));
-    } catch {
-      /* already gone */
-    }
-  }
+export async function removeReviewMediaFiles(rows: Pick<Media, "file_path" | "file_name">[]) {
+  await Promise.all(rows.map((row) => deleteMediaFile(row.file_path, row.file_name)));
 }
 
 export function reviewImageIds(review: Pick<ProductReview, "images">): bigint[] {

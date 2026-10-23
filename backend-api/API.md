@@ -20,7 +20,7 @@ Content-Type: application/json
 | Default port | `8001` (`PORT` env) |
 | Auth header | `Authorization: Bearer <accessToken>` |
 | Login returns | `accessToken`, `refreshToken`, and deprecated `token` (= access) |
-| Uploads public URL | `{PUBLIC_API_URL}/uploads/{file_path}/{file_name}` |
+| Uploads public URL | `local`: `{PUBLIC_API_URL}/uploads/{file_path}/{file_name}`. `s3` / `r2`: `{S3_PUBLIC_BASE_URL}/{file_path}/{file_name}` |
 | CORS (default) | `http://localhost:3000`, `http://localhost:5173` |
 
 ### Roles
@@ -99,7 +99,9 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/dashboard/brands` | `routes/dashboardBrands.ts` | Staff (showcase: `super_admin`, `admin`, linked vendor) |
 | `/api/dashboard/products` | `routes/dashboardProducts.ts` | Staff |
 
-Static files: `GET /uploads/*`
+Static files: `GET /uploads/*` (only when `STORAGE_DRIVER=local`, or for older rows with `medias.disk=public`).
+
+New uploads with `STORAGE_DRIVER=s3` are resized in memory (sharp → WebP, or PNG for the favicon preset) and streamed to the bucket. Nothing is written under `uploads/`. `medias.disk` is `s3`, or `r2` when `S3_ENDPOINT` is `*.r2.cloudflarestorage.com`. `S3_FORCE_PATH_STYLE=true` is required for MinIO. The bucket policy must allow anonymous `GET` on the public prefix; objects are not uploaded with an ACL. Set the storefront `NEXT_PUBLIC_MEDIA_URL` to `S3_PUBLIC_BASE_URL` so Next.js can optimize those images. Private objects can be signed in code with `presignMediaDownload` (`@aws-sdk/s3-request-presigner`, 1–60 minutes); public media uses the base URL above.
 
 ---
 

@@ -1,5 +1,4 @@
 import fs from "node:fs";
-import path from "node:path";
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import type {
@@ -7,6 +6,7 @@ import type {
   FinalizedAvatarOk,
   FinalizedAvatarResult,
 } from "./avatarImage.js";
+import { saveMediaFile, StorageError } from "./storage/files.js";
 
 /**
  * Upload presets, sized to ~2× the largest place each image is shown on the storefront.
@@ -192,38 +192,43 @@ export async function optimizeImageWithin(
   return null;
 }
 
+function removeLocal(file: string) {
+  if (!file || file.startsWith("s3://")) return;
+  try {
+    fs.unlinkSync(file);
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
- * Optimizes an upload that was already validated and stored (magic bytes checked,
- * UUID file name). Replaces it with the resized file next to it and deletes the original.
+ * Resizes bytes that were already sniffed, then stores the WebP/PNG result.
+ * S3 mode streams that buffer and does not write `uploads/`.
  */
 export async function optimizeStoredUpload(
   stored: FinalizedAvatarOk,
   preset: ImagePresetKey,
   maxBytes: number,
+  destination: { absoluteDir: string; relativeDir: string },
 ): Promise<FinalizedAvatarResult> {
-  const remove = (file: string) => {
-    try {
-      fs.unlinkSync(file);
-    } catch {
-      /* ignore */
-    }
-  };
-
   let optimized: OptimizedImage | null;
   try {
-    const buffer = fs.readFileSync(stored.absolutePath);
+    const buffer = stored.body ?? (stored.absolutePath ? fs.readFileSync(stored.absolutePath) : null);
+    if (!buffer) {
+      return { ok: false, message: "Failed to process image", code: "IMAGE_PROCESS_FAILED" };
+    }
     const dims = await checkImageDimensions(buffer, preset);
     if (!dims.ok) {
-      remove(stored.absolutePath);
+      removeLocal(stored.absolutePath);
       return dims;
     }
     optimized = await optimizeImageWithin(buffer, preset, maxBytes);
   } catch {
-    remove(stored.absolutePath);
+    removeLocal(stored.absolutePath);
     return { ok: false, message: "Failed to process image", code: "IMAGE_PROCESS_FAILED" };
   }
   if (!optimized) {
-    remove(stored.absolutePath);
+    removeLocal(stored.absolutePath);
     return {
       ok: false,
       message: `Image must be ${Math.floor(maxBytes / (1024 * 1024))} MB or smaller after resize`,
@@ -232,15 +237,27 @@ export async function optimizeStoredUpload(
   }
 
   const fileName = `${randomUUID()}${optimized.ext}`;
-  const absolutePath = path.join(path.dirname(stored.absolutePath), fileName);
-  fs.writeFileSync(absolutePath, optimized.output);
-  remove(stored.absolutePath);
-
-  return {
-    ok: true,
-    detected: { mime: optimized.mime, ext: optimized.ext },
-    size: optimized.output.length,
-    fileName,
-    absolutePath,
-  };
+  try {
+    const saved = await saveMediaFile({
+      absoluteDir: destination.absoluteDir,
+      relativeDir: destination.relativeDir,
+      fileName,
+      body: optimized.output,
+      contentType: optimized.mime,
+    });
+    removeLocal(stored.absolutePath);
+    return {
+      ok: true,
+      detected: { mime: optimized.mime, ext: optimized.ext },
+      size: optimized.output.length,
+      fileName,
+      absolutePath: saved.absolutePath,
+    };
+  } catch (error) {
+    removeLocal(stored.absolutePath);
+    if (error instanceof StorageError) {
+      return { ok: false, message: "Failed to store image", code: "IMAGE_STORE_FAILED" };
+    }
+    return { ok: false, message: "Failed to process image", code: "IMAGE_PROCESS_FAILED" };
+  }
 }

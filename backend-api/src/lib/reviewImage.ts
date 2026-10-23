@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import {
@@ -8,6 +7,13 @@ import {
   type FinalizedAvatarResult,
 } from "./avatarImage.js";
 import { optimizeImageWithin } from "./imageOptimize.js";
+import {
+  discardUploadSource,
+  ensureLocalUploadDir,
+  readUploadSource,
+  saveMediaFile,
+  StorageError,
+} from "./storage/files.js";
 
 /** Disk folder for customer review photos. */
 export const REVIEW_IMAGES_DIR = path.resolve(process.cwd(), "uploads", "reviews");
@@ -20,30 +26,22 @@ export const REVIEW_IMAGE_MAX_BYTES = 2 * 1024 * 1024;
 export const REVIEW_IMAGE_MAX_FILES = 4;
 const REVIEW_IMAGE_MIN_BYTES = 32;
 
-fs.mkdirSync(REVIEW_IMAGES_DIR, { recursive: true });
+ensureLocalUploadDir(REVIEW_IMAGES_DIR);
 
-function removeQuietly(file: string) {
-  try {
-    fs.unlinkSync(file);
-  } catch {
-    /* ignore */
-  }
-}
-
-/** Sniff magic bytes, always resize/re-encode to WebP, store under uploads/reviews/. */
+/** Sniff magic bytes, always resize/re-encode to WebP, then store the result. */
 export async function finalizeReviewImageUpload(
-  tempPath: string,
+  source: Buffer | string,
   declaredMime?: string | null,
 ): Promise<FinalizedAvatarResult> {
   let buffer: Buffer;
   try {
-    buffer = fs.readFileSync(tempPath);
+    buffer = readUploadSource(source);
   } catch {
     return { ok: false, message: "Failed to read uploaded image", code: "REVIEW_IMAGE_READ_FAILED" };
   }
 
   const fail = (message: string, code: string): FinalizedAvatarResult => {
-    removeQuietly(tempPath);
+    discardUploadSource(source);
     return { ok: false, message, code };
   };
 
@@ -68,17 +66,25 @@ export async function finalizeReviewImageUpload(
       return fail("Each review photo must be 2 MB or smaller after resize", "REVIEW_IMAGE_TOO_LARGE");
     }
     const fileName = `${randomUUID()}${optimized.ext}`;
-    const absolutePath = path.join(REVIEW_IMAGES_DIR, fileName);
-    fs.writeFileSync(absolutePath, optimized.output);
-    removeQuietly(tempPath);
+    const saved = await saveMediaFile({
+      absoluteDir: REVIEW_IMAGES_DIR,
+      relativeDir: REVIEW_IMAGES_RELATIVE,
+      fileName,
+      body: optimized.output,
+      contentType: optimized.mime,
+    });
+    discardUploadSource(source);
     return {
       ok: true,
       detected: { mime: optimized.mime, ext: optimized.ext },
       size: optimized.output.length,
       fileName,
-      absolutePath,
+      absolutePath: saved.absolutePath,
     };
-  } catch {
-    return fail("Failed to process review photo", "REVIEW_IMAGE_PROCESS_FAILED");
+  } catch (error) {
+    return fail(
+      error instanceof StorageError ? "Failed to store review photo" : "Failed to process review photo",
+      error instanceof StorageError ? "REVIEW_IMAGE_STORE_FAILED" : "REVIEW_IMAGE_PROCESS_FAILED",
+    );
   }
 }

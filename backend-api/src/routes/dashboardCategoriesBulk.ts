@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import path from "node:path";
 import { Router, type Response } from "express";
 import multer from "multer";
@@ -12,7 +11,9 @@ import {
   CATEGORY_ZIP_MAX_BYTES,
   readCategoryImportFile,
 } from "../lib/categoryCsv.js";
+import { CATEGORY_IMAGE_MAX_BYTES } from "../lib/categoryImage.js";
 import { toCsv } from "../lib/productCsv.js";
+import { readMediaFile } from "../lib/storage/files.js";
 import { toPublicMedia } from "../lib/user.js";
 import { isZipBuffer } from "../lib/zipArchive.js";
 import { runCategoryImport } from "../services/categoryImport.js";
@@ -50,7 +51,6 @@ function validationError(res: Response, error: z.ZodError, fallback = "Validatio
 
 /* ---------- Export ---------- */
 
-const UPLOADS_ROOT = path.resolve(process.cwd(), "uploads");
 /** Cover images bundled per ZIP export; rows past the cap keep their URL instead. */
 const ZIP_EXPORT_IMAGE_BYTES = 200 * 1024 * 1024;
 
@@ -76,16 +76,9 @@ function exportRow(c: ExportRow, image: string | null | undefined) {
   ];
 }
 
-function readStoredImage(c: ExportRow) {
+async function readStoredImage(c: ExportRow) {
   if (!c.image) return null;
-  const relative = `${(c.image.file_path ?? "").replace(/^\/+|\/+$/g, "")}/${c.image.file_name}`;
-  const absolute = path.resolve(UPLOADS_ROOT, relative);
-  if (!absolute.startsWith(UPLOADS_ROOT + path.sep)) return null;
-  try {
-    return fs.readFileSync(absolute);
-  } catch {
-    return null;
-  }
+  return readMediaFile(c.image.file_path, c.image.file_name, CATEGORY_IMAGE_MAX_BYTES, c.image.disk);
 }
 
 dashboardCategoriesBulkRouter.get(
@@ -124,17 +117,19 @@ dashboardCategoriesBulkRouter.get(
 
     const files: Zippable = {};
     let imageBytes = 0;
-    const csvRows = rows.map((c) => {
-      const data = readStoredImage(c);
+    const csvRows = [];
+    for (const c of rows) {
+      const data = await readStoredImage(c);
       if (!data || imageBytes + data.length > ZIP_EXPORT_IMAGE_BYTES) {
-        return exportRow(c, toPublicMedia(c.image)?.path);
+        csvRows.push(exportRow(c, toPublicMedia(c.image)?.path));
+        continue;
       }
       imageBytes += data.length;
       const ext = path.extname(c.image!.file_name).toLowerCase() || ".webp";
       const name = `images/${c.slug}${ext}`;
       files[name] = [new Uint8Array(data), { level: 0 }];
-      return exportRow(c, name);
-    });
+      csvRows.push(exportRow(c, name));
+    }
     files["categories.csv"] = [Buffer.from(toCsv(CATEGORY_CSV_COLUMNS, csvRows), "utf8"), { level: 6 }];
 
     const zip = zipSync(files);

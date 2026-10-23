@@ -1,7 +1,6 @@
 import { Router } from "express";
-import fs from "node:fs";
-import path from "node:path";
 import { z } from "zod";
+import { currentMediaDisk } from "../config/storage.config.js";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import {
@@ -16,10 +15,10 @@ import {
   sanitizeOriginalName,
 } from "../lib/categoryImage.js";
 import { homeBlockImagePreset } from "../lib/imageOptimize.js";
-import { PRODUCT_IMAGES_DIR } from "../lib/productImage.js";
+import { deleteMediaFile } from "../lib/storage/files.js";
 import { toPublicMedia } from "../lib/user.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
-import { categoryImageUpload } from "../middleware/upload.js";
+import { categoryImageUpload, uploadBytes } from "../middleware/upload.js";
 import { homeBlockContentSchemas } from "../validators/homeBlocks.js";
 import {
   ensureHomeBlocks,
@@ -247,7 +246,7 @@ dashboardHomeBlocksRouter.post(
     }
 
     const finalized = await finalizeCategoryImageUpload(
-      file.path,
+      uploadBytes(file),
       file.mimetype,
       homeBlockImagePreset(key, fieldPath),
     );
@@ -262,7 +261,7 @@ dashboardHomeBlocksRouter.post(
       const media = await prisma.media.create({
         data: {
           user_id: req.auth!.userId,
-          disk: "public",
+          disk: currentMediaDisk(),
           file_name: finalized.fileName,
           original_name: sanitizeOriginalName(file.originalname),
           file_path: PRODUCT_IMAGES_RELATIVE,
@@ -294,11 +293,7 @@ dashboardHomeBlocksRouter.post(
             );
 
       if (!setByPath(base, fieldPath, imageUrl)) {
-        try {
-          fs.unlinkSync(path.join(PRODUCT_IMAGES_DIR, finalized.fileName));
-        } catch {
-          /* ignore */
-        }
+        await deleteMediaFile(PRODUCT_IMAGES_RELATIVE, finalized.fileName);
         await prisma.media
           .delete({ where: { id: media.id } })
           .catch(() => undefined);
@@ -324,11 +319,7 @@ dashboardHomeBlocksRouter.post(
         updated_at: row.updated_at,
       });
     } catch (err) {
-      try {
-        fs.unlinkSync(path.join(PRODUCT_IMAGES_DIR, finalized.fileName));
-      } catch {
-        /* ignore */
-      }
+      await deleteMediaFile(PRODUCT_IMAGES_RELATIVE, finalized.fileName);
       throw err;
     }
   },

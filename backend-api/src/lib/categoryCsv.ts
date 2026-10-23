@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
+import { storageConfig } from "../config/storage.config.js";
 import { env } from "./env.js";
+import { mediaObjectKey, readMediaFile } from "./storage/files.js";
 import { CATEGORY_IMAGE_MAX_BYTES } from "./categoryImage.js";
 import { decodeCsvText, parseCsv, unguard } from "./productCsv.js";
 import { isZipBuffer, listZipEntries, readZipEntry, type ZipEntry } from "./zipArchive.js";
@@ -174,16 +176,60 @@ const UPLOADS_ROOT = path.resolve(process.cwd(), "uploads");
 
 /** How the Image column was resolved. */
 export type ImageRef =
-  | { kind: "local"; relative: string; read: () => Buffer | { error: string } }
+  | { kind: "local"; relative: string; read: () => Promise<Buffer | { error: string }> }
   | { kind: "external" }
   | { kind: "bundle"; ref: string }
   | { kind: "invalid"; message: string };
 
+/** Object key when the cell is this deployment's public object URL. Never fetches other hosts. */
+function storageKeyFromPublicUrl(value: string): string | null {
+  const base = storageConfig.publicBaseUrl;
+  if (!base) return null;
+  let url: URL;
+  let baseUrl: URL;
+  try {
+    url = new URL(value);
+    baseUrl = new URL(base);
+  } catch {
+    return null;
+  }
+  if (url.origin !== baseUrl.origin) return null;
+  const prefix = baseUrl.pathname.replace(/\/$/, "");
+  if (!url.pathname.startsWith(`${prefix}/`)) return null;
+  let key: string;
+  try {
+    key = decodeURIComponent(url.pathname.slice(prefix.length + 1));
+  } catch {
+    return null;
+  }
+  if (!key || key.includes("..") || key.includes("\\") || !IMAGE_EXT.test(key)) return null;
+  const parts = key.split("/");
+  const fileName = parts.pop();
+  if (!fileName || !mediaObjectKey(parts.join("/"), fileName)) return null;
+  return key;
+}
+
 /**
- * Classify an Image cell. URLs on this API's own `/uploads/` are read from disk;
- * other hosts are never fetched (no server-side requests to user-supplied URLs).
+ * Classify an Image cell. URLs on this API's own `/uploads/` are read from disk.
+ * URLs on the configured object-storage base are read with the storage credentials.
+ * Other hosts are never fetched.
  */
 export function classifyImageRef(value: string): ImageRef {
+  const remoteKey = storageKeyFromPublicUrl(value);
+  if (remoteKey) {
+    const parts = remoteKey.split("/");
+    const fileName = parts.pop() ?? "";
+    const filePath = parts.join("/");
+    return {
+      kind: "local",
+      relative: remoteKey,
+      read: async () => {
+        const data = await readMediaFile(filePath, fileName, CATEGORY_IMAGE_MAX_BYTES, "s3");
+        return data ?? { error: "Image not found on this server" };
+      },
+    };
+  }
+
   let pathname: string | null = null;
   if (value.startsWith("/uploads/")) {
     pathname = value;
@@ -230,7 +276,7 @@ export function classifyImageRef(value: string): ImageRef {
   return {
     kind: "local",
     relative,
-    read: () => {
+    read: async () => {
       try {
         const stat = fs.statSync(absolute);
         if (!stat.isFile()) return { error: "Image not found on this server" };

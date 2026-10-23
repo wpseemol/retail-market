@@ -1,12 +1,13 @@
 import { Router } from "express";
 import type { Prisma } from "@prisma/client";
+import { currentMediaDisk } from "../config/storage.config.js";
 import { CATEGORY_IMAGE_MAX_BYTES, finalizeCategoryImageUpload, PRODUCT_IMAGES_RELATIVE, sanitizeOriginalName } from "../lib/categoryImage.js";
 import { prisma } from "../lib/prisma.js";
 import { revalidateFrontend } from "../lib/revalidate.js";
 import { discardUpload, removeStoredMedia, singleImageUpload } from "../lib/showcaseMedia.js";
 import { toPublicMedia, toPublicUser, userWithAvatarInclude } from "../lib/user.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
-import { categoryImageUpload } from "../middleware/upload.js";
+import { categoryImageUpload, uploadBytes } from "../middleware/upload.js";
 import { normalizeSeoPages, updateSeoSettingsSchema } from "../validators/seo.js";
 import { ensureSiteSettings } from "./publicSiteSettings.js";
 
@@ -155,7 +156,7 @@ dashboardSeoRouter.post(
     if (!file) return res.status(400).json({ message: "Share image is required (field: image)" });
 
     const existing = await ensureSiteSettings();
-    const finalized = await finalizeCategoryImageUpload(file.path, file.mimetype, "ogImage");
+    const finalized = await finalizeCategoryImageUpload(uploadBytes(file), file.mimetype, "ogImage");
     if (!finalized.ok) {
       discardUpload(file);
       return res.status(400).json({
@@ -167,7 +168,7 @@ dashboardSeoRouter.post(
     const media = await prisma.media.create({
       data: {
         user_id: req.auth!.userId,
-        disk: "public",
+        disk: currentMediaDisk(),
         file_name: finalized.fileName,
         original_name: sanitizeOriginalName(file.originalname),
         file_path: PRODUCT_IMAGES_RELATIVE,

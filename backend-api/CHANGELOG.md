@@ -3,6 +3,17 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-23
+
+### S3-compatible media storage (MinIO, Cloudflare R2, AWS S3)
+
+- `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner` added. `multer`, `sharp`, and `@types/multer` were already present.
+- `src/config/storage.config.ts`: `STORAGE_DRIVER` (`local` or `s3`) and the `S3_*` variables. `s3` refuses to start when the endpoint, region, bucket, keys, or public base URL is missing. `S3_FORCE_PATH_STYLE` defaults to true for MinIO. A Cloudflare R2 endpoint sets `medias.disk` to `r2`; other S3 endpoints use `s3`.
+- `src/lib/storage/files.ts`: put, delete, read, and presign. Resized image bytes are streamed to the bucket. S3 mode does not write `uploads/`.
+- Image finalizers (`product`, `category`, `review`, `avatar`, `shop`) and multer use memory storage when the driver is `s3`. New `medias` rows record the active disk. Public URLs for `s3`/`r2` rows use `S3_PUBLIC_BASE_URL`. Deletes remove the object and any leftover local file.
+- Category ZIP export/import reads objects from the bucket (or this API's `/uploads/` path). Other hosts are still never fetched.
+- `.env.example`, root `.env.production.example`, and `docker-compose.prod.yml` document the variables. `API.md` and `AGENTS.md` updated. `scripts/optimize-images.ts` still only rewrites `disk: public` files.
+
 ## 2026-10-22
 
 ### Production Docker stack

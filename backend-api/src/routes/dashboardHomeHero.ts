@@ -1,6 +1,5 @@
-import fs from "node:fs";
-import path from "node:path";
 import { Router } from "express";
+import { currentMediaDisk } from "../config/storage.config.js";
 import {
   finalizeCategoryImageUpload,
   CATEGORY_IMAGE_MAX_BYTES,
@@ -8,10 +7,10 @@ import {
   sanitizeOriginalName,
 } from "../lib/categoryImage.js";
 import type { ImagePresetKey } from "../lib/imageOptimize.js";
-import { PRODUCT_IMAGES_DIR } from "../lib/productImage.js";
+import { deleteMediaFile } from "../lib/storage/files.js";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
-import { categoryImageUpload } from "../middleware/upload.js";
+import { categoryImageUpload, uploadBytes } from "../middleware/upload.js";
 import {
   ensureHomeHeroBanner,
   toPublicHomeHero,
@@ -216,7 +215,7 @@ dashboardHomeHeroRouter.post(
 
     const existing = await ensureHomeHeroBanner();
     const finalized = await finalizeCategoryImageUpload(
-      file.path,
+      uploadBytes(file),
       file.mimetype,
       SLOT_PRESET[slot],
     );
@@ -231,7 +230,7 @@ dashboardHomeHeroRouter.post(
       const media = await prisma.media.create({
         data: {
           user_id: req.auth!.userId,
-          disk: "public",
+          disk: currentMediaDisk(),
           file_name: finalized.fileName,
           original_name: sanitizeOriginalName(file.originalname),
           file_path: PRODUCT_IMAGES_RELATIVE,
@@ -254,12 +253,7 @@ dashboardHomeHeroRouter.post(
 
       const previousMedia = existing[meta.relation];
       if (previousMedia && previousMedia.id !== media.id) {
-        const oldPath = path.join(PRODUCT_IMAGES_DIR, previousMedia.file_name);
-        try {
-          if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-        } catch {
-          /* ignore */
-        }
+        await deleteMediaFile(previousMedia.file_path, previousMedia.file_name);
         await prisma.media
           .delete({ where: { id: previousMedia.id } })
           .catch(() => undefined);
@@ -270,11 +264,7 @@ dashboardHomeHeroRouter.post(
         hero: toDashboardHero(row),
       });
     } catch (err) {
-      try {
-        fs.unlinkSync(path.join(PRODUCT_IMAGES_DIR, finalized.fileName));
-      } catch {
-        /* ignore */
-      }
+      await deleteMediaFile(PRODUCT_IMAGES_RELATIVE, finalized.fileName);
       throw err;
     }
   },

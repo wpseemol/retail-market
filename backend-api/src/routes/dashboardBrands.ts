@@ -1,6 +1,5 @@
-import fs from "node:fs";
-import path from "node:path";
 import { Router } from "express";
+import { currentMediaDisk } from "../config/storage.config.js";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import {
@@ -9,13 +8,13 @@ import {
   PRODUCT_IMAGES_RELATIVE,
   sanitizeOriginalName,
 } from "../lib/categoryImage.js";
-import { PRODUCT_IMAGES_DIR } from "../lib/productImage.js";
+import { deleteMediaFile } from "../lib/storage/files.js";
 import { prisma } from "../lib/prisma.js";
 import { parseBigIntId } from "../utils/ids.js";
 import { uniqueVendorSlug } from "../lib/slug.js";
 import { toPublicMedia } from "../lib/user.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
-import { brandImageUpload, categoryImageUpload, shopImageUpload } from "../middleware/upload.js";
+import { brandImageUpload, categoryImageUpload, discardTempUpload, shopImageUpload, uploadBytes } from "../middleware/upload.js";
 import {
   brandListQuerySchema,
   createBrandSchema,
@@ -318,11 +317,7 @@ dashboardBrandsRouter.post(
       include: { image: true },
     });
     if (!existing) {
-      try {
-        fs.unlinkSync(file.path);
-      } catch {
-        /* ignore */
-      }
+      discardTempUpload(file);
       return res.status(404).json({ message: "Brand not found" });
     }
     if (!canManage(req.auth!.role) && !(await canEditShowcase(req.auth!, existing))) {
@@ -333,7 +328,7 @@ dashboardBrandsRouter.post(
     }
 
     const finalized = await finalizeCategoryImageUpload(
-      file.path,
+      uploadBytes(file),
       file.mimetype,
       "brand",
     );
@@ -348,7 +343,7 @@ dashboardBrandsRouter.post(
       const media = await prisma.media.create({
         data: {
           user_id: req.auth!.userId,
-          disk: "public",
+          disk: currentMediaDisk(),
           file_name: finalized.fileName,
           original_name: sanitizeOriginalName(file.originalname),
           file_path: PRODUCT_IMAGES_RELATIVE,
@@ -370,12 +365,7 @@ dashboardBrandsRouter.post(
       });
 
       if (existing.image && existing.image.id !== media.id) {
-        const oldPath = path.join(PRODUCT_IMAGES_DIR, existing.image.file_name);
-        try {
-          if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-        } catch {
-          /* ignore */
-        }
+        await deleteMediaFile(existing.image.file_path, existing.image.file_name);
         await prisma.media
           .delete({ where: { id: existing.image.id } })
           .catch(() => undefined);
@@ -387,11 +377,7 @@ dashboardBrandsRouter.post(
         brand: toPublicBrand(row),
       });
     } catch (err) {
-      try {
-        fs.unlinkSync(path.join(PRODUCT_IMAGES_DIR, finalized.fileName));
-      } catch {
-        /* ignore */
-      }
+      await deleteMediaFile(PRODUCT_IMAGES_RELATIVE, finalized.fileName);
       throw err;
     }
   },

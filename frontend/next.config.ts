@@ -11,12 +11,18 @@ const mediaUrl = process.env.NEXT_PUBLIC_MEDIA_URL
   ? new URL(process.env.NEXT_PUBLIC_MEDIA_URL)
   : null;
 
-const toPattern = (url: URL) => ({
+const toPattern = (url: URL, pathname: string) => ({
   protocol: url.protocol.replace(":", "") as "http" | "https",
   hostname: url.hostname,
   port: url.port,
-  pathname: "/uploads/**",
+  pathname,
 });
+
+/** `NEXT_PUBLIC_MEDIA_URL` may be the API (`/uploads`) or an object-storage base (`/niyenin-media`). */
+function mediaPathname(url: URL): string {
+  const prefix = url.pathname.replace(/\/$/, "");
+  return prefix ? `${prefix}/**` : "/**";
+}
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
@@ -24,7 +30,10 @@ const nextConfig: NextConfig = {
   // Monorepo root, so the production image runs `node frontend/server.js`.
   outputFileTracingRoot: path.join(appDir, ".."),
   images: {
-    remotePatterns: [toPattern(apiUrl), ...(mediaUrl ? [toPattern(mediaUrl)] : [])],
+    remotePatterns: [
+      toPattern(apiUrl, "/uploads/**"),
+      ...(mediaUrl ? [toPattern(mediaUrl, mediaPathname(mediaUrl))] : []),
+    ],
     // Next 16 refuses to optimize images from private IPs (localhost) unless allowed.
     dangerouslyAllowLocalIP: process.env.NODE_ENV !== "production",
     // The optimizer fetches upload URLs from inside the server; in Docker a

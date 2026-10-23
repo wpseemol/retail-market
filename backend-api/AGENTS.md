@@ -30,8 +30,9 @@ backend-api/
 │   ├── schema.prisma
 │   └── migrations/<timestamp>_<name>/migration.sql
 ├── scripts/optimize-images.ts
-├── uploads/                 # stored media (gitignored)
+├── uploads/                 # local driver only (gitignored). Empty when STORAGE_DRIVER=s3
 └── src/
+    ├── config/storage.config.ts  # STORAGE_DRIVER + S3_* validation
     ├── server.ts            # express app, cors, route mounting
     ├── routes/              # public*, customer*, dashboard*, payments, health
     ├── controllers/
@@ -45,7 +46,8 @@ backend-api/
     │                        # productCsv (product CSV parse / export, header aliases, limits),
     │                        # categoryCsv (category CSV / ZIP import file, image refs),
     │                        # zipArchive (size-capped ZIP reader for imports),
-    │                        # smsGateway + whatsappGateway (OTP delivery, encrypted credentials)
+    │                        # smsGateway + whatsappGateway (OTP delivery, encrypted credentials),
+    │                        # storage/files.ts (local disk or S3/MinIO/R2 put, delete, read, presign)
     ├── utils/
     └── data/
 ```
@@ -65,7 +67,7 @@ backend-api/
 - **Category export / import:** `routes/dashboardCategoriesBulk.ts` + `services/categoryImport.ts`, elevated roles only (`categoryBulkPermissions`). ZIP exports carry covers under `images/`; imports read images from the ZIP or this API's own `/uploads/` URLs only — never fetch other hosts. Read uploaded ZIPs with `lib/zipArchive.ts` (per-entry output cap), not an unbounded unzip. Images go through `finalizeCategoryImageBuffer`. Keep limits in sync with `dashboard/src/lib/validators/categoryBulk.ts`.
 - **Bangla content:** `Category` (`name_bn`, `description_bn`), `Brand` (`name_bn`, `description_bn`), `Vendor` (`shop_name_bn`, `description_bn`) and `Product` (`name_bn`, `short_description_bn`, `description_bn` — sanitized HTML like `description`) have optional nullable Bangla copy. The slug is shared, so never add a `slug_bn`. Validate with `withSafeInput`, turn `""` into `null`, and return the fields on both dashboard and public responses; the storefront falls back to English.
 - **Storefront cache:** after any write that changes public pages, call `revalidateFrontend([...tags])` from `src/lib/revalidate.ts` (needs `REVALIDATE_SECRET` + `FRONTEND_URL`; silently skipped when unset). Tags: `stores`, `store:<slug>`, `brands`, `brand:<slug>`, `reviews`, `site-settings`, `pages`, `page:<key>`.
-- **Uploads:** sniff MIME by magic bytes, enforce multer size limit, check dimensions with `checkImageDimensions(buffer, preset)`, always resize with sharp, re-check size after resize, sanitize original filenames.
+- **Uploads:** sniff MIME by magic bytes, enforce multer size limit, check dimensions with `checkImageDimensions(buffer, preset)`, always resize with sharp, re-check size after resize, sanitize original filenames. `STORAGE_DRIVER=s3` keeps the multer file in memory and streams the resized buffer to object storage (`src/lib/storage/files.ts`); `medias.disk` is `s3` or `r2`. `local` still writes `uploads/` and uses `disk: public`.
   - The dimension rule: shape within 3% of the preset and at least the preset size. Exempt: avatars, reviews, `homeGeneric`.
   - Keep `IMAGE_PRESETS` in sync with `dashboard/src/lib/imagePresets.ts`. Document field names and limits in `API.md`.
 - **Migrations:** add a new folder under `prisma/migrations/` (never edit an applied one). Backfill data in the same SQL when adding non-null columns.

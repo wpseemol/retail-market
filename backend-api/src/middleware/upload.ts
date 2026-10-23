@@ -3,6 +3,8 @@ import path from "node:path";
 import type { Request } from "express";
 import multer from "multer";
 import { randomUUID } from "node:crypto";
+import { storageConfig } from "../config/storage.config.js";
+import { ensureLocalUploadDir } from "../lib/storage/files.js";
 import {
   AVATAR_ALLOWED_MIMES,
   AVATAR_MAX_BYTES,
@@ -31,9 +33,37 @@ export const USER_PHOTOS_DIR = path.resolve(
 /** Relative path stored on `medias.file_path`. */
 export const USER_PHOTOS_RELATIVE = "users/photos";
 
-fs.mkdirSync(USER_PHOTOS_DIR, { recursive: true });
-fs.mkdirSync(PRODUCT_IMAGES_DIR, { recursive: true });
-fs.mkdirSync(SHOP_IMAGES_DIR, { recursive: true });
+ensureLocalUploadDir(USER_PHOTOS_DIR);
+ensureLocalUploadDir(PRODUCT_IMAGES_DIR);
+ensureLocalUploadDir(SHOP_IMAGES_DIR);
+
+/** Bytes for an image upload. S3 mode keeps them in memory so nothing is written under `uploads/`. */
+export function uploadBytes(file: Express.Multer.File): Buffer | string {
+  if (file.buffer && file.buffer.byteLength > 0) return file.buffer;
+  return file.path;
+}
+
+/** Removes a multer temp file. Memory uploads have no path. */
+export function discardTempUpload(file: Express.Multer.File | undefined): void {
+  if (!file?.path) return;
+  try {
+    fs.unlinkSync(file.path);
+  } catch {
+    /* ignore */
+  }
+}
+
+function imageStorage(dir: string): multer.StorageEngine {
+  if (storageConfig.driver === "s3") return multer.memoryStorage();
+  return multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      cb(null, dir);
+    },
+    filename: (_req, _file, cb) => {
+      cb(null, `${randomUUID()}.upload`);
+    },
+  });
+}
 
 function imageFileFilter(
   _req: Request,
@@ -60,17 +90,8 @@ function imageFileFilter(
   cb(null, true);
 }
 
-const avatarStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, USER_PHOTOS_DIR);
-  },
-  filename: (_req, _file, cb) => {
-    cb(null, `${randomUUID()}.upload`);
-  },
-});
-
 export const avatarUpload = multer({
-  storage: avatarStorage,
+  storage: imageStorage(USER_PHOTOS_DIR),
   limits: {
     fileSize: AVATAR_MAX_BYTES,
     files: 1,
@@ -80,18 +101,9 @@ export const avatarUpload = multer({
   fileFilter: imageFileFilter,
 });
 
-const productImageStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, PRODUCT_IMAGES_DIR);
-  },
-  filename: (_req, _file, cb) => {
-    cb(null, `${randomUUID()}.upload`);
-  },
-});
-
-/** Product / variant images → `uploads/products/` + `medias` · max 5 MB · resized. */
+/** Product / variant images → `medias` · max 5 MB · resized, then stored on the active driver. */
 export const productImageUpload = multer({
-  storage: productImageStorage,
+  storage: imageStorage(PRODUCT_IMAGES_DIR),
   limits: {
     fileSize: PRODUCT_IMAGE_MAX_BYTES,
     files: 12,
@@ -103,7 +115,7 @@ export const productImageUpload = multer({
 
 /** Category cover images — max 1 MB (resized server-side). */
 export const categoryImageUpload = multer({
-  storage: productImageStorage,
+  storage: imageStorage(PRODUCT_IMAGES_DIR),
   limits: {
     fileSize: CATEGORY_IMAGE_MAX_BYTES,
     files: 1,
@@ -116,18 +128,9 @@ export const categoryImageUpload = multer({
 /** Brand logo images — same limits as category cover (1 MB, resized). */
 export const brandImageUpload = categoryImageUpload;
 
-const shopImageStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, SHOP_IMAGES_DIR);
-  },
-  filename: (_req, _file, cb) => {
-    cb(null, `${randomUUID()}.upload`);
-  },
-});
-
-/** Shop logo / store image → `uploads/shops/` + `medias`. */
+/** Shop logo / store image → `medias`. */
 export const shopImageUpload = multer({
-  storage: shopImageStorage,
+  storage: imageStorage(SHOP_IMAGES_DIR),
   limits: {
     fileSize: AVATAR_MAX_BYTES,
     files: 1,
@@ -137,18 +140,9 @@ export const shopImageUpload = multer({
   fileFilter: imageFileFilter,
 });
 
-const reviewImageStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, REVIEW_IMAGES_DIR);
-  },
-  filename: (_req, _file, cb) => {
-    cb(null, `${randomUUID()}.upload`);
-  },
-});
-
-/** Customer review photos → `uploads/reviews/` + `medias` · max 4 × 2 MB · resized. */
+/** Customer review photos → `medias` · max 4 × 2 MB · resized. */
 export const reviewImageUpload = multer({
-  storage: reviewImageStorage,
+  storage: imageStorage(REVIEW_IMAGES_DIR),
   limits: {
     fileSize: REVIEW_IMAGE_MAX_BYTES,
     files: REVIEW_IMAGE_MAX_FILES,

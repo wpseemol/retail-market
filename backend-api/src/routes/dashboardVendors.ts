@@ -1,6 +1,5 @@
-import fs from "node:fs";
-import path from "node:path";
 import { Router } from "express";
+import { currentMediaDisk } from "../config/storage.config.js";
 import { z } from "zod";
 import type { Prisma, UserStatus } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
@@ -14,11 +13,11 @@ import { slugify, uniqueVendorSlug } from "../lib/slug.js";
 import {
   finalizeShopImageUpload,
   sanitizeOriginalName,
-  SHOP_IMAGES_DIR,
   SHOP_IMAGES_RELATIVE,
 } from "../lib/shopImage.js";
+import { deleteMediaFile } from "../lib/storage/files.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
-import { categoryImageUpload, shopImageUpload } from "../middleware/upload.js";
+import { categoryImageUpload, discardTempUpload, shopImageUpload, uploadBytes } from "../middleware/upload.js";
 import { findUnsafeInputReason } from "../validators/customerAuth.js";
 import { updateShowcaseSchema } from "../validators/showcase.js";
 import { buildShowcaseUpdate, toDashboardShowcase } from "../lib/showcase.js";
@@ -772,7 +771,7 @@ dashboardVendorsRouter.post(
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 
-    const finalized = await finalizeShopImageUpload(file.path, file.mimetype, "shopLogo");
+    const finalized = await finalizeShopImageUpload(uploadBytes(file), file.mimetype, "shopLogo");
     if (!finalized.ok) {
       return res.status(400).json({
         message: finalized.message,
@@ -784,7 +783,7 @@ dashboardVendorsRouter.post(
       const media = await prisma.media.create({
         data: {
           user_id: req.auth!.userId,
-          disk: "public",
+          disk: currentMediaDisk(),
           file_name: finalized.fileName,
           original_name: sanitizeOriginalName(file.originalname),
           file_path: SHOP_IMAGES_RELATIVE,
@@ -822,12 +821,7 @@ dashboardVendorsRouter.post(
       });
 
       if (existing.logo && existing.logo.id !== media.id) {
-        const oldPath = path.join(SHOP_IMAGES_DIR, existing.logo.file_name);
-        try {
-          if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-        } catch {
-          /* ignore */
-        }
+        await deleteMediaFile(existing.logo.file_path, existing.logo.file_name);
         await prisma.media
           .delete({ where: { id: existing.logo.id } })
           .catch(() => undefined);
@@ -839,11 +833,7 @@ dashboardVendorsRouter.post(
         shop: toPublicShop(vendor),
       });
     } catch (err) {
-      try {
-        fs.unlinkSync(finalized.absolutePath);
-      } catch {
-        /* ignore */
-      }
+      await deleteMediaFile(SHOP_IMAGES_RELATIVE, finalized.fileName);
       throw err;
     }
   },
@@ -865,13 +855,7 @@ dashboardVendorsRouter.post(
   async (req, res) => {
     const existing = await findVendorWithMedia(String(req.params.idOrSlug));
     if (!existing) {
-      if (req.file?.path) {
-        try {
-          fs.unlinkSync(req.file.path);
-        } catch {
-          /* ignore */
-        }
-      }
+      discardTempUpload(req.file);
       return res.status(404).json({ message: "Store not found" });
     }
     const id = existing.id;
@@ -886,15 +870,11 @@ dashboardVendorsRouter.post(
     if (
       !(await assertCanAccessShop(existing, req.auth!.userId, req.auth!.role, "design"))
     ) {
-      try {
-        fs.unlinkSync(file.path);
-      } catch {
-        /* ignore */
-      }
+      discardTempUpload(file);
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 
-    const finalized = await finalizeShopImageUpload(file.path, file.mimetype, "shopBanner");
+    const finalized = await finalizeShopImageUpload(uploadBytes(file), file.mimetype, "shopBanner");
     if (!finalized.ok) {
       return res.status(400).json({
         message: finalized.message,
@@ -906,7 +886,7 @@ dashboardVendorsRouter.post(
       const media = await prisma.media.create({
         data: {
           user_id: req.auth!.userId,
-          disk: "public",
+          disk: currentMediaDisk(),
           file_name: finalized.fileName,
           original_name: sanitizeOriginalName(file.originalname),
           file_path: SHOP_IMAGES_RELATIVE,
@@ -944,12 +924,7 @@ dashboardVendorsRouter.post(
       });
 
       if (existing.banner && existing.banner.id !== media.id) {
-        const oldPath = path.join(SHOP_IMAGES_DIR, existing.banner.file_name);
-        try {
-          if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-        } catch {
-          /* ignore */
-        }
+        await deleteMediaFile(existing.banner.file_path, existing.banner.file_name);
         await prisma.media
           .delete({ where: { id: existing.banner.id } })
           .catch(() => undefined);
@@ -961,11 +936,7 @@ dashboardVendorsRouter.post(
         shop: toPublicShop(vendor),
       });
     } catch (err) {
-      try {
-        fs.unlinkSync(finalized.absolutePath);
-      } catch {
-        /* ignore */
-      }
+      await deleteMediaFile(SHOP_IMAGES_RELATIVE, finalized.fileName);
       throw err;
     }
   },

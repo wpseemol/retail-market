@@ -1,5 +1,5 @@
-import fs from "node:fs";
 import { Router, type NextFunction, type Request, type Response } from "express";
+import { currentMediaDisk } from "../config/storage.config.js";
 import { Prisma, type ProductReviewStatus } from "@prisma/client";
 import { z } from "zod";
 import { env } from "../lib/env.js";
@@ -21,7 +21,8 @@ import {
   toPublicReview,
 } from "../lib/productReviews.js";
 import { optionalAuth } from "../middleware/auth.js";
-import { reviewImageUpload } from "../middleware/upload.js";
+import { deleteMediaFile } from "../lib/storage/files.js";
+import { discardTempUpload, reviewImageUpload, uploadBytes } from "../middleware/upload.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { withSafeInput } from "../validators/customerAuth.js";
 import {
@@ -83,14 +84,12 @@ async function resolveProduct(req: Request) {
   });
 }
 
-function removeFiles(paths: string[]) {
-  for (const file of paths) {
-    try {
-      fs.unlinkSync(file);
-    } catch {
-      /* ignore */
-    }
-  }
+function removeTempUploads(files: Array<Express.Multer.File | undefined>) {
+  for (const file of files) discardTempUpload(file);
+}
+
+async function removeStoredPhotos(stored: StoredPhoto[]) {
+  await Promise.all(stored.map((item) => deleteMediaFile(REVIEW_IMAGES_RELATIVE, item.fileName)));
 }
 
 function uploadedFiles(req: Request): Express.Multer.File[] {
@@ -116,7 +115,7 @@ function contactRequired(res: Response) {
 function acceptPhotos(req: Request, res: Response, next: NextFunction) {
   reviewImageUpload.array("images", REVIEW_IMAGE_MAX_FILES)(req, res, (err) => {
     if (err) {
-      removeFiles(uploadedFiles(req).map((file) => file.path));
+      removeTempUploads(uploadedFiles(req));
       const message =
         err?.code === "LIMIT_FILE_SIZE"
           ? "Each review photo must be 2 MB or smaller"
@@ -135,12 +134,12 @@ function acceptPhotos(req: Request, res: Response, next: NextFunction) {
 async function finalizePhotos(
   files: Express.Multer.File[],
 ): Promise<{ ok: true; stored: StoredPhoto[] } | { ok: false; message: string; code: string }> {
-  const tempPaths = files.map((file) => file.path);
   const stored: StoredPhoto[] = [];
   for (const [index, file] of files.entries()) {
-    const finalized = await finalizeReviewImageUpload(file.path, file.mimetype);
+    const finalized = await finalizeReviewImageUpload(uploadBytes(file), file.mimetype);
     if (!finalized.ok) {
-      removeFiles([...tempPaths.slice(index + 1), ...stored.map((item) => item.absolutePath)]);
+      removeTempUploads(files.slice(index + 1));
+      await removeStoredPhotos(stored);
       return { ok: false, message: finalized.message, code: finalized.code };
     }
     stored.push({
@@ -167,6 +166,7 @@ async function createPhotoRows(
     const media = await tx.media.create({
       data: {
         user_id: userId,
+        disk: currentMediaDisk(),
         file_name: item.fileName,
         original_name: item.originalName,
         file_path: REVIEW_IMAGES_RELATIVE,
@@ -275,28 +275,27 @@ productReviewsRouter.post(
   acceptPhotos,
   asyncHandler(async (req, res) => {
     const files = uploadedFiles(req);
-    const tempPaths = files.map((file) => file.path);
 
     const parsed = createReviewSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
-      removeFiles(tempPaths);
+      removeTempUploads(files);
       return validationError(res, parsed.error);
     }
     if (!hasIdentity(req, parsed.data)) {
-      removeFiles(tempPaths);
+      removeTempUploads(files);
       return contactRequired(res);
     }
 
     const product = await resolveProduct(req);
     if (!product) {
-      removeFiles(tempPaths);
+      removeTempUploads(files);
       return res.status(404).json({ message: "Product not found" });
     }
 
     const { email, phone, author_name, rating, title, comment } = parsed.data;
     const eligibility = await findEligibleOrder(product.id, { email, phone }, req.auth?.userId);
     if (!eligibility.ok) {
-      removeFiles(tempPaths);
+      removeTempUploads(files);
       return eligibility.reason === "already_reviewed"
         ? res.status(409).json({ message: REVIEW_ALREADY_SUBMITTED_MESSAGE, code: "REVIEW_ALREADY_SUBMITTED" })
         : res.status(403).json({ message: REVIEW_NOT_PURCHASED_MESSAGE, code: "REVIEW_NOT_ELIGIBLE" });
@@ -338,7 +337,7 @@ productReviewsRouter.post(
         review: toPublicReview(review, media),
       });
     } catch (error) {
-      removeFiles(stored.map((item) => item.absolutePath));
+      await removeStoredPhotos(stored);
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
         return res.status(409).json({ message: REVIEW_ALREADY_SUBMITTED_MESSAGE, code: "REVIEW_ALREADY_SUBMITTED" });
       }
@@ -355,22 +354,21 @@ productReviewsRouter.patch(
   acceptPhotos,
   asyncHandler(async (req, res) => {
     const files = uploadedFiles(req);
-    const tempPaths = files.map((file) => file.path);
 
     const parsed = updateOwnReviewSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
-      removeFiles(tempPaths);
+      removeTempUploads(files);
       return validationError(res, parsed.error);
     }
     if (!hasIdentity(req, parsed.data)) {
-      removeFiles(tempPaths);
+      removeTempUploads(files);
       return contactRequired(res);
     }
 
     const { email, phone, author_name, rating, title, comment, keep_images } = parsed.data;
     const loaded = await loadOwnReview(req, { email, phone });
     if (!loaded.ok) {
-      removeFiles(tempPaths);
+      removeTempUploads(files);
       return res.status(loaded.status).json({ message: loaded.message, code: loaded.code });
     }
     const { product, review } = loaded;
@@ -378,7 +376,7 @@ productReviewsRouter.patch(
     const currentIds = reviewImageIds(review).map(String);
     const keepIds = currentIds.filter((id) => keep_images.includes(id));
     if (keepIds.length + files.length > REVIEW_IMAGE_MAX_FILES) {
-      removeFiles(tempPaths);
+      removeTempUploads(files);
       return res.status(400).json({
         message: `You can attach up to ${REVIEW_IMAGE_MAX_FILES} photos`,
         code: "REVIEW_UPLOAD_INVALID",
@@ -412,7 +410,7 @@ productReviewsRouter.patch(
           },
         });
       });
-      removeReviewMediaFiles(dropped);
+      await removeReviewMediaFiles(dropped);
 
       const media = await loadReviewMedia([updated]);
       return res.json({
@@ -424,7 +422,7 @@ productReviewsRouter.patch(
         review: toOwnReview(updated, media),
       });
     } catch (error) {
-      removeFiles(stored.map((item) => item.absolutePath));
+      await removeStoredPhotos(stored);
       throw error;
     }
   }),
@@ -452,7 +450,7 @@ productReviewsRouter.delete(
       prisma.media.deleteMany({ where: { id: { in: media.map((row) => row.id) } } }),
       prisma.productReview.delete({ where: { id: review.id } }),
     ]);
-    removeReviewMediaFiles(media);
+    await removeReviewMediaFiles(media);
 
     return res.json({ message: "Your review has been deleted.", id: review.id.toString() });
   }),

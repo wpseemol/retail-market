@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import {
@@ -8,6 +7,13 @@ import {
   type FinalizedAvatarResult,
 } from "./avatarImage.js";
 import { checkImageDimensions, IMAGE_PRESETS, optimizeImageWithin } from "./imageOptimize.js";
+import {
+  discardUploadSource,
+  ensureLocalUploadDir,
+  readUploadSource,
+  saveMediaFile,
+  StorageError,
+} from "./storage/files.js";
 
 /** Disk folder for all product / variant / category catalog images. */
 export const PRODUCT_IMAGES_DIR = path.resolve(
@@ -32,7 +38,7 @@ export const PRODUCT_IMAGE_ALLOWED_MIMES = [
 
 export type ProductImageMime = (typeof PRODUCT_IMAGE_ALLOWED_MIMES)[number];
 
-fs.mkdirSync(PRODUCT_IMAGES_DIR, { recursive: true });
+ensureLocalUploadDir(PRODUCT_IMAGES_DIR);
 
 export { sanitizeOriginalName };
 
@@ -102,15 +108,16 @@ function validateProductBuffer(
 }
 
 /**
- * Validate (≤5 MB), always resize/re-encode, store under uploads/products/.
+ * Validate (≤5 MB), always resize/re-encode to WebP, then store.
+ * S3 mode streams the resized buffer and leaves nothing under `uploads/`.
  */
 export async function finalizeProductImageUpload(
-  tempPath: string,
+  source: Buffer | string,
   declaredMime?: string | null,
 ): Promise<FinalizedAvatarResult> {
   let buffer: Buffer;
   try {
-    buffer = fs.readFileSync(tempPath);
+    buffer = readUploadSource(source);
   } catch {
     return {
       ok: false,
@@ -119,68 +126,50 @@ export async function finalizeProductImageUpload(
     };
   }
 
+  const fail = (result: FinalizedAvatarResult): FinalizedAvatarResult => {
+    discardUploadSource(source);
+    return result;
+  };
+
   const validated = validateProductBuffer(buffer, declaredMime);
-  if (!validated.ok) {
-    try {
-      fs.unlinkSync(tempPath);
-    } catch {
-      /* ignore */
-    }
-    return validated;
-  }
+  if (!validated.ok) return fail(validated);
 
   const dims = await checkImageDimensions(buffer, "product");
-  if (!dims.ok) {
-    try {
-      fs.unlinkSync(tempPath);
-    } catch {
-      /* ignore */
-    }
-    return dims;
-  }
+  if (!dims.ok) return fail(dims);
 
   try {
     const optimized = await optimizeImageWithin(buffer, "product", PRODUCT_IMAGE_MAX_BYTES);
     if (!optimized) {
-      try {
-        fs.unlinkSync(tempPath);
-      } catch {
-        /* ignore */
-      }
-      return {
+      return fail({
         ok: false,
         message: "Product image must be 5 MB or smaller after resize",
         code: "PRODUCT_IMAGE_TOO_LARGE",
-      };
+      });
     }
     const { output, mime, ext } = optimized;
-
     const fileName = `${randomUUID()}${ext}`;
-    const absolutePath = path.join(PRODUCT_IMAGES_DIR, fileName);
-    fs.writeFileSync(absolutePath, output);
-    try {
-      fs.unlinkSync(tempPath);
-    } catch {
-      /* ignore */
-    }
+    const saved = await saveMediaFile({
+      absoluteDir: PRODUCT_IMAGES_DIR,
+      relativeDir: PRODUCT_IMAGES_RELATIVE,
+      fileName,
+      body: output,
+      contentType: mime,
+    });
+    discardUploadSource(source);
 
     return {
       ok: true,
       detected: { mime, ext },
       size: output.length,
       fileName,
-      absolutePath,
+      absolutePath: saved.absolutePath,
     } satisfies FinalizedAvatarOk;
-  } catch {
-    try {
-      fs.unlinkSync(tempPath);
-    } catch {
-      /* ignore */
-    }
+  } catch (error) {
+    discardUploadSource(source);
     return {
       ok: false,
-      message: "Failed to process product image",
-      code: "PRODUCT_IMAGE_PROCESS_FAILED",
+      message: error instanceof StorageError ? "Failed to store product image" : "Failed to process product image",
+      code: error instanceof StorageError ? "PRODUCT_IMAGE_STORE_FAILED" : "PRODUCT_IMAGE_PROCESS_FAILED",
     };
   }
 }

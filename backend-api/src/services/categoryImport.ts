@@ -1,6 +1,5 @@
-import fs from "node:fs";
-import path from "node:path";
 import type { Prisma } from "@prisma/client";
+import { currentMediaDisk } from "../config/storage.config.js";
 import { prisma } from "../lib/prisma.js";
 import { slugify } from "../lib/slug.js";
 import {
@@ -8,7 +7,7 @@ import {
   finalizeCategoryImageBuffer,
   PRODUCT_IMAGES_RELATIVE,
 } from "../lib/categoryImage.js";
-import { PRODUCT_IMAGES_DIR } from "../lib/productImage.js";
+import { deleteMediaFile, readMediaFile } from "../lib/storage/files.js";
 import {
   classifyImageRef,
   type CategoryCsvColumn,
@@ -54,7 +53,7 @@ const FIELD_OF: Record<CategoryCsvColumn, keyof Fields> = {
   Image: "image",
 };
 
-type ImageLoad = () => Buffer | { error: string };
+type ImageLoad = () => Promise<Buffer | { error: string }>;
 
 type Plan = {
   result: CategoryImportRowResult;
@@ -68,26 +67,22 @@ type ExistingCategory = {
   id: bigint;
   slug: string;
   parent_id: bigint | null;
-  image: { id: bigint; file_name: string; file_path: string | null } | null;
+  image: { id: bigint; file_name: string; file_path: string | null; disk: string } | null;
 };
 
 /** A re-imported export carries the exact stored file — no need to store it again. */
-function sameAsStored(image: NonNullable<ExistingCategory["image"]>, data: Buffer) {
-  try {
-    const stored = path.join(PRODUCT_IMAGES_DIR, image.file_name);
-    return fs.statSync(stored).size === data.length && fs.readFileSync(stored).equals(data);
-  } catch {
-    return false;
-  }
+async function sameAsStored(image: NonNullable<ExistingCategory["image"]>, data: Buffer) {
+  const stored = await readMediaFile(image.file_path ?? "products", image.file_name, data.length, image.disk);
+  return Boolean(stored && stored.equals(data));
 }
 
-function resolveImage(
+async function resolveImage(
   value: string,
   file: CategoryImportFile,
   existing: ExistingCategory | undefined,
   errors: string[],
   warnings: string[],
-): ImageLoad | null {
+): Promise<ImageLoad | null> {
   const ref = classifyImageRef(value);
   if (ref.kind === "invalid") {
     errors.push(ref.message);
@@ -111,15 +106,15 @@ function resolveImage(
       return null;
     }
     const bundle = file.bundle;
-    load = () => bundle.read(ref.ref) ?? { error: `Image "${ref.ref.slice(0, 80)}" is not in the ZIP` };
+    load = async () => bundle.read(ref.ref) ?? { error: `Image "${ref.ref.slice(0, 80)}" is not in the ZIP` };
   }
 
-  const data = load();
+  const data = await load();
   if ("error" in data) {
     errors.push(data.error);
     return null;
   }
-  if (existing?.image && sameAsStored(existing.image, data)) return null;
+  if (existing?.image && (await sameAsStored(existing.image, data))) return null;
   const problem = checkCategoryImageBuffer(data);
   if (problem) {
     errors.push(problem);
@@ -139,7 +134,7 @@ export async function runCategoryImport(
       id: true,
       slug: true,
       parent_id: true,
-      image: { select: { id: true, file_name: true, file_path: true } },
+      image: { select: { id: true, file_name: true, file_path: true, disk: true } },
     },
   });
   const bySlug = new Map(all.map((c) => [c.slug, c]));
@@ -236,7 +231,7 @@ export async function runCategoryImport(
     }
 
     if (fields.image) {
-      plan.loadImage = resolveImage(fields.image, file, existing, errors, warnings);
+      plan.loadImage = await resolveImage(fields.image, file, existing, errors, warnings);
       if (errors.length > 0) continue;
       result.image = plan.loadImage !== null;
     }
@@ -355,7 +350,7 @@ export async function runCategoryImport(
       plan.result.image = false;
       plan.result.warnings.push(`Saved, but the image wasn't: ${msg}`);
     };
-    const data = plan.loadImage();
+    const data = await plan.loadImage();
     if ("error" in data) {
       warn(data.error);
       continue;
@@ -371,7 +366,7 @@ export async function runCategoryImport(
       const media = await prisma.media.create({
         data: {
           user_id: ctx.userId,
-          disk: "public",
+          disk: currentMediaDisk(),
           file_name: finalized.fileName,
           original_name: `${plan.fields.handle}${finalized.detected.ext}`,
           file_path: PRODUCT_IMAGES_RELATIVE,
@@ -387,20 +382,11 @@ export async function runCategoryImport(
       });
       await prisma.category.update({ where: { id }, data: { image_id: media.id } });
       if (previous) {
-        try {
-          const old = path.join(PRODUCT_IMAGES_DIR, previous.file_name);
-          if (fs.existsSync(old)) fs.unlinkSync(old);
-        } catch {
-          /* ignore */
-        }
+        await deleteMediaFile(previous.file_path ?? PRODUCT_IMAGES_RELATIVE, previous.file_name);
         await prisma.media.delete({ where: { id: previous.id } }).catch(() => undefined);
       }
     } catch {
-      try {
-        fs.unlinkSync(finalized.absolutePath);
-      } catch {
-        /* ignore */
-      }
+      await deleteMediaFile(PRODUCT_IMAGES_RELATIVE, finalized.fileName);
       warn("could not be stored");
     }
   }

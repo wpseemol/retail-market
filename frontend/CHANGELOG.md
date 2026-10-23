@@ -3,6 +3,12 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-23
+
+### Allow Next.js to optimize object-storage images
+
+- `next.config.ts`: `NEXT_PUBLIC_MEDIA_URL` is no longer limited to `/uploads/**`. The allowed path is the URL's own prefix (for example `/niyenin-media/**` when media is on MinIO or R2). API uploads stay on `/uploads/**`.
+
 ## 2026-10-22
 
 ### Production Docker stack
