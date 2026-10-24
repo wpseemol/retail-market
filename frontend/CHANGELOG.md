@@ -9,7 +9,7 @@ Format: date heading, then one bullet per change with the files touched.
 
 - `src/app/shop/page.tsx`: the shop asks the API for one page (`products_per_page`, or `?page=` in numbered mode) instead of a fixed batch of 48.
 - `src/components/shop/useShopCatalog.ts`: filter, sort, price, and brand changes load that page from the API. Infinite scroll appends the next page and remembers the loaded pages plus scroll position in `sessionStorage` (up to 8 pages).
-- `src/components/shop/ShopProductGrid.tsx`: `@tanstack/react-virtual` window virtualizer draws only the rows on screen.
+- `src/components/shop/ShopProductGrid.tsx`: numbered pages render a normal grid. Infinite scroll virtualizes rows with `@tanstack/react-virtual` and does not move the window scroll, so Lenis smooth scrolling does not snap the page back to the top.
 - `src/components/shop/ShopPagination.tsx`: numbered pages show a short window (page 1, neighbors, last) when there are many pages.
 - `src/lib/products.ts`, `src/lib/siteSettings.ts`, `src/i18n/dictionaries/en.ts`, `bn.ts`: catalog query helper, `shop.pagination_mode`, and loading copy.
 

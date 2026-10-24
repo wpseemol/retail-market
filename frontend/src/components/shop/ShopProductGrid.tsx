@@ -53,26 +53,25 @@ export default function ShopProductGrid({
     useLayoutEffect(() => {
         const node = parentRef.current;
         if (!node) return;
-        const margin = node.getBoundingClientRect().top + window.scrollY;
-        setScrollMargin(margin);
-        setWidth(node.clientWidth);
+        setScrollMargin(node.getBoundingClientRect().top + window.scrollY);
+        setWidth(window.innerWidth);
     }, []);
 
     useEffect(() => {
-        const node = parentRef.current;
-        if (!node) return;
-        const observer = new ResizeObserver(() => setWidth(node.clientWidth));
-        observer.observe(node);
-        return () => observer.disconnect();
+        const onResize = () => setWidth(window.innerWidth);
+        window.addEventListener("resize", onResize);
+        return () => window.removeEventListener("resize", onResize);
     }, []);
 
     const virtualizer = useWindowVirtualizer({
-        count: rowCount,
+        count: showStatus ? rowCount : 0,
         estimateSize: () => (viewMode === "list" ? 176 : 420),
         overscan: 4,
         scrollMargin,
-        // The window observer reports 0px on the first render, which draws an empty list.
         initialRect: { width: 1280, height: 1600 },
+        // Lenis owns window scrolling. If the virtualizer writes scroll while it
+        // measures rows, the page jumps back to the top and looks like a reload.
+        scrollToFn: () => {},
     });
     const virtualRows = virtualizer.getVirtualItems();
     const nearEndIndex = virtualRows.at(-1)?.index ?? -1;
@@ -89,6 +88,37 @@ export default function ShopProductGrid({
         });
         return () => window.cancelAnimationFrame(frame);
     }, [restoreScrollY]);
+
+    if (!showStatus) {
+        return (
+            <div
+                className={
+                    viewMode === "list" ? "flex flex-col gap-4" : VIEW_MODE_GRID_CLASS[viewMode]
+                }
+            >
+                {products.map((product) => (
+                    <ShopProductCard
+                        key={product.id}
+                        product={product}
+                        viewMode={viewMode}
+                        onQuickView={onQuickView}
+                    />
+                ))}
+                {error ? (
+                    <p className="py-4 text-center text-sm text-error">
+                        {copy.loadFailed}{" "}
+                        <button
+                            type="button"
+                            onClick={onRetry}
+                            className="font-semibold text-brand-primary"
+                        >
+                            {copy.retry}
+                        </button>
+                    </p>
+                ) : null}
+            </div>
+        );
+    }
 
     return (
         <div ref={parentRef}>
