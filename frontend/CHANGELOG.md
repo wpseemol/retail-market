@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-24
 
+### Infinite scroll product hover
+
+- `src/components/shop/ShopProductGrid.tsx`: infinite scroll uses the same product grid as numbered pages. Cards stay in normal flow, so a hovered card and its buy buttons sit above the next row and no longer cover the footer. The next batch loads when the end of the list nears the screen.
+
 ### Shop page size only on numbered pages
 
 - `src/components/shop/ShopToolbar.tsx` and `src/components/shop/ShopPageContent.tsx`: the “Show” page-size menu is only on numbered pages. Infinite scroll shows how many products are on screen (`Showing 24 of 120 products`) and keeps sort and layout.
