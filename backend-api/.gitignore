@@ -5,6 +5,10 @@ node_modules/
 dist/
 build/
 
+# Built on your PC for cPanel (Linux Prisma engines). Created by npm run pack:cpanel.
+prisma/cpanel-client/
+prisma/cpanel-import.sql
+
 # Environment variable files
 .env
 .env.*

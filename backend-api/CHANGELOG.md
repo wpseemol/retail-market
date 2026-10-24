@@ -5,6 +5,14 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-24
 
+### cPanel zip when SSH is unavailable
+
+- `prisma/schema.prisma`: generator `binaryTargets` includes the CloudLinux engines (`rhel-openssl-3.0.x`, `rhel-openssl-1.1.x`, `debian-openssl-3.0.x`) so a client generated on Windows can run on cPanel.
+- `scripts/pack-cpanel.mjs`: `pnpm --filter backend-api pack:cpanel` compiles `dist`, copies the Linux Prisma client to `prisma/cpanel-client`, writes `prisma/cpanel-import.sql` (all migrations plus one super admin), and creates `niyenin-api.zip`.
+- `scripts/install-cpanel-client.mjs`: `postinstall` copies that client into `node_modules/.prisma/client` only under cPanel (`nodevenv` / `alt-nodejs`, or `PRISMA_SKIP_POSTINSTALL_GENERATE`).
+- `scripts/build.mjs`: on cPanel, copy the client and keep the shipped `dist` when `tsc` is not installed.
+- `DEPLOY.md`, `AGENTS.md`, gitignores.
+
 ### cPanel build skips Prisma generate
 
 - `package.json`: `build` runs `scripts/build.mjs`.

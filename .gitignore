@@ -14,5 +14,6 @@ dashboard/dist/
 
 # Tools/other
 .pnpm-store
+niyenin-api.zip
 .DS_Store
 *.log

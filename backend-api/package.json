@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "node scripts/build.mjs",
+    "postinstall": "node scripts/install-cpanel-client.mjs",
+    "pack:cpanel": "node scripts/pack-cpanel.mjs",
     "start": "node dist/server.js",
     "type-check": "tsc --noEmit",
     "db:generate": "prisma generate",
