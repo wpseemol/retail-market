@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-24
 
+### npm install warnings and a dropped connection
+
+- `package.json`: removed `@types/bcryptjs`. bcryptjs 3 already ships its own types, and that stub package is what printed the deprecation warning.
+- `.npmrc`: retry a dropped download (`ECONNRESET`) up to 5 times.
+- `package.json`: `allowScripts` lets the current npm run Prisma and esbuild install scripts. Without it, `npm install` skips them and `prisma generate` has no query engine.
+
 ### Plain production scripts
 
 - `package.json`: removed the cPanel `postinstall` hook that broke a normal `npm install`. `build` is `prisma generate && tsc`. `start` is `node dist/server.js`. `typescript` and the `@types/*` packages are dependencies so a production install can still compile.
