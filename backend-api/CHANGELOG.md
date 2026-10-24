@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-24
 
+### cPanel npm install finds the app folder
+
+- `package.json`: `postinstall` and `build` locate the real application directory. cPanel runs npm inside `nodevenv/.../22/lib`, so `node scripts/install-cpanel-client.mjs` could not see the uploaded files.
+- `scripts/install-cpanel-client.mjs`: copies the prebuilt Prisma Client into that virtualenv's `node_modules`.
+- `geoip-lite` is pinned to `1.4.10`. `2.0.3` asks for Node 24, and this host is Node 22.
+
 ### cPanel zip when SSH is unavailable
 
 - `prisma/schema.prisma`: generator `binaryTargets` includes the CloudLinux engines (`rhel-openssl-3.0.x`, `rhel-openssl-1.1.x`, `debian-openssl-3.0.x`) so a client generated on Windows can run on cPanel.
