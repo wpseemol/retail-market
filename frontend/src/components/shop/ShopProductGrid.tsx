@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { useI18n } from "@/components/providers/LocaleProvider";
 import ShopProductCard from "./ShopProductCard";
@@ -29,6 +29,7 @@ export default function ShopProductGrid({
     error,
     onRetry,
     hasMore,
+    showStatus,
 }: {
     products: ShopProduct[];
     viewMode: ShopViewMode;
@@ -49,28 +50,29 @@ export default function ShopProductGrid({
     const columns = columnsFor(viewMode, width);
     const rowCount = Math.ceil(products.length / columns);
 
+    useLayoutEffect(() => {
+        const node = parentRef.current;
+        if (!node) return;
+        const margin = node.getBoundingClientRect().top + window.scrollY;
+        setScrollMargin(margin);
+        setWidth(node.clientWidth);
+    }, []);
+
     useEffect(() => {
         const node = parentRef.current;
         if (!node) return;
-        const measure = () => {
-            setWidth(node.clientWidth);
-            setScrollMargin(node.offsetTop);
-        };
-        measure();
-        const observer = new ResizeObserver(measure);
+        const observer = new ResizeObserver(() => setWidth(node.clientWidth));
         observer.observe(node);
-        window.addEventListener("resize", measure);
-        return () => {
-            observer.disconnect();
-            window.removeEventListener("resize", measure);
-        };
+        return () => observer.disconnect();
     }, []);
 
     const virtualizer = useWindowVirtualizer({
         count: rowCount,
         estimateSize: () => (viewMode === "list" ? 176 : 420),
-        overscan: 3,
+        overscan: 4,
         scrollMargin,
+        // The window observer reports 0px on the first render, which draws an empty list.
+        initialRect: { width: 1280, height: 1600 },
     });
     const virtualRows = virtualizer.getVirtualItems();
     const nearEndIndex = virtualRows.at(-1)?.index ?? -1;

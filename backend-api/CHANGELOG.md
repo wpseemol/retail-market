@@ -5,6 +5,14 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-24
 
+### Shop pagination mode and catalog filters
+
+- `prisma/schema.prisma` and `prisma/migrations/20261024140000_shop_pagination_mode`: `site_settings.shop_pagination_mode` is `pages` or `infinite` (default `pages`).
+- `src/routes/publicSiteSettings.ts` and `src/routes/dashboardSiteSettings.ts`: public `shop.pagination_mode` and dashboard `shop_pagination_mode`.
+- `src/validators/siteSettings.ts`: the mode is one of those two values.
+- `src/routes/publicProducts.ts`: `GET /api/products` accepts `brands` (comma-separated slugs), `min_price`, and `max_price`, so the shop can page through a filtered catalog one page at a time.
+- `API.md` documents the setting and the extra query fields.
+
 ### Wholesale orders require a verified customer
 
 - `src/routes/customerOrders.ts`: `POST /api/customer/orders/bulk` now requires a customer token. The account email and phone must both be verified. The stored contact email and phone are those verified values, even if the body sends different ones. Shop checkout is unchanged.

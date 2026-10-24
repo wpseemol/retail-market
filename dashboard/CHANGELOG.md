@@ -3,6 +3,14 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-24
+
+### Shop pagination setting
+
+- `src/lib/validators/siteSettings.ts`: `shop_pagination_mode` is `pages` or `infinite`.
+- `src/pages/system/settings/settingsContext.ts`: form defaults include the mode so a save keeps the stored value.
+- `src/pages/system/settings/storefront/ShopSettingsPage.tsx`: Shop catalog has a Pagination select (numbered pages or infinite scroll).
+
 ## 2026-10-23
 
 ### Show wholesale orders

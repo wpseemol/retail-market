@@ -128,6 +128,13 @@ export function useShopCatalog(args: CatalogArgs) {
             .then((data) => {
                 if (requestId.current !== id) return;
                 applyPage(data, true);
+                if (argsRef.current.mode === "pages") {
+                    const url = new URL(window.location.href);
+                    if (url.searchParams.has("page")) {
+                        url.searchParams.delete("page");
+                        window.history.replaceState(window.history.state, "", url);
+                    }
+                }
             })
             .catch(() => {
                 if (requestId.current !== id) return;
@@ -144,7 +151,8 @@ export function useShopCatalog(args: CatalogArgs) {
 
     useEffect(() => {
         if (args.mode !== "infinite") return;
-        const saved = readRestore(key);
+        const savedKey = keyRef.current;
+        const saved = readRestore(savedKey);
         if (!saved || saved.pages <= 1) {
             if (saved?.scrollY) setRestoreScrollY(saved.scrollY);
             return;
@@ -157,9 +165,10 @@ export function useShopCatalog(args: CatalogArgs) {
             let reportedTotal = args.initialTotal;
             let reportedPages = args.initialTotalPages;
             for (let next = 2; next <= saved.pages && next <= reportedPages; next += 1) {
+                if (cancelled || keyRef.current !== savedKey) return;
                 try {
                     const data = await fetchPage(next);
-                    if (cancelled) return;
+                    if (cancelled || keyRef.current !== savedKey) return;
                     const mapped = (data.products ?? []).map((product) =>
                         toShopProduct(product, args.locale),
                     );
@@ -172,7 +181,7 @@ export function useShopCatalog(args: CatalogArgs) {
                     break;
                 }
             }
-            if (cancelled) return;
+            if (cancelled || keyRef.current !== savedKey) return;
             setProducts(latest);
             setPage(pages);
             setTotal(reportedTotal);
@@ -183,7 +192,7 @@ export function useShopCatalog(args: CatalogArgs) {
         return () => {
             cancelled = true;
         };
-        // Restore once for the SSR filter key. Later filter changes start from page 1.
+        // Restore once for the first filter key. Later filter changes start from page 1.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -249,6 +258,8 @@ export function useShopCatalog(args: CatalogArgs) {
         void fetchPage(page + 1)
             .then((data) => {
                 if (requestId.current !== id) return;
+                const nextPage = data.pagination?.page ?? page + 1;
+                if (nextPage <= page) return;
                 applyPage(data, false);
             })
             .catch(() => {

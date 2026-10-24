@@ -120,7 +120,7 @@ export default function ShopPageContent({
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [debouncedPrice, setDebouncedPrice] = useState({ min: priceMin, max: priceMax });
   const listRef = useRef<HTMLDivElement>(null);
-  const skipPageScroll = useRef(true);
+  const lastScrolledPage = useRef(initialPage);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedSearch(searchQuery), 300);
@@ -168,11 +168,8 @@ export default function ShopPageContent({
   }, [catalog.products, selectedColor, selectedTag, sortBy]);
 
   useEffect(() => {
-    if (paginationMode !== "pages") return;
-    if (skipPageScroll.current) {
-      skipPageScroll.current = false;
-      return;
-    }
+    if (paginationMode !== "pages" || lastScrolledPage.current === catalog.page) return;
+    lastScrolledPage.current = catalog.page;
     listRef.current?.scrollIntoView({ block: "start" });
   }, [catalog.page, paginationMode]);
 

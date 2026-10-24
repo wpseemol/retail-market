@@ -5,6 +5,14 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-24
 
+### Shop pagination: numbered pages or infinite scroll
+
+- `src/app/shop/page.tsx`: the shop asks the API for one page (`products_per_page`, or `?page=` in numbered mode) instead of a fixed batch of 48.
+- `src/components/shop/useShopCatalog.ts`: filter, sort, price, and brand changes load that page from the API. Infinite scroll appends the next page and remembers the loaded pages plus scroll position in `sessionStorage` (up to 8 pages).
+- `src/components/shop/ShopProductGrid.tsx`: `@tanstack/react-virtual` window virtualizer draws only the rows on screen.
+- `src/components/shop/ShopPagination.tsx`: numbered pages show a short window (page 1, neighbors, last) when there are many pages.
+- `src/lib/products.ts`, `src/lib/siteSettings.ts`, `src/i18n/dictionaries/en.ts`, `bn.ts`: catalog query helper, `shop.pagination_mode`, and loading copy.
+
 ### Wholesale orders need a verified account
 
 - `src/components/bulk/BulkOrderPageContent.tsx`: guests see a sign-in gate. Signed-in customers must have a verified email and mobile number before the order form opens. Those two fields stay locked to the account. Products can be browsed by category, searched, and added with a quantity stepper. A saved address can fill the delivery fields.
