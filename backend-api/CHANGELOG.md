@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-24
 
+### cPanel build skips Prisma generate
+
+- `package.json`: `build` runs `scripts/build.mjs`.
+- `scripts/build.mjs`: on a normal Node binary this still runs `prisma generate` and `tsc`. Under cPanel `nodevenv` it only runs `tsc`, and it exits with SSH steps when `node_modules/.prisma/client` is missing. The Run JS script memory cap kills Prisma's schema WebAssembly engine (`prisma/build/index.js`, `__wbindgen_start`).
+- `DEPLOY.md`: generate, migrate, and install (`npm install --include=dev`) over SSH. `tsc` is a devDependency, so a production `npm install` would omit it.
+- `AGENTS.md`: build script note.
+
 ### Spaceship deploy and outbound limits
 
 - `DEPLOY.md` (repo root): manual deploy of this API on Spaceship Web Hosting Supreme, and of the storefront and dashboard on Vercel. No CI pipeline.

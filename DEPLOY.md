@@ -47,18 +47,18 @@ rsync -av --exclude node_modules --exclude dist --exclude .env --exclude uploads
 
 ### Build on the server
 
-SSH in, then paste the virtualenv command from the Node.js app page, then:
+Use SSH (PuTTY, Termius, or the host SSH). Paste the virtualenv command from the Node.js app page first. The cPanel **Run JS script** button and the cPanel web terminal cannot run `prisma generate`: Prisma loads a WebAssembly schema engine, those tools hit a memory cap, and the log is a long dump of `node_modules/prisma/build/index.js` that stops near `__wbindgen_start` (`returncode: 1`).
 
 ```bash
 cd ~/niyenin-api
-npm install
+npm install --include=dev
 npx prisma generate
 npx prisma migrate deploy
 npm run build
 mkdir -p uploads
 ```
 
-`npm run build` runs `prisma generate` and `tsc`. The startup file is `dist/server.js`. Under Passenger the process listens on Passenger's socket, not on port 8001. `PORT` in the environment is unused while Passenger is in front.
+`NODE_ENV=production` makes a plain `npm install` skip devDependencies, and `tsc` lives there, so install with `--include=dev`. `npm run build` sees the cPanel `nodevenv` Node binary and only runs `tsc`. Generate the client with the `npx prisma generate` line above whenever `prisma/schema.prisma` changes. The startup file is `dist/server.js`. Under Passenger the process listens on Passenger's socket, not on port 8001. `PORT` in the environment is unused while Passenger is in front.
 
 ### Environment variables
 
@@ -104,12 +104,13 @@ curl -sS https://api.yourdomain.com/api/health
 ```bash
 cd ~/niyenin-api
 # upload or git pull the new backend-api files
-npm install
+npm install --include=dev
+npx prisma generate
 npx prisma migrate deploy
 npm run build
 ```
 
-Restart the app in cPanel. Run `npm install` on the server again whenever dependencies change, so Linux binaries for `sharp` and Prisma stay correct.
+Run that over SSH. Restart the app in cPanel. Run `npm install --include=dev` on the server again whenever dependencies change, so Linux binaries for `sharp` and Prisma stay correct.
 
 ## 2. Storefront on Vercel
 

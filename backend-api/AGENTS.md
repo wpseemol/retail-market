@@ -16,7 +16,7 @@ Run from `backend-api/` (or `pnpm --filter backend-api <script>` from the root):
 | Script | What it does |
 | --- | --- |
 | `dev` | `tsx watch src/server.ts` |
-| `build` / `start` | Compile with `tsc`, run `dist/server.js` |
+| `build` / `start` | `node scripts/build.mjs` (`prisma generate` then `tsc` on a normal machine). On cPanel `nodevenv`, generate is skipped and only `tsc` runs. `start` runs `dist/server.js` |
 | `type-check` | `tsc --noEmit` |
 | `db:generate` | `prisma generate` (stop the dev server first on Windows — the query engine DLL is locked) |
 | `db:migrate` / `db:push` / `db:seed` / `db:studio` | Prisma helpers |
@@ -29,6 +29,7 @@ backend-api/
 ├── prisma/
 │   ├── schema.prisma
 │   └── migrations/<timestamp>_<name>/migration.sql
+├── scripts/build.mjs          # prisma generate + tsc; tsc only under cPanel nodevenv
 ├── scripts/optimize-images.ts
 ├── uploads/                 # local driver only (gitignored). Empty when STORAGE_DRIVER=s3
 └── src/
