@@ -1,8 +1,5 @@
 generator client {
-  provider      = "prisma-client-js"
-  // cPanel has no SSH here, so the client is generated on Windows and uploaded.
-  // These are the Linux engines CloudLinux / cPanel Node 22 actually load.
-  binaryTargets = ["native", "rhel-openssl-3.0.x", "rhel-openssl-1.1.x", "debian-openssl-3.0.x"]
+  provider = "prisma-client-js"
 }
 
 datasource db {

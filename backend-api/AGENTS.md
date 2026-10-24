@@ -16,10 +16,10 @@ Run from `backend-api/` (or `pnpm --filter backend-api <script>` from the root):
 | Script | What it does |
 | --- | --- |
 | `dev` | `tsx watch src/server.ts` |
-| `build` / `start` | `node scripts/build.mjs` (`prisma generate` then `tsc` on a normal machine). On cPanel it copies `prisma/cpanel-client` and uses the shipped `dist`. `start` runs `dist/server.js` |
-| `pack:cpanel` | `scripts/pack-cpanel.mjs` — generates the Linux Prisma engines, compiles, writes `prisma/cpanel-import.sql`, and creates `niyenin-api.zip` in the repo root. Use this when the host has no SSH |
+| `build` | `prisma generate && tsc` |
+| `start` | `node dist/server.js` |
 | `type-check` | `tsc --noEmit` |
-| `db:generate` | `prisma generate` (stop the dev server first on Windows — the query engine DLL is locked). Downloads the cPanel Linux engines listed in `binaryTargets` |
+| `db:generate` | `prisma generate` (stop the dev server first on Windows — the query engine DLL is locked) |
 | `db:migrate` / `db:push` / `db:seed` / `db:studio` | Prisma helpers |
 | `images:optimize` | `scripts/optimize-images.ts` — re-encodes stored media, keeps originals, `--prune-orphans` optional |
 
@@ -30,9 +30,6 @@ backend-api/
 ├── prisma/
 │   ├── schema.prisma
 │   └── migrations/<timestamp>_<name>/migration.sql
-├── scripts/build.mjs
-├── scripts/install-cpanel-client.mjs  # postinstall: copy prebuilt client on cPanel only
-├── scripts/pack-cpanel.mjs            # zip for cPanel when SSH is unavailable
 ├── scripts/optimize-images.ts
 ├── uploads/                 # local driver only (gitignored). Empty when STORAGE_DRIVER=s3
 └── src/

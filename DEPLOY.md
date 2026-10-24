@@ -32,55 +32,27 @@ mysql://cpaneluser_api:PASSWORD@localhost:3306/cpaneluser_retail
 2. Node.js version **22**, application mode **Production**.
 3. Application root: a folder under your home directory, for example `niyenin-api`. Do not put the app inside `public_html` if you can avoid it. Point the application URL at a subdomain such as `api.yourdomain.com`.
 4. Application startup file: `dist/server.js`.
-5. Save.
+5. Save. Application startup file stays `dist/server.js`.
 
-The cPanel **Run JS script** list (`build`, `db:generate`, and the rest) cannot run `prisma generate`. That command loads a WebAssembly engine and the button stops it (`returncode: 1`, a long dump of `prisma/build/index.js`). With no SSH, generate on your PC and upload the result.
+### Run it
 
-### Upload without SSH
-
-On your PC, from the repo:
+Upload `backend-api/` into the application root (`package.json` in that folder, no `node_modules`, no `.env`). Then, from that folder:
 
 ```bash
-pnpm --filter backend-api pack:cpanel
+npm install
+npm run build
+npm run start
 ```
 
-That writes `niyenin-api.zip` in the repo root. It contains `dist/` and the Linux Prisma engines. It does not contain `node_modules` or `.env`.
+On cPanel those are two buttons, then a restart:
 
-cPanel File Manager → the application root → Upload `niyenin-api.zip` → Extract. `package.json` must sit in the application root, not in an extra folder. Delete the zip after extract.
+1. **Run NPM Install**
+2. In the script list, run **build** (`prisma generate` then `tsc`)
+3. **Restart**. Passenger runs `dist/server.js`, which is the same program as `npm run start`.
 
-In the Node.js app environment variables, add this **before** Run NPM Install:
-
-| Name | Value |
-| --- | --- |
-| `PRISMA_SKIP_POSTINSTALL_GENERATE` | `true` |
-
-Then click **Run NPM Install**. Do not run `db:generate` or `build` from the script list. The install copies `prisma/cpanel-client` into place.
-
-Database: cPanel → **phpMyAdmin** → your empty database → **Import** → choose `backend-api/prisma/cpanel-import.sql` from your PC (the pack command writes it). Import it once.
-
-Startup file stays `dist/server.js`. Click **Restart**.
+`npm run start` is for a normal terminal. The live site stays up through Passenger, not through the script button.
 
 Under Passenger the process listens on Passenger's socket, not on port 8001. `PORT` in the environment is unused while Passenger is in front.
-
-### Upload with SSH
-
-If you later have SSH, you can sync source instead of the zip:
-
-```bash
-rsync -av --exclude node_modules --exclude dist --exclude .env --exclude uploads \
-  backend-api/ USER@your-server:~/niyenin-api/
-```
-
-Then, after the virtualenv command from the Node.js app page:
-
-```bash
-cd ~/niyenin-api
-npm install --include=dev
-npx prisma generate
-npx prisma migrate deploy
-npm run build
-mkdir -p uploads
-```
 
 ### Environment variables
 
@@ -95,7 +67,6 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
 | Name | Value |
 | --- | --- |
 | `NODE_ENV` | `production` |
-| `PRISMA_SKIP_POSTINSTALL_GENERATE` | `true` (required when you install from the cPanel button, so Prisma's WebAssembly engine is not started) |
 | `DATABASE_URL` | the MariaDB URL above |
 | `JWT_SECRET` | 32+ bytes, random |
 | `SETTINGS_ENCRYPTION_KEY` | a different 32+ byte random value |
@@ -124,20 +95,12 @@ curl -sS https://api.yourdomain.com/api/health
 
 ### Update later (still manual)
 
-Without SSH, run `pnpm --filter backend-api pack:cpanel` again, upload the new zip over the application root, extract, then **Run NPM Install** and **Restart**. Import `prisma/cpanel-import.sql` only on an empty database. On a database that already has the tables, apply only the new file under `prisma/migrations/` in phpMyAdmin.
-
-With SSH:
-
 ```bash
-cd ~/niyenin-api
-# upload or git pull the new backend-api files
-npm install --include=dev
-npx prisma generate
-npx prisma migrate deploy
+npm install
 npm run build
 ```
 
-Restart the app in cPanel. Run `npm install` on the server again whenever dependencies change, so the Linux `sharp` binary stays correct.
+Restart the app. `npm run start` is `node dist/server.js`. Run `npm install` again whenever dependencies change, so the Linux `sharp` binary stays correct.
 
 ## 2. Storefront on Vercel
 

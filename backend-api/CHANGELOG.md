@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-24
 
+### Plain production scripts
+
+- `package.json`: removed the cPanel `postinstall` hook that broke a normal `npm install`. `build` is `prisma generate && tsc`. `start` is `node dist/server.js`. `typescript` and the `@types/*` packages are dependencies so a production install can still compile.
+- `prisma/schema.prisma`: generator is the default client again.
+- Removed `scripts/build.mjs`, `scripts/install-cpanel-client.mjs`, and `scripts/pack-cpanel.mjs`.
+- `DEPLOY.md`, `AGENTS.md`.
+
 ### cPanel npm install finds the app folder
 
 - `package.json`: `postinstall` and `build` locate the real application directory. cPanel runs npm inside `nodevenv/.../22/lib`, so `node scripts/install-cpanel-client.mjs` could not see the uploaded files.
