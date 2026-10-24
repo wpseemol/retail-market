@@ -3,6 +3,13 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-24
+
+### Wholesale orders require a verified customer
+
+- `src/routes/customerOrders.ts`: `POST /api/customer/orders/bulk` now requires a customer token. The account email and phone must both be verified. The stored contact email and phone are those verified values, even if the body sends different ones. Shop checkout is unchanged.
+- `API.md`: documents the 401 and the `EMAIL_NOT_VERIFIED` / `PHONE_NOT_VERIFIED` responses.
+
 ## 2026-10-23
 
 ### Wholesale bulk orders

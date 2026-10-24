@@ -3,6 +3,13 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-24
+
+### Wholesale orders need a verified account
+
+- `src/components/bulk/BulkOrderPageContent.tsx`: guests see a sign-in gate. Signed-in customers must have a verified email and mobile number before the order form opens. Those two fields stay locked to the account. Products can be browsed by category, searched, and added with a quantity stepper. A saved address can fill the delivery fields.
+- `src/i18n/dictionaries/en.ts` and `bn.ts`: copy for the sign-in gate, verification checklist, and product picker.
+
 ## 2026-10-23
 
 ### Wholesale order page

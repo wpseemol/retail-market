@@ -19,6 +19,7 @@ import {
 } from "../lib/shipping.js";
 import { couponDiscount, findCoupon, publicCoupon } from "../lib/coupons.js";
 import { rateLimit } from "../lib/rateLimit.js";
+import { normalizePhone } from "../lib/phone.js";
 import {
   bulkOrderSchema,
   couponCheckSchema,
@@ -140,14 +141,18 @@ function orderNumber() {
   return `NIY-${y}${m}${day}-${rand}`;
 }
 
+type LockedContact = { email: string; phone: string };
+
 /**
  * Guest checkout (no token) or customer checkout (Bearer token).
  * `retail` is the shop cart. `wholesale` is a পাইকারি bulk order (more lines, larger quantities).
+ * Wholesale passes `lockedContact` so the order email and phone are the verified account values.
  */
 async function placeStorefrontOrder(
   req: Request,
   res: Response,
   kind: "retail" | "wholesale",
+  lockedContact?: LockedContact,
 ) {
     const parsed = (kind === "wholesale" ? bulkOrderSchema : placeOrderSchema).safeParse(req.body);
     if (!parsed.success) {
@@ -165,16 +170,22 @@ async function placeStorefrontOrder(
     }
 
     const input = parsed.data as PlaceOrderInput;
+    if (lockedContact) {
+      input.email = lockedContact.email.toLowerCase();
+      input.billing.phone = lockedContact.phone;
+      if (input.shipping) input.shipping.phone = lockedContact.phone;
+    }
     const customer = req.auth?.user ?? null;
     const userId = req.auth?.userId ?? null;
-    const contactEmail = input.email ?? customer?.email.toLowerCase() ?? null;
+    const contactEmail =
+      lockedContact?.email.toLowerCase() ?? input.email ?? customer?.email.toLowerCase() ?? null;
     if (!contactEmail) {
       return res.status(400).json({
         message: "Validation failed",
         errors: { email: ["Email is required for guest checkout"] },
       });
     }
-    const contactPhone = input.billing.phone;
+    const contactPhone = lockedContact?.phone ?? input.billing.phone;
 
     // Same product sent twice is one line, so stock is checked against the total.
     const requested = new Map<string, number>();
@@ -421,11 +432,31 @@ async function placeStorefrontOrder(
     });
 }
 
-/** Wholesale / পাইকারি: up to 100 products, quantity up to 5000. Same pricing rules as the shop cart. */
+/** Wholesale / পাইকারি: verified customers only. Up to 100 products, quantity up to 5000. */
 customerOrdersRouter.post(
   "/bulk",
-  optionalAuth,
-  asyncHandler((req, res) => placeStorefrontOrder(req, res, "wholesale")),
+  requireAuth,
+  requireRoles("customer"),
+  asyncHandler(async (req, res) => {
+    const account = req.auth!.user;
+    if (!account.email_verified_at) {
+      return res.status(403).json({
+        message: "Verify your email before placing a wholesale order.",
+        code: "EMAIL_NOT_VERIFIED",
+      });
+    }
+    const phone = normalizePhone(account.phone);
+    if (!account.phone_verified_at || !phone) {
+      return res.status(403).json({
+        message: "Verify your mobile number before placing a wholesale order.",
+        code: "PHONE_NOT_VERIFIED",
+      });
+    }
+    return placeStorefrontOrder(req, res, "wholesale", {
+      email: account.email,
+      phone,
+    });
+  }),
 );
 
 /** Everyday shop-cart checkout. */

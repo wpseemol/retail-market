@@ -593,13 +593,18 @@ Placing an order creates inbox notifications for `super_admin` / `admin` / `mode
 
 ### `POST /api/customer/orders/bulk` — wholesale (পাইকারি)
 
-Same body, auth, pricing, stock, coupon, and shipping rules as `POST /api/customer/orders`. The order is stored with `kind: "wholesale"`.
+Same body, pricing, stock, coupon, and shipping rules as `POST /api/customer/orders`. The order is stored with `kind: "wholesale"`.
 
+Bearer **customer** only. The account email and mobile number must both be verified (`email_verified_at` and `phone_verified_at`). The order is stored with that verified email and phone; `email` and `billing.phone` in the body are replaced.
+
+- No token, or an invalid token → **401**.
+- Staff token → **403** (insufficient permissions).
+- Customer with an unverified email → **403 `EMAIL_NOT_VERIFIED`**.
+- Customer with a missing or unverified phone → **403 `PHONE_NOT_VERIFIED`**.
 - `items`: 1–100 lines (shop checkout stays at 50).
 - `items[].quantity`: 1–5000 (shop checkout stays at 99). Stock is still enforced (`409 ITEM_UNAVAILABLE`).
 - Prices, shipping, and the coupon discount come from the server. A client `shipping_fee` is ignored.
-- Guest checkout needs `email`. Staff tokens return `403 STAFF_CANNOT_ORDER`.
-- Logged-in customers have the ordered products removed from their shop cart in the same transaction. The shop cart itself is unchanged for products that were not in this order.
+- The ordered products are removed from the customer's shop cart in the same transaction. The shop cart itself is unchanged for products that were not in this order.
 
 **201** → same shape as shop checkout, with `order.kind: "wholesale"`.
 
