@@ -50,10 +50,11 @@ export default async function ShopPage({
   const category = firstParam(params.category);
   const brandParam = firstParam(params.brand).toLowerCase();
   const brand = SLUG_RE.test(brandParam) ? brandParam : "";
-  const perPageParam = firstParam(params.per_page);
-  const initialPerPage = /^\d{1,2}$/.test(perPageParam) ? Number(perPageParam) : null;
-
   const [settings, locale] = await Promise.all([getSiteSettings(), getLocale()]);
+  const numberedPages = settings.shop.pagination_mode === "pages";
+  const perPageParam = firstParam(params.per_page);
+  const initialPerPage =
+    numberedPages && /^\d{1,2}$/.test(perPageParam) ? Number(perPageParam) : null;
   const defaultPerPage = clampPerPage(settings.shop.products_per_page);
   const limit =
     initialPerPage && perPageChoices(defaultPerPage).includes(initialPerPage)
@@ -61,7 +62,7 @@ export default async function ShopPage({
       : defaultPerPage;
   const requestedPage = Number(firstParam(params.page));
   const page =
-    settings.shop.pagination_mode === "pages" &&
+    numberedPages &&
     Number.isInteger(requestedPage) &&
     requestedPage > 0
       ? requestedPage

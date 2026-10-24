@@ -115,7 +115,12 @@ function FormStage({ mode }: { mode: AuthMode }) {
     );
 }
 
-export default function AuthShell() {
+export default function AuthShell({
+    loginImageUrl = null,
+}: {
+    /** Photo on the left of the login card, from Super Admin → Site settings. */
+    loginImageUrl?: string | null;
+}) {
     const pathname = usePathname();
     const mode: AuthMode = pathname.startsWith("/register") ? "register" : "login";
 
@@ -155,23 +160,33 @@ export default function AuthShell() {
 
             <div className="container mx-auto px-4 sm:px-6 py-10 sm:py-14 lg:py-16">
                 <div className="mx-auto grid max-w-5xl grid-cols-1 overflow-hidden rounded-2xl border border-border-default bg-bg-surface shadow-sm lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-                    <aside className="relative hidden flex-col justify-between gap-10 overflow-hidden bg-brand-primary p-10 text-white lg:flex">
-                        <div
-                            ref={circleARef}
-                            aria-hidden="true"
-                            style={{ transform: CIRCLE_A[mode] }}
-                            className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-white/10"
-                        />
-                        <div
-                            ref={circleBRef}
-                            aria-hidden="true"
-                            style={{ transform: CIRCLE_B[mode] }}
-                            className="pointer-events-none absolute -bottom-32 -left-20 size-80 rounded-full bg-white/5"
-                        />
+                    <aside className="relative hidden min-h-[28rem] overflow-hidden bg-brand-primary text-white lg:block">
+                        {loginImageUrl ? (
+                            <img
+                                src={loginImageUrl}
+                                alt=""
+                                className="absolute inset-0 size-full object-cover"
+                            />
+                        ) : (
+                            <>
+                                <div
+                                    ref={circleARef}
+                                    aria-hidden="true"
+                                    style={{ transform: CIRCLE_A[mode] }}
+                                    className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-white/10"
+                                />
+                                <div
+                                    ref={circleBRef}
+                                    aria-hidden="true"
+                                    style={{ transform: CIRCLE_B[mode] }}
+                                    className="pointer-events-none absolute -bottom-32 -left-20 size-80 rounded-full bg-white/5"
+                                />
+                            </>
+                        )}
 
                         <div
                             ref={asideRef}
-                            className="relative flex flex-1 flex-col justify-between gap-10"
+                            className={`relative flex h-full flex-col justify-between gap-10 p-10 ${loginImageUrl ? "bg-linear-to-t from-black/70 via-black/35 to-black/20" : ""}`}
                         >
                             <div>
                                 <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.18em] text-white/70">

@@ -5,6 +5,16 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-24
 
+### Products per page only for numbered shop pages
+
+- `src/pages/system/settings/storefront/ShopSettingsPage.tsx`: “Products per page” shows only when pagination is numbered pages. Infinite scroll keeps the other shop options and explains that shoppers do not pick a page size.
+
+### Storefront login image
+
+- `src/lib/imagePresets.ts`: `loginPanel` is 960 × 1200 (4:5).
+- `src/lib/validators/siteSettings.ts`: settings include `login_image`, and the file check rejects unsafe uploads.
+- `src/pages/system/settings/storefront/IdentitySettingsPage.tsx`: Website identity has a Storefront login image upload. It is resized on the server and shown on the left side of the storefront login page.
+
 ### Shop pagination setting
 
 - `src/lib/validators/siteSettings.ts`: `shop_pagination_mode` is `pages` or `infinite`.

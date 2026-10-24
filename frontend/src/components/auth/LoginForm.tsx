@@ -17,11 +17,8 @@ import { messageForAuthCode } from "@/lib/authErrors";
 import { useSocialLogin } from "@/hooks/useSocialLogin";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/authSlice";
-import { dashboardLoginUrl } from "@/config/site";
 import type { ApiUser } from "@/lib/api";
 import { authSwitchHref, safeNextPath } from "@/lib/authRedirect";
-
-const DASHBOARD_LOGIN_URL = dashboardLoginUrl();
 
 const STAFF_ROLES = new Set([
   "super_admin",
@@ -49,15 +46,8 @@ export default function LoginForm() {
 
   const finishAuth = useCallback(
     (user: ApiUser) => {
-      if (STAFF_ROLES.has(user.role)) {
-        setError(
-          `Staff accounts cannot sign in here. Use the dashboard: ${DASHBOARD_LOGIN_URL}`,
-        );
-        return;
-      }
-
-      if (user.role !== "customer") {
-        setError("Only customer accounts can sign in on the storefront.");
+      if (STAFF_ROLES.has(user.role) || user.role !== "customer") {
+        setError("This page is for shoppers. Staff accounts sign in on the dashboard.");
         return;
       }
 
@@ -157,17 +147,8 @@ export default function LoginForm() {
         Customer login
       </h1>
       <p className="mb-5 text-sm text-text-secondary">
-        For shoppers only. Super Admin, Admin, Moderator, and Vendor must use
-        the{" "}
-        <a
-          href={DASHBOARD_LOGIN_URL}
-          className="font-medium text-brand-primary hover:underline"
-          target="_blank"
-          rel="noreferrer"
-        >
-          dashboard login
-        </a>
-        .
+        For shoppers only. Super Admin, Admin, Moderator, and Vendor sign in on
+        the dashboard.
       </p>
 
       {social.hasAny ? (

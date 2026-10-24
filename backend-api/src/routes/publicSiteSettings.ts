@@ -15,6 +15,7 @@ export const siteSettingsMediaInclude = {
   og_image: true,
   favicon: true,
   login_logo: true,
+  login_image: true,
 } as const;
 
 const DEFAULTS = {
@@ -98,6 +99,7 @@ export function toPublicSiteSettings(
     og_image: toPublicMedia(row.og_image),
     favicon: toPublicMedia(row.favicon),
     login_logo: toPublicMedia(row.login_logo),
+    login_image: toPublicMedia(row.login_image),
     twitter_title: row.twitter_title,
     twitter_description: row.twitter_description,
     twitter_handle: row.twitter_handle,

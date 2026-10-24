@@ -869,7 +869,7 @@ Multipart field **`avatar`** · max **5 MB** · JPEG/PNG/WebP/GIF. Clears `avata
 
 No auth. Used by the storefront for SEO / Open Graph and analytics pixels.
 
-`GET /api/site-settings` → `{ settings }` with `site_name`, `site_title`, `site_description`, `keywords`, OG/Twitter fields, `og_image`, `favicon`, `login_logo`, nested `seo` (`title_template`, `noindex_site`, `google_site_verification`, `bing_site_verification`, `pages.{home,shop,stores,brands}.{title,description}`), nested `shop` (`default_view`, `products_per_page`, `pagination_mode` `pages`|`infinite`, `categories_visible`, `brands_visible`, `see_all_label`, `show_less_label`), nested `shipping` (`default_fee`, `free_threshold`), nested `analytics` + `pixels` (`enabled` + `id`).
+`GET /api/site-settings` → `{ settings }` with `site_name`, `site_title`, `site_description`, `keywords`, OG/Twitter fields, `og_image`, `favicon`, `login_logo`, `login_image` (storefront login / register side photo), nested `seo` (`title_template`, `noindex_site`, `google_site_verification`, `bing_site_verification`, `pages.{home,shop,stores,brands}.{title,description}`), nested `shop` (`default_view`, `products_per_page`, `pagination_mode` `pages`|`infinite`, `categories_visible`, `brands_visible`, `see_all_label`, `show_less_label`), nested `shipping` (`default_fee`, `free_threshold`), nested `analytics` + `pixels` (`enabled` + `id`).
 
 ---
 
@@ -884,6 +884,7 @@ Auth: Bearer **`super_admin`** only. Drives the main website title, SEO, Open Gr
 | POST | `/og-image` | Multipart field **`image`** · max **1 MB** · always resized |
 | POST | `/favicon` | Multipart field **`image`** · max **1 MB** · always resized |
 | POST | `/login-logo` | Multipart field **`image`** · max **1 MB** · always resized |
+| POST | `/login-image` | Multipart field **`image`** · max **1 MB** · always resized · left side of the storefront login and register pages |
 | PATCH | `/chrome` | Header/footer contact + social URL fields |
 | POST | `/nav` | Create menu item (`header`\|`footer_find`\|`footer_care`\|`footer_sell`) |
 | PATCH | `/nav/:id` | Update label/href/enabled |
@@ -982,7 +983,7 @@ Callback URLs are built from `PUBLIC_API_URL` (not editable in the dashboard). W
 
 **Shipping** (columns on `site_settings`): `shipping_default_fee` (default `60`) is used for products without their own fee. `shipping_vendor_override` (default `true`) lets vendors set a per-product `shipping_fee`; when `false`, fees sent by vendors are ignored (admins can always set it). See the shipping rule under [Customer orders](#customer-orders--apicustomerorders).
 
-**Identity media:** `og_image`, `favicon`, `login_logo`  
+**Identity media:** `og_image`, `favicon`, `login_logo` (dashboard sign-in wordmark), `login_image` (storefront login / register side photo)  
 **Chrome:** `topbar_email`, `topbar_phone`, `footer_blurb`, `footer_phone`, `footer_callout`, `social_*`  
 **Menus:** table `site_nav_items` (associative to `site_settings`)  
 **Home:** table `home_sections` (component keys + position + enabled)  
@@ -1466,6 +1467,7 @@ Includes: `id`, `vendor_id`, `category_id`, `brand_id`, `thumbnail_id`, `name`, 
 | `POST /api/dashboard/site-settings/og-image` | `image` | **1 MB** · resized |
 | `POST /api/dashboard/site-settings/favicon` | `image` | **1 MB** · resized |
 | `POST /api/dashboard/site-settings/login-logo` | `image` | **1 MB** · resized |
+| `POST /api/dashboard/site-settings/login-image` | `image` | **1 MB** · resized |
 | `POST /api/dashboard/products/:id/thumbnail` | `image` | **5 MB** · resized |
 | `POST /api/dashboard/products/:id/images` | `images` | **5 MB** × 12 · resized |
 | `POST /api/dashboard/shops/:id/logo` | `logo` | **5 MB** · resized |
@@ -1493,6 +1495,7 @@ Every dashboard image upload must match its preset's **shape** (aspect ratio wit
 | `shopBanner` / `brandBanner` | 1920 × 640 | 3:1 | store / brand banner |
 | `ogImage` | 1200 × 630 | 1.9:1 | share images (SEO, store, brand) |
 | `loginLogo` | 480 × 120 | 4:1 | dashboard login logo |
+| `loginPanel` | 960 × 1200 | 4:5 | storefront login / register side image |
 | `favicon` | 512 × 512 | 1:1 | favicon |
 | `heroMainBg` · `heroMainProduct` · `heroSideBg` · `heroSideProduct` | 1600 × 700 · 880 × 700 · 800 × 700 · 440 × 480 | 16:7 · 5:4 · 8:7 · 11:12 | home hero slots |
 | home blocks | see `HOME_BLOCK_PRESETS` | — | `/api/dashboard/home-blocks/:key/images` |

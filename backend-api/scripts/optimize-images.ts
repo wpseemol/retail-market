@@ -38,6 +38,7 @@ const mediaInclude = {
       siteSettingsOg: true,
       siteSettingsFavicon: true,
       siteSettingsLogin: true,
+      siteSettingsLoginPanel: true,
       homeHeroMainProduct: true,
       homeHeroMainBg: true,
       homeHeroSideProduct: true,
@@ -58,6 +59,7 @@ function presetFor(media: MediaRow): ImagePresetKey | null {
   if (c.siteSettingsFavicon) return "favicon";
   if (c.siteSettingsOg) return "ogImage";
   if (c.siteSettingsLogin) return "loginLogo";
+  if (c.siteSettingsLoginPanel) return "loginPanel";
   if (c.homeHeroMainBg) return "heroMainBg";
   if (c.homeHeroMainProduct) return "heroMainProduct";
   if (c.homeHeroSideBg) return "heroSideBg";

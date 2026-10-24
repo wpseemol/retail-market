@@ -21,6 +21,7 @@ export const IMAGE_PRESETS = {
   brandBanner: { width: 1920, height: 640, ratio: "3:1" },
   avatar: { width: 400, height: 400, ratio: "1:1" },
   loginLogo: { width: 480, height: 120, ratio: "4:1" },
+  loginPanel: { width: 960, height: 1200, ratio: "4:5" },
   favicon: { width: 512, height: 512, ratio: "1:1", format: "PNG" },
   ogImage: { width: 1200, height: 630, ratio: "1.91:1" },
   heroMainBg: { width: 1600, height: 700, ratio: "16:7" },

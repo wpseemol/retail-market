@@ -131,7 +131,7 @@ dashboardSeoRouter.patch("/", async (req, res) => {
   const row = await prisma.siteSettings.update({
     where: { id: 1 },
     data: update,
-    include: { og_image: true, favicon: true, login_logo: true },
+    include: { og_image: true, favicon: true, login_logo: true, login_image: true },
   });
 
   if (Object.keys(changes).length > 0) {
@@ -186,7 +186,7 @@ dashboardSeoRouter.post(
     const row = await prisma.siteSettings.update({
       where: { id: 1 },
       data: { og_image_id: media.id },
-      include: { og_image: true, favicon: true, login_logo: true },
+      include: { og_image: true, favicon: true, login_logo: true, login_image: true },
     });
     if (existing.og_image && existing.og_image.id !== media.id) {
       await removeStoredMedia(existing.og_image);
@@ -209,7 +209,7 @@ dashboardSeoRouter.delete("/og-image", async (req, res) => {
   const row = await prisma.siteSettings.update({
     where: { id: 1 },
     data: { og_image_id: null },
-    include: { og_image: true, favicon: true, login_logo: true },
+    include: { og_image: true, favicon: true, login_logo: true, login_image: true },
   });
   await removeStoredMedia(existing.og_image);
   await recordHistory(req.auth!.userId, "seo_og_image_removed", {

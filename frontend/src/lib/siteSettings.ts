@@ -55,6 +55,8 @@ export type PublicSiteSettings = {
   og_image: { path: string } | null;
   favicon: { path: string } | null;
   login_logo: { path: string } | null;
+  /** Left-side photo on the storefront login and register screens. */
+  login_image: { path: string } | null;
   twitter_title: string | null;
   twitter_description: string | null;
   twitter_handle: string | null;
@@ -121,6 +123,7 @@ const FALLBACK: PublicSiteSettings = {
   og_image: null,
   favicon: null,
   login_logo: null,
+  login_image: null,
   twitter_title: null,
   twitter_description: null,
   twitter_handle: siteConfig.social.twitter,
@@ -190,6 +193,7 @@ export async function getSiteSettings(): Promise<PublicSiteSettings> {
     if (!data.settings) return FALLBACK;
     return {
       ...data.settings,
+      login_image: data.settings.login_image ?? null,
       seo: {
         ...EMPTY_SEO,
         ...data.settings.seo,

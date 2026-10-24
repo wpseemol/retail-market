@@ -15,6 +15,8 @@ interface ShopToolbarProps {
     perPage: number;
     perPageOptions: number[];
     onPerPageChange: (perPage: number) => void;
+    /** Numbered pages let shoppers pick a page size. Infinite scroll does not. */
+    showPerPage?: boolean;
 }
 
 function ChevronDown() {
@@ -137,38 +139,53 @@ export default function ShopToolbar({
     perPage,
     perPageOptions,
     onPerPageChange,
+    showPerPage = true,
 }: ShopToolbarProps) {
     return (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-5 border-b border-border-default">
             <p className="text-[14px] text-text-secondary m-0">
-                Showing{" "}
-                <span className="text-text-primary font-medium">
-                    {total === 0 ? 0 : from}-{to}
-                </span>{" "}
-                of{" "}
-                <span className="text-text-primary font-medium">{total}</span>{" "}
-                Results
+                {showPerPage ? (
+                    <>
+                        Showing{" "}
+                        <span className="text-text-primary font-medium">
+                            {total === 0 ? 0 : from}-{to}
+                        </span>{" "}
+                        of{" "}
+                        <span className="text-text-primary font-medium">{total}</span>{" "}
+                        Results
+                    </>
+                ) : (
+                    <>
+                        Showing{" "}
+                        <span className="text-text-primary font-medium">{to}</span>{" "}
+                        of{" "}
+                        <span className="text-text-primary font-medium">{total}</span>{" "}
+                        products
+                    </>
+                )}
             </p>
 
             <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-                <label className="flex items-center gap-2 text-[13px] text-text-secondary">
-                    Show
-                    <span className="relative">
-                        <select
-                            value={perPage}
-                            onChange={(e) => onPerPageChange(Number(e.target.value))}
-                            aria-label="Products per page"
-                            className={selectClass}
-                        >
-                            {perPageOptions.map((n) => (
-                                <option key={n} value={n}>
-                                    {n}
-                                </option>
-                            ))}
-                        </select>
-                        <ChevronDown />
-                    </span>
-                </label>
+                {showPerPage ? (
+                    <label className="flex items-center gap-2 text-[13px] text-text-secondary">
+                        Show
+                        <span className="relative">
+                            <select
+                                value={perPage}
+                                onChange={(e) => onPerPageChange(Number(e.target.value))}
+                                aria-label="Products per page"
+                                className={selectClass}
+                            >
+                                {perPageOptions.map((n) => (
+                                    <option key={n} value={n}>
+                                        {n}
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown />
+                        </span>
+                    </label>
+                ) : null}
 
                 <div
                     className="flex items-center gap-0.5 sm:gap-1"

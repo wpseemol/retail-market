@@ -5,6 +5,16 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-24
 
+### Shop page size only on numbered pages
+
+- `src/components/shop/ShopToolbar.tsx` and `src/components/shop/ShopPageContent.tsx`: the “Show” page-size menu is only on numbered pages. Infinite scroll shows how many products are on screen (`Showing 24 of 120 products`) and keeps sort and layout.
+- `src/app/shop/page.tsx`: infinite scroll ignores `?per_page=` and always loads the site’s batch size.
+
+### Shopper login page
+
+- `src/components/auth/LoginForm.tsx` and `src/lib/authErrors.ts`: the storefront login page no longer links to the dashboard. Only shoppers can sign in here. Staff who try are told to use the dashboard, without a URL.
+- `src/app/(auth)/layout.tsx` and `src/components/auth/AuthShell.tsx`: the left side of the login and create-account card keeps the welcome text and shows the photo from site settings (`login_image`). The form stays on the right. Until a photo is uploaded, the green welcome panel stays.
+
 ### Shop pagination: numbered pages or infinite scroll
 
 - `src/app/shop/page.tsx`: the shop asks the API for one page (`products_per_page`, or `?page=` in numbered mode) instead of a fixed batch of 48.

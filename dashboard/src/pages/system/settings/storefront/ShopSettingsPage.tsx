@@ -110,6 +110,7 @@ function LabelInput({
 
 export function ShopSettingsPage() {
     const { form } = useSiteSettings();
+    const paginationMode = form.watch("shop_pagination_mode");
 
     return (
         <GeneralSettingsForm>
@@ -176,21 +177,23 @@ export function ShopSettingsPage() {
                                     </SelectContent>
                                 </Select>
                                 <FormDescription>
-                                    Numbered pages show page 1, page 2 and Next. Infinite scroll loads
-                                    the next page as shoppers move down. Each request is one page, and
-                                    the shop only draws the rows on screen.
+                                    {paginationMode === "infinite"
+                                        ? "Shoppers keep scrolling and the next batch loads. They do not pick how many products appear at once."
+                                        : "Numbered pages show page 1, page 2 and Next. Shoppers can choose how many products each page shows."}
                                 </FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
-                    <CountSelect
-                        name="shop_products_per_page"
-                        label="Default products per page"
-                        description="Selected when shoppers open /shop. They can still switch between 12, 24, 36 and 48 (plus this value) in the toolbar."
-                        options={SHOP_PER_PAGE_OPTIONS}
-                        suffix="per page"
-                    />
+                    {paginationMode === "pages" ? (
+                        <CountSelect
+                            name="shop_products_per_page"
+                            label="Products per page"
+                            description="How many products each numbered page shows. Shoppers can still switch this in the shop toolbar."
+                            options={SHOP_PER_PAGE_OPTIONS}
+                            suffix="per page"
+                        />
+                    ) : null}
                     <CountSelect
                         name="shop_categories_visible"
                         label="Categories shown"

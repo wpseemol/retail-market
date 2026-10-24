@@ -24,6 +24,7 @@ export const IMAGE_PRESETS = {
   brandBanner: { width: 1920, height: 640, format: "webp" },
   avatar: { width: 400, height: 400, format: "webp" },
   loginLogo: { width: 480, height: 120, format: "webp" },
+  loginPanel: { width: 960, height: 1200, format: "webp" },
   favicon: { width: 512, height: 512, format: "png" },
   ogImage: { width: 1200, height: 630, format: "webp" },
   heroMainBg: { width: 1600, height: 700, format: "webp" },

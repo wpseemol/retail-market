@@ -276,6 +276,7 @@ export default function ShopPageContent({
                 perPage={perPage}
                 perPageOptions={perPageOptions}
                 onPerPageChange={handlePerPageChange}
+                showPerPage={paginationMode === "pages"}
               />
 
               {hasActiveFilters ? (

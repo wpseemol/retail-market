@@ -130,6 +130,7 @@ export type SiteSettingsApiResponse = {
     og_image: { id: string; path: string; alt_text?: string | null } | null;
     favicon: { id: string; path: string; alt_text?: string | null } | null;
     login_logo: { id: string; path: string; alt_text?: string | null } | null;
+    login_image: { id: string; path: string; alt_text?: string | null } | null;
     twitter_title: string | null;
     twitter_description: string | null;
     twitter_handle: string | null;
@@ -161,6 +162,7 @@ export type SiteSettingsApiResponse = {
     og_image_id: string | null;
     favicon_id: string | null;
     login_logo_id: string | null;
+    login_image_id: string | null;
     topbar_email?: string | null;
     topbar_phone?: string | null;
     footer_blurb?: string | null;
@@ -247,4 +249,8 @@ export function validateFaviconFile(file: File | null | undefined) {
 
 export function validateLoginLogoFile(file: File | null | undefined) {
   return validateSafeImageFile(file, OG_IMAGE_MAX_BYTES, "Login logo");
+}
+
+export function validateLoginImageFile(file: File | null | undefined) {
+  return validateSafeImageFile(file, OG_IMAGE_MAX_BYTES, "Login image");
 }

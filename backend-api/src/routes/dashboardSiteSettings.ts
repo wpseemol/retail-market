@@ -53,8 +53,8 @@ dashboardSiteSettingsRouter.use("/payment-gateway", dashboardPaymentGatewayRoute
 
 type ChangeMap = Record<string, { from: unknown; to: unknown }>;
 
-type SiteMediaField = "og_image_id" | "favicon_id" | "login_logo_id";
-type SiteMediaRelation = "og_image" | "favicon" | "login_logo";
+type SiteMediaField = "og_image_id" | "favicon_id" | "login_logo_id" | "login_image_id";
+type SiteMediaRelation = "og_image" | "favicon" | "login_logo" | "login_image";
 
 async function toDashboardSettings(
   row: Awaited<ReturnType<typeof ensureSiteSettings>>,
@@ -116,6 +116,7 @@ async function toDashboardSettings(
     og_image_id: row.og_image_id?.toString() ?? null,
     favicon_id: row.favicon_id?.toString() ?? null,
     login_logo_id: row.login_logo_id?.toString() ?? null,
+    login_image_id: row.login_image_id?.toString() ?? null,
     nav,
     home_sections: homeRows.map((s) => ({
       id: s.id.toString(),
@@ -649,6 +650,25 @@ dashboardSiteSettingsRouter.post(
       field: "login_logo_id",
       relation: "login_logo",
       preset: "loginLogo",
+    });
+  },
+);
+
+/** Upload / replace the storefront login side image — max 1 MB, resized. */
+dashboardSiteSettingsRouter.post(
+  "/login-image",
+  siteImageUploadMiddleware("Login image", "LOGIN_IMAGE"),
+  async (req, res) => {
+    await handleSiteImageUpload({
+      req,
+      res,
+      label: "Login image",
+      codePrefix: "LOGIN_IMAGE",
+      action: "login_image_updated",
+      successMessage: "Login image updated",
+      field: "login_image_id",
+      relation: "login_image",
+      preset: "loginPanel",
     });
   },
 );

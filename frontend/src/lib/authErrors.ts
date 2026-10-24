@@ -1,7 +1,3 @@
-import { dashboardLoginUrl } from "@/config/site";
-
-const DASHBOARD_LOGIN_URL = dashboardLoginUrl();
-
 /** Map Auth.js `signIn` result codes (from backend) to storefront copy. */
 export function messageForAuthCode(
   code: string | undefined | null,
@@ -13,7 +9,7 @@ export function messageForAuthCode(
     case "EMAIL_IN_USE":
       return "An account with this email or phone already exists. Try logging in instead.";
     case "STAFF_USE_DASHBOARD":
-      return `Staff accounts cannot sign in here. Use the dashboard: ${DASHBOARD_LOGIN_URL}`;
+      return "This page is for shoppers. Staff accounts sign in on the dashboard.";
     case "GOOGLE_EMAIL_UNVERIFIED":
       return "Your Google email is not verified. Verify it with Google, then try again.";
     case "INVALID_GOOGLE_TOKEN":

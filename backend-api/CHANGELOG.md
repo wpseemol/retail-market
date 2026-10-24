@@ -5,6 +5,14 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-24
 
+### Storefront login side image
+
+- `prisma/schema.prisma` and `prisma/migrations/20261024150000_site_settings_login_image`: `site_settings.login_image_id` stores the photo for the storefront login and register screens.
+- `src/lib/imageOptimize.ts`: preset `loginPanel` (960 × 1200, WebP).
+- `src/routes/publicSiteSettings.ts` and `src/routes/dashboardSiteSettings.ts`: public settings include `login_image`. Super admin uploads it at `POST /api/dashboard/site-settings/login-image` (field `image`, max 1 MB, resized).
+- `scripts/optimize-images.ts`: that photo uses the `loginPanel` preset.
+- `API.md` documents the field, the upload, and the size rule.
+
 ### Shop pagination mode and catalog filters
 
 - `prisma/schema.prisma` and `prisma/migrations/20261024140000_shop_pagination_mode`: `site_settings.shop_pagination_mode` is `pages` or `infinite` (default `pages`).

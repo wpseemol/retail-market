@@ -219,6 +219,7 @@ model Media {
   siteSettingsOg      SiteSettings[]   @relation("SiteSettingsOgImage")
   siteSettingsFavicon SiteSettings[]   @relation("SiteSettingsFavicon")
   siteSettingsLogin   SiteSettings[]   @relation("SiteSettingsLoginLogo")
+  siteSettingsLoginPanel SiteSettings[] @relation("SiteSettingsLoginImage")
   homeHeroMainProduct HomeHeroBanner[] @relation("HomeHeroMainProduct")
   homeHeroMainBg      HomeHeroBanner[] @relation("HomeHeroMainBg")
   homeHeroSideProduct HomeHeroBanner[] @relation("HomeHeroSideProduct")
@@ -899,8 +900,10 @@ model SiteSettings {
   og_image_id    BigInt? @unique @db.UnsignedBigInt
   /// Browser tab / bookmark icon.
   favicon_id     BigInt? @unique @db.UnsignedBigInt
-  /// Logo shown on dashboard (and storefront) login screens.
+  /// Wordmark on the dashboard sign-in screen.
   login_logo_id  BigInt? @unique @db.UnsignedBigInt
+  /// Photo on the left side of the storefront login and register screens.
+  login_image_id BigInt? @unique @db.UnsignedBigInt
 
   twitter_title       String? @db.VarChar(160)
   twitter_description String? @db.VarChar(500)
@@ -974,6 +977,7 @@ model SiteSettings {
   og_image      Media?                @relation("SiteSettingsOgImage", fields: [og_image_id], references: [id], onDelete: SetNull)
   favicon       Media?                @relation("SiteSettingsFavicon", fields: [favicon_id], references: [id], onDelete: SetNull)
   login_logo    Media?                @relation("SiteSettingsLoginLogo", fields: [login_logo_id], references: [id], onDelete: SetNull)
+  login_image   Media?                @relation("SiteSettingsLoginImage", fields: [login_image_id], references: [id], onDelete: SetNull)
   history       SiteSettingsHistory[]
   nav_items     SiteNavItem[]
   home_sections HomeSection[]
