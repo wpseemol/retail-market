@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ShopPageContent from "@/components/shop/ShopPageContent";
+import { clampPerPage, perPageChoices } from "@/components/shop/data";
 import type { ShopViewMode } from "@/components/shop/types";
 import { siteConfig } from "@/config/site";
 import { fetchProducts, toShopProduct } from "@/lib/products";
@@ -27,7 +28,13 @@ export async function generateMetadata({
     path: "/shop",
   });
   // Filtered / searched listings are thin duplicates of /shop and brand pages.
-  if (firstParam(params.q) || firstParam(params.brand) || firstParam(params.per_page)) {
+  const pageParam = Number(firstParam(params.page));
+  if (
+    firstParam(params.q) ||
+    firstParam(params.brand) ||
+    firstParam(params.per_page) ||
+    (Number.isInteger(pageParam) && pageParam > 1)
+  ) {
     return { ...base, robots: { index: false, follow: true } };
   }
   return base;
@@ -46,17 +53,27 @@ export default async function ShopPage({
   const perPageParam = firstParam(params.per_page);
   const initialPerPage = /^\d{1,2}$/.test(perPageParam) ? Number(perPageParam) : null;
 
-  const [data, settings, locale] = await Promise.all([
-    fetchProducts({
-      limit: 48,
-      sort: "default",
-      q: q || undefined,
-      category: category || undefined,
-      brand: brand || undefined,
-    }),
-    getSiteSettings(),
-    getLocale(),
-  ]);
+  const [settings, locale] = await Promise.all([getSiteSettings(), getLocale()]);
+  const defaultPerPage = clampPerPage(settings.shop.products_per_page);
+  const limit =
+    initialPerPage && perPageChoices(defaultPerPage).includes(initialPerPage)
+      ? initialPerPage
+      : defaultPerPage;
+  const requestedPage = Number(firstParam(params.page));
+  const page =
+    settings.shop.pagination_mode === "pages" &&
+    Number.isInteger(requestedPage) &&
+    requestedPage > 0
+      ? requestedPage
+      : 1;
+  const data = await fetchProducts({
+    page,
+    limit,
+    sort: "default",
+    q: q || undefined,
+    category: category || undefined,
+    brand: brand || undefined,
+  });
   const products = data.products.map((p) => toShopProduct(p, locale));
   const tags = Array.from(
     new Set(
@@ -82,6 +99,11 @@ export default async function ShopPage({
         defaultViewMode={settings.shop.default_view as ShopViewMode}
         productsPerPage={settings.shop.products_per_page}
         initialPerPage={initialPerPage}
+        paginationMode={settings.shop.pagination_mode}
+        initialPage={data.pagination?.page ?? page}
+        initialTotal={data.pagination?.total ?? products.length}
+        initialTotalPages={data.pagination?.total_pages ?? 1}
+        locale={locale}
         categoriesVisible={settings.shop.categories_visible}
         brandsVisible={settings.shop.brands_visible}
         seeAllLabel={settings.shop.see_all_label}

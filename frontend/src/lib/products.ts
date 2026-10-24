@@ -173,23 +173,38 @@ export function toShopProduct(apiProduct: ApiProduct, locale: Locale = "en"): Sh
   };
 }
 
-export async function fetchProducts(options?: {
+export type ProductListQuery = {
   page?: number;
   limit?: number;
   q?: string;
   category?: string;
   brand?: string;
+  brands?: string[];
+  minPrice?: number;
+  maxPrice?: number;
   sort?: string;
-}): Promise<ProductsListPayload> {
+};
+
+export function productListPath(options?: ProductListQuery) {
   const params = new URLSearchParams();
   if (options?.page) params.set("page", String(options.page));
   if (options?.limit) params.set("limit", String(options.limit));
   if (options?.q?.trim()) params.set("q", options.q.trim());
   if (options?.category) params.set("category", options.category);
-  if (options?.brand) params.set("brand", options.brand);
+  if (options?.brands && options.brands.length > 0) {
+    params.set("brands", options.brands.join(","));
+  } else if (options?.brand) {
+    params.set("brand", options.brand);
+  }
+  if (options?.minPrice != null) params.set("min_price", String(options.minPrice));
+  if (options?.maxPrice != null) params.set("max_price", String(options.maxPrice));
   if (options?.sort) params.set("sort", options.sort);
   const qs = params.toString();
-  const url = `${API_URL}/api/products${qs ? `?${qs}` : ""}`;
+  return `/api/products${qs ? `?${qs}` : ""}`;
+}
+
+export async function fetchProducts(options?: ProductListQuery): Promise<ProductsListPayload> {
+  const url = `${API_URL}${productListPath(options)}`;
 
   const empty: ProductsListPayload = {
     products: [],

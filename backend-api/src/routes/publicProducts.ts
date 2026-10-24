@@ -42,6 +42,10 @@ const listQuerySchema = z.object({
   q: searchQuerySchema,
   category: searchQuerySchema,
   brand: searchQuerySchema,
+  /** Comma-separated brand slugs. Combined with `brand` when both are sent. */
+  brands: z.string().trim().max(600).optional(),
+  min_price: z.coerce.number().finite().min(0).max(1_000_000).optional(),
+  max_price: z.coerce.number().finite().min(0).max(1_000_000).optional(),
   sort: z
     .enum(["default", "price-asc", "price-desc", "name-asc", "newest"])
     .default("default"),
@@ -104,11 +108,23 @@ function catalogWhere(filters: {
   q?: string;
   category?: string;
   brands?: string[];
+  minPrice?: number;
+  maxPrice?: number;
 }): Prisma.ProductWhereInput {
-  const { q, category, brands = [] } = filters;
+  const { q, category, brands = [], minPrice, maxPrice } = filters;
+  const price =
+    minPrice != null || maxPrice != null
+      ? {
+          price: {
+            ...(minPrice != null ? { gte: minPrice } : {}),
+            ...(maxPrice != null ? { lte: maxPrice } : {}),
+          },
+        }
+      : {};
   return {
     AND: [
       activeProductScope(),
+      price,
       q
         ? {
             OR: [
@@ -177,11 +193,36 @@ publicProductsRouter.get("/", async (req, res) => {
     });
   }
 
-  const { page, limit, q, sort } = parsed.data;
+  const { page, limit, q, sort, min_price: minPrice, max_price: maxPrice } = parsed.data;
+  if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
+    return res.status(400).json({ message: "min_price cannot be greater than max_price" });
+  }
   const category = safeOptionalSlug(parsed.data.category);
   const brand = safeOptionalSlug(parsed.data.brand);
+  const brandList = [
+    ...new Set(
+      [
+        ...(brand ? [brand.toLowerCase()] : []),
+        ...(parsed.data.brands
+          ? parsed.data.brands
+              .split(",")
+              .map((value) => value.trim().toLowerCase())
+              .filter(Boolean)
+          : []),
+      ],
+    ),
+  ];
+  if (brandList.length > 20 || brandList.some((value) => !SLUG_RE.test(value))) {
+    return res.status(400).json({ message: "Invalid brand" });
+  }
 
-  const where = catalogWhere({ q, category, brands: brand ? [brand] : [] });
+  const where = catalogWhere({
+    q,
+    category,
+    brands: brandList,
+    minPrice,
+    maxPrice,
+  });
 
   const [total, rows, categories, brands, priceAgg] = await Promise.all([
     prisma.product.count({ where }),

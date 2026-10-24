@@ -1,16 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { Locale } from "@/i18n/config";
 import { usePriceRange } from "@/hooks/usePriceRange";
 import { clampPerPage, PRODUCTS_PER_PAGE, perPageChoices } from "./data";
 import QuickViewModal from "./QuickViewModal";
 import ShopBreadcrumb from "./ShopBreadcrumb";
 import ShopPagination from "./ShopPagination";
-import ShopProductCard from "./ShopProductCard";
+import ShopProductGrid from "./ShopProductGrid";
 import ShopSidebar from "./ShopSidebar";
 import ShopToolbar from "./ShopToolbar";
 import type { ShopProduct, ShopSortOption, ShopViewMode } from "./types";
-import { VIEW_MODE_GRID_CLASS } from "./types";
+import { useShopCatalog, type ShopPaginationMode } from "./useShopCatalog";
 
 export type ShopFacetOption = {
   id: string;
@@ -30,6 +31,11 @@ type ShopPageContentProps = {
   productsPerPage?: number;
   /** Shopper's choice from `?per_page=`; falls back to the default. */
   initialPerPage?: number | null;
+  paginationMode?: ShopPaginationMode;
+  initialPage?: number;
+  initialTotal?: number;
+  initialTotalPages?: number;
+  locale?: Locale;
   categoriesVisible?: number;
   brandsVisible?: number;
   seeAllLabel?: string;
@@ -39,70 +45,6 @@ type ShopPageContentProps = {
   /** Brand slug from `?brand=`; preselects that brand filter. */
   initialBrand?: string | null;
 };
-
-function matchesSearch(product: ShopProduct, query: string) {
-  const q = query.trim().toLowerCase();
-  if (!q) return true;
-  const haystack = [
-    product.name,
-    product.brand,
-    product.category,
-    product.description,
-    product.sku,
-    product.model,
-    product.slug,
-    ...(product.tags ?? []),
-    ...(product.categoryLabels ?? []),
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-  return haystack.includes(q);
-}
-
-function matchesBrand(
-  product: ShopProduct,
-  selectedBrands: string[],
-  brands: ShopFacetOption[],
-) {
-  if (selectedBrands.length === 0) return true;
-  const brandSlug = product.brand.toLowerCase();
-  const brandLabel = (product.model ?? "").toLowerCase();
-  return selectedBrands.some((id) => {
-    const facet = brands.find((b) => b.id === id);
-    const idLower = id.toLowerCase();
-    const labelLower = (facet?.label ?? "").toLowerCase();
-    return (
-      brandSlug === idLower ||
-      brandLabel === idLower ||
-      (labelLower &&
-        (brandLabel === labelLower ||
-          brandSlug === labelLower ||
-          product.tags.some((t) => t.toLowerCase() === labelLower)))
-    );
-  });
-}
-
-function matchesCategory(
-  product: ShopProduct,
-  selectedCategory: string | null,
-  categories: ShopFacetOption[],
-) {
-  if (!selectedCategory) return true;
-  const facet = categories.find((c) => c.id === selectedCategory);
-  const idLower = selectedCategory.toLowerCase();
-  const labelLower = (facet?.label ?? "").toLowerCase();
-  const cat = product.category.toLowerCase();
-  return (
-    cat === idLower ||
-    (labelLower &&
-      (cat === labelLower ||
-        product.tags.some((t) => t.toLowerCase() === labelLower) ||
-        product.categoryLabels?.some(
-          (t) => t.toLowerCase() === labelLower,
-        )))
-  );
-}
 
 export default function ShopPageContent({
   products,
@@ -120,6 +62,11 @@ export default function ShopPageContent({
   initialSearch = "",
   initialCategory = null,
   initialBrand = null,
+  paginationMode = "pages",
+  initialPage = 1,
+  initialTotal = 0,
+  initialTotalPages = 1,
+  locale = "en",
 }: ShopPageContentProps) {
   const defaultPerPage = clampPerPage(productsPerPage);
   const perPageOptions = useMemo(() => perPageChoices(defaultPerPage), [defaultPerPage]);
@@ -168,80 +115,87 @@ export default function ShopPageContent({
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ShopViewMode>(defaultViewMode);
   const [sortBy, setSortBy] = useState<ShopSortOption>("default");
-  const [currentPage, setCurrentPage] = useState(1);
   const [quickViewProduct, setQuickViewProduct] =
     useState<ShopProduct | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
+  const [debouncedPrice, setDebouncedPrice] = useState({ min: priceMin, max: priceMax });
+  const listRef = useRef<HTMLDivElement>(null);
+  const skipPageScroll = useRef(true);
 
-  const filteredProducts = useMemo(() => {
-    let result = products.filter((p) => {
-      if (!matchesSearch(p, searchQuery)) return false;
-      if (p.priceMin < priceMin || p.priceMin > priceMax) return false;
-      if (selectedColor && !p.colors.includes(selectedColor)) return false;
-      if (!matchesCategory(p, selectedCategory, categories)) return false;
-      if (!matchesBrand(p, selectedBrands, brands)) return false;
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => setDebouncedPrice({ min: priceMin, max: priceMax }),
+      300,
+    );
+    return () => window.clearTimeout(timer);
+  }, [priceMin, priceMax]);
+
+  const catalog = useShopCatalog({
+    initialProducts: products,
+    initialPage,
+    initialTotal: initialTotal || products.length,
+    initialTotalPages,
+    mode: paginationMode,
+    perPage,
+    search: debouncedSearch,
+    category: selectedCategory,
+    brands: selectedBrands,
+    sort: sortBy,
+    priceMin: debouncedPrice.min,
+    priceMax: debouncedPrice.max,
+    priceBounds: { min: rangeMin, max: rangeMax },
+    locale,
+  });
+
+  const visibleProducts = useMemo(() => {
+    const result = catalog.products.filter((product) => {
+      if (selectedColor && !product.colors.includes(selectedColor)) return false;
       if (
         selectedTag &&
-        !p.tags.some((t) => t.toLowerCase() === selectedTag.toLowerCase())
+        !product.tags.some((tag) => tag.toLowerCase() === selectedTag.toLowerCase())
       ) {
         return false;
       }
       return true;
     });
+    if (sortBy !== "rating-desc") return result;
+    return [...result].sort((a, b) => b.rating - a.rating);
+  }, [catalog.products, selectedColor, selectedTag, sortBy]);
 
-    result = [...result];
-    switch (sortBy) {
-      case "price-asc":
-        result.sort((a, b) => a.priceMin - b.priceMin);
-        break;
-      case "price-desc":
-        result.sort((a, b) => b.priceMin - a.priceMin);
-        break;
-      case "name-asc":
-        result.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case "rating-desc":
-        result.sort((a, b) => b.rating - a.rating);
-        break;
-      default:
-        break;
+  useEffect(() => {
+    if (paginationMode !== "pages") return;
+    if (skipPageScroll.current) {
+      skipPageScroll.current = false;
+      return;
     }
+    listRef.current?.scrollIntoView({ block: "start" });
+  }, [catalog.page, paginationMode]);
 
-    return result;
-  }, [
-    products,
-    searchQuery,
-    priceMin,
-    priceMax,
-    selectedColor,
-    selectedCategory,
-    selectedBrands,
-    selectedTag,
-    sortBy,
-    categories,
-    brands,
-  ]);
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredProducts.length / perPage),
-  );
-  const safePage = Math.min(currentPage, totalPages);
-  const startIndex = (safePage - 1) * perPage;
-  const pageProducts = filteredProducts.slice(
-    startIndex,
-    startIndex + perPage,
-  );
-
-  const resetPage = () => setCurrentPage(1);
+  const rangeStart =
+    visibleProducts.length === 0
+      ? 0
+      : paginationMode === "infinite"
+        ? 1
+        : (catalog.page - 1) * perPage + 1;
+  const rangeEnd =
+    visibleProducts.length === 0
+      ? 0
+      : paginationMode === "infinite"
+        ? visibleProducts.length
+        : rangeStart + visibleProducts.length - 1;
 
   const handlePerPageChange = (next: number) => {
-    if (!perPageOptions.includes(next)) return;
-    const firstVisible = startIndex;
+    if (!perPageOptions.includes(next) || next === perPage) return;
     setPerPage(next);
-    setCurrentPage(Math.floor(firstVisible / next) + 1);
     const url = new URL(window.location.href);
     if (next === defaultPerPage) url.searchParams.delete("per_page");
     else url.searchParams.set("per_page", String(next));
+    url.searchParams.delete("page");
     window.history.replaceState(window.history.state, "", url);
   };
 
@@ -251,7 +205,6 @@ export default function ShopPageContent({
         ? prev.filter((id) => id !== brandId)
         : [...prev, brandId],
     );
-    resetPage();
   };
 
   const clearFilters = () => {
@@ -263,7 +216,6 @@ export default function ShopPageContent({
     setSelectedBrands([]);
     setSelectedTag(null);
     setSortBy("default");
-    resetPage();
   };
 
   const hasColorData = products.some((p) => p.colors.length > 0);
@@ -288,10 +240,7 @@ export default function ShopPageContent({
           <div className="flex flex-col lg:flex-row gap-8 xl:gap-10">
             <ShopSidebar
               searchQuery={searchQuery}
-              onSearchChange={(value) => {
-                setSearchQuery(value);
-                resetPage();
-              }}
+              onSearchChange={setSearchQuery}
               priceMin={priceMin}
               priceMax={priceMax}
               priceRange={{ min: rangeMin, max: rangeMax }}
@@ -299,26 +248,16 @@ export default function ShopPageContent({
               onPriceChange={(min, max) => {
                 setPriceMin(min);
                 setPriceMax(max);
-                resetPage();
               }}
               selectedColor={selectedColor}
-              onColorChange={(color) => {
-                setSelectedColor(color);
-                resetPage();
-              }}
+              onColorChange={setSelectedColor}
               showColorFilter={hasColorData}
               selectedCategory={selectedCategory}
-              onCategoryChange={(category) => {
-                setSelectedCategory(category);
-                resetPage();
-              }}
+              onCategoryChange={setSelectedCategory}
               selectedBrands={selectedBrands}
               onBrandToggle={handleBrandToggle}
               selectedTag={selectedTag}
-              onTagChange={(tag) => {
-                setSelectedTag(tag);
-                resetPage();
-              }}
+              onTagChange={setSelectedTag}
               categories={categories}
               brands={brands}
               tags={tags}
@@ -328,23 +267,15 @@ export default function ShopPageContent({
               showLessLabel={showLessLabel}
             />
 
-            <div className="flex-1 min-w-0">
+            <div ref={listRef} className="flex-1 min-w-0">
               <ShopToolbar
-                from={
-                  filteredProducts.length === 0 ? 0 : startIndex + 1
-                }
-                to={Math.min(
-                  startIndex + perPage,
-                  filteredProducts.length,
-                )}
-                total={filteredProducts.length}
+                from={rangeStart}
+                to={rangeEnd}
+                total={catalog.total}
                 viewMode={viewMode}
                 onViewModeChange={setViewMode}
                 sortBy={sortBy}
-                onSortChange={(sort) => {
-                  setSortBy(sort);
-                  resetPage();
-                }}
+                onSortChange={setSortBy}
                 perPage={perPage}
                 perPageOptions={perPageOptions}
                 onPerPageChange={handlePerPageChange}
@@ -362,10 +293,12 @@ export default function ShopPageContent({
                 </div>
               ) : null}
 
-              {pageProducts.length === 0 ? (
+              {catalog.loading && visibleProducts.length === 0 ? (
+                <p className="py-16 text-center text-sm text-text-secondary">Loading products…</p>
+              ) : visibleProducts.length === 0 ? (
                 <div className="py-20 text-center border border-dashed border-border-default rounded-lg bg-bg-surface">
                   <p className="text-text-secondary text-[15px] m-0">
-                    {products.length === 0
+                    {catalog.total === 0
                       ? "No products available yet."
                       : "No products match your filters."}
                   </p>
@@ -378,29 +311,29 @@ export default function ShopPageContent({
                   </button>
                 </div>
               ) : (
-                <div
-                  className={
-                    viewMode === "list"
-                      ? "flex flex-col gap-4"
-                      : VIEW_MODE_GRID_CLASS[viewMode]
-                  }
-                >
-                  {pageProducts.map((product) => (
-                    <ShopProductCard
-                      key={product.id}
-                      product={product}
-                      viewMode={viewMode}
-                      onQuickView={setQuickViewProduct}
-                    />
-                  ))}
+                <div className={catalog.loading ? "opacity-60" : undefined}>
+                  <ShopProductGrid
+                    products={visibleProducts}
+                    viewMode={viewMode}
+                    onQuickView={setQuickViewProduct}
+                    onNearEnd={paginationMode === "infinite" ? catalog.loadMore : undefined}
+                    restoreScrollY={catalog.restoreScrollY}
+                    loadingMore={catalog.loadingMore}
+                    error={catalog.error}
+                    onRetry={catalog.retry}
+                    hasMore={catalog.page < catalog.totalPages}
+                    showStatus={paginationMode === "infinite"}
+                  />
                 </div>
               )}
 
-              <ShopPagination
-                currentPage={safePage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-              />
+              {paginationMode === "pages" ? (
+                <ShopPagination
+                  currentPage={catalog.page}
+                  totalPages={catalog.totalPages}
+                  onPageChange={catalog.goToPage}
+                />
+              ) : null}
             </div>
           </div>
         </div>

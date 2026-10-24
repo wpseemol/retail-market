@@ -418,6 +418,12 @@ const en = {
         catalogEmpty: "No products to show right now.",
         catalogFailed: "Could not load products. Try again.",
     },
+    shopPage: {
+        loadingMore: "Loading more products…",
+        endOfList: "You've seen every product in this list.",
+        loadFailed: "Could not load the next page.",
+        retry: "Try again",
+    },
 };
 
 export type Dictionary = typeof en;

@@ -420,6 +420,12 @@ const bn: Dictionary = {
         catalogEmpty: "এখন দেখানোর মতো কোনো পণ্য নেই।",
         catalogFailed: "পণ্য লোড হয়নি। আবার চেষ্টা করুন।",
     },
+    shopPage: {
+        loadingMore: "আরও পণ্য লোড হচ্ছে…",
+        endOfList: "এই তালিকার সব পণ্য দেখা হয়ে গেছে।",
+        loadFailed: "পরের পাতা লোড হয়নি।",
+        retry: "আবার চেষ্টা করুন",
+    },
 };
 
 export default bn;

@@ -62,6 +62,8 @@ export type PublicSiteSettings = {
   shop: {
     default_view: "grid4" | "grid3" | "grid2" | "list";
     products_per_page: number;
+    /** `pages` shows numbered pages. `infinite` loads the next page while scrolling. */
+    pagination_mode: "pages" | "infinite";
     categories_visible: number;
     brands_visible: number;
     see_all_label: string;
@@ -126,6 +128,7 @@ const FALLBACK: PublicSiteSettings = {
   shop: {
     default_view: "grid4",
     products_per_page: 12,
+    pagination_mode: "pages",
     categories_visible: 5,
     brands_visible: 6,
     see_all_label: "See all",
@@ -162,6 +165,7 @@ function normalizeShopSettings(
       ? (view as PublicSiteSettings["shop"]["default_view"])
       : "grid4",
     products_per_page: clampInt(shop?.products_per_page, 4, 48, 12),
+    pagination_mode: shop?.pagination_mode === "infinite" ? "infinite" : "pages",
     categories_visible: clampInt(shop?.categories_visible, 1, 50, 5),
     brands_visible: clampInt(shop?.brands_visible, 1, 50, 6),
     see_all_label:

@@ -1,5 +1,20 @@
 "use client";
 
+function pageList(current: number, total: number): Array<number | "gap"> {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const wanted = new Set(
+        [1, total, current - 1, current, current + 1].filter((page) => page >= 1 && page <= total),
+    );
+    const sorted = [...wanted].sort((a, b) => a - b);
+    const list: Array<number | "gap"> = [];
+    sorted.forEach((page, index) => {
+        const prev = sorted[index - 1];
+        if (prev != null && page - prev > 1) list.push("gap");
+        list.push(page);
+    });
+    return list;
+}
+
 interface ShopPaginationProps {
     currentPage: number;
     totalPages: number;
@@ -13,7 +28,7 @@ export default function ShopPagination({
 }: ShopPaginationProps) {
     if (totalPages <= 1) return null;
 
-    const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pages = pageList(currentPage, totalPages);
 
     return (
         <nav
@@ -40,7 +55,14 @@ export default function ShopPagination({
                 </svg>
             </button>
 
-            {pages.map((page) => {
+            {pages.map((page, index) => {
+                if (page === "gap") {
+                    return (
+                        <span key={`gap-${index}`} className="px-1 text-text-secondary" aria-hidden>
+                            …
+                        </span>
+                    );
+                }
                 const isActive = page === currentPage;
                 return (
                     <button

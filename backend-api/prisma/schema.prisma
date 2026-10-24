@@ -939,6 +939,8 @@ model SiteSettings {
   shop_default_view       String @default("grid4") @db.VarChar(16)
   /// How many products to show per page on /shop.
   shop_products_per_page  Int    @default(12)
+  /// `pages` (numbered) or `infinite` (load the next page while scrolling).
+  shop_pagination_mode    String @default("pages") @db.VarChar(16)
   /// Sidebar: how many categories shown before “See all”.
   shop_categories_visible Int    @default(5)
   /// Sidebar: how many brands shown before “See all”.

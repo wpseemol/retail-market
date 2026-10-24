@@ -91,6 +91,7 @@ export const siteSettingsFormSchema = z.object({
   // ── Shop catalog ──────────────────────────────────────────────────────────
   shop_default_view: z.enum(["grid4", "grid3", "grid2", "list"]),
   shop_products_per_page: z.number().int().min(4).max(48),
+  shop_pagination_mode: z.enum(["pages", "infinite"]),
   shop_categories_visible: z.number().int().min(1).max(50),
   shop_brands_visible: z.number().int().min(1).max(50),
   shop_see_all_label: withSafeInput(
@@ -111,6 +112,10 @@ export const SHOP_VIEW_OPTIONS = [
 ] as const;
 
 export const SHOP_PER_PAGE_OPTIONS = [8, 12, 16, 20, 24, 36, 48] as const;
+export const SHOP_PAGINATION_OPTIONS = [
+  { value: "pages", label: "Numbered pages" },
+  { value: "infinite", label: "Infinite scroll" },
+] as const;
 export const SHOP_FACET_VISIBLE_OPTIONS = [3, 4, 5, 6, 8, 10, 12, 15, 20] as const;
 
 /** API response shape for the dashboard GET/PATCH site-settings endpoints. */
@@ -148,6 +153,7 @@ export type SiteSettingsApiResponse = {
     meta_pixel_enabled: boolean;
     shop_default_view: "grid4" | "grid3" | "grid2" | "list";
     shop_products_per_page: number;
+    shop_pagination_mode: "pages" | "infinite";
     shop_categories_visible: number;
     shop_brands_visible: number;
     shop_see_all_label: string;

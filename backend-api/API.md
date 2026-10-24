@@ -313,7 +313,7 @@ No auth. Active products only (inactive / draft stay dashboard-only).
 
 ### `GET /api/products`
 
-Query: `page`, `limit` (max 48), `q?`, `category?` (slug), `brand?` (slug), `sort` (`default`|`price-asc`|`price-desc`|`name-asc`|`newest`).
+Query: `page`, `limit` (max 48), `q?`, `category?` (slug), `brand?` (slug), `brands?` (comma-separated slugs, max 20, combined with `brand`), `min_price?`, `max_price?`, `sort` (`default`|`price-asc`|`price-desc`|`name-asc`|`newest`).
 
 **200** → `{ products, facets, pagination }`
 
@@ -869,7 +869,7 @@ Multipart field **`avatar`** · max **5 MB** · JPEG/PNG/WebP/GIF. Clears `avata
 
 No auth. Used by the storefront for SEO / Open Graph and analytics pixels.
 
-`GET /api/site-settings` → `{ settings }` with `site_name`, `site_title`, `site_description`, `keywords`, OG/Twitter fields, `og_image`, `favicon`, `login_logo`, nested `seo` (`title_template`, `noindex_site`, `google_site_verification`, `bing_site_verification`, `pages.{home,shop,stores,brands}.{title,description}`), nested `shop` (`default_view`, `products_per_page`, `categories_visible`, `brands_visible`, `see_all_label`, `show_less_label`), nested `shipping` (`default_fee`, `free_threshold`), nested `analytics` + `pixels` (`enabled` + `id`).
+`GET /api/site-settings` → `{ settings }` with `site_name`, `site_title`, `site_description`, `keywords`, OG/Twitter fields, `og_image`, `favicon`, `login_logo`, nested `seo` (`title_template`, `noindex_site`, `google_site_verification`, `bing_site_verification`, `pages.{home,shop,stores,brands}.{title,description}`), nested `shop` (`default_view`, `products_per_page`, `pagination_mode` `pages`|`infinite`, `categories_visible`, `brands_visible`, `see_all_label`, `show_less_label`), nested `shipping` (`default_fee`, `free_threshold`), nested `analytics` + `pixels` (`enabled` + `id`).
 
 ---
 
@@ -986,7 +986,7 @@ Callback URLs are built from `PUBLIC_API_URL` (not editable in the dashboard). W
 **Chrome:** `topbar_email`, `topbar_phone`, `footer_blurb`, `footer_phone`, `footer_callout`, `social_*`  
 **Menus:** table `site_nav_items` (associative to `site_settings`)  
 **Home:** table `home_sections` (component keys + position + enabled)  
-**Shop catalog:** `shop_default_view` (`grid4`|`grid3`|`grid2`|`list`, default `grid4`), `shop_products_per_page` (default `12`), `shop_categories_visible` (default `5`), `shop_brands_visible` (default `6`), `shop_see_all_label` / `shop_show_less_label` (sidebar expand/collapse text)
+**Shop catalog:** `shop_default_view` (`grid4`|`grid3`|`grid2`|`list`, default `grid4`), `shop_products_per_page` (default `12`), `shop_pagination_mode` (`pages`|`infinite`, default `pages`), `shop_categories_visible` (default `5`), `shop_brands_visible` (default `6`), `shop_see_all_label` / `shop_show_less_label` (sidebar expand/collapse text)
 **Analytics IDs:** Google Analytics (`G-…`), GTM (`GTM-…`), Hotjar, Plerdy
 **Pixels:** Google Ads (`AW-…`), TikTok, LinkedIn, Twitter/X, Meta (Facebook)
 

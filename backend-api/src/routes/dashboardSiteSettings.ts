@@ -98,6 +98,7 @@ async function toDashboardSettings(
     meta_pixel_enabled: row.meta_pixel_enabled,
     shop_default_view: row.shop_default_view,
     shop_products_per_page: row.shop_products_per_page,
+    shop_pagination_mode: row.shop_pagination_mode === "infinite" ? "infinite" : "pages",
     shop_categories_visible: row.shop_categories_visible,
     shop_brands_visible: row.shop_brands_visible,
     shop_see_all_label: row.shop_see_all_label,
@@ -484,6 +485,14 @@ dashboardSiteSettingsRouter.patch("/", async (req, res) => {
       data.shop_products_per_page,
     );
   }
+  if (data.shop_pagination_mode !== undefined) {
+    trackChange(
+      changes,
+      "shop_pagination_mode",
+      before.shop_pagination_mode,
+      data.shop_pagination_mode,
+    );
+  }
   if (data.shop_categories_visible !== undefined) {
     trackChange(
       changes,
@@ -552,6 +561,9 @@ dashboardSiteSettingsRouter.patch("/", async (req, res) => {
         : {}),
       ...(data.shop_products_per_page !== undefined
         ? { shop_products_per_page: data.shop_products_per_page }
+        : {}),
+      ...(data.shop_pagination_mode !== undefined
+        ? { shop_pagination_mode: data.shop_pagination_mode }
         : {}),
       ...(data.shop_categories_visible !== undefined
         ? { shop_categories_visible: data.shop_categories_visible }

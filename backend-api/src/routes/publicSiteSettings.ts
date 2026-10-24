@@ -27,6 +27,7 @@ const DEFAULTS = {
   twitter_handle: "@niyenin",
   shop_default_view: "grid4",
   shop_products_per_page: 12,
+  shop_pagination_mode: "pages",
   shop_categories_visible: 5,
   shop_brands_visible: 6,
   shop_see_all_label: "See all",
@@ -110,6 +111,7 @@ export function toPublicSiteSettings(
     shop: {
       default_view: row.shop_default_view,
       products_per_page: row.shop_products_per_page,
+      pagination_mode: row.shop_pagination_mode === "infinite" ? "infinite" : "pages",
       categories_visible: row.shop_categories_visible,
       brands_visible: row.shop_brands_visible,
       see_all_label: row.shop_see_all_label,

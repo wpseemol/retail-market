@@ -1,6 +1,7 @@
 import { LayoutGrid } from "lucide-react";
 import {
     SHOP_FACET_VISIBLE_OPTIONS,
+    SHOP_PAGINATION_OPTIONS,
     SHOP_PER_PAGE_OPTIONS,
     SHOP_VIEW_OPTIONS,
     type SiteSettingsFormValues,
@@ -145,6 +146,39 @@ export function ShopSettingsPage() {
                                 <FormDescription>
                                     Initial layout when shoppers open /shop (they can still switch in the
                                     toolbar).
+                                </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="shop_pagination_mode"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Pagination</FormLabel>
+                                <Select
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                    disabled={form.formState.isSubmitting}
+                                >
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select pagination" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {SHOP_PAGINATION_OPTIONS.map((opt) => (
+                                            <SelectItem key={opt.value} value={opt.value}>
+                                                {opt.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormDescription>
+                                    Numbered pages show page 1, page 2 and Next. Infinite scroll loads
+                                    the next page as shoppers move down. Each request is one page, and
+                                    the shop only draws the rows on screen.
                                 </FormDescription>
                                 <FormMessage />
                             </FormItem>
