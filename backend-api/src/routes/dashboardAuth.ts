@@ -21,6 +21,11 @@ import {
 } from "../middleware/auth.js";
 import { avatarUpload } from "../middleware/upload.js";
 import { findUnsafeInputReason, refreshSchema } from "../validators/customerAuth.js";
+import {
+  loginAccountLimiter,
+  loginIpLimiter,
+  refreshLimiter,
+} from "../lib/rateLimit.js";
 
 export const dashboardAuthRouter = Router();
 
@@ -45,7 +50,7 @@ const ROLE_HOME: Record<Exclude<UserRole, "customer">, string> = {
 };
 
 /** Dashboard only — staff roles; customers are rejected. */
-dashboardAuthRouter.post("/login", async (req, res) => {
+dashboardAuthRouter.post("/login", loginIpLimiter, loginAccountLimiter, async (req, res) => {
   // Accept `identifier`, or legacy `email` / `phone` / `username`.
   const body = {
     identifier:
@@ -132,7 +137,7 @@ dashboardAuthRouter.post("/login", async (req, res) => {
  * Exchange a staff refreshToken for a new access + refresh pair.
  * Called by the dashboard when the access token expires (401).
  */
-dashboardAuthRouter.post("/refresh", async (req, res) => {
+dashboardAuthRouter.post("/refresh", refreshLimiter, async (req, res) => {
   const parsed = refreshSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({

@@ -5,7 +5,7 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 
 - **Last audit:** 2026-10-15 (re-check; no earlier item fixed yet)
 - **Method:** `pnpm audit` + manual code review of `src/`
-- **Totals:** 1 Critical · 7 High · 7 Medium · 6 Low · 4 Info (open: 0 Critical · 3 High · 7 Medium · 6 Low · 4 Info)
+- **Totals:** 1 Critical · 7 High · 7 Medium · 6 Low · 4 Info (open: 0 Critical · 1 High · 6 Medium · 5 Low · 4 Info)
 
 ## Summary
 
@@ -14,18 +14,18 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 | BE-01 | Critical | Client-controlled checkout discount | Fixed 2026-10-15 |
 | BE-02 | High | `sharp` < 0.35.5 (librsvg CVE-2026-96889) | Fixed 2026-10-15 |
 | BE-03 | High | JWT / encryption secret falls back to a hard-coded default | Fixed 2026-10-15 |
-| BE-04 | High | No rate limiting or lockout on login / register | Open |
+| BE-04 | High | No rate limiting or lockout on login / register | Fixed 2026-10-24 |
 | BE-05 | High | Unhandled promise rejections crash the server (oversized ids) | Fixed 2026-10-15 |
-| BE-06 | High | Variant generation can exhaust memory / DB | Open |
+| BE-06 | High | Variant generation can exhaust memory / DB | Fixed 2026-10-24 |
 | BE-07 | High | Guest review "ownership" = knowing an email or phone | Open |
 | BE-08 | Medium | Social login account pre-hijacking | Open |
 | BE-09 | Medium | Regex HTML sanitizer can be bypassed (latent stored XSS) | Open |
-| BE-10 | Medium | Spoofable `X-Forwarded-For` for rate limits / session IPs | Open |
+| BE-10 | Medium | Spoofable `X-Forwarded-For` for rate limits / session IPs | Fixed 2026-10-24 |
 | BE-11 | Medium | Sessions survive password change; no logout endpoint | Open |
 | BE-12 | Medium | No abuse limits on guest checkout; stock never reserved | Open |
 | BE-13 | Medium | Vendors see other stores' items and full customer contact on orders | Open |
 | BE-14 | Low | Leftover temp uploads inside the public `uploads/` folder | Open |
-| BE-15 | Low | No security headers (`helmet`, `nosniff`, `X-Powered-By`) | Open |
+| BE-15 | Low | No security headers (`helmet`, `nosniff`, `X-Powered-By`) | Fixed 2026-10-24 |
 | BE-16 | Low | Raw Prisma error messages returned to clients | Open |
 | BE-17 | Low | Account enumeration on register / login | Open |
 | BE-18 | Low | Vendor business-logic gaps (self-publish shop, search masked PII) | Open |
@@ -61,6 +61,7 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 - **Where:** `src/routes/dashboardAuth.ts:48`, `src/routes/customerAuth.ts:27-28`
 - **Issue:** `rateLimit()` is only used for product reviews. Staff and customer login, register, social login and refresh have unlimited attempts.
 - **Fix:** Per-IP and per-identifier limits with backoff and temporary lockout (shared store such as Redis if multi-instance). Consider MFA for `super_admin` / `admin`.
+- **Status:** Fixed 2026-10-24 — `loginIpLimiter` / `loginAccountLimiter` (40/15 min per network, 8/15 min per account), register, refresh, and social login in `src/lib/rateLimit.ts`, on both auth routers. SMS, email, and WhatsApp also have per-target and whole-process hourly caps (`src/lib/outboundBudget.ts`). In-memory, which matches one Passenger process. MFA is still not implemented.
 
 ### BE-05 · High · Server crash via unhandled rejections
 - **Where:** `src/routes/publicProducts.ts:219-233` (`BigInt(key)` inside a bare async handler); same pattern in `parseId` of `dashboardProducts.ts:44-51`, `dashboardVendors.ts:179-186`, `dashboardBrands.ts`, `dashboardCategories.ts`; `BigInt(String(req.params.id))` in `dashboardSiteSettings.ts:780,822,882`.
@@ -72,6 +73,7 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 - **Where:** `src/routes/dashboardProducts.ts:56-62, 114, 192-208, 286-296`
 - **Issue:** `type: "variable"` with 5 options × 40 values and no `variants` builds 40⁵ ≈ 102 million combinations, then inserts them one by one.
 - **Fix:** Reject when the product of value counts exceeds 200 (matching `variants.max(200)`); insert with `createMany` in one transaction.
+- **Status:** Fixed 2026-10-24 — `productBodySchema` rejects a variable product whose options would create more than 200 variants, and `replaceOptionsAndVariants` stops before writing options. Inserts are still one `create` per variant, capped at 200.
 
 ### BE-07 · High · Weak guest review ownership
 - **Where:** `src/routes/productReviews.ts:186-197, 237-268`, `src/lib/productReviews.ts:25-41, 97-108`
@@ -92,6 +94,7 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 - **Where:** `src/server.ts:43` (`trust proxy 1`), `src/lib/rateLimit.ts:18`, `src/lib/userSession.ts:80-86`, `src/routes/publicAnalytics.ts:37-43`
 - **Issue:** `clientIp()` takes the first `X-Forwarded-For` entry, which the client controls. Rate limits can be bypassed and session/analytics IPs forged. The frontend proxy forwards the client's header unchanged (FE-06).
 - **Fix:** Use `req.ip` everywhere and set `trust proxy` to the real proxy addresses.
+- **Status:** Fixed 2026-10-24 — `trust proxy` stays `1` (Passenger is the only hop). Session IPs, analytics, and rate limits use `clientAddress()` (`req.ip`). The storefront may pass a shopper IP only with `PROXY_IP_SECRET` (`X-Client-Ip-Secret` + `X-Real-Client-Ip`). The raw `X-Forwarded-For` header is not trusted.
 
 ### BE-11 · Medium · Sessions not revoked
 - **Where:** `src/middleware/auth.ts:32-39`, `src/routes/dashboardAuth.ts:396-399`
@@ -115,6 +118,7 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 ### BE-15 · Low · No security headers
 - **Where:** `src/server.ts:41-59`
 - **Fix:** `app.use(helmet())`, `app.disable("x-powered-by")`, `nosniff` + restrictive CSP on `/uploads`.
+- **Status:** Fixed 2026-10-24 — `x-powered-by` is off. Every response sets `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, and HSTS in production. `/uploads` gets those same headers. A CSP was not added on image responses.
 
 ### BE-16 · Low · Internal errors leaked
 - **Where:** `src/routes/dashboardProducts.ts:540-543, 726-729` (`err.message` returned)

@@ -28,12 +28,10 @@ async function proxy(request: NextRequest, context: RouteContext) {
       : await request.arrayBuffer();
 
   const contentType = request.headers.get("content-type") ?? undefined;
-  // Per-IP limits on the API (e.g. review eligibility) need the shopper's address, not this server's.
-  const forwardedFor =
-    request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? undefined;
+  // Shopper IP is attached in `backendFetch` via PROXY_IP_SECRET. Do not copy
+  // the raw X-Forwarded-For header — the caller can set that themselves.
   const forwardHeaders: Record<string, string> = {
     ...(contentType ? { "Content-Type": contentType } : {}),
-    ...(forwardedFor ? { "X-Forwarded-For": forwardedFor } : {}),
   };
 
   let accessToken = token?.accessToken as string | undefined;

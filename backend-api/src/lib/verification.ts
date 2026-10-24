@@ -2,12 +2,13 @@ import crypto from "node:crypto";
 import type { VerificationChannel } from "@prisma/client";
 import { env } from "./env.js";
 import { prisma } from "./prisma.js";
-import { sendEmail, sendSms, sendWhatsAppOtp, WhatsAppSendError } from "./messaging.js";
+import { sendEmail, sendSms, sendWhatsAppOtp, WhatsAppSendError, OutboundLimitError } from "./messaging.js";
 
 const CODE_TTL_MS = 10 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
 const MAX_ATTEMPTS = 5;
-const MAX_SENDS_PER_HOUR = 5;
+const MAX_EMAIL_PER_HOUR = 5;
+const MAX_PHONE_PER_HOUR = 3;
 
 /** How a phone OTP is delivered. Confirm still uses the `sms` verification channel. */
 export type PhoneDelivery = "sms" | "whatsapp";
@@ -62,10 +63,15 @@ export async function sendVerificationCode(
     );
   }
 
+  const cap = channel === "email" ? MAX_EMAIL_PER_HOUR : MAX_PHONE_PER_HOUR;
   const sentLastHour = await prisma.verificationCode.count({
-    where: { target, created_at: { gte: new Date(now - 60 * 60 * 1000) } },
+    where: {
+      channel,
+      created_at: { gte: new Date(now - 60 * 60 * 1000) },
+      OR: [{ user_id: userId }, { target }],
+    },
   });
-  if (sentLastHour >= MAX_SENDS_PER_HOUR) {
+  if (sentLastHour >= cap) {
     throw new VerificationError(
       429,
       "TOO_MANY_CODES",
@@ -108,6 +114,13 @@ export async function sendVerificationCode(
   } catch (err) {
     await prisma.verificationCode.delete({ where: { id: row.id } }).catch(() => undefined);
     console.error(`[verification] ${channel}/${phoneDelivery} send failed`, err);
+    if (err instanceof OutboundLimitError) {
+      throw new VerificationError(
+        429,
+        "TOO_MANY_CODES",
+        "Too many messages sent. Try again in an hour.",
+      );
+    }
     if (err instanceof WhatsAppSendError) {
       throw new VerificationError(
         502,

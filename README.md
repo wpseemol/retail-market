@@ -49,6 +49,10 @@ pnpm build:dashboard
 pnpm build:backend
 ```
 
+## Production (Spaceship + Vercel)
+
+The current manual deploy is in [`DEPLOY.md`](./DEPLOY.md): the API on Spaceship Web Hosting Supreme (Node.js app, not Docker), and the storefront and dashboard on Vercel. A later move to a VPS can use the Docker stack below. There is no CI pipeline yet.
+
 ## Production (Docker)
 
 `docker-compose.yml` is the local stack (MySQL published on the host, plus phpMyAdmin). A server uses `docker-compose.prod.yml`: MySQL stays on the Docker network, uploads live in a volume, and the API refuses to start until the secrets below are set.

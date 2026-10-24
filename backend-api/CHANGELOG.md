@@ -5,6 +5,17 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-24
 
+### Spaceship deploy and outbound limits
+
+- `DEPLOY.md` (repo root): manual deploy of this API on Spaceship Web Hosting Supreme, and of the storefront and dashboard on Vercel. No CI pipeline.
+- `src/server.ts`: Passenger startup (`listen('passenger')`), `trust proxy` 1, and security headers. `x-powered-by` is off.
+- `src/lib/rateLimit.ts`: login, register, refresh, and social login limits, per network and per account. Client IP comes from `req.ip`, or from the storefront only when `PROXY_IP_SECRET` matches.
+- `src/lib/verification.ts`: 5 email codes and 3 phone codes per hour, per account or destination. SMS and WhatsApp share the phone cap.
+- `src/lib/outboundBudget.ts`: whole-process hourly caps (`SMS_MAX_PER_HOUR` 40, `EMAIL_MAX_PER_HOUR` 200, `WHATSAPP_MAX_PER_HOUR` 40). Dashboard test sends are also 8 per staff user per hour.
+- `src/routes/dashboardProducts.ts`: a variable product cannot expand into more than 200 variants.
+- `src/lib/userSession.ts` and `src/routes/publicAnalytics.ts`: session and visit IPs use the same client address helper.
+- `.env.example`, `API.md`, `AGENTS.md`.
+
 ### Storefront login side image
 
 - `prisma/schema.prisma` and `prisma/migrations/20261024150000_site_settings_login_image`: `site_settings.login_image_id` stores the photo for the storefront login and register screens.

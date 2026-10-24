@@ -5,13 +5,13 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 
 - **Last audit:** 2026-10-15 (re-check; only DB-08 fixed so far)
 - **Method:** `pnpm audit` + manual review of `src/`, `nginx.conf`, `Dockerfile`, `vite.config.ts`
-- **Totals:** 0 Critical · 0 High · 3 Medium · 6 Low · 2 Info (open: 3 Medium · 4 Low)
+- **Totals:** 0 Critical · 0 High · 3 Medium · 6 Low · 2 Info (open: 2 Medium · 4 Low)
 
 ## Summary
 
 | ID | Severity | Title | Status |
 | --- | --- | --- | --- |
-| DB-01 | Medium | nginx sends no security headers | Open |
+| DB-01 | Medium | nginx sends no security headers | Fixed 2026-10-24 |
 | DB-02 | Medium | Logout doesn't revoke the session on the server | Open |
 | DB-03 | Medium | Access + refresh tokens readable by JS in `sessionStorage` | Open |
 | DB-04 | Low | `index.html` may be cached by browsers | Open |
@@ -29,6 +29,7 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 - **Where:** `nginx.conf:1-15`
 - **Issue:** No CSP / `frame-ancestors` (clickjacking of admin actions), no HSTS, no `nosniff`, nginx version exposed.
 - **Fix:** Add at server level with `always`: `server_tokens off;`, a CSP (`default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: <API>; connect-src 'self' <API>; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`), `X-Frame-Options DENY`, `X-Content-Type-Options nosniff`, `Referrer-Policy strict-origin-when-cross-origin`, `Permissions-Policy`, HSTS where TLS terminates. Repeat them in the asset `location` (lines 11-14) because nginx doesn't inherit `add_header` there.
+- **Status:** Fixed 2026-10-24 — `nginx.conf` sets those headers on `/` and `/assets/` (`connect-src` and `img-src` allow `https:` because the API origin is chosen at deploy time). `vercel.json` sets the same headers for the current Vercel host. `server_tokens off` was already set.
 
 ### DB-02 · Medium · Logout is client-only
 - **Where:** `src/components/dashboard/nav-user.tsx:177-180`, `src/store/auth.ts:60-63`

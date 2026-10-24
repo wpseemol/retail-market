@@ -7,6 +7,9 @@ import {
   sendViaWhatsAppGateway,
   WhatsAppSendError,
 } from "./whatsappGateway.js";
+import { consumeOutbound } from "./outboundBudget.js";
+
+export { OutboundLimitError } from "./outboundBudget.js";
 
 export { WhatsAppSendError };
 
@@ -32,6 +35,7 @@ function getTransporter(cfg: EmailTransportConfig): Transporter {
 
 /** Sends through an explicit config (dashboard test button). */
 export async function sendEmailWith(cfg: EmailTransportConfig, input: EmailInput) {
+  consumeOutbound("email");
   await getTransporter(cfg).sendMail({ from: cfg.from, ...input });
 }
 

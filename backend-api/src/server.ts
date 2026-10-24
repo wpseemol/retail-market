@@ -43,7 +43,19 @@ import { dashboardPagesRouter } from "./routes/dashboardPages.js";
 
 const app = express();
 
+app.disable("x-powered-by");
+// One reverse proxy (Passenger / LiteSpeed on Spaceship). Do not set this to `true`.
 app.set("trust proxy", 1);
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  if (env.nodeEnv === "production") {
+    res.setHeader("Strict-Transport-Security", "max-age=15552000; includeSubDomains");
+  }
+  next();
+});
 app.use(
   cors({
     origin: env.corsOrigins,
@@ -113,10 +125,23 @@ process.on("unhandledRejection", (reason) => {
   console.error("[unhandledRejection]", reason);
 });
 
-app.listen(env.port, "0.0.0.0", () => {
-  const storage =
-    storageConfig.driver === "s3"
-      ? `s3 bucket ${storageConfig.bucket}`
-      : "local uploads/";
-  console.log(`Server running on port ${env.port} (storage: ${storage})`);
-});
+const storage =
+  storageConfig.driver === "s3"
+    ? `s3 bucket ${storageConfig.bucket}`
+    : "local uploads/";
+
+type PassengerRuntime = {
+  configure: (opts: { autoInstall: boolean }) => void;
+};
+
+const passenger = (globalThis as { PhusionPassenger?: PassengerRuntime }).PhusionPassenger;
+if (passenger) {
+  passenger.configure({ autoInstall: false });
+  app.listen("passenger" as never, () => {
+    console.log(`Server running on Passenger (storage: ${storage})`);
+  });
+} else {
+  app.listen(env.port, "0.0.0.0", () => {
+    console.log(`Server running on port ${env.port} (storage: ${storage})`);
+  });
+}

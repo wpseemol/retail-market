@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-24
 
+### Vercel deploy and security headers
+
+- `DEPLOY.md` (repo root): this app is hosted on Vercel for now. `vercel.json` serves the SPA and sets HSTS, `nosniff`, frame, referrer, and a content security policy.
+- `nginx.conf`: the same headers for a later VPS image. `connect-src` and `img-src` allow `https:` so the API host can change without editing the config.
+- `AGENTS.md` points at the deploy guide.
+
 ### Products per page only for numbered shop pages
 
 - `src/pages/system/settings/storefront/ShopSettingsPage.tsx`: “Products per page” shows only when pagination is numbered pages. Infinite scroll keeps the other shop options and explains that shoppers do not pick a page size.

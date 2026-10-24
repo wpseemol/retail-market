@@ -3,6 +3,7 @@ import type { Request } from "express";
 import type { DeviceType, UserRole } from "@prisma/client";
 import { countryFromIp } from "./geo.js";
 import { prisma } from "./prisma.js";
+import { clientAddress } from "./rateLimit.js";
 import { issueAuthTokens, tokenTtlsForRole } from "./token.js";
 
 /** Mirrors Prisma `LoginMethod` enum. */
@@ -78,11 +79,8 @@ export function expiresAtFromDuration(duration: string, from = new Date()): Date
 }
 
 function clientIp(req: Request): string | null {
-  const forwarded = req.headers["x-forwarded-for"];
-  if (typeof forwarded === "string" && forwarded.length > 0) {
-    return forwarded.split(",")[0]?.trim().slice(0, 45) || null;
-  }
-  return (req.ip ?? req.socket.remoteAddress ?? null)?.slice(0, 45) || null;
+  const ip = clientAddress(req);
+  return ip === "unknown" ? null : ip;
 }
 
 /**

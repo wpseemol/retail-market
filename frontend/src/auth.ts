@@ -1,6 +1,7 @@
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { SERVER_API_URL, type ApiUser, type AuthTokenResponse } from "@/lib/api";
+import { trustedClientHeaders } from "@/lib/clientIp";
 
 const BACKEND_URL = SERVER_API_URL;
 
@@ -43,6 +44,7 @@ async function callBackendAuth(
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
+      ...(await trustedClientHeaders()),
     },
     body: JSON.stringify(body),
   });
@@ -86,6 +88,7 @@ async function refreshBackendTokens(refreshToken: string) {
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
+      ...(await trustedClientHeaders()),
     },
     body: JSON.stringify({ refreshToken }),
   });

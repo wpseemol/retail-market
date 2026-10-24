@@ -16,6 +16,7 @@ import {
   type EmailProviderId,
 } from "../lib/emailProvider.js";
 import { sendEmailWith } from "../lib/messaging.js";
+import { OutboundLimitError, userOutboundRetryAfter } from "../lib/outboundBudget.js";
 import {
   revealEmailSecretsSchema,
   testEmailSchema,
@@ -244,6 +245,14 @@ dashboardEmailProviderRouter.post(
         code: "TEST_TOO_SOON",
       });
     }
+    const hourlyWait = userOutboundRetryAfter(key, "email");
+    if (hourlyWait > 0) {
+      return res.status(429).json({
+        message: "Too many test emails this hour. Try again later.",
+        code: "TEST_HOURLY_LIMIT",
+        retry_after: hourlyWait,
+      });
+    }
 
     const cfg = await getActiveEmailConfig();
     if (!cfg) {
@@ -262,6 +271,9 @@ dashboardEmailProviderRouter.post(
       });
     } catch (err) {
       console.error("[email-provider] test send failed", err);
+      if (err instanceof OutboundLimitError) {
+        return res.status(429).json({ message: err.message, code: err.code });
+      }
       return res.status(502).json({
         message: err instanceof Error ? err.message : "The provider rejected the email",
         code: "EMAIL_TEST_FAILED",

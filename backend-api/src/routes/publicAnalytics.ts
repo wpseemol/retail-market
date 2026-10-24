@@ -4,6 +4,7 @@ import type { Request } from "express";
 import { z } from "zod";
 import { countryFromIp } from "../lib/geo.js";
 import { prisma } from "../lib/prisma.js";
+import { clientAddress } from "../lib/rateLimit.js";
 import { parseUserAgent } from "../lib/userSession.js";
 import { findUnsafeInputReason } from "../validators/customerAuth.js";
 
@@ -35,11 +36,8 @@ const visitSchema = z.object({
 });
 
 function clientIp(req: Request): string | null {
-  const forwarded = req.headers["x-forwarded-for"];
-  if (typeof forwarded === "string" && forwarded.length > 0) {
-    return forwarded.split(",")[0]?.trim().slice(0, 45) || null;
-  }
-  return (req.ip ?? req.socket.remoteAddress ?? null)?.slice(0, 45) || null;
+  const ip = clientAddress(req);
+  return ip === "unknown" ? null : ip;
 }
 
 /** Lightweight storefront visit beacon — no auth. */

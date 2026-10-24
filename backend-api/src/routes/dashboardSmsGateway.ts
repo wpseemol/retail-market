@@ -19,6 +19,7 @@ import {
   testSmsSchema,
   updateSmsGatewaySchema,
 } from "../validators/smsGateway.js";
+import { OutboundLimitError, userOutboundRetryAfter } from "../lib/outboundBudget.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 /** Mounted under `/api/dashboard/site-settings/sms-gateway` (super_admin only). */
@@ -237,6 +238,14 @@ dashboardSmsGatewayRouter.post(
         code: "TEST_TOO_SOON",
       });
     }
+    const hourlyWait = userOutboundRetryAfter(key, "sms");
+    if (hourlyWait > 0) {
+      return res.status(429).json({
+        message: "Too many test SMS messages this hour. Try again later.",
+        code: "TEST_HOURLY_LIMIT",
+        retry_after: hourlyWait,
+      });
+    }
 
     const cfg = await getActiveSmsConfig();
     if (!cfg) {
@@ -255,6 +264,9 @@ dashboardSmsGatewayRouter.post(
       );
     } catch (err) {
       console.error("[sms-gateway] test send failed", err);
+      if (err instanceof OutboundLimitError) {
+        return res.status(429).json({ message: err.message, code: err.code });
+      }
       return res.status(502).json({
         message: err instanceof Error ? err.message : "The gateway rejected the message",
         code: "SMS_TEST_FAILED",

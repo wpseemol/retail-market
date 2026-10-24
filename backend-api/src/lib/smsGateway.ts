@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { prisma } from "./prisma.js";
 import { env } from "./env.js";
 import { decryptSecret } from "./secretBox.js";
+import { consumeOutbound } from "./outboundBudget.js";
 
 export const SMS_PROVIDERS = ["bulksmsbd", "alpha_sms", "ssl_wireless", "mim_sms", "twilio"] as const;
 export type SmsProvider = (typeof SMS_PROVIDERS)[number];
@@ -100,6 +101,7 @@ function fail(provider: SmsProvider, body: string): never {
 
 /** `to` must be E.164 (e.g. +8801712345678). */
 export async function sendViaGateway(cfg: SmsGatewayConfig, to: string, message: string) {
+  consumeOutbound("sms");
   const digits = to.replace(/^\+/, "");
   const signal = AbortSignal.timeout(10_000);
 

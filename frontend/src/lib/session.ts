@@ -17,6 +17,7 @@ import {
   type AuthTokenResponse,
   type ApiUser,
 } from "@/lib/api";
+import { trustedClientHeaders } from "@/lib/clientIp";
 
 export {
   sealSession,
@@ -91,6 +92,10 @@ export async function backendFetch(
   headers.set("Accept", "application/json");
   if (accessToken) {
     headers.set("Authorization", `Bearer ${accessToken}`);
+  }
+  const trusted = await trustedClientHeaders();
+  for (const [name, value] of Object.entries(trusted)) {
+    if (!headers.has(name)) headers.set(name, value);
   }
   return fetch(`${BACKEND_URL}${path}`, {
     ...rest,

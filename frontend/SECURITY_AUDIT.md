@@ -17,7 +17,7 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 | FE-04 | Medium | Open redirect via `?next=` (middleware + login/sign-up) | Open |
 | FE-05 | Medium | Backend access token exposed in `/api/auth/session` | Open |
 | FE-06 | Medium | No security headers (CSP, HSTS, frame-ancestors, …) | Open |
-| FE-07 | Medium | API proxy forwards client-supplied `X-Forwarded-For` | Open |
+| FE-07 | Medium | API proxy forwards client-supplied `X-Forwarded-For` | Fixed 2026-10-24 |
 | FE-08 | Low | Analytics IDs interpolated raw into inline scripts | Open |
 | FE-09 | Low | CMS / vendor links rendered without a scheme check | Open |
 | FE-10 | Low | Payment `gateway_url` followed without an origin check | Open |
@@ -58,11 +58,13 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 ### FE-06 · Medium · Missing security headers
 - **Where:** `next.config.ts:17-28`
 - **Fix:** Add `async headers()` with HSTS, `X-Frame-Options: DENY` / `frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`, and a nonce-based CSP allowlisting GTM, Meta, TikTok, Hotjar, LinkedIn, Twitter, Google sign-in and SSLCommerz. Set `poweredByHeader: false`.
+- **Status:** Open. 2026-10-24 added HSTS, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, and `poweredByHeader: false` in `next.config.ts`. A nonce CSP that allows the analytics pixels is still missing, so this stays open.
 
 ### FE-07 · Medium · Forwarded client IP
 - **Where:** `src/app/api/backend/[...path]/route.ts:32-36`
 - **Issue:** Incoming `x-forwarded-for` is passed to the API unchanged, letting attackers rotate fake IPs past per-IP limits (see BE-10).
 - **Fix:** Derive the IP from a trusted hop, or add a shared secret header between frontend and API.
+- **Status:** Fixed 2026-10-24 — the proxy no longer copies `X-Forwarded-For`. `trustedClientHeaders()` sends `X-Real-Client-Ip` (last Vercel hop) plus `X-Client-Ip-Secret` (`PROXY_IP_SECRET`). The API ignores that IP when the secret does not match.
 
 ### FE-08 · Low · Raw IDs in inline scripts
 - **Where:** `src/components/providers/AnalyticsPixels.tsx:35, 59, 82, 111, 128, 136, 155` (e.g. unquoted `hjid:${hotjar.id}`)

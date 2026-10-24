@@ -49,7 +49,7 @@ frontend/src/
 
 ## Conventions
 
-- Server calls go through `src/lib/api.ts`; inside Docker the server side uses `INTERNAL_API_URL`. Production is `docker-compose.prod.yml` (see the root `README.md`).
+- Server calls go through `src/lib/api.ts`; inside Docker the server side uses `INTERNAL_API_URL`. Current production is Vercel (see [`../DEPLOY.md`](../DEPLOY.md)). Set `PROXY_IP_SECRET` to the same value as the API so login limits see each shopper. `docker-compose.prod.yml` stays for a later VPS.
 - The `/api/backend` route is a proxy to `backend-api` — the name is intentional, don't rename it.
 - Guest cart lives in an encrypted cookie; logged-in cart lives in the DB and merges on login.
 - Forms use shadcn `Form` + react-hook-form + `zodResolver`, with safe-input checks on strings. Primitives live in `src/components/ui/` (`form`, `label`, `dialog` — built on the `radix-ui` package). For translated validation messages, build the Zod schema from the dictionary (see `src/lib/validators/review.ts`).

@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-24
 
+### Vercel deploy and shopper IP
+
+- `DEPLOY.md` (repo root): this app is hosted on Vercel for now. `next.config.ts` skips the Docker `standalone` output when `VERCEL` is set, and sends HSTS, `nosniff`, frame, and referrer headers.
+- `src/lib/clientIp.ts`, `src/auth.ts`, `src/lib/session.ts`: server calls send the shopper IP with `PROXY_IP_SECRET`. The value is not public.
+- `src/app/api/backend/[...path]/route.ts`: the proxy no longer forwards `X-Forwarded-For`.
+- `.env.example` documents `PROXY_IP_SECRET`. `AGENTS.md` points at the deploy guide.
+
 ### Infinite scroll product hover
 
 - `src/components/shop/ShopProductGrid.tsx`: infinite scroll uses the same product grid as numbered pages. Cards stay in normal flow, so a hovered card and its buy buttons sit above the next row and no longer cover the footer. The next batch loads when the end of the list nears the screen.

@@ -7,6 +7,11 @@ const isProduction = process.env.NODE_ENV === "production";
 const MIN_SECRET_BYTES = 32;
 const DEV_SECRET = "dev-only-change-me";
 
+function positiveInt(raw: string | undefined, fallback: number) {
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+}
+
 const required = ["DATABASE_URL", "JWT_SECRET"] as const;
 
 for (const key of required) {
@@ -25,6 +30,11 @@ if (isProduction) {
       `[env] ${weak.join(", ")} must be set to at least ${MIN_SECRET_BYTES} bytes in production. Refusing to start.`,
     );
     process.exit(1);
+  }
+  if (!process.env.PROXY_IP_SECRET?.trim()) {
+    console.warn(
+      "[env] PROXY_IP_SECRET is empty. Storefront requests that pass through Vercel share one IP for rate limits. Set the same secret on the API and the storefront.",
+    );
   }
 }
 
@@ -74,6 +84,19 @@ export const env = {
   frontendUrl: (process.env.FRONTEND_URL ?? "http://localhost:3000").replace(/\/$/, ""),
   /** Shared with the storefront's `REVALIDATE_SECRET`; empty → on-demand cache refresh is off. */
   revalidateSecret: (process.env.REVALIDATE_SECRET ?? "").trim(),
+  /**
+   * Shared with the storefront `PROXY_IP_SECRET`. When it matches
+   * `X-Client-Ip-Secret`, rate limits use `X-Real-Client-Ip` (the Vercel hop).
+   * Empty → limits use the TCP client (`req.ip`), which is correct for the
+   * dashboard (browser → API) and for direct API calls.
+   */
+  proxyIpSecret: (process.env.PROXY_IP_SECRET ?? "").trim(),
+  /** Whole-process caps for paid outbound messages. One Passenger process. */
+  outbound: {
+    emailPerHour: positiveInt(process.env.EMAIL_MAX_PER_HOUR, 200),
+    smsPerHour: positiveInt(process.env.SMS_MAX_PER_HOUR, 40),
+    whatsappPerHour: positiveInt(process.env.WHATSAPP_MAX_PER_HOUR, 40),
+  },
   /** SSLCOMMERZ hosted checkout. Sandbox unless SSLCZ_IS_LIVE=true. */
   sslcommerz: {
     storeId: process.env.SSLCZ_STORE_ID ?? "",

@@ -26,9 +26,28 @@ function mediaPathname(url: URL): string {
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  output: "standalone",
+  poweredByHeader: false,
+  // Docker self-host uses standalone. Vercel builds its own output.
+  ...(process.env.VERCEL ? {} : { output: "standalone" as const }),
   // Monorepo root, so the production image runs `node frontend/server.js`.
   outputFileTracingRoot: path.join(appDir, ".."),
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=15552000; includeSubDomains",
+          },
+        ],
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       toPattern(apiUrl, "/uploads/**"),

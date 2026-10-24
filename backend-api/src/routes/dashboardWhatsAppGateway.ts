@@ -19,6 +19,7 @@ import {
   testWhatsAppSchema,
   updateWhatsAppGatewaySchema,
 } from "../validators/whatsappGateway.js";
+import { OutboundLimitError, userOutboundRetryAfter } from "../lib/outboundBudget.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 /** Mounted under `/api/dashboard/site-settings/whatsapp-gateway` (super_admin only). */
@@ -301,6 +302,14 @@ dashboardWhatsAppGatewayRouter.post(
         code: "TEST_TOO_SOON",
       });
     }
+    const hourlyWait = userOutboundRetryAfter(key, "whatsapp");
+    if (hourlyWait > 0) {
+      return res.status(429).json({
+        message: "Too many test WhatsApp messages this hour. Try again later.",
+        code: "TEST_HOURLY_LIMIT",
+        retry_after: hourlyWait,
+      });
+    }
 
     const cfg = await getActiveWhatsAppConfig();
     if (!cfg) {
@@ -316,6 +325,9 @@ dashboardWhatsAppGatewayRouter.post(
       await sendViaWhatsAppGateway(cfg, parsed.data.phone, "000000");
     } catch (err) {
       console.error("[whatsapp-gateway] test send failed", err);
+      if (err instanceof OutboundLimitError) {
+        return res.status(429).json({ message: err.message, code: err.code });
+      }
       return res.status(502).json({
         message: err instanceof Error ? err.message : "The gateway rejected the message",
         code: "WHATSAPP_TEST_FAILED",

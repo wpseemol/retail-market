@@ -437,6 +437,8 @@ Revenue = order `total` excluding `cancelled` and `refunded` orders.
 
 Staff accounts must use dashboard login (not this endpoint).
 
+**429:** `LOGIN_IP_RATE_LIMITED` (40 attempts / 15 min per network) or `LOGIN_ACCOUNT_RATE_LIMITED` (8 attempts / 15 min per account). Register is `REGISTER_IP_RATE_LIMITED` (10 / hour per network) and `REGISTER_ACCOUNT_RATE_LIMITED` (3 / hour per email). Refresh is `REFRESH_RATE_LIMITED` (60 / 15 min). Social login is `SOCIAL_LOGIN_RATE_LIMITED` (20 / 15 min).
+
 ### `POST /api/auth/google`
 
 ```json
@@ -505,8 +507,10 @@ Google sign-in marks the email as verified automatically.
 | POST | `/api/auth/me/verify/phone/confirm` | `{ "code": "123456" }` | `{ message, user, claimed_orders }` |
 
 - Codes: 6 digits, stored hashed (HMAC-SHA256), valid **10 min**, max **5** wrong attempts.
-- Resend cooldown **60 s** per channel (`429 RESEND_TOO_SOON`, `retry_after`); max **5** codes per target per hour (`429 TOO_MANY_CODES`).
-- IP rate limits: **20** send / **40** confirm requests per hour (`429 VERIFY_SEND_RATE_LIMITED` / `VERIFY_CONFIRM_RATE_LIMITED`).
+- Resend cooldown **60 s** per channel (`429 RESEND_TOO_SOON`, `retry_after`).
+- Per account or destination, per hour: **5** email codes, **3** phone codes (SMS and WhatsApp share the phone cap). `429 TOO_MANY_CODES`.
+- Per network: email send 20/hour (`VERIFY_SEND_RATE_LIMITED`), phone send also 8/hour (`SMS_SEND_RATE_LIMITED`), confirm 40/hour (`VERIFY_CONFIRM_RATE_LIMITED`).
+- Whole API process, per hour (env `EMAIL_MAX_PER_HOUR` 200, `SMS_MAX_PER_HOUR` 40, `WHATSAPP_MAX_PER_HOUR` 40), including dashboard test sends. Over the cap: `429 OUTBOUND_HOURLY_LIMIT`. Dashboard tests are also 1 per 30 s and 8 per staff user per hour (`TEST_TOO_SOON`, `TEST_HOURLY_LIMIT`).
 - `phone/send` body is **strict** (unknown keys → 400). Without `phone` uses the profile number; with `phone`, the number is saved to the profile only after the code is confirmed (`409 PHONE_IN_USE` if another account owns it).
 - `via` defaults to `sms` and must be exactly `"sms"` | `"whatsapp"`. `via: "whatsapp"` is accepted only when the WhatsApp gateway is ready (or shared local console fallback when neither gateway is configured). Otherwise `503 WHATSAPP_UNAVAILABLE` / `SMS_UNAVAILABLE`. Confirm is the same for both. `phone_channels` tells the storefront which buttons to show.
 - Error codes: `ALREADY_VERIFIED`, `PHONE_REQUIRED`, `CODE_EXPIRED`, `INVALID_CODE` (+ `attempts_left`), `TOO_MANY_ATTEMPTS`, `SEND_FAILED`, `TARGET_CHANGED`, `NOT_ON_WHATSAPP`, `WHATSAPP_REJECTED`, `WHATSAPP_UNAVAILABLE`, `SMS_UNAVAILABLE`.
@@ -816,6 +820,8 @@ Dashboard review object: public fields plus `status`, `author_name` (full), `aut
 `identifier` may be email, phone, or username. Legacy keys `email` / `phone` / `username` also accepted.
 
 **Response:** `{ message, accessToken, refreshToken, token, sessionId, home, user }`
+
+**429:** same login and refresh limits as the storefront (`LOGIN_IP_RATE_LIMITED`, `LOGIN_ACCOUNT_RATE_LIMITED`, `REFRESH_RATE_LIMITED`). The account key is `identifier`.
 
 | Role | `home` |
 |------|--------|

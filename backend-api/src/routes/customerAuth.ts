@@ -19,7 +19,15 @@ import {
 import { requireAuth, requireRoles } from "../middleware/auth.js";
 import { avatarUpload } from "../middleware/upload.js";
 import { AVATAR_MAX_BYTES } from "../lib/avatarImage.js";
-import { rateLimit } from "../lib/rateLimit.js";
+import {
+  loginAccountLimiter,
+  loginIpLimiter,
+  rateLimit,
+  refreshLimiter,
+  registerAccountLimiter,
+  registerIpLimiter,
+  socialLoginLimiter,
+} from "../lib/rateLimit.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import multer from "multer";
 
@@ -40,13 +48,25 @@ const verifyConfirmLimiter = rateLimit({
   message: "Too many verification attempts. Please try again later.",
 });
 
-customerAuthRouter.post("/register", asyncHandler(register));
-customerAuthRouter.post("/login", asyncHandler(login));
+const phoneSendLimiter = rateLimit({
+  name: "SMS_SEND",
+  max: 8,
+  windowMs: 60 * 60 * 1000,
+  message: "Too many text messages requested. Please try again later.",
+});
+
+customerAuthRouter.post(
+  "/register",
+  registerIpLimiter,
+  registerAccountLimiter,
+  asyncHandler(register),
+);
+customerAuthRouter.post("/login", loginIpLimiter, loginAccountLimiter, asyncHandler(login));
 customerAuthRouter.get("/social-providers", asyncHandler(socialProviders));
-customerAuthRouter.post("/google", asyncHandler(googleLogin));
-customerAuthRouter.post("/facebook", asyncHandler(facebookLogin));
-customerAuthRouter.post("/apple", asyncHandler(appleLogin));
-customerAuthRouter.post("/refresh", asyncHandler(refresh));
+customerAuthRouter.post("/google", socialLoginLimiter, asyncHandler(googleLogin));
+customerAuthRouter.post("/facebook", socialLoginLimiter, asyncHandler(facebookLogin));
+customerAuthRouter.post("/apple", socialLoginLimiter, asyncHandler(appleLogin));
+customerAuthRouter.post("/refresh", refreshLimiter, asyncHandler(refresh));
 
 customerAuthRouter.get("/me", requireAuth, requireRoles("customer"), getMe);
 
@@ -80,6 +100,7 @@ customerAuthRouter.post(
   "/me/verify/phone/send",
   ...customerOnly,
   verifySendLimiter,
+  phoneSendLimiter,
   asyncHandler(sendPhoneCode),
 );
 customerAuthRouter.post(

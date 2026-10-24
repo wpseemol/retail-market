@@ -124,6 +124,18 @@ const productBodySchema = z.object({
   sku: withSafeInput(z.string().trim().max(100)).optional().nullable(),
   options: z.array(optionSchema).max(5).optional(),
   variants: z.array(variantInputSchema).max(200).optional(),
+}).superRefine((data, ctx) => {
+  if (data.type !== "variable") return;
+  if (data.variants && data.variants.length > 0) return;
+  const options = data.options ?? [];
+  const count = options.reduce((total, opt) => total * opt.values.length, options.length ? 1 : 0);
+  if (count > 200) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["options"],
+      message: `These options would create ${count} variants. A product can have at most 200. Send the variant list you want, or use fewer values.`,
+    });
+  }
 });
 
 const listQuerySchema = z.object({
@@ -263,6 +275,14 @@ async function replaceOptionsAndVariants(input: {
   const options = input.options ?? [];
   if (options.length === 0) {
     throw new Error("Variable products need at least one option");
+  }
+
+  const variantCount =
+    input.variants && input.variants.length > 0
+      ? input.variants.length
+      : options.reduce((total, opt) => total * opt.values.length, 1);
+  if (variantCount > 200) {
+    throw new Error("A product can have at most 200 variants");
   }
 
   const optionRows: Array<{

@@ -1,6 +1,7 @@
 import { prisma } from "./prisma.js";
 import { env } from "./env.js";
 import { decryptSecret } from "./secretBox.js";
+import { consumeOutbound } from "./outboundBudget.js";
 
 export const WHATSAPP_PROVIDERS = ["meta_cloud", "twilio_whatsapp"] as const;
 export type WhatsAppProvider = (typeof WHATSAPP_PROVIDERS)[number];
@@ -159,6 +160,7 @@ export async function sendViaWhatsAppGateway(
   to: string,
   code: string,
 ) {
+  consumeOutbound("whatsapp");
   const digits = digitsOnly(to);
   const signal = AbortSignal.timeout(15_000);
 
