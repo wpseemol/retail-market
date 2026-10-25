@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Local env keeps development active
+
+- `.env`: existing values stay uncommented for local development. Production `NODE_ENV`, `DATABASE_URL`, `CORS_ORIGINS`, API URL, storefront URL, and SSLCOMMERZ live mode are commented underneath.
+
 ### Live storefront and dashboard CORS
 
 - `src/lib/env.ts`: allowed origins always include `https://niyenin-frontend.vercel.app` and `https://niyenin-dashboard.vercel.app`, plus the local app ports. Trailing slashes are removed so a browser origin still matches.
