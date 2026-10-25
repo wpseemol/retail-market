@@ -1,4 +1,4 @@
-import { API_URL } from "@/lib/api";
+import { appKeyHeaders, publicApiUrl } from "@/lib/api";
 
 export type HeroMedia = {
   path: string;
@@ -60,7 +60,8 @@ export const DEFAULT_HOME_HERO: HomeHeroBanner = {
 /** Fetch home hero for SSR (cached ~60s). */
 export async function getHeroBanner(): Promise<HomeHeroBanner> {
   try {
-    const res = await fetch(`${API_URL}/api/home/hero`, {
+    const res = await fetch(publicApiUrl("/api/home/hero"), {
+      headers: appKeyHeaders(),
       next: { revalidate: 60, tags: ["home-hero"] },
     });
     if (!res.ok) return DEFAULT_HOME_HERO;

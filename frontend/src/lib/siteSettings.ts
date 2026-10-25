@@ -1,4 +1,4 @@
-import { API_URL } from "@/lib/api";
+import { appKeyHeaders, publicApiUrl } from "@/lib/api";
 import { siteConfig } from "@/config/site";
 
 export type TrackerConfig = {
@@ -185,7 +185,8 @@ function normalizeShopSettings(
 /** Fetch live site settings from the API (cached ~60s). Falls back to static config. */
 export async function getSiteSettings(): Promise<PublicSiteSettings> {
   try {
-    const res = await fetch(`${API_URL}/api/site-settings`, {
+    const res = await fetch(publicApiUrl("/api/site-settings"), {
+      headers: appKeyHeaders(),
       next: { revalidate: 60, tags: ["site-settings"] },
     });
     if (!res.ok) return FALLBACK;

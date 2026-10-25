@@ -1,4 +1,4 @@
-import { API_URL } from "@/lib/api";
+import { appKeyHeaders, publicApiUrl } from "@/lib/api";
 import {
   DEFAULT_HOME_HERO,
   type HomeHeroBanner,
@@ -16,7 +16,8 @@ const EMPTY_BLOCKS: HomeBlocksMap = {};
 /** One SSR fetch for all home CMS blocks + hero (cached ~60s). */
 export async function getHomePageContent(): Promise<HomePagePayload> {
   try {
-    const res = await fetch(`${API_URL}/api/home/blocks`, {
+    const res = await fetch(publicApiUrl("/api/home/blocks"), {
+      headers: appKeyHeaders(),
       next: { revalidate: 60, tags: ["home-blocks", "home-hero"] },
     });
     if (!res.ok) {

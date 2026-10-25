@@ -54,9 +54,18 @@ On cPanel those are two buttons, then a restart:
 
 Under Passenger the process listens on Passenger's socket, not on port 8001. `PORT` in the environment is unused while Passenger is in front.
 
+### When the Node app is stopped
+
+The application folder is the site root. Without a Node process, the host would list every file, including `.env.prod`. Two files in `backend-api/` stop that:
+
+- `index.html` — the page people see. It says the API is not running.
+- `.htaccess` — turns off directory listing and refuses browser access to `.env*`, source files, and other project files.
+
+Upload both with the app. If cPanel already wrote a `CLOUDLINUX PASSENGER CONFIGURATION` block into `.htaccess`, keep that block under the rules from this repo. Deleting it stops Passenger. Restart the Node app after the file is in place. While the app is running, Passenger serves the API. The HTML page is only for when the script is stopped.
+
 ### Environment variables
 
-Set these in the Node.js app UI (not only in a file). Passenger reads the UI values. Restart the app after every change.
+Local values live in `backend-api/.env.dev`. Live values live in `backend-api/.env.prod`. The storefront and dashboard use the same two names. Set the live values in the Node.js app UI as well (not only in a file). Passenger reads the UI values, and those win over the file. Restart the app after every change.
 
 Generate secrets locally:
 
@@ -71,6 +80,8 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
 | `JWT_SECRET` | 32+ bytes, random |
 | `SETTINGS_ENCRYPTION_KEY` | a different 32+ byte random value |
 | `CORS_ORIGINS` | `https://niyenin-frontend.vercel.app,https://niyenin-dashboard.vercel.app` (no spaces, no trailing slash) |
+| `API_PUBLIC_KEY` | same value on the API, the storefront, and the dashboard. 32+ bytes |
+| `API_SECRET_KEY` | same secret on those three hosts. Server-only. Do not put it in `NEXT_PUBLIC_` or `VITE_` |
 | `PUBLIC_API_URL` | `https://api.yourdomain.com` |
 | `FRONTEND_URL` | the storefront origin, `https://your-store.vercel.app` |
 | `PROXY_IP_SECRET` | same hex string you put on the Vercel storefront. Server-only. |

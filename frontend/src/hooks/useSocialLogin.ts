@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { getSession, signIn } from "next-auth/react";
-import { API_URL, type ApiUser } from "@/lib/api";
+import { publicApiUrl, type ApiUser } from "@/lib/api";
 import { messageForAuthCode } from "@/lib/authErrors";
 import { useGoogleIdToken } from "@/hooks/useGoogleIdToken";
 import { useFacebookLogin } from "@/hooks/useFacebookLogin";
@@ -21,7 +21,7 @@ const LABEL: Record<SocialProvider, string> = {
 let providersCache: Promise<PublicProviders | null> | null = null;
 
 function fetchProviders(): Promise<PublicProviders | null> {
-  providersCache ??= fetch(`${API_URL}/api/auth/social-providers`, {
+  providersCache ??= fetch(publicApiUrl("/api/auth/social-providers"), {
     headers: { Accept: "application/json" },
   })
     .then(async (res) => (res.ok ? ((await res.json()) as { providers: PublicProviders }).providers : null))

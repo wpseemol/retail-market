@@ -2,7 +2,7 @@
 
 import { signOut } from "@/auth";
 import { auth } from "@/auth";
-import { SERVER_API_URL, type ApiUser } from "@/lib/api";
+import { appKeyRecord, SERVER_API_URL, type ApiUser } from "@/lib/api";
 
 export type AuthActionResult =
   | {
@@ -45,6 +45,7 @@ export async function syncSessionUserAction(): Promise<AuthActionResult> {
     headers: {
       Accept: "application/json",
       Authorization: `Bearer ${session.accessToken}`,
+      ...appKeyRecord(),
     },
   });
 

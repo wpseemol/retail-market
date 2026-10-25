@@ -5,6 +5,18 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### `.env.dev` and `.env.prod`
+
+- `.env.dev`, `.env.prod`: local values and live values are separate. `.env` and `.env.local` no longer hold those values.
+- `next.config.ts`: `next dev` loads `.env.dev`. `next build` and `next start` load `.env.prod`. A value already set on Vercel is kept.
+- `.env.example`, `AGENTS.md`: the two file names. The example `AUTH_SECRET` line is its own line again.
+
+### API keys stay on the server
+
+- `src/lib/api.ts`, `src/lib/session.ts`, `src/auth.ts`, `src/app/actions/auth.ts`: server calls send `X-Public-Key` and `X-Api-Secret` from `API_PUBLIC_KEY` and `API_SECRET_KEY`.
+- Catalog, content, sitemap, visit beacon, and social-login fetches go through the Next.js proxy when they run in the browser, so the secret is not in the page.
+- `.env.example` and `AGENTS.md` document the two server-only names.
+
 ### Vercel install and live product images
 
 - `pnpm-lock.yaml`: refreshed so it matches `package.json`. Vercel’s frozen `pnpm install` was failing because this copy still listed Next.js 16.3.5 and was missing newer dependencies.

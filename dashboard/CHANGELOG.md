@@ -5,6 +5,19 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### `.env.dev` and `.env.prod`
+
+- `.env.dev`, `.env.prod`: local values and live values are separate. `.env` no longer holds those values.
+- `vite.config.ts`: `pnpm dev` reads `.env.dev`. `pnpm build` and `pnpm start` read `.env.prod`.
+- `.env.example`, `AGENTS.md`: the two file names.
+
+### API calls go through a server proxy
+
+- `vite.config.ts`: the dev and preview servers forward `/api` to the real API and add `X-Public-Key` and `X-Api-Secret`. Those values are not `VITE_` variables, so they are not in the browser bundle.
+- `api/[...path].js`, `vercel.json`: the hosted dashboard does the same. `/api` is not rewritten to `index.html`.
+- `src/lib/api.ts`: a missing app key is reported as `API_KEY_REQUIRED` instead of signing the staff user out.
+- `.env.example` and `AGENTS.md` document `API_PUBLIC_KEY`, `API_SECRET_KEY`, and `API_PROXY_TARGET`.
+
 ### Vercel build and live URLs
 
 - `package-lock.json`: removed. It pointed at this machine’s pnpm store, so Vercel’s `npm install` never installed `typescript` and `tsc` exited 127.

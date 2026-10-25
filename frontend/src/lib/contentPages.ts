@@ -1,4 +1,4 @@
-import { API_URL } from "@/lib/api";
+import { appKeyHeaders, publicApiUrl } from "@/lib/api";
 
 export type ContentPageKey = "faq" | "terms";
 
@@ -53,7 +53,8 @@ export type ContentPage<K extends ContentPageKey> = {
 /** `null` = unpublished, unknown or API down. Metadata and page call this with the same URL so Next dedupes it. */
 export async function fetchContentPage<K extends ContentPageKey>(key: K): Promise<ContentPage<K> | null> {
     try {
-        const res = await fetch(`${API_URL}/api/pages/${key}`, {
+        const res = await fetch(publicApiUrl(`/api/pages/${key}`), {
+            headers: appKeyHeaders(),
             next: { revalidate: 300, tags: ["pages", `page:${key}`] },
         });
         if (!res.ok) return null;

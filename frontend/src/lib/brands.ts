@@ -1,4 +1,4 @@
-import { API_URL } from "@/lib/api";
+import { appKeyHeaders, publicApiUrl } from "@/lib/api";
 import type { Locale } from "@/i18n/config";
 import type { ShowcaseMedia, ShowcasePayload, StorefrontSort } from "@/lib/showcase";
 import type { StorefrontProduct } from "@/lib/stores";
@@ -75,7 +75,8 @@ export async function fetchBrands(options?: { q?: string; limit?: number }): Pro
   if (options?.q?.trim()) params.set("q", options.q.trim());
 
   try {
-    const res = await fetch(`${API_URL}/api/brands?${params}`, {
+    const res = await fetch(publicApiUrl(`/api/brands?${params}`), {
+      headers: appKeyHeaders(),
       next: { revalidate: 60, tags: ["brands"] },
     });
     if (!res.ok) return EMPTY_LIST;
@@ -96,7 +97,8 @@ export async function fetchBrandBySlug(
   const qs = params.toString();
 
   try {
-    const res = await fetch(`${API_URL}/api/brands/${encodeURIComponent(slug)}${qs ? `?${qs}` : ""}`, {
+    const res = await fetch(publicApiUrl(`/api/brands/${encodeURIComponent(slug)}${qs ? `?${qs}` : ""}`), {
+      headers: appKeyHeaders(),
       next: { revalidate: 60, tags: ["brands", `brand:${slug}`] },
     });
     if (!res.ok) return null;

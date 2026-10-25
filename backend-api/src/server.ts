@@ -40,6 +40,7 @@ import { publicSitemapRouter } from "./routes/publicSitemap.js";
 import { dashboardSeoRouter } from "./routes/dashboardSeo.js";
 import { publicPagesRouter } from "./routes/publicPages.js";
 import { dashboardPagesRouter } from "./routes/dashboardPages.js";
+import { requireAppKeys } from "./middleware/appKeys.js";
 
 const app = express();
 
@@ -60,9 +61,11 @@ app.use(
   cors({
     origin: env.corsOrigins,
     credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Public-Key", "X-Api-Secret"],
     exposedHeaders: ["Content-Disposition", "X-Total-Rows"],
   }),
 );
+app.use(requireAppKeys);
 app.use(express.json());
 
 // Public uploaded files — e.g. /uploads/users/photos/<file>

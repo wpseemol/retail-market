@@ -1,4 +1,4 @@
-import { API_URL } from "@/lib/api";
+import { appKeyHeaders, publicApiUrl } from "@/lib/api";
 
 export type ReviewImage = { id: string; url: string };
 
@@ -61,9 +61,10 @@ export const EMPTY_REVIEWS: ReviewsPayload = {
 
 /** Approved reviews only — rendered on the server for SEO. */
 export async function fetchProductReviews(idOrSlug: string): Promise<ReviewsPayload> {
-  const url = `${API_URL}/api/products/${encodeURIComponent(idOrSlug)}/reviews?limit=${REVIEW_PAGE_SIZE}`;
+  const url = publicApiUrl(`/api/products/${encodeURIComponent(idOrSlug)}/reviews?limit=${REVIEW_PAGE_SIZE}`);
   try {
     const res = await fetch(url, {
+      headers: appKeyHeaders(),
       next: { revalidate: 60, tags: ["reviews", `product-reviews:${idOrSlug}`] },
     });
     if (!res.ok) return EMPTY_REVIEWS;

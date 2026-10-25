@@ -179,3 +179,32 @@ export const SERVER_API_URL =
 
 export const API_URL =
   typeof window === "undefined" ? SERVER_API_URL : PUBLIC_API_URL;
+
+/**
+ * Server calls the API directly and attaches both keys.
+ * The browser calls the Next.js proxy, which attaches the keys there.
+ * `API_SECRET_KEY` is never sent to the browser.
+ */
+export function publicApiUrl(path: string) {
+  if (typeof window === "undefined") return `${SERVER_API_URL}${path}`;
+  return `/api/backend${path.replace(/^\/api/, "")}`;
+}
+
+export function appKeyRecord(): Record<string, string> {
+  if (typeof window !== "undefined") return {};
+  const headers: Record<string, string> = {};
+  // Computed access so the secret is not written into the browser bundle.
+  const publicKey = process.env["API_PUBLIC_KEY"]?.trim();
+  const secret = process.env["API_SECRET_KEY"]?.trim();
+  if (publicKey) headers["X-Public-Key"] = publicKey;
+  if (secret) headers["X-Api-Secret"] = secret;
+  return headers;
+}
+
+export function appKeyHeaders(init?: HeadersInit) {
+  const headers = new Headers(init);
+  for (const [name, value] of Object.entries(appKeyRecord())) {
+    if (!headers.has(name)) headers.set(name, value);
+  }
+  return headers;
+}

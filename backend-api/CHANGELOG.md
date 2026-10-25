@@ -5,6 +5,17 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Separate dev and production env files, and a closed folder when Node is stopped
+
+- `.env.dev`, `.env.prod`, `.env`: development values and production values are separate files. `src/lib/env.ts` loads `.env.dev`, or `.env.prod` when `NODE_ENV=production`. A value already set in cPanel wins. `.env` stays the development copy because Prisma reads that name.
+- `index.html`, `.htaccess`: when Passenger is stopped, the site shows “The API is not running” and the host must not list the folder or send `.env` files, source, or other project files.
+- `.env.example`, `AGENTS.md`, `DEPLOY.md`: the two file names and the offline page.
+
+### API key gate
+
+- `src/middleware/appKeys.ts`, `src/server.ts`, `src/lib/env.ts`: every `/api` route except `/api/health` and the SSLCOMMERZ callbacks requires `X-Public-Key` and `X-Api-Secret`. `/uploads` stays public so images load. Production refuses to start when either key is shorter than 32 bytes.
+- `.env`, `.env.example`, `API.md`, `DEPLOY.md`, `AGENTS.md`: the key names. The secret stays on the server.
+
 ### Local env keeps development active
 
 - `.env`: existing values stay uncommented for local development. Production `NODE_ENV`, `DATABASE_URL`, `CORS_ORIGINS`, API URL, storefront URL, and SSLCOMMERZ live mode are commented underneath.

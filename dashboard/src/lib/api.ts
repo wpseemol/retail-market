@@ -194,6 +194,14 @@ export async function apiFetch<T>(
     code?: string;
   };
 
+  if (response.status === 401 && data.code === "API_KEY_REQUIRED") {
+    throw new ApiError(
+      data.message ?? "A valid public key and secret key are required.",
+      401,
+      data.code,
+    );
+  }
+
   if (
     response.status === 401 &&
     !options.skipRefresh &&
@@ -250,6 +258,14 @@ export async function apiUpload<T>(
     code?: string;
   };
 
+  if (response.status === 401 && data.code === "API_KEY_REQUIRED") {
+    throw new ApiError(
+      data.message ?? "A valid public key and secret key are required.",
+      401,
+      data.code,
+    );
+  }
+
   if (response.status === 401 && !options.skipRefresh) {
     const newToken = await refreshAccessToken();
     if (newToken) {
@@ -290,6 +306,17 @@ export async function apiDownload(
 
   let response = await send(initialToken);
   if (response.status === 401) {
+    const denied = (await response.clone().json().catch(() => ({}))) as {
+      message?: string;
+      code?: string;
+    };
+    if (denied.code === "API_KEY_REQUIRED") {
+      throw new ApiError(
+        denied.message ?? "A valid public key and secret key are required.",
+        401,
+        denied.code,
+      );
+    }
     const newToken = await refreshAccessToken();
     if (!newToken) {
       forceLogout("session_expired");

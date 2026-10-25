@@ -13,6 +13,7 @@ import {
   type AuthSession,
 } from "@/lib/sessionCrypto";
 import {
+  appKeyRecord,
   SERVER_API_URL,
   type AuthTokenResponse,
   type ApiUser,
@@ -95,6 +96,9 @@ export async function backendFetch(
   }
   const trusted = await trustedClientHeaders();
   for (const [name, value] of Object.entries(trusted)) {
+    if (!headers.has(name)) headers.set(name, value);
+  }
+  for (const [name, value] of Object.entries(appKeyRecord())) {
     if (!headers.has(name)) headers.set(name, value);
   }
   return fetch(`${BACKEND_URL}${path}`, {

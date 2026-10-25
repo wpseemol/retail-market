@@ -1,6 +1,10 @@
 import path from "node:path";
 import dotenv from "dotenv";
 
+// `.env.dev` locally, `.env.prod` when NODE_ENV=production. A value already set
+// by cPanel or the shell wins. `.env` only fills anything still missing (Prisma reads that name).
+const envFile = process.env.NODE_ENV === "production" ? ".env.prod" : ".env.dev";
+dotenv.config({ path: path.resolve(process.cwd(), envFile) });
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
 const isProduction = process.env.NODE_ENV === "production";
@@ -42,7 +46,7 @@ for (const key of required) {
 
 // A guessable signing key lets anyone mint a super_admin token, so production must not start without real secrets.
 if (isProduction) {
-  const weak = (["JWT_SECRET", "SETTINGS_ENCRYPTION_KEY"] as const).filter(
+  const weak = (["JWT_SECRET", "SETTINGS_ENCRYPTION_KEY", "API_PUBLIC_KEY", "API_SECRET_KEY"] as const).filter(
     (key) => Buffer.byteLength(process.env[key]?.trim() ?? "", "utf8") < MIN_SECRET_BYTES,
   );
   if (weak.length > 0) {
@@ -89,6 +93,13 @@ export const env = {
     .trim()
     .replace(/^["']|["']$/g, ""),
   corsOrigins: corsOriginList(process.env.CORS_ORIGINS),
+  /** Identifies the storefront or dashboard. Sent with `X-Public-Key`. */
+  apiPublicKey: (process.env.API_PUBLIC_KEY ?? "").trim(),
+  /** Server-only. Sent with `X-Api-Secret`. Never put this in a browser bundle. */
+  apiSecretKey: (process.env.API_SECRET_KEY ?? "").trim(),
+  apiKeysEnforced:
+    Boolean((process.env.API_PUBLIC_KEY ?? "").trim()) &&
+    Boolean((process.env.API_SECRET_KEY ?? "").trim()),
   /** Public base URL for uploaded media (e.g. http://localhost:8001). */
   publicBaseUrl: (
     process.env.PUBLIC_API_URL ??

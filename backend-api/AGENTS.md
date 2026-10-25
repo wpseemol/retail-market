@@ -74,6 +74,8 @@ backend-api/
 - **Migrations:** add a new folder under `prisma/migrations/` (never edit an applied one). Backfill data in the same SQL when adding non-null columns.
 - **Concurrency:** guard state-changing writes with the expected current state in the `where` clause (`updateMany` / `deleteMany`) and return 409 when nothing matched.
 - **CORS:** custom response headers the dashboard reads (`Content-Disposition`, `X-Total-Rows`) must be listed in `exposedHeaders` in `server.ts`.
+- **App keys:** `requireAppKeys` blocks every `/api` route except `GET /api/health` and the SSLCOMMERZ success, fail, cancel, and IPN callbacks. Callers send `X-Public-Key` and `X-Api-Secret`. `/uploads` stays public. Production will not start unless both keys are at least 32 bytes.
+- **Env files:** `.env.dev` locally, `.env.prod` when `NODE_ENV=production`. `.env` stays a copy of `.env.dev` because Prisma reads that name. `index.html` and `.htaccess` are what the host serves when Passenger is stopped, so the folder listing and the env files are not public.
 
 ## Workspace rules
 

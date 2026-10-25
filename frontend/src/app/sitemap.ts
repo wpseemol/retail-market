@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { siteConfig } from "@/config/site";
-import { API_URL } from "@/lib/api";
+import { appKeyHeaders, publicApiUrl } from "@/lib/api";
 import { fetchContentPage } from "@/lib/contentPages";
 import { getSiteSettings } from "@/lib/siteSettings";
 
@@ -16,7 +16,8 @@ export const revalidate = 3600;
 
 async function fetchEntries(): Promise<SitemapEntries> {
     try {
-        const res = await fetch(`${API_URL}/api/sitemap-entries`, {
+        const res = await fetch(publicApiUrl("/api/sitemap-entries"), {
+            headers: appKeyHeaders(),
             next: { revalidate: 3600, tags: ["sitemap", "stores", "brands"] },
         });
         if (!res.ok) throw new Error(String(res.status));

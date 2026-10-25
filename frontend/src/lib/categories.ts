@@ -1,4 +1,4 @@
-import { API_URL } from "@/lib/api";
+import { appKeyHeaders, publicApiUrl } from "@/lib/api";
 import type { Locale } from "@/i18n/config";
 
 export type PublicCategoryChild = {
@@ -23,7 +23,8 @@ export type PublicCategory = {
 /** Fetch active categories for the header mega-menu (cached ~60s). */
 export async function getCategories(): Promise<PublicCategory[]> {
   try {
-    const res = await fetch(`${API_URL}/api/categories`, {
+    const res = await fetch(publicApiUrl("/api/categories"), {
+      headers: appKeyHeaders(),
       next: { revalidate: 60, tags: ["categories"] },
     });
     if (!res.ok) return [];

@@ -1,4 +1,4 @@
-import { API_URL, apiFetch } from "@/lib/api";
+import { apiFetch, appKeyHeaders, publicApiUrl } from "@/lib/api";
 import type { ShopProduct } from "@/components/shop/types";
 import type { Locale } from "@/i18n/config";
 
@@ -204,7 +204,7 @@ export function productListPath(options?: ProductListQuery) {
 }
 
 export async function fetchProducts(options?: ProductListQuery): Promise<ProductsListPayload> {
-  const url = `${API_URL}${productListPath(options)}`;
+  const url = publicApiUrl(productListPath(options));
 
   const empty: ProductsListPayload = {
     products: [],
@@ -218,6 +218,7 @@ export async function fetchProducts(options?: ProductListQuery): Promise<Product
 
   try {
     const res = await fetch(url, {
+      headers: appKeyHeaders(),
       next: { revalidate: 60, tags: ["products"] },
     });
     if (!res.ok) return empty;
@@ -253,9 +254,10 @@ export async function fetchPriceRange(filters: {
 export async function fetchProductByIdOrSlug(
   idOrSlug: string,
 ): Promise<ProductDetailPayload | null> {
-  const url = `${API_URL}/api/products/${encodeURIComponent(idOrSlug)}`;
+  const url = publicApiUrl(`/api/products/${encodeURIComponent(idOrSlug)}`);
   try {
     const res = await fetch(url, {
+      headers: appKeyHeaders(),
       next: { revalidate: 60, tags: [`product:${idOrSlug}`] },
     });
     if (res.status === 404) return null;

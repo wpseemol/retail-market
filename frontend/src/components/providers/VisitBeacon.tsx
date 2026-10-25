@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { API_URL } from "@/lib/api";
+import { publicApiUrl } from "@/lib/api";
 
 /**
  * Sends a lightweight storefront page-view beacon for visitor-by-country analytics.
@@ -21,7 +21,7 @@ export function VisitBeacon() {
         typeof document !== "undefined" ? document.referrer.slice(0, 500) : "",
     });
 
-    const url = `${API_URL}/api/analytics/visit`;
+    const url = publicApiUrl("/api/analytics/visit");
     try {
       if (typeof navigator !== "undefined" && navigator.sendBeacon) {
         const blob = new Blob([body], { type: "application/json" });

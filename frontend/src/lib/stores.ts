@@ -1,4 +1,4 @@
-import { API_URL } from "@/lib/api";
+import { appKeyHeaders, publicApiUrl } from "@/lib/api";
 import type { Locale } from "@/i18n/config";
 import type { ShowcaseMedia, ShowcasePayload, StorefrontSort } from "@/lib/showcase";
 
@@ -106,10 +106,11 @@ export async function fetchStores(options?: {
   if (options?.limit) params.set("limit", String(options.limit));
   if (options?.q?.trim()) params.set("q", options.q.trim());
   const qs = params.toString();
-  const url = `${API_URL}/api/shops${qs ? `?${qs}` : ""}`;
+  const url = publicApiUrl(`/api/shops${qs ? `?${qs}` : ""}`);
 
   try {
     const res = await fetch(url, {
+      headers: appKeyHeaders(),
       next: { revalidate: 60, tags: ["stores"] },
     });
     if (!res.ok) {
@@ -136,10 +137,11 @@ export async function fetchStoreBySlug(
   if (options?.limit) params.set("limit", String(options.limit));
   if (options?.sort) params.set("sort", options.sort);
   const qs = params.toString();
-  const url = `${API_URL}/api/shops/${encodeURIComponent(slug)}${qs ? `?${qs}` : ""}`;
+  const url = publicApiUrl(`/api/shops/${encodeURIComponent(slug)}${qs ? `?${qs}` : ""}`);
 
   try {
     const res = await fetch(url, {
+      headers: appKeyHeaders(),
       next: { revalidate: 60, tags: ["stores", `store:${slug}`] },
     });
     if (res.status === 404) return null;

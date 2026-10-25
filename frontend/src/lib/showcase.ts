@@ -1,4 +1,4 @@
-import { API_URL } from "@/lib/api";
+import { appKeyHeaders, publicApiUrl } from "@/lib/api";
 import type { ReviewImage, ReviewSummary } from "@/lib/reviews";
 
 export type ShowcaseMedia = {
@@ -71,8 +71,9 @@ export async function fetchShowcaseReviews(
 ): Promise<ShowcaseReviewsPayload | null> {
     try {
         const res = await fetch(
-            `${API_URL}/api/${kind}/${encodeURIComponent(slug)}/reviews?limit=${limit}`,
+            publicApiUrl(`/api/${kind}/${encodeURIComponent(slug)}/reviews?limit=${limit}`),
             {
+                headers: appKeyHeaders(),
                 next: {
                     revalidate: 60,
                     tags: ["reviews", kind === "shops" ? `store:${slug}` : `brand:${slug}`],
