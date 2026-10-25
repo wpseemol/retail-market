@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Disabled buttons show a blocked cursor
+
+- `src/components/ui/button.tsx`: a button that can be clicked uses the pointer. A disabled button keeps the not-allowed cursor, including Save changes before anything is edited.
+
 ### API connection caption removed
 
 - `src/components/dashboard/site-header.tsx`: the “API connected” badge is gone from the header in production and in local dev. The header no longer polls `/api/health`.
