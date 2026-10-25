@@ -13,6 +13,7 @@ import {
   SwitchRow,
 } from "@/components/content/ContentPageSections";
 import { useContentPage } from "@/components/content/useContentPage";
+import { useEditSave } from "@/hooks/use-edit-save";
 import { FormSection, FormStatusMessage, PageHero, StickyFormActions } from "@/components/dashboard/page-shell";
 import { Button } from "@/components/ui/button";
 import {
@@ -130,9 +131,11 @@ export function TermsPageEditor() {
     ];
   }, [list]);
 
+  const { isSubmitting, isDirty } = form.formState;
+  const editSave = useEditSave(isDirty, isSubmitting, "Saving refreshes /terms within a few seconds.");
+
   if (loadError) return <p className="text-sm text-destructive">{loadError}</p>;
 
-  const { isSubmitting, isDirty } = form.formState;
   const allOpen = list.length > 0 && list.every((s) => open.has(s.id));
 
   return (
@@ -340,7 +343,7 @@ export function TermsPageEditor() {
                   <FormStatusMessage
                     error={error}
                     success={success}
-                    idle={isDirty ? "Unsaved changes to the terms." : "Saving refreshes /terms within a few seconds."}
+                    idle={editSave.hint}
                   />
                 }
               >
@@ -352,7 +355,7 @@ export function TermsPageEditor() {
                 >
                   Discard
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={!editSave.canSave} title={editSave.blockedReason}>
                   {isSubmitting ? "Saving…" : "Save terms"}
                 </Button>
               </StickyFormActions>

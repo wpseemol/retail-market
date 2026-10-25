@@ -1,4 +1,5 @@
 import {
+    createAction,
     createAsyncThunk,
     createSelector,
     createSlice,
@@ -19,6 +20,7 @@ import {
 } from "@/lib/cart";
 import { type CartDto, type CartLine, MAX_LINE_QUANTITY } from "@/lib/cartTypes";
 import type { ShopProduct } from "@/components/shop/types";
+import { type CartCache, type OfflineCartOp } from "@/store/cartCache";
 
 export type { CartLine } from "@/lib/cartTypes";
 
@@ -32,6 +34,8 @@ export interface CartState {
     couponCode: string | null;
     /** Display-only fraction (0.1 = 10%); the order endpoint recomputes the discount from the code. */
     couponDiscount: number;
+    /** Mutations made while the browser was offline. Replayed when the connection returns. */
+    offlineOps: OfflineCartOp[];
 }
 
 const initialState: CartState = {
@@ -42,6 +46,7 @@ const initialState: CartState = {
     error: null,
     couponCode: null,
     couponDiscount: 0,
+    offlineOps: [],
 };
 
 type ThunkApi = { state: { cart: CartState }; rejectValue: string };
@@ -49,6 +54,14 @@ type ThunkApi = { state: { cart: CartState }; rejectValue: string };
 function errorMessage(err: unknown, fallback: string) {
     return err instanceof ApiError || err instanceof Error ? err.message : fallback;
 }
+
+function browserOffline() {
+    return typeof navigator !== "undefined" && navigator.onLine === false;
+}
+
+export const hydrateCartCache = createAction<CartCache | null>("cart/hydrateCache");
+export const queueOfflineOp = createAction<OfflineCartOp>("cart/queueOfflineOp");
+const setOfflineOps = createAction<OfflineCartOp[]>("cart/setOfflineOps");
 
 /** Display data used for the optimistic line until the server responds. */
 export type CartProductSnapshot = {
@@ -88,6 +101,7 @@ function cartMutation<Arg>(
     type: string,
     fallback: string,
     call: (mode: CartMode, arg: Arg) => Promise<CartDto>,
+    toOfflineOp?: (arg: Arg) => OfflineCartOp,
 ) {
     return createAsyncThunk<CartDto, Arg, ThunkApi>(
         type,
@@ -95,6 +109,10 @@ function cartMutation<Arg>(
             try {
                 return await call(getState().cart.mode, arg);
             } catch (err) {
+                if (browserOffline()) {
+                    if (toOfflineOp) dispatch(queueOfflineOp(toOfflineOp(arg)));
+                    return rejectWithValue("OFFLINE");
+                }
                 void dispatch(fetchCart());
                 return rejectWithValue(errorMessage(err, fallback));
             }
@@ -106,20 +124,29 @@ export const addCartItem = cartMutation<{
     productId: string | number;
     quantity?: number;
     product: CartProductSnapshot;
-}>("cart/add", "Could not add to cart", (mode, { productId, quantity = 1 }) =>
-    addCartItemApi(mode, String(productId), quantity),
+}>(
+    "cart/add",
+    "Could not add to cart",
+    (mode, { productId, quantity = 1 }) => addCartItemApi(mode, String(productId), quantity),
+    ({ productId, quantity = 1 }) => ({
+        kind: "add",
+        productId: String(productId),
+        quantity,
+    }),
 );
 
 export const setLineQuantity = cartMutation<{ productId: string; quantity: number }>(
     "cart/setQuantity",
     "Could not update quantity",
     (mode, { productId, quantity }) => updateCartLineApi(mode, productId, { quantity }),
+    ({ productId, quantity }) => ({ kind: "qty", productId, quantity }),
 );
 
 export const setLineSelected = cartMutation<{ productId: string; selected: boolean }>(
     "cart/setSelected",
     "Could not update selection",
     (mode, { productId, selected }) => updateCartLineApi(mode, productId, { selected }),
+    ({ productId, selected }) => ({ kind: "selected", productId, selected }),
 );
 
 /** Select / unselect every line, or only `productIds` (e.g. "Buy now" selects just one product). */
@@ -127,12 +154,14 @@ export const setLinesSelected = cartMutation<{ selected: boolean; productIds?: s
     "cart/setAllSelected",
     "Could not update selection",
     (mode, { selected, productIds }) => selectCartLinesApi(mode, selected, productIds),
+    ({ selected, productIds }) => ({ kind: "selectedMany", productIds, selected }),
 );
 
 export const removeCartLines = cartMutation<string[]>(
     "cart/remove",
     "Could not remove item",
     (mode, productIds) => removeCartLinesApi(mode, productIds),
+    (productIds) => ({ kind: "remove", productIds }),
 );
 
 /**
@@ -144,6 +173,39 @@ export const removeOrderedLines = cartMutation<string[]>(
     "Could not refresh your cart",
     (mode, productIds) =>
         mode === "guest" ? removeCartLinesApi("guest", productIds) : fetchCartApi("user"),
+);
+
+async function applyOfflineOp(mode: CartMode, op: OfflineCartOp) {
+    switch (op.kind) {
+        case "add":
+            return addCartItemApi(mode, op.productId, op.quantity);
+        case "qty":
+            return updateCartLineApi(mode, op.productId, { quantity: op.quantity });
+        case "selected":
+            return updateCartLineApi(mode, op.productId, { selected: op.selected });
+        case "selectedMany":
+            return selectCartLinesApi(mode, op.selected, op.productIds);
+        case "remove":
+            return removeCartLinesApi(mode, op.productIds);
+    }
+}
+
+/** Sends edits that happened offline, then loads the cart the server kept. */
+export const flushOfflineCart = createAsyncThunk<CartDto, void, ThunkApi>(
+    "cart/flushOffline",
+    async (_, { getState, dispatch, rejectWithValue }) => {
+        const mode = getState().cart.mode;
+        const ops = [...getState().cart.offlineOps];
+        try {
+            for (let index = 0; index < ops.length; index += 1) {
+                await applyOfflineOp(mode, ops[index]);
+                dispatch(setOfflineOps(ops.slice(index + 1)));
+            }
+            return await fetchCartApi(mode);
+        } catch (err) {
+            return rejectWithValue(errorMessage(err, "Could not sync your cart"));
+        }
+    },
 );
 
 export type AppliedCoupon = { code: string; percent: number };
@@ -258,6 +320,40 @@ const cartSlice = createSlice({
             })
             .addCase(fetchCart.rejected, (state) => {
                 state.loaded = true;
+            })
+            .addCase(hydrateCartCache, (state, action) => {
+                state.loaded = true;
+                const cached = action.payload;
+                if (!cached || cached.mode !== state.mode) return;
+                if (state.items.length === 0) state.items = cached.items;
+                if (state.offlineOps.length === 0) state.offlineOps = cached.offlineOps;
+            })
+            .addCase(queueOfflineOp, (state, action) => {
+                const op = action.payload;
+                if (op.kind === "qty" || op.kind === "selected") {
+                    const index = state.offlineOps.findIndex(
+                        (item) => item.kind === op.kind && item.productId === op.productId,
+                    );
+                    if (index >= 0) {
+                        state.offlineOps[index] = op;
+                        return;
+                    }
+                }
+                state.offlineOps.push(op);
+                if (state.offlineOps.length > 40) state.offlineOps.shift();
+            })
+            .addCase(setOfflineOps, (state, action) => {
+                state.offlineOps = action.payload;
+            })
+            .addCase(flushOfflineCart.fulfilled, (state, action) => {
+                state.loaded = true;
+                state.items = action.payload.items;
+                state.offlineOps = [];
+                state.error = null;
+            })
+            .addCase(flushOfflineCart.rejected, (state, action) => {
+                state.loaded = true;
+                state.error = action.payload ?? "Could not sync your cart";
             });
 
         // Optimistic updates so the UI responds instantly.
@@ -324,6 +420,10 @@ const cartSlice = createSlice({
                 state.items = action.payload.items;
             })
             .addMatcher(isRejected(...mutations), (state, action) => {
+                if (action.payload === "OFFLINE") {
+                    state.error = null;
+                    return;
+                }
                 state.error = (action.payload as string | undefined) ?? "Something went wrong";
             });
     },

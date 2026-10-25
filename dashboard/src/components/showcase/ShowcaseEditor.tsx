@@ -16,6 +16,7 @@ import {
   SearchCheck,
 } from "lucide-react";
 import { useConfirm } from "@/components/providers/ConfirmProvider";
+import { useEditSave } from "@/hooks/use-edit-save";
 import { CharCounter, SearchPreview, SharePreview } from "@/components/seo/SeoPreview";
 import { FormSection, FormStatusMessage, StickyFormActions } from "@/components/dashboard/page-shell";
 import { Button } from "@/components/ui/button";
@@ -248,6 +249,13 @@ export function ShowcaseEditor({
     form.setValue("showcase.sections", rows, { shouldDirty: true });
   }
 
+  const { isSubmitting, isDirty } = form.formState;
+  const save = useEditSave(
+    isDirty,
+    isSubmitting,
+    "Images save right away; text and layout need Save.",
+  );
+
   if (loadError) {
     return (
       <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
@@ -266,7 +274,6 @@ export function ShowcaseEditor({
   const values = form.watch();
   const accent = values.accent_color;
   const lowContrast = isHexColor(accent) && contrastRatio(accent, "#FFFFFF") < 3;
-  const { isSubmitting, isDirty } = form.formState;
 
   const slotField = (slot: MediaSlot, extra?: { previewClassName?: string; imgClassName?: string; prefix?: string }) => (
     <ShowcaseImageField
@@ -725,7 +732,7 @@ export function ShowcaseEditor({
               <FormStatusMessage
                 error={error}
                 success={success}
-                idle={isDirty ? "Unsaved changes on this page design." : "Images save right away; text and layout need Save."}
+                idle={save.hint}
               />
             }
           >
@@ -737,7 +744,7 @@ export function ShowcaseEditor({
             <Button type="button" variant="outline" disabled={!isDirty || isSubmitting} onClick={() => form.reset(toShowcaseFormValues(payload))}>
               Discard
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={!save.canSave} title={save.blockedReason}>
               {isSubmitting ? "Saving…" : "Save page"}
             </Button>
           </StickyFormActions>

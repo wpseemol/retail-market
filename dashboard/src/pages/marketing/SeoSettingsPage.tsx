@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ExternalLink, ShieldAlert, Trash2 } from "lucide-react";
 import { useConfirm } from "@/components/providers/ConfirmProvider";
+import { useEditSave } from "@/hooks/use-edit-save";
 import { BrandingImageDropzone } from "@/components/settings/BrandingImageDropzone";
 import { CharCounter, SearchPreview, SharePreview } from "@/components/seo/SeoPreview";
 import {
@@ -191,6 +192,11 @@ export function SeoSettingsPage() {
       : applyTitleTemplate(page.title || SEO_PAGE_META[activePage].label, v.seo_title_template, siteName);
   const previewDescription = page.description || v.site_description;
   const { isSubmitting, isDirty } = form.formState;
+  const save = useEditSave(
+    isDirty,
+    isSubmitting,
+    "Saving refreshes the storefront within a few seconds.",
+  );
 
   if (loadError) {
     return <p className="text-sm text-destructive">{loadError}</p>;
@@ -516,7 +522,7 @@ export function SeoSettingsPage() {
                   <FormStatusMessage
                     error={error}
                     success={success}
-                    idle={isDirty ? "Unsaved SEO changes." : "Saving refreshes the storefront within a few seconds."}
+                    idle={save.hint}
                   />
                 }
               >
@@ -528,7 +534,7 @@ export function SeoSettingsPage() {
                 >
                   Discard
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={!save.canSave} title={save.blockedReason}>
                   {isSubmitting ? "Saving…" : "Save SEO settings"}
                 </Button>
               </StickyFormActions>

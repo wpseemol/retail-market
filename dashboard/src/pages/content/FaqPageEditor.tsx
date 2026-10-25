@@ -13,6 +13,7 @@ import {
   SwitchRow,
 } from "@/components/content/ContentPageSections";
 import { useContentPage } from "@/components/content/useContentPage";
+import { useEditSave } from "@/hooks/use-edit-save";
 import { FormSection, FormStatusMessage, PageHero, StickyFormActions } from "@/components/dashboard/page-shell";
 import { Button } from "@/components/ui/button";
 import {
@@ -148,9 +149,11 @@ export function FaqPageEditor() {
     ];
   }, [allCats, values.content?.layout]);
 
+  const { isSubmitting, isDirty } = form.formState;
+  const editSave = useEditSave(isDirty, isSubmitting, "Saving refreshes /faq within a few seconds.");
+
   if (loadError) return <p className="text-sm text-destructive">{loadError}</p>;
 
-  const { isSubmitting, isDirty } = form.formState;
   const q = filter.trim().toLowerCase();
 
   return (
@@ -296,7 +299,7 @@ export function FaqPageEditor() {
                   <FormStatusMessage
                     error={error}
                     success={success}
-                    idle={isDirty ? "Unsaved FAQ changes." : "Saving refreshes /faq within a few seconds."}
+                    idle={editSave.hint}
                   />
                 }
               >
@@ -308,7 +311,7 @@ export function FaqPageEditor() {
                 >
                   Discard
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={!editSave.canSave} title={editSave.blockedReason}>
                   {isSubmitting ? "Saving…" : "Save FAQ"}
                 </Button>
               </StickyFormActions>

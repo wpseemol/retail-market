@@ -28,6 +28,8 @@ import {
 } from "@/lib/validators/shop";
 import { BanglaVersionFields } from "@/components/dashboard/bangla-version-fields";
 import { useAuthStore } from "@/store/auth";
+import { useBaselineDirty } from "@/hooks/use-baseline-dirty";
+import { useEditSave } from "@/hooks/use-edit-save";
 import {
   StoreFormHeader,
   StoreFormSection,
@@ -58,6 +60,24 @@ type VendorOption = {
 function formatChangeValue(value: unknown) {
   if (value === null || value === undefined || value === "") return "—";
   return String(value);
+}
+
+function storeDraftFromShop(shop: Shop) {
+  return {
+    shopName: shop.shop_name,
+    slug: shop.slug,
+    description: shop.description ?? "",
+    bnEnabled: Boolean(shop.shop_name_bn || shop.description_bn),
+    shopNameBn: shop.shop_name_bn ?? "",
+    descriptionBn: shop.description_bn ?? "",
+    status: shop.status,
+    ownerId: shop.user_id,
+    theme: shop.storefront_theme ?? "classic",
+    productsPerPage: shop.products_per_page ?? 12,
+    featuredCount: shop.featured_products_count ?? 4,
+    showBannedBrands: shop.show_banned_brands ?? true,
+    productSort: shop.product_sort ?? "featured_first",
+  };
 }
 
 export function StoreEditPage() {
@@ -162,6 +182,30 @@ export function StoreEditPage() {
     setProductSort(next.product_sort ?? "featured_first");
   }
 
+  const baseline = useBaselineDirty(
+    {
+      shopName,
+      slug,
+      description,
+      bnEnabled,
+      shopNameBn,
+      descriptionBn,
+      status,
+      ownerId,
+      theme,
+      productsPerPage,
+      featuredCount,
+      showBannedBrands,
+      productSort,
+    },
+    !loading && shop !== null,
+  );
+  const save = useEditSave(
+    baseline.dirty,
+    saving || deleting,
+    "Updates save to the live storefront after you click Save.",
+  );
+
   async function onToggleBangla(next: boolean) {
     if (!next && (shopNameBn.trim() || descriptionBn.trim())) {
       const ok = await confirm({
@@ -222,6 +266,7 @@ export function StoreEditPage() {
         },
       );
       applyShop(data.shop);
+      baseline.markClean(storeDraftFromShop(data.shop));
       setSaveSuccess(data.message || "Store updated");
       await refreshHistory();
       if (data.shop.slug !== routeSlug) {
@@ -644,9 +689,7 @@ export function StoreEditPage() {
                   {saveSuccess}
                 </p>
               ) : (
-                <p className="text-muted-foreground">
-                  Updates save to the live storefront after you click Save.
-                </p>
+                <p className="text-muted-foreground">{save.hint}</p>
               )
             }
           >
@@ -664,7 +707,11 @@ export function StoreEditPage() {
                 {deleting ? "Deleting…" : "Delete"}
               </Button>
             ) : null}
-            <Button type="submit" disabled={saving}>
+            <Button
+              type="submit"
+              disabled={!save.canSave}
+              title={save.blockedReason}
+            >
               {saving ? "Saving…" : "Save changes"}
             </Button>
           </StoreStickyActions>

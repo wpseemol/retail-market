@@ -17,6 +17,7 @@ import {
     savePendingWishlist,
     toIdList,
 } from "@/lib/wishlist";
+import { queueWishlistChange } from "@/store/wishlistCache";
 
 /**
  * Wishlist is account-only. Guests are sent to /login (then back here) and the
@@ -58,6 +59,10 @@ export function useWishlist() {
                     : await addToWishlistApi(productId);
                 dispatch(setWishlistIds(toIdList(response)));
             } catch (err) {
+                if (typeof navigator !== "undefined" && !navigator.onLine) {
+                    queueWishlistChange(productId, wasSaved ? "remove" : "add");
+                    return;
+                }
                 dispatch(wasSaved ? addWishlistId(productId) : removeWishlistId(productId));
                 if (err instanceof ApiError && err.status === 401) {
                     savePendingWishlist(productId);

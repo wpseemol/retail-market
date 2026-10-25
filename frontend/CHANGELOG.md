@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Offline browsing stays friendly
+
+- Redux keeps a connection flag plus the cart and wishlist. Offline cart edits stay on this device and sync when the browser is online again. A banner explains both states.
+- `src/store/connectionSlice.ts`, `src/store/cartSlice.ts`, `src/store/cartCache.ts`, `src/store/wishlistCache.ts`, `src/components/providers/ConnectionBanner.tsx`, `CartHydrator.tsx`, `WishlistHydrator.tsx`, `src/hooks/useWishlist.ts`, `src/app/layout.tsx`, and the English and Bangla dictionaries.
+
 ### Storefront permission policy
 
 - `next.config.ts`: the page allows `unload` and clipboard read/write on this site. Camera, microphone, and location stay blocked. This matches the dashboard and stops Chrome’s “unload is not allowed” console line.

@@ -68,12 +68,12 @@ dashboard/
     │   ├── siteBranding.ts         # cached branding + getPrintBranding()
     │   └── validators/             # Zod schemas + safeInput helpers
     ├── hooks/
-    └── store/
+    └── store/                  # Zustand: staff session, connection, unsaved edits
 ```
 
 ## Conventions
 
-- **Forms:** create/edit forms use shadcn `Form` + react-hook-form + `zodResolver`, schemas in `src/lib/validators/`. Every string goes through the safe-input helper.
+- **Forms:** create/edit forms use shadcn `Form` + react-hook-form + `zodResolver`, schemas in `src/lib/validators/`. Every string goes through the safe-input helper. Edit screens keep Save disabled until something changed, and while the browser is offline.
 - **Image dimensions:** every image field shows `<ImageSizeBadge preset=… />` next to its label.
   - Before uploading, run `await checkImageDimensions(file, preset)` from `src/lib/imagePresets.ts` after the type / size check, and show its `message`.
   - The rule (shape within 3%, at least the preset size) matches the API.

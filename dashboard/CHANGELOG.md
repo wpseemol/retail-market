@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Save only after an edit
+
+- Edit screens keep **Save changes** off until a field, option, variant, or new product image actually changes. Saving again clears that state.
+- Product, brand, category, store, user, profile, password, FAQ, terms, SEO, page design, site settings, and home sections all follow this.
+- While the browser is offline the button stays off, the edits remain on the page, and a banner plus a toast say when you are back online and can save.
+- `src/store/connection.ts`, `src/hooks/use-edit-save.ts`, `src/hooks/use-baseline-dirty.ts`, `src/components/providers/ConnectionWatcher.tsx`, and the edit pages listed above.
+
 ### Product editor TipTap warning
 
 - `src/components/products/RichTextEditor.tsx`: StarterKit already includes link and underline, so those two are not registered a second time. The console warning “Duplicate extension names found” stops.

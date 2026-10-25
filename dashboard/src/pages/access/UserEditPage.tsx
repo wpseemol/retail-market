@@ -16,6 +16,8 @@ import {
   RESTRICT_STATUSES,
 } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
+import { useBaselineDirty } from "@/hooks/use-baseline-dirty";
+import { useEditSave } from "@/hooks/use-edit-save";
 import { FadeUp, Stagger, StaggerItem } from "@/components/motion";
 import {
   FormPageHeader,
@@ -43,6 +45,17 @@ function statusTone(status: string) {
     return "border-destructive/30 bg-destructive/10 text-destructive";
   }
   return "";
+}
+
+function userDraft(next: ManagedUser) {
+  return {
+    firstName: next.first_name,
+    lastName: next.last_name,
+    username: next.username ?? "",
+    email: next.email,
+    phone: next.phone ?? "",
+    role: next.role,
+  };
 }
 
 export function UserEditPage() {
@@ -113,6 +126,16 @@ export function UserEditPage() {
     setRole(next.role);
   }
 
+  const baseline = useBaselineDirty(
+    { firstName, lastName, username, email, phone, role },
+    !loading && user !== null,
+  );
+  const save = useEditSave(
+    baseline.dirty,
+    saving,
+    "Save profile and role changes for this user.",
+  );
+
   async function onSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token || !id) return;
@@ -138,6 +161,7 @@ export function UserEditPage() {
         },
       );
       applyUser(data.user);
+      baseline.markClean(userDraft(data.user));
       setSaveSuccess(data.message || "User updated");
     } catch (err) {
       setSaveError(err instanceof ApiError ? err.message : "Update failed");
@@ -355,16 +379,22 @@ export function UserEditPage() {
                   {saveSuccess}
                 </p>
               ) : (
-                <p className="text-muted-foreground">
-                  Save profile and role changes for this user.
-                </p>
+                <p className="text-muted-foreground">{save.hint}</p>
               )
             }
           >
             <Button asChild type="button" variant="outline">
               <Link to="/users">Cancel</Link>
             </Button>
-            <Button type="submit" disabled={saving || isOtherSuperAdmin}>
+            <Button
+              type="submit"
+              disabled={!save.canSave || isOtherSuperAdmin}
+              title={
+                isOtherSuperAdmin
+                  ? "Another super admin cannot be edited here."
+                  : save.blockedReason
+              }
+            >
               {saving ? "Saving…" : "Save changes"}
             </Button>
           </StickyFormActions>

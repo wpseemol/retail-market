@@ -10,6 +10,7 @@ import {
 } from "@/components/dashboard/page-shell";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import { useEditSave } from "@/hooks/use-edit-save";
 import { useSiteSettings } from "./settingsContext";
 
 /** Identity, Shop, Analytics and Pixels share this form and its single PATCH. */
@@ -31,6 +32,12 @@ export function GeneralSettingsForm({ children }: { children: ReactNode }) {
     }
 
     const { isSubmitting, isDirty } = form.formState;
+    const save = useEditSave(
+        isDirty,
+        isSubmitting,
+        "Saving updates the live storefront.",
+        "Unsaved changes — Save also keeps edits made on the Identity, Shop, Analytics and Pixels tabs.",
+    );
 
     return (
         <Form {...form}>
@@ -41,15 +48,11 @@ export function GeneralSettingsForm({ children }: { children: ReactNode }) {
                         <FormStatusMessage
                             error={error}
                             success={success}
-                            idle={
-                                isDirty
-                                    ? "Unsaved changes — Save also keeps edits made on the Identity, Shop, Analytics and Pixels tabs."
-                                    : "Saving updates the live storefront."
-                            }
+                            idle={save.hint}
                         />
                     }
                 >
-                    <Button type="submit" disabled={isSubmitting}>
+                    <Button type="submit" disabled={!save.canSave} title={save.blockedReason}>
                         {isSubmitting ? "Saving…" : "Save settings"}
                     </Button>
                 </StickyFormActions>

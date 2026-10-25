@@ -7,6 +7,7 @@ import { ApiError, apiFetch, apiUpload, type StaffUser } from "@/lib/api";
 import { imageUploadHint } from "@/lib/imagePresets";
 import { ImageSizeBadge } from "@/components/dashboard/image-size-badge";
 import { useAuthStore } from "@/store/auth";
+import { useEditSave } from "@/hooks/use-edit-save";
 import {
   passwordFormSchema,
   profileFormSchema,
@@ -292,6 +293,7 @@ function AccountDetailsSection({
         },
       });
       onUserUpdate(toStaffUser(data.user));
+      form.reset(values);
       setSaveSuccess(data.message || "Profile updated");
     } catch (err) {
       setSaveError(
@@ -300,7 +302,11 @@ function AccountDetailsSection({
     }
   }
 
-  const isSubmitting = form.formState.isSubmitting;
+  const save = useEditSave(
+    form.formState.isDirty,
+    form.formState.isSubmitting,
+    "Validated with Zod · injection-safe strings",
+  );
 
   return (
     <Form {...form}>
@@ -408,14 +414,12 @@ function AccountDetailsSection({
                 {saveSuccess}
               </p>
             ) : (
-              <p className="text-muted-foreground">
-                Validated with Zod · injection-safe strings
-              </p>
+              <p className="text-muted-foreground">{save.hint}</p>
             )
           }
         >
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving…" : "Save changes"}
+          <Button type="submit" disabled={!save.canSave} title={save.blockedReason}>
+            {form.formState.isSubmitting ? "Saving…" : "Save changes"}
           </Button>
         </StickyFormActions>
       </form>
@@ -471,7 +475,11 @@ function PasswordSection() {
     }
   }
 
-  const isSubmitting = form.formState.isSubmitting;
+  const save = useEditSave(
+    form.formState.isDirty,
+    form.formState.isSubmitting,
+    "You will stay logged in after changing your password.",
+  );
 
   return (
     <Form {...form}>
@@ -607,14 +615,12 @@ function PasswordSection() {
                 {saveSuccess}
               </p>
             ) : (
-              <p className="text-muted-foreground">
-                You will stay logged in after changing your password.
-              </p>
+              <p className="text-muted-foreground">{save.hint}</p>
             )
           }
         >
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Updating…" : "Update password"}
+          <Button type="submit" disabled={!save.canSave} title={save.blockedReason}>
+            {form.formState.isSubmitting ? "Updating…" : "Update password"}
           </Button>
         </StickyFormActions>
       </form>

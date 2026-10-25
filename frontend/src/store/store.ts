@@ -3,6 +3,7 @@ import cartReducer from "./cartSlice";
 import authReducer from "./authSlice";
 import siteChromeReducer from "./siteChromeSlice";
 import wishlistReducer from "./wishlistSlice";
+import connectionReducer from "./connectionSlice";
 
 export const makeStore = () =>
     configureStore({
@@ -11,6 +12,7 @@ export const makeStore = () =>
             auth: authReducer,
             siteChrome: siteChromeReducer,
             wishlist: wishlistReducer,
+            connection: connectionReducer,
         },
     });
 

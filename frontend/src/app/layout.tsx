@@ -11,6 +11,7 @@ import Footer from "@/components/home/Footer";
 import AuthHydrator from "@/components/providers/AuthHydrator";
 import WishlistHydrator from "@/components/providers/WishlistHydrator";
 import CartHydrator from "@/components/providers/CartHydrator";
+import ConnectionBanner from "@/components/providers/ConnectionBanner";
 import DisableMotion from "@/components/providers/DisableMotion";
 import SmoothScroll from "@/components/providers/SmoothScroll";
 import AuthSessionProvider from "@/components/providers/AuthSessionProvider";
@@ -199,6 +200,7 @@ export default async function RootLayout({
                     <LocaleProvider locale={locale}>
                         <StoreProvider>
                             <AuthSessionProvider>
+                                <ConnectionBanner />
                                 <AuthHydrator />
                                 <WishlistHydrator />
                                 <CartHydrator />

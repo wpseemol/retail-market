@@ -5,6 +5,7 @@ import { ConfirmProvider } from "@/components/providers/ConfirmProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ConnectionWatcher } from "@/components/providers/ConnectionWatcher";
 import { NavigationProgress } from "@/components/providers/NavigationProgress";
 import { SiteBrandingHydrator } from "@/lib/siteBranding";
 import App from "./App";
@@ -16,6 +17,7 @@ createRoot(document.getElementById("root")!).render(
       <TooltipProvider>
         <ConfirmProvider>
           <BrowserRouter>
+            <ConnectionWatcher />
             <NavigationProgress />
             <SiteBrandingHydrator />
             <App />

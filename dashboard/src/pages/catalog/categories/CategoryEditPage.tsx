@@ -2,6 +2,8 @@ import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import { useConfirm } from "@/components/providers/ConfirmProvider";
+import { useBaselineDirty } from "@/hooks/use-baseline-dirty";
+import { useEditSave } from "@/hooks/use-edit-save";
 import { useToastMessages } from "@/hooks/use-toast-messages";
 import { checkImageDimensions } from "@/lib/imagePresets";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
@@ -116,6 +118,26 @@ export function CategoryEditPage() {
     [parents, parentId],
   );
 
+  const categoryDraft = {
+    name,
+    slug,
+    description,
+    bnEnabled,
+    nameBn,
+    descriptionBn,
+    icon,
+    parentId,
+    isActive,
+    sortOrder,
+  };
+  const baseline = useBaselineDirty(categoryDraft, !loading && category !== null);
+  const linkedCount = category?.products_count ?? 0;
+  const save = useEditSave(
+    baseline.dirty,
+    saving || deleting,
+    `${linkedCount} product${linkedCount === 1 ? "" : "s"} linked`,
+  );
+
   async function onSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token || !id) return;
@@ -161,6 +183,7 @@ export function CategoryEditPage() {
         },
       );
       setCategory(data.category);
+      baseline.markClean();
       setSaveSuccess("Category saved");
     } catch (err) {
       setSaveError(
@@ -462,10 +485,7 @@ export function CategoryEditPage() {
                   {saveSuccess}
                 </p>
               ) : (
-                <p className="text-muted-foreground">
-                  {category.products_count ?? 0} product
-                  {(category.products_count ?? 0) === 1 ? "" : "s"} linked
-                </p>
+                <p className="text-muted-foreground">{save.hint}</p>
               )
             }
           >
@@ -481,7 +501,11 @@ export function CategoryEditPage() {
             <Button asChild type="button" variant="outline">
               <Link to="/categories">Cancel</Link>
             </Button>
-            <Button type="submit" disabled={saving}>
+            <Button
+              type="submit"
+              disabled={!save.canSave}
+              title={save.blockedReason}
+            >
               {saving ? "Saving…" : "Save changes"}
             </Button>
           </CategoryStickyActions>

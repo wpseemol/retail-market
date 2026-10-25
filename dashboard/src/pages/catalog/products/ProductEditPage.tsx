@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import { useConfirm } from "@/components/providers/ConfirmProvider";
+import { useEditSave } from "@/hooks/use-edit-save";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import type { Category } from "@/lib/categories";
 import type { Brand } from "@/lib/brands";
@@ -61,6 +62,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+
+const MARK_DIRTY = { shouldDirty: true, shouldValidate: true } as const;
 
 export function ProductEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -219,6 +222,7 @@ export function ProductEditPage() {
         stock_qty: 0,
         option_values: c.option_values,
       })),
+      MARK_DIRTY,
     );
   }
 
@@ -278,6 +282,7 @@ export function ProductEditPage() {
         },
       );
       setProduct(data.product);
+      form.reset(values);
       setSaveSuccess("Product saved");
     } catch (err) {
       setSubmitError(
@@ -358,6 +363,13 @@ export function ProductEditPage() {
       setDeleting(false);
     }
   }
+
+  const galleryCount = product?.gallery?.length ?? 0;
+  const save = useEditSave(
+    form.formState.isDirty || localImages.length > 0,
+    form.formState.isSubmitting || deleting,
+    `${galleryCount} image${galleryCount === 1 ? "" : "s"} in gallery`,
+  );
 
   if (loading) {
     return (
@@ -752,10 +764,11 @@ export function ProductEditPage() {
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        form.setValue("options", [
-                          ...options,
-                          { name: "", valuesText: "" },
-                        ])
+                        form.setValue(
+                          "options",
+                          [...options, { name: "", valuesText: "" }],
+                          MARK_DIRTY,
+                        )
                       }
                     >
                       <Plus />
@@ -774,7 +787,7 @@ export function ProductEditPage() {
                         onChange={(e) => {
                           const next = [...options];
                           next[index] = { ...next[index], name: e.target.value };
-                          form.setValue("options", next);
+                          form.setValue("options", next, MARK_DIRTY);
                         }}
                       />
                       <Input
@@ -786,7 +799,7 @@ export function ProductEditPage() {
                             ...next[index],
                             valuesText: e.target.value,
                           };
-                          form.setValue("options", next);
+                          form.setValue("options", next, MARK_DIRTY);
                         }}
                       />
                       <Button
@@ -797,6 +810,7 @@ export function ProductEditPage() {
                           form.setValue(
                             "options",
                             options.filter((_, i) => i !== index),
+                            MARK_DIRTY,
                           )
                         }
                       >
@@ -835,7 +849,7 @@ export function ProductEditPage() {
                                 ...next[index],
                                 title: e.target.value,
                               };
-                              form.setValue("variants", next);
+                              form.setValue("variants", next, MARK_DIRTY);
                             }}
                           />
                           <Input
@@ -850,7 +864,7 @@ export function ProductEditPage() {
                                 ...next[index],
                                 price: Number(e.target.value) || 0,
                               };
-                              form.setValue("variants", next);
+                              form.setValue("variants", next, MARK_DIRTY);
                             }}
                           />
                           <Input
@@ -864,7 +878,7 @@ export function ProductEditPage() {
                                 ...next[index],
                                 stock_qty: Number(e.target.value) || 0,
                               };
-                              form.setValue("variants", next);
+                              form.setValue("variants", next, MARK_DIRTY);
                             }}
                           />
                         </div>
@@ -890,10 +904,7 @@ export function ProductEditPage() {
                     {saveSuccess}
                   </p>
                 ) : (
-                  <p className="text-muted-foreground">
-                    {product.gallery?.length ?? 0} image
-                    {(product.gallery?.length ?? 0) === 1 ? "" : "s"} in gallery
-                  </p>
+                  <p className="text-muted-foreground">{save.hint}</p>
                 )
               }
             >
@@ -911,7 +922,8 @@ export function ProductEditPage() {
               </Button>
               <Button
                 type="submit"
-                disabled={form.formState.isSubmitting || deleting}
+                disabled={!save.canSave}
+                title={save.blockedReason}
               >
                 {form.formState.isSubmitting ? "Saving…" : "Save changes"}
               </Button>

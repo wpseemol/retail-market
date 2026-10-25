@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { MapPin } from "lucide-react";
+import { useEditSave } from "@/hooks/use-edit-save";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -73,14 +74,13 @@ export function StickyEditorActions({
   onReset?: () => void;
   saveLabel?: string;
 }) {
+  const save = useEditSave(dirty, saving, "All changes saved.");
   return (
     <>
       <div className="h-14" aria-hidden />
       <div className="sticky bottom-3 z-20 rounded-2xl border border-border/80 bg-background/95 p-3 shadow-lg backdrop-blur supports-backdrop-filter:bg-background/80">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="min-w-0 text-sm text-muted-foreground">
-            {dirty ? "Unsaved changes on this section." : "All changes saved."}
-          </p>
+          <p className="min-w-0 text-sm text-muted-foreground">{save.hint}</p>
           <div className="flex flex-wrap gap-2">
             {onReset ? (
               <Button
@@ -92,7 +92,12 @@ export function StickyEditorActions({
                 Reset defaults
               </Button>
             ) : null}
-            <Button type="submit" size="lg" disabled={saving || !dirty}>
+            <Button
+              type="submit"
+              size="lg"
+              disabled={!save.canSave}
+              title={save.blockedReason}
+            >
               {saving ? "Saving…" : saveLabel}
             </Button>
           </div>

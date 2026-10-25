@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Palette, Trash2 } from "lucide-react";
 import { useConfirm } from "@/components/providers/ConfirmProvider";
+import { useEditSave } from "@/hooks/use-edit-save";
 import { BrandLinkedStoreCard } from "@/components/brands/BrandLinkedStoreCard";
 import { BanglaVersionFormFields } from "@/components/dashboard/bangla-version-fields";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
@@ -136,6 +137,7 @@ export function BrandEditPage() {
         },
       );
       setBrand(data.brand);
+      form.reset(values);
       setSaveSuccess("Brand saved");
     } catch (err) {
       setSubmitError(
@@ -203,6 +205,13 @@ export function BrandEditPage() {
       setDeleting(false);
     }
   }
+
+  const linkedCount = brand?.products_count ?? 0;
+  const save = useEditSave(
+    form.formState.isDirty,
+    form.formState.isSubmitting || deleting,
+    `${linkedCount} product${linkedCount === 1 ? "" : "s"} linked`,
+  );
 
   if (loading) {
     return (
@@ -426,10 +435,7 @@ export function BrandEditPage() {
                     {saveSuccess}
                   </p>
                 ) : (
-                  <p className="text-muted-foreground">
-                    {brand.products_count ?? 0} product
-                    {(brand.products_count ?? 0) === 1 ? "" : "s"} linked
-                  </p>
+                  <p className="text-muted-foreground">{save.hint}</p>
                 )
               }
             >
@@ -445,7 +451,11 @@ export function BrandEditPage() {
               <Button asChild type="button" variant="outline">
                 <Link to="/brands">Cancel</Link>
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
+              <Button
+                type="submit"
+                disabled={!save.canSave}
+                title={save.blockedReason}
+              >
                 {form.formState.isSubmitting ? "Saving…" : "Save changes"}
               </Button>
             </BrandStickyActions>

@@ -424,6 +424,11 @@ const en = {
         loadFailed: "Could not load the next page.",
         retry: "Try again",
     },
+    connection: {
+        offline:
+            "You're offline. You can keep browsing. Your cart and wishlist stay on this device and sync when you're back online.",
+        backOnline: "You're back online. Your cart and wishlist are syncing.",
+    },
 };
 
 export type Dictionary = typeof en;
