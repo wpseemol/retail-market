@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Production database URL
+
+- `.env.prod`: `DATABASE_URL` now uses `localhost` port `3306`. The password is URL-encoded. The old value pointed at `127.0.0.1` port `3307`, so `/api/health` could not open MySQL on the host.
+
 ### Separate dev and production env files, and a closed folder when Node is stopped
 
 - `.env.dev`, `.env.prod`, `.env`: development values and production values are separate files. `src/lib/env.ts` loads `.env.dev`, or `.env.prod` when `NODE_ENV=production`. A value already set in cPanel wins. `.env` stays the development copy because Prisma reads that name.
