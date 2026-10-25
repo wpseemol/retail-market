@@ -72,6 +72,9 @@ export function RichTextEditor({
     extensions: [
       StarterKit.configure({
         heading: { levels: [2, 3] },
+        // StarterKit already registers these. The copies below keep the link rules.
+        link: false,
+        underline: false,
       }),
       Underline,
       Link.configure({

@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Product editor TipTap warning
+
+- `src/components/products/RichTextEditor.tsx`: StarterKit already includes link and underline, so those two are not registered a second time. The console warning “Duplicate extension names found” stops.
+
 ### Dashboard permission policy
 
 - `vercel.json`: the same permission list as the storefront. `unload` and clipboard stay allowed on this site. Camera, microphone, and location stay blocked.
