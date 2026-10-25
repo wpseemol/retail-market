@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### API connection caption removed
+
+- `src/components/dashboard/site-header.tsx`: the “API connected” badge is gone from the header in production and in local dev. The header no longer polls `/api/health`.
+- Removed `src/components/ApiHealthBadge.tsx` and `fetchHealth` from `src/lib/api.ts`.
+
 ### Super admin can delete another user
 
 - `src/pages/access/UserEditPage.tsx`: a super admin sees **Delete user** on someone else's account. A confirmation asks before the delete. The signed-in super admin has no delete button on their own account, so the shop cannot be left with zero super admins.

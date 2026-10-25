@@ -157,15 +157,6 @@ export async function apiUpload<T>(
   return data as T;
 }
 
-export async function fetchHealth() {
-  return apiFetch<{
-    status: string;
-    service: string;
-    database: string;
-    timestamp: string;
-  }>("/api/health");
-}
-
 export const PUBLIC_API_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8001";
 

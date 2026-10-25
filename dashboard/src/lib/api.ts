@@ -350,13 +350,4 @@ export async function apiDownload(
   return { blob: await response.blob(), filename };
 }
 
-export async function fetchHealth() {
-  return apiFetch<{
-    status: string;
-    service: string;
-    database: string;
-    timestamp: string;
-  }>("/api/health", { skipRefresh: true });
-}
-
 export { API_URL };

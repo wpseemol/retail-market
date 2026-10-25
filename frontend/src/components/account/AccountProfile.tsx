@@ -11,7 +11,6 @@ import {
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import AuthInput from "@/components/auth/AuthInput";
-import ApiHealthBadge from "@/components/ApiHealthBadge";
 import { apiFetch, apiUpload, ApiError, type ApiUser } from "@/lib/api";
 import { useAppDispatch } from "@/store/hooks";
 import { setSessionUser, setUser } from "@/store/authSlice";
@@ -216,7 +215,6 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
               <li className="text-text-primary font-medium">My account</li>
             </ol>
           </nav>
-          <ApiHealthBadge />
         </div>
       </div>
 

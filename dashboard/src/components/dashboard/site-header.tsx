@@ -1,5 +1,4 @@
 import { useLocation } from "react-router-dom";
-import { ApiHealthBadge } from "@/components/ApiHealthBadge";
 import { NotificationsMenu } from "@/components/dashboard/notifications-menu";
 import {
   Breadcrumb,
@@ -61,7 +60,6 @@ export function SiteHeader() {
       </div>
       <div className="flex items-center gap-1">
         <NotificationsMenu />
-        <ApiHealthBadge />
       </div>
     </header>
   );

@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### API connection caption removed
+
+- Login, sign-up, and the account page no longer show “API connected”, including while the storefront runs in dev mode.
+- Removed `src/components/ApiHealthBadge.tsx` and `fetchHealth` from `src/lib/api.ts`. `src/components/auth/AuthShell.tsx` and `src/components/account/AccountProfile.tsx` no longer mount it.
+
 ### Product tabs sit under the menu
 
 - `src/components/shop/ProductPageContent.tsx`: specification, description, FAQ, and review stay pinned while the page scrolls, directly under the site menu instead of a tall empty gap. Related products use the same offset.

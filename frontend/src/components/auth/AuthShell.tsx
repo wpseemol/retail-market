@@ -6,7 +6,6 @@ import { Suspense, useRef } from "react";
 import AuthTabs from "./AuthTabs";
 import LoginForm from "./LoginForm";
 import SignUpForm from "./SignUpForm";
-import ApiHealthBadge from "@/components/ApiHealthBadge";
 import {
     type AuthMode,
     type SwapVariant,
@@ -210,9 +209,6 @@ export default function AuthShell({
                     </aside>
 
                     <div className="p-6 sm:p-10">
-                        <div className="mb-6 flex justify-end">
-                            <ApiHealthBadge />
-                        </div>
                         <Suspense fallback={<div className="min-h-96" aria-hidden />}>
                             <AuthTabs mode={mode} />
                             <FormStage mode={mode} />
