@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Vercel build and live URLs
+
+- `vercel.json`: install dev dependencies before the build. Vercel’s production `npm install` skipped `typescript`, so `tsc` was not found (exit 127).
+- `vite.config.ts`: a Vercel build calls `https://niyenin-api.wpseemol.site` and links the storefront at `https://niyenin-frontend.vercel.app`. The dashboard origin is `https://niyenin-dashboard.vercel.app`. Local `.env` values still win.
+- `.env.example` and `DEPLOY.md` list those hosts.
+
 ### Production start script
 
 - `package.json`: `pnpm run start` serves the built app with Vite preview. There was no `start` script, so that command failed.
