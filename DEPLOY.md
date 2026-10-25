@@ -135,7 +135,7 @@ Second Vercel project, same repository, **Root Directory** `dashboard`. Framewor
 | `VITE_APP_URL` | `https://niyenin-dashboard.vercel.app` |
 | `VITE_STOREFRONT_URL` | `https://niyenin-frontend.vercel.app` |
 
-`vercel.json` runs `npm install --include=dev` before `npm run build`. Vercel’s production install otherwise skips `typescript` and `vite`, and `tsc` exits 127. If these variables are left unset on Vercel, `vite.config.ts` still bakes in the three live URLs above.
+`vercel.json` installs with pnpm, then runs `pnpm run build`. Do not add an npm lockfile in this folder: the old one pointed at a local pnpm store, so Vercel never installed `tsc`. If the `VITE_` variables are left unset on Vercel, `vite.config.ts` still bakes in the three live URLs above.
 
 The dashboard is a static site. The browser calls the API directly, so `CORS_ORIGINS` on the API must include this origin. Redeploy after changing any `VITE_` variable (Vite bakes them in at build time).
 

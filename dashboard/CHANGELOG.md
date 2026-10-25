@@ -7,7 +7,8 @@ Format: date heading, then one bullet per change with the files touched.
 
 ### Vercel build and live URLs
 
-- `vercel.json`: install dev dependencies before the build. Vercel’s production `npm install` skipped `typescript`, so `tsc` was not found (exit 127).
+- `package-lock.json`: removed. It pointed at this machine’s pnpm store, so Vercel’s `npm install` never installed `typescript` and `tsc` exited 127.
+- `pnpm-lock.yaml`, `package.json`: the Vercel install uses pnpm 10.28.0. `vercel.json` runs `pnpm install` and `pnpm run build`.
 - `vite.config.ts`: a Vercel build calls `https://niyenin-api.wpseemol.site` and links the storefront at `https://niyenin-frontend.vercel.app`. The dashboard origin is `https://niyenin-dashboard.vercel.app`. Local `.env` values still win.
 - `.env.example` and `DEPLOY.md` list those hosts.
 
