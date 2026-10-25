@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Vercel install and live product images
+
+- `pnpm-lock.yaml`: refreshed so it matches `package.json`. Vercel’s frozen `pnpm install` was failing because this copy still listed Next.js 16.3.5 and was missing newer dependencies.
+- `next.config.ts`: product images may load from `https://niyenin-api.wpseemol.site/uploads`. On Vercel, that host is the API URL when `NEXT_PUBLIC_API_URL` is not set. File tracing no longer points at the parent folder, which is not part of a frontend-only upload.
+
 ### Cart images on a local production server
 
 - `next.config.ts`: the image optimizer may fetch loopback API hosts (`localhost`, `127.0.0.1`, `::1`) during `next start`. A public media host stays blocked. Standalone output is only for Docker (`NEXT_STANDALONE=1`), so `pnpm run start` no longer warns that `next start` cannot serve it.

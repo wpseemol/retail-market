@@ -110,7 +110,7 @@ Environment (Production):
 
 | Name | Value |
 | --- | --- |
-| `NEXT_PUBLIC_API_URL` | `https://api.yourdomain.com` |
+| `NEXT_PUBLIC_API_URL` | `https://niyenin-api.wpseemol.site` |
 | `NEXT_PUBLIC_APP_URL` | the Vercel storefront URL, then your real domain |
 | `NEXT_PUBLIC_DASHBOARD_URL` | the dashboard Vercel URL |
 | `NEXT_PUBLIC_MEDIA_URL` | only if images are on S3/R2; otherwise omit it and images load from the API `/uploads` path |
