@@ -10,15 +10,16 @@ export default function AuthHydrator() {
   const dispatch = useAppDispatch();
   const { data, status } = useSession();
   const backendUser = data?.backendUser;
+  const sessionError = data?.error;
   const userKey = backendUser
-    ? `${backendUser.id}|${backendUser.email_verified_at ?? ""}|${backendUser.phone_verified_at ?? ""}|${backendUser.avatar_id ?? ""}`
+    ? `${backendUser.id}|${backendUser.email_verified_at ?? ""}|${backendUser.phone_verified_at ?? ""}|${backendUser.avatar_id ?? ""}|${sessionError ?? ""}`
     : "";
 
   useEffect(() => {
     if (status === "loading") return;
 
     dispatch(hydrateAuth());
-    if (status === "authenticated" && backendUser) {
+    if (status === "authenticated" && backendUser && sessionError !== "RefreshTokenError") {
       dispatch(setSessionUser(backendUser));
     } else {
       dispatch(setSessionUser(null));

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
 import type { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { backendFetch } from "@/lib/session";
+import { readSessionToken } from "@/lib/sessionToken";
 import type { AuthTokenResponse } from "@/lib/api";
 
 type RouteContext = { params: Promise<{ path: string[] }> };
@@ -18,11 +18,7 @@ async function proxy(request: NextRequest, context: RouteContext) {
   const search = new URL(request.url).search;
 
   const session = await auth();
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-    secureCookie: request.nextUrl.protocol === "https:",
-  });
+  const token = await readSessionToken(request);
   const accessToken =
     (typeof token?.accessToken === "string" ? token.accessToken : undefined) ??
     session?.accessToken;

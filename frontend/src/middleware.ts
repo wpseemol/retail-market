@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { readSessionToken } from "@/lib/sessionToken";
 
 // /checkout is public: guests can order; orders merge after email/phone verification.
 const PROTECTED_PREFIXES = ["/account", "/wishlist"];
@@ -27,10 +27,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-  });
+  const token = await readSessionToken(request);
 
   const loggedIn =
     Boolean(token?.backendUser) && token?.error !== "RefreshTokenError";

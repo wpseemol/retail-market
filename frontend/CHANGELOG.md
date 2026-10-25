@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Account page kept a logged-in shopper
+
+- `src/lib/sessionToken.ts`, `src/middleware.ts`: on HTTPS the login cookie is `__Secure-authjs.session-token`. The account and wishlist guard was looking for the name used on localhost, so a signed-in shopper was sent to `/login?next=/account`. The public and secret API keys are not involved in that redirect.
+- `src/app/api/backend/[...path]/route.ts` reads that same cookie.
+- `src/components/providers/AuthHydrator.tsx`: a session whose refresh already failed no longer leaves the name in the menu.
+
 ### API connection caption removed
 
 - Login, sign-up, and the account page no longer show “API connected”, including while the storefront runs in dev mode.
