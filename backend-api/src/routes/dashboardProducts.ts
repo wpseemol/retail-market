@@ -90,7 +90,7 @@ function bnTextSchema(max: number) {
     .optional();
 }
 
-const productBodySchema = z.object({
+const productBodyObject = z.object({
   vendor_id: z.string().regex(/^\d+$/).optional(),
   category_id: z.string().regex(/^\d+$/),
   brand_id: z.string().regex(/^\d+$/).optional().nullable(),
@@ -124,7 +124,12 @@ const productBodySchema = z.object({
   sku: withSafeInput(z.string().trim().max(100)).optional().nullable(),
   options: z.array(optionSchema).max(5).optional(),
   variants: z.array(variantInputSchema).max(200).optional(),
-}).superRefine((data, ctx) => {
+});
+
+function limitVariantExplosion(
+  data: { type?: string; options?: { values: string[] }[]; variants?: unknown[] },
+  ctx: { addIssue: (issue: { code: "custom"; path: (string | number)[]; message: string }) => void },
+) {
   if (data.type !== "variable") return;
   if (data.variants && data.variants.length > 0) return;
   const options = data.options ?? [];
@@ -136,7 +141,11 @@ const productBodySchema = z.object({
       message: `These options would create ${count} variants. A product can have at most 200. Send the variant list you want, or use fewer values.`,
     });
   }
-});
+}
+
+const productBodySchema = productBodyObject.superRefine(limitVariantExplosion);
+/** Zod 4 throws if `.partial()` is called on a schema that already has a refinement. */
+const productUpdateSchema = productBodyObject.partial().superRefine(limitVariantExplosion);
 
 const listQuerySchema = z.object({
   q: withSafeInput(z.string().trim().max(120)).optional(),
@@ -591,7 +600,7 @@ dashboardProductsRouter.patch("/:id", async (req, res) => {
   const id = parseId(String(req.params.id));
   if (!id) return res.status(400).json({ message: "Invalid product id" });
 
-  const parsed = productBodySchema.partial().safeParse(req.body);
+  const parsed = productUpdateSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({
       message: parsed.error.issues[0]?.message ?? "Validation failed",

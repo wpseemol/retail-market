@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Product update no longer crashes
+
+- `src/routes/dashboardProducts.ts`: saving a product called `.partial()` on a schema that already checks variant counts. Zod 4 throws on that, and the API returned 500. The update schema is now a partial object with the same check applied afterwards. The public key and secret key were not the cause.
+
 ### Production database URL
 
 - `.env.prod`: `DATABASE_URL` now uses `localhost` port `3306`. The password is URL-encoded. The old value pointed at `127.0.0.1` port `3307`, so `/api/health` could not open MySQL on the host.
