@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Storefront proxy accepts an empty visit response
+
+- `src/app/api/backend/[...path]/route.ts`: a 204 from `/api/analytics/visit` is returned with no body. Passing that empty body into `NextResponse` made the beacon a 500. A missing session token no longer fails the proxy.
+
 ### `.env.dev` and `.env.prod`
 
 - `.env.dev`, `.env.prod`: local values and live values are separate. `.env` and `.env.local` no longer hold those values.

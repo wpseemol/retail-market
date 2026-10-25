@@ -16,10 +16,15 @@ async function proxy(request: NextRequest, context: RouteContext) {
   const targetPath = `/api/${path.join("/")}`;
   const search = new URL(request.url).search;
 
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-  });
+  let token: Awaited<ReturnType<typeof getToken>> = null;
+  try {
+    token = await getToken({
+      req: request,
+      secret: process.env.AUTH_SECRET,
+    });
+  } catch {
+    token = null;
+  }
 
   const method = request.method;
   const body =
@@ -65,13 +70,17 @@ async function proxy(request: NextRequest, context: RouteContext) {
     });
   }
 
-  const payload = await upstream.arrayBuffer();
+  const status = upstream.status;
+  const noBody = status === 204 || status === 205 || status === 304;
+  const payload = noBody ? null : await upstream.arrayBuffer();
   return new NextResponse(payload, {
-    status: upstream.status,
-    headers: {
-      "Content-Type":
-        upstream.headers.get("Content-Type") ?? "application/json",
-    },
+    status,
+    headers: noBody
+      ? {}
+      : {
+          "Content-Type":
+            upstream.headers.get("Content-Type") ?? "application/json",
+        },
   });
 }
 

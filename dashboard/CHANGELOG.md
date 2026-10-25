@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Dashboard API proxy reached login
+
+- `api/gateway.js`, `vercel.json`: every `/api` path, including `/api/dashboard/auth/login`, is forwarded to the API with the server keys. The old catch-all missed nested paths (404) and crashed while copying the response (500).
+- Removed `api/[...path].js`.
+
 ### `.env.dev` and `.env.prod`
 
 - `.env.dev`, `.env.prod`: local values and live values are separate. `.env` no longer holds those values.
