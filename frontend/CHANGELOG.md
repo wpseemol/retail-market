@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Cart images on a local production server
+
+- `next.config.ts`: the image optimizer may fetch loopback API hosts (`localhost`, `127.0.0.1`, `::1`) during `next start`. A public media host stays blocked. Standalone output is only for Docker (`NEXT_STANDALONE=1`), so `pnpm run start` no longer warns that `next start` cannot serve it.
+- `Dockerfile`: the image build sets `NEXT_STANDALONE=1`. The dashboard URL default is port 4173.
+
 ### Dashboard link port
 
 - `src/config/site.ts`, `.env.example`: the staff dashboard URL defaults to `http://localhost:4173`. Port 5173 cannot be bound on Windows (reserved range 5141–5240).

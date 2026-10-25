@@ -24,11 +24,18 @@ function mediaPathname(url: URL): string {
   return prefix ? `${prefix}/**` : "/**";
 }
 
+function isLoopbackHost(hostname: string) {
+  const host = hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  return host === "localhost" || host === "127.0.0.1" || host === "::1";
+}
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
   poweredByHeader: false,
-  // Docker self-host uses standalone. Vercel builds its own output.
-  ...(process.env.VERCEL ? {} : { output: "standalone" as const }),
+  // Docker sets NEXT_STANDALONE=1. A normal `next start` cannot serve standalone output.
+  ...(process.env.VERCEL || process.env.NEXT_STANDALONE !== "1"
+    ? {}
+    : { output: "standalone" as const }),
   // Monorepo root, so the production image runs `node frontend/server.js`.
   outputFileTracingRoot: path.join(appDir, ".."),
   async headers() {
@@ -53,8 +60,11 @@ const nextConfig: NextConfig = {
       toPattern(apiUrl, "/uploads/**"),
       ...(mediaUrl ? [toPattern(mediaUrl, mediaPathname(mediaUrl))] : []),
     ],
-    // Next 16 refuses to optimize images from private IPs (localhost) unless allowed.
-    dangerouslyAllowLocalIP: process.env.NODE_ENV !== "production",
+    // `next start` is production, but a local API is still on loopback.
+    // Public image hosts stay blocked. remotePatterns still limit the path.
+    dangerouslyAllowLocalIP:
+      isLoopbackHost(apiUrl.hostname) ||
+      (mediaUrl != null && isLoopbackHost(mediaUrl.hostname)),
     // The optimizer fetches upload URLs from inside the server; in Docker a
     // localhost API URL is unreachable there, so browsers load them directly.
     unoptimized: process.env.NEXT_IMAGE_UNOPTIMIZED === "1",
