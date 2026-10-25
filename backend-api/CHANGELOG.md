@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Super admin user delete
+
+- `src/routes/dashboardUsers.ts`: `DELETE /api/dashboard/users/:id` soft-deletes a user, revokes their sessions, and soft-deletes their store. The signed-in super admin cannot delete their own account. A super admin row is locked during the delete so the last one cannot be removed. Email, username, and phone are released.
+- `API.md`: the new delete row.
+
 ### Product update no longer crashes
 
 - `src/routes/dashboardProducts.ts`: saving a product called `.partial()` on a schema that already checks variant counts. Zod 4 throws on that, and the API returned 500. The update schema is now a partial object with the same check applied afterwards. The public key and secret key were not the cause.

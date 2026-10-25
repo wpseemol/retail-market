@@ -1,10 +1,11 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { useToastMessages } from "@/hooks/use-toast-messages";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Ban,
   KeyRound,
   ShieldAlert,
+  Trash2,
   UserRound,
 } from "lucide-react";
 import {
@@ -18,6 +19,7 @@ import {
 import { useAuthStore } from "@/store/auth";
 import { useBaselineDirty } from "@/hooks/use-baseline-dirty";
 import { useEditSave } from "@/hooks/use-edit-save";
+import { useConfirm } from "@/components/providers/ConfirmProvider";
 import { FadeUp, Stagger, StaggerItem } from "@/components/motion";
 import {
   FormPageHeader,
@@ -60,6 +62,8 @@ function userDraft(next: ManagedUser) {
 
 export function UserEditPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const confirm = useConfirm();
   const token = useAuthStore((s) => s.token);
   const me = useAuthStore((s) => s.user);
 
@@ -87,6 +91,9 @@ export function UserEditPage() {
   const [restrictSuccess, setRestrictSuccess] = useState<string | null>(null);
   useToastMessages(restrictSuccess, restrictError);
   const [restricting, setRestricting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  useToastMessages(null, deleteError);
 
   useEffect(() => {
     if (!token || !id) return;
@@ -219,6 +226,33 @@ export function UserEditPage() {
       );
     } finally {
       setRestricting(false);
+    }
+  }
+
+  async function onDelete() {
+    if (!token || !id || !user) return;
+    const name = `${user.first_name} ${user.last_name}`.trim() || user.email;
+    const ok = await confirm({
+      title: `Delete “${name}”?`,
+      description:
+        user.role === "super_admin"
+          ? "This super admin account is removed and cannot sign in again. Your own super admin account stays, so the shop is not left without one. This cannot be undone."
+          : "This account is removed and cannot sign in again. Orders already placed stay on record. This cannot be undone.",
+      confirmLabel: "Delete user",
+    });
+    if (!ok) return;
+
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await apiFetch(`/api/dashboard/users/${id}`, {
+        method: "DELETE",
+        token,
+      });
+      navigate("/users");
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : "Delete failed");
+      setDeleting(false);
     }
   }
 
@@ -508,6 +542,42 @@ export function UserEditPage() {
                 block + session revoke
               </li>
             </ul>
+          </FormSection>
+
+          <FormSection
+            step="04"
+            title="Delete account"
+            description="Remove this user from the dashboard and the store."
+            tone="danger"
+          >
+            {isSelf ? (
+              <p className="text-sm text-muted-foreground">
+                You cannot delete your own account. At least one super admin
+                must remain.
+              </p>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  {user.role === "super_admin"
+                    ? "Deleting this super admin still leaves your own super admin account in place."
+                    : "The account cannot sign in after this. Orders already placed stay on record."}
+                </p>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={deleting}
+                  onClick={() => void onDelete()}
+                >
+                  <Trash2 className="size-3.5" />
+                  {deleting ? "Deleting…" : "Delete user"}
+                </Button>
+                {deleteError ? (
+                  <p className="text-sm text-destructive" role="alert">
+                    {deleteError}
+                  </p>
+                ) : null}
+              </>
+            )}
           </FormSection>
         </form>
 

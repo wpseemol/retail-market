@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import type { Prisma, UserRole, UserStatus } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
+import { revalidateFrontend } from "../lib/revalidate.js";
 import { toPublicUser, userWithAvatarInclude } from "../lib/user.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
 import { parseBigIntId } from "../utils/ids.js";
@@ -388,4 +389,84 @@ dashboardUsersRouter.post("/:id/unblock", async (req, res) => {
     message: "User unrestricted and set to active",
     user: toPublicUser(user),
   });
+});
+
+function retiredEmail(userId: bigint) {
+  return `deleted.${userId}.${Date.now().toString(36)}@users.invalid`.slice(0, 255);
+}
+
+/** Soft-delete. The signed-in super admin cannot remove their own account. */
+dashboardUsersRouter.delete("/:id", async (req, res) => {
+  const userId = parseUserId(String(req.params.id));
+  if (!userId) {
+    return res.status(400).json({ message: "Invalid user id" });
+  }
+
+  const actorId = req.auth!.userId;
+  if (userId === actorId) {
+    return res.status(400).json({
+      code: "CANNOT_DELETE_SELF",
+      message:
+        "You cannot delete your own account. At least one super admin must remain.",
+    });
+  }
+
+  const existing = await prisma.user.findFirst({
+    where: { id: userId, deleted_at: null },
+    include: { vendorProfile: { select: { slug: true } } },
+  });
+  if (!existing) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      if (existing.role === "super_admin") {
+        const locked = await tx.$queryRaw<Array<{ id: bigint }>>`
+          SELECT id FROM users
+          WHERE role = 'super_admin' AND deleted_at IS NULL
+          FOR UPDATE
+        `;
+        const others = locked.filter((row) => String(row.id) !== String(userId));
+        if (others.length < 1) {
+          throw new Error("LAST_SUPER_ADMIN");
+        }
+      }
+
+      const now = new Date();
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          deleted_at: now,
+          status: "inactive",
+          email: retiredEmail(userId),
+          username: null,
+          phone: null,
+        },
+      });
+      await tx.userSession.updateMany({
+        where: { user_id: userId, is_revoked: false },
+        data: { is_revoked: true, revoked_at: now },
+      });
+      await tx.vendor.updateMany({
+        where: { user_id: userId, deleted_at: null },
+        data: { deleted_at: now, status: "inactive" },
+      });
+    });
+  } catch (err) {
+    if (err instanceof Error && err.message === "LAST_SUPER_ADMIN") {
+      return res.status(400).json({
+        code: "LAST_SUPER_ADMIN",
+        message:
+          "This is the last super admin. Deleting them would leave the shop with none.",
+      });
+    }
+    throw err;
+  }
+
+  if (existing.vendorProfile?.slug) {
+    revalidateFrontend(["stores", `store:${existing.vendorProfile.slug}`]);
+  }
+
+  return res.json({ message: "User deleted" });
 });

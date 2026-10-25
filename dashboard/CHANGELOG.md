@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Super admin can delete another user
+
+- `src/pages/access/UserEditPage.tsx`: a super admin sees **Delete user** on someone else's account. A confirmation asks before the delete. The signed-in super admin has no delete button on their own account, so the shop cannot be left with zero super admins.
+
 ### Save only after an edit
 
 - Edit screens keep **Save changes** off until a field, option, variant, or new product image actually changes. Saving again clears that state.

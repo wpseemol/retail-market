@@ -1047,6 +1047,7 @@ Auth: Bearer **`super_admin`** only.
 | PATCH | `/:id` | Update profile/role/status |
 | POST | `/:id/restrict` | Block: body `{ status: "inactive"\|"suspended"\|"banned", reason? }` |
 | POST | `/:id/unblock` | Reactivate |
+| DELETE | `/:id` | Soft-delete. The signed-in super admin cannot delete their own account. Deleting a super admin is refused when they are the last one (`code`: `CANNOT_DELETE_SELF` or `LAST_SUPER_ADMIN`). Orders stay. Their store, if any, is soft-deleted too. Email, username, and phone are released. |
 
 List response: `{ users, pagination: { page, limit, total, totalPages } }`
 
