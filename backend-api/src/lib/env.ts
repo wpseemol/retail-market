@@ -12,6 +12,26 @@ function positiveInt(raw: string | undefined, fallback: number) {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
 }
 
+const LOCAL_ORIGINS = [
+  "http://localhost:3000",
+  "http://localhost:4173",
+  "http://localhost:5173",
+];
+
+/** Live storefront and dashboard. Browsers send these without a trailing slash. */
+const PRODUCTION_ORIGINS = [
+  "https://niyenin-frontend.vercel.app",
+  "https://niyenin-dashboard.vercel.app",
+];
+
+function corsOriginList(raw: string | undefined) {
+  const fromEnv = (raw ?? "")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+  return [...new Set([...LOCAL_ORIGINS, ...PRODUCTION_ORIGINS, ...fromEnv])];
+}
+
 const required = ["DATABASE_URL", "JWT_SECRET"] as const;
 
 for (const key of required) {
@@ -68,13 +88,7 @@ export const env = {
   googleClientId: (process.env.GOOGLE_CLIENT_ID ?? "")
     .trim()
     .replace(/^["']|["']$/g, ""),
-  corsOrigins: (
-    process.env.CORS_ORIGINS ??
-    "http://localhost:3000,http://localhost:4173,http://localhost:5173"
-  )
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean),
+  corsOrigins: corsOriginList(process.env.CORS_ORIGINS),
   /** Public base URL for uploaded media (e.g. http://localhost:8001). */
   publicBaseUrl: (
     process.env.PUBLIC_API_URL ??

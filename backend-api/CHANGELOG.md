@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Live storefront and dashboard CORS
+
+- `src/lib/env.ts`: allowed origins always include `https://niyenin-frontend.vercel.app` and `https://niyenin-dashboard.vercel.app`, plus the local app ports. Trailing slashes are removed so a browser origin still matches.
+- `.env`, `.env.example`, `API.md`, `DEPLOY.md`: the same two origins.
+
 ### Dashboard origin
 
 - `src/lib/env.ts`, `.env`, `.env.example`, `API.md`: CORS allows `http://localhost:4173`. The dashboard moved off 5173 because Windows reserves that port. `5173` stays allowed for older local setups.

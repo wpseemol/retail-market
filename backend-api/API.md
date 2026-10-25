@@ -21,7 +21,7 @@ Content-Type: application/json
 | Auth header | `Authorization: Bearer <accessToken>` |
 | Login returns | `accessToken`, `refreshToken`, and deprecated `token` (= access) |
 | Uploads public URL | `local`: `{PUBLIC_API_URL}/uploads/{file_path}/{file_name}`. `s3` / `r2`: `{S3_PUBLIC_BASE_URL}/{file_path}/{file_name}` |
-| CORS (default) | `http://localhost:3000`, `http://localhost:4173`, `http://localhost:5173` |
+| CORS (default) | `http://localhost:3000`, `http://localhost:4173`, `http://localhost:5173`, `https://niyenin-frontend.vercel.app`, `https://niyenin-dashboard.vercel.app` |
 
 ### Roles
 

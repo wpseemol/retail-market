@@ -70,7 +70,7 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
 | `DATABASE_URL` | the MariaDB URL above |
 | `JWT_SECRET` | 32+ bytes, random |
 | `SETTINGS_ENCRYPTION_KEY` | a different 32+ byte random value |
-| `CORS_ORIGINS` | `https://your-store.vercel.app,https://your-dashboard.vercel.app` (no spaces, no trailing slash). Add the real domains when you attach them. |
+| `CORS_ORIGINS` | `https://niyenin-frontend.vercel.app,https://niyenin-dashboard.vercel.app` (no spaces, no trailing slash) |
 | `PUBLIC_API_URL` | `https://api.yourdomain.com` |
 | `FRONTEND_URL` | the storefront origin, `https://your-store.vercel.app` |
 | `PROXY_IP_SECRET` | same hex string you put on the Vercel storefront. Server-only. |
