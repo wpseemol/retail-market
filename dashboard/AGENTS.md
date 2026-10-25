@@ -3,7 +3,7 @@
 Vite + React + TypeScript + shadcn/ui admin panel for the Niyenin retail market.
 Talks to `backend-api` (port 8001) with Bearer auth.
 
-- **Port:** 5173 (`vite --port 5173 --strictPort`). Current production is Vercel (`vercel.json`, see [`../DEPLOY.md`](../DEPLOY.md)). The nginx image in `docker-compose.prod.yml` stays for a later VPS.
+- **Port:** 4173 (`vite --port 4173 --strictPort`). 5173 sits inside a Windows reserved range (5141–5240), so binding it fails with `EACCES`. Current production is Vercel (`vercel.json`, see [`../DEPLOY.md`](../DEPLOY.md)). The nginx image in `docker-compose.prod.yml` stays for a later VPS.
 - **API reference:** [`../backend-api/API.md`](../backend-api/API.md)
 - **Change log:** [`CHANGELOG.md`](./CHANGELOG.md) — append every change you make here.
 - **Security audit:** [`SECURITY_AUDIT.md`](./SECURITY_AUDIT.md) — mark items `Fixed YYYY-MM-DD` when resolved and update the root [`../SECURITY_AUDIT.md`](../SECURITY_AUDIT.md) counts.
@@ -12,8 +12,9 @@ Talks to `backend-api` (port 8001) with Bearer auth.
 
 | Script | What it does |
 | --- | --- |
-| `dev` | Vite dev server on 5173 |
+| `dev` | Vite dev server on 4173 |
 | `build` | `tsc -b && vite build` |
+| `start` | Serve the production build on 4173 (`vite preview`). Run `build` first, and stop `dev` if that port is already taken. |
 | `type-check` | `tsc -b --noEmit` style check — run before finishing |
 | `lint` | ESLint |
 

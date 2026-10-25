@@ -3,6 +3,15 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-25
+
+### Production start script
+
+- `package.json`: `pnpm run start` serves the built app with Vite preview. There was no `start` script, so that command failed.
+- Dev, preview, and start listen on **4173**. Port 5173 is inside the Windows reserved range 5141–5240, so `vite preview` exited with `EACCES`.
+- `vite.config.ts`, `.env`, `.env.example`, `Dockerfile`: same port. Compose maps the dashboard to 4173. `src/lib/api.ts`: the auth store is imported directly. The dynamic import was also pulled in statically, which Vite warned about during `pnpm run build`.
+- `AGENTS.md`: scripts table includes `start` and the new port.
+
 ## 2026-10-24
 
 ### Vercel deploy and security headers

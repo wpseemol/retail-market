@@ -15,7 +15,7 @@ export const siteConfig = {
     /** Staff / seller dashboard origin (Vite app). */
     dashboardUrl:
         process.env.NEXT_PUBLIC_DASHBOARD_URL?.replace(/\/$/, "") ??
-        "http://localhost:5173",
+        "http://localhost:4173",
     locale: "en_BD",
     language: "en",
     keywords: [

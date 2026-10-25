@@ -1,7 +1,7 @@
 # backend-api — agent guide
 
 Express + Prisma 6 + MySQL REST API for the Niyenin retail market. Serves the
-storefront (`frontend/`, port 3000) and the admin dashboard (`dashboard/`, port 5173).
+storefront (`frontend/`, port 3000) and the admin dashboard (`dashboard/`, port 4173).
 
 - **Port:** 8001 (`PORT` in `backend-api/.env`). Current production is a Spaceship Node.js app (Passenger, startup file `dist/server.js`); steps are in [`../DEPLOY.md`](../DEPLOY.md). `docker-compose.prod.yml` stays for a later VPS.
 - **Package name:** `backend-api` (pnpm workspace member)

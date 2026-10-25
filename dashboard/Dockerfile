@@ -16,7 +16,7 @@ COPY --from=deps /app/ ./
 COPY dashboard ./dashboard
 
 ARG VITE_API_URL=http://localhost:8001
-ARG VITE_APP_URL=http://localhost:5173
+ARG VITE_APP_URL=http://localhost:4173
 ARG VITE_STOREFRONT_URL=http://localhost:3000
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_APP_URL=$VITE_APP_URL

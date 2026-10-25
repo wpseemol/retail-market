@@ -71,7 +71,7 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001}
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
-        NEXT_PUBLIC_DASHBOARD_URL: ${NEXT_PUBLIC_DASHBOARD_URL:-http://localhost:5173}
+        NEXT_PUBLIC_DASHBOARD_URL: ${NEXT_PUBLIC_DASHBOARD_URL:-http://localhost:4173}
         NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
         NEXT_PUBLIC_MEDIA_URL: ${NEXT_PUBLIC_MEDIA_URL:-}
         # The image optimizer can't reach a localhost API from inside the container.
@@ -105,13 +105,13 @@ services:
       dockerfile: dashboard/Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8001}
-        VITE_APP_URL: ${VITE_APP_URL:-http://localhost:5173}
+        VITE_APP_URL: ${VITE_APP_URL:-http://localhost:4173}
         VITE_STOREFRONT_URL: ${VITE_STOREFRONT_URL:-http://localhost:3000}
     image: retail_market_dashboard
     container_name: retail_market_dashboard
     restart: unless-stopped
     ports:
-      - "${DASHBOARD_PORT:-5173}:80"
+      - "${DASHBOARD_PORT:-4173}:80"
     depends_on:
       backend:
         condition: service_healthy

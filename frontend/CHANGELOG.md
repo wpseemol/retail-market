@@ -3,6 +3,12 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-25
+
+### Dashboard link port
+
+- `src/config/site.ts`, `.env.example`: the staff dashboard URL defaults to `http://localhost:4173`. Port 5173 cannot be bound on Windows (reserved range 5141–5240).
+
 ## 2026-10-24
 
 ### Vercel deploy and shopper IP

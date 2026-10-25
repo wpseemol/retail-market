@@ -36,6 +36,7 @@ import {
   STAFF_TOKEN_KEY,
   clearStaffSessionStorage,
 } from "./authKeys";
+import { useAuthStore } from "../store/auth";
 
 type ApiOptions = {
   method?: string;
@@ -83,25 +84,21 @@ function persistTokens(accessToken: string, refreshToken?: string | null) {
     /* ignore */
   }
 
-  void import("../store/auth").then(({ useAuthStore }) => {
-    const state = useAuthStore.getState();
-    if (state.user) {
-      state.setSession(
-        accessToken,
-        state.user,
-        refreshToken ?? state.refreshToken,
-      );
-    }
-  });
+  const state = useAuthStore.getState();
+  if (state.user) {
+    state.setSession(
+      accessToken,
+      state.user,
+      refreshToken ?? state.refreshToken,
+    );
+  }
 }
 
 /** Secure logout: clear tokens and force login (used when refresh expires). */
 export function forceLogout(reason?: string) {
   clearStaffSessionStorage();
 
-  void import("../store/auth").then(({ useAuthStore }) => {
-    useAuthStore.getState().logout();
-  });
+  useAuthStore.getState().logout();
 
   if (typeof window === "undefined") return;
   if (window.location.pathname.includes("/login")) return;

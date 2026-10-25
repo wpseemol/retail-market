@@ -7,7 +7,7 @@ Monorepo for the Niyenin multi-vendor platform. Architecture source of truth: `T
 | App | Stack | Dev URL | Role |
 | --- | --- | --- | --- |
 | `frontend/` | Next.js (App Router) | http://localhost:3000 | Customer storefront (`www.niyenin.com`) |
-| `dashboard/` | Vite + React + ReactDOM SPA | http://localhost:5173 | Admin / Vendor dashboard |
+| `dashboard/` | Vite + React + ReactDOM SPA | http://localhost:4173 | Admin / Vendor dashboard |
 | `backend-api/` | Express (TypeScript) | http://localhost:8001 | API · see [`backend-api/API.md`](backend-api/API.md) |
 
 ## Prerequisites
@@ -37,7 +37,7 @@ pnpm dev:backend
 | App | URL |
 | --- | --- |
 | Storefront | http://localhost:3000 |
-| Dashboard | http://localhost:5173 |
+| Dashboard | http://localhost:4173 |
 | API | http://localhost:8001 |
 
 Build:
@@ -64,7 +64,7 @@ cp .env.production.example .env.production
 pnpm docker:prod
 ```
 
-That builds three images and starts MySQL, the API (port 8001), the storefront (port 3000), and the dashboard (port 5173). The API applies Prisma migrations on boot. Point a reverse proxy at those ports:
+That builds three images and starts MySQL, the API (port 8001), the storefront (port 3000), and the dashboard (port 4173). The API applies Prisma migrations on boot. Point a reverse proxy at those ports:
 
 | Public URL | Container |
 | --- | --- |

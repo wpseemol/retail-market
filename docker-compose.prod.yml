@@ -121,7 +121,7 @@ services:
     init: true
     logging: *default-logging
     ports:
-      - "${DASHBOARD_BIND:-0.0.0.0}:${DASHBOARD_PORT:-5173}:80"
+      - "${DASHBOARD_BIND:-0.0.0.0}:${DASHBOARD_PORT:-4173}:80"
     depends_on:
       backend:
         condition: service_healthy
