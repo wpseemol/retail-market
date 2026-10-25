@@ -5,11 +5,13 @@ import {
   STAFF_TOKEN_KEY,
   STAFF_USER_KEY,
   clearStaffSessionStorage,
+  writeAccessCookie,
 } from "../lib/authKeys";
 
 /**
  * Dashboard is Vite (not Next.js) — NextAuth cannot run here.
  * Tokens are kept in sessionStorage (tab-scoped), not localStorage.
+ * The access token is also copied into a same-origin cookie for the API proxy.
  * When refresh token expires/fails → logout (secure staff sessions).
  */
 
@@ -36,8 +38,11 @@ function readUser(): StaffUser | null {
   }
 }
 
+const storedAccessToken = sessionStorage.getItem(STAFF_TOKEN_KEY);
+writeAccessCookie(storedAccessToken);
+
 export const useAuthStore = create<AuthState>((set, get) => ({
-  token: sessionStorage.getItem(STAFF_TOKEN_KEY),
+  token: storedAccessToken,
   refreshToken: sessionStorage.getItem(STAFF_REFRESH_KEY),
   user: readUser(),
   setSession: (token, user, refreshToken) => {
@@ -45,6 +50,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       refreshToken === undefined ? get().refreshToken : refreshToken;
 
     sessionStorage.setItem(STAFF_TOKEN_KEY, token);
+    writeAccessCookie(token);
     if (nextRefresh) {
       sessionStorage.setItem(STAFF_REFRESH_KEY, nextRefresh);
     } else {

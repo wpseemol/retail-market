@@ -58,6 +58,16 @@ export class ApiError extends Error {
   }
 }
 
+function bearerHeaders(token: string | null): Record<string, string> {
+  if (!token) return {};
+  const value = token.trim();
+  if (!value) return {};
+  return {
+    Authorization: `Bearer ${value}`,
+    "X-Staff-Token": value,
+  };
+}
+
 function readStoredAccessToken() {
   try {
     return sessionStorage.getItem(STAFF_TOKEN_KEY);
@@ -165,13 +175,13 @@ async function requestJson(
   options: ApiOptions,
   token: string | null,
 ): Promise<Response> {
-  const headers: Record<string, string> = { Accept: "application/json" };
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    ...bearerHeaders(token),
+  };
 
   if (options.body !== undefined) {
     headers["Content-Type"] = "application/json";
-  }
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
   }
 
   return fetch(`${API_URL}${path}`, {
@@ -243,8 +253,10 @@ export async function apiUpload<T>(
     options.token !== undefined ? options.token : readStoredAccessToken();
 
   async function send(token: string | null) {
-    const headers: Record<string, string> = { Accept: "application/json" };
-    if (token) headers.Authorization = `Bearer ${token}`;
+    const headers: Record<string, string> = {
+      Accept: "application/json",
+      ...bearerHeaders(token),
+    };
     return fetch(`${API_URL}${path}`, {
       method: options.method ?? "POST",
       headers,
@@ -301,7 +313,7 @@ export async function apiDownload(
 
   const send = (token: string | null) =>
     fetch(`${API_URL}${path}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: bearerHeaders(token),
     });
 
   let response = await send(initialToken);

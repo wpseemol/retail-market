@@ -3,7 +3,7 @@
 Vite + React + TypeScript + shadcn/ui admin panel for the Niyenin retail market.
 Talks to `backend-api` (port 8001) with Bearer auth.
 
-- **Port:** 4173 (`vite --port 4173 --strictPort`). 5173 sits inside a Windows reserved range (5141–5240), so binding it fails with `EACCES`. Current production is Vercel (`vercel.json`, see [`../DEPLOY.md`](../DEPLOY.md)). The browser calls same-origin `/api`; the Vite proxy and `api/gateway.js` add `API_PUBLIC_KEY` and `API_SECRET_KEY`. Do not prefix those with `VITE_`. `pnpm dev` reads `.env.dev`; `pnpm build` and `pnpm start` read `.env.prod`. The nginx image in `docker-compose.prod.yml` stays for a later VPS.
+- **Port:** 4173 (`vite --port 4173 --strictPort`). 5173 sits inside a Windows reserved range (5141–5240), so binding it fails with `EACCES`. Current production is Vercel (`vercel.json`, see [`../DEPLOY.md`](../DEPLOY.md)). The browser calls same-origin `/api`; the Vite proxy and `api/gateway.js` add `API_PUBLIC_KEY` and `API_SECRET_KEY`. The browser also sends the staff access token as `X-Staff-Token` and a `rm_access` cookie so a dropped `Authorization` header still reaches the API. Do not prefix the app keys with `VITE_`. `pnpm dev` reads `.env.dev`; `pnpm build` and `pnpm start` read `.env.prod`. The nginx image in `docker-compose.prod.yml` stays for a later VPS.
 - **API reference:** [`../backend-api/API.md`](../backend-api/API.md)
 - **Change log:** [`CHANGELOG.md`](./CHANGELOG.md) — append every change you make here.
 - **Security audit:** [`SECURITY_AUDIT.md`](./SECURITY_AUDIT.md) — mark items `Fixed YYYY-MM-DD` when resolved and update the root [`../SECURITY_AUDIT.md`](../SECURITY_AUDIT.md) counts.

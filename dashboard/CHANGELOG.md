@@ -5,6 +5,17 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Dashboard permission policy
+
+- `vercel.json`: the same permission list as the storefront. `unload` and clipboard stay allowed on this site. Camera, microphone, and location stay blocked.
+
+### Dashboard saves and unload policy
+
+- `vercel.json`: the page allows `unload` again, so Chrome stops reporting “unload is not allowed” while a save is in progress.
+- `api/gateway.js`: staff calls keep their bearer token when the `Authorization` header is dropped, and update bodies are still forwarded if the host already parsed them. API responses are not cached.
+- `src/lib/api.ts`, `src/lib/authKeys.ts`, `src/store/auth.ts`: the access token is also sent as `X-Staff-Token` and a same-origin `rm_access` cookie.
+- `AGENTS.md`: proxy note for that token.
+
 ### Dashboard API proxy reached login
 
 - `api/gateway.js`, `vercel.json`: every `/api` path, including `/api/dashboard/auth/login`, is forwarded to the API with the server keys. The old catch-all missed nested paths (404) and crashed while copying the response (500).

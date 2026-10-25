@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Storefront permission policy
+
+- `next.config.ts`: the page allows `unload` and clipboard read/write on this site. Camera, microphone, and location stay blocked. This matches the dashboard and stops Chrome’s “unload is not allowed” console line.
+
 ### Storefront console 401 and 404
 
 - `src/app/api/backend/[...path]/route.ts`: the signed-in cart and wishlist calls now read the https session cookie, so those requests are no longer sent without a token.

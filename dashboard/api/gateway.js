@@ -33,19 +33,55 @@ function search(req) {
   return text ? `?${text}` : "";
 }
 
+function parsedBody(req) {
+  if (req.body == null || req.body === "") return undefined;
+  if (Buffer.isBuffer(req.body)) return req.body;
+  if (typeof req.body === "string") return Buffer.from(req.body);
+  return Buffer.from(JSON.stringify(req.body));
+}
+
 function readBody(req) {
   if (typeof req[Symbol.asyncIterator] !== "function") {
-    if (req.body == null || req.body === "") return Promise.resolve(undefined);
-    if (Buffer.isBuffer(req.body)) return Promise.resolve(req.body);
-    if (typeof req.body === "string") return Promise.resolve(Buffer.from(req.body));
-    return Promise.resolve(Buffer.from(JSON.stringify(req.body)));
+    return Promise.resolve(parsedBody(req));
   }
   return new Promise((resolve, reject) => {
     const chunks = [];
     req.on("data", (chunk) => chunks.push(chunk));
-    req.on("end", () => resolve(chunks.length ? Buffer.concat(chunks) : undefined));
+    req.on("end", () => {
+      if (chunks.length) {
+        resolve(Buffer.concat(chunks));
+        return;
+      }
+      resolve(parsedBody(req));
+    });
     req.on("error", reject);
   });
+}
+
+function readCookie(req, name) {
+  const raw = header(req, "cookie");
+  if (!raw) return "";
+  const prefix = `${name}=`;
+  for (const part of raw.split(";")) {
+    const item = part.trim();
+    if (item.startsWith(prefix)) {
+      try {
+        return decodeURIComponent(item.slice(prefix.length));
+      } catch {
+        return item.slice(prefix.length);
+      }
+    }
+  }
+  return "";
+}
+
+/** Bearer value. Custom header and cookie survive when Authorization is removed. */
+function staffBearer(req) {
+  const custom = header(req, "x-staff-token").trim().replace(/^Bearer\s+/i, "");
+  if (custom) return custom;
+  const authorization = header(req, "authorization").trim().replace(/^Bearer\s+/i, "");
+  if (authorization) return authorization;
+  return readCookie(req, "rm_access").trim().replace(/^Bearer\s+/i, "");
 }
 
 function send(res, status, body, headers) {
@@ -80,14 +116,14 @@ export default async function handler(req, res) {
     "X-Api-Secret": secretKey,
     Accept: header(req, "accept") || "application/json",
   };
-  const authorization = header(req, "authorization");
+  const bearer = staffBearer(req);
   const contentType = header(req, "content-type");
-  if (authorization) headers.Authorization = authorization;
+  if (bearer) headers.Authorization = `Bearer ${bearer}`;
   if (contentType) headers["Content-Type"] = contentType;
 
   const upstream = await fetch(upstreamUrl, { method, headers, body });
   const payload = Buffer.from(await upstream.arrayBuffer());
-  const out = {};
+  const out = { "Cache-Control": "private, no-store" };
   const type = upstream.headers.get("content-type");
   if (type) out["Content-Type"] = type;
   const disposition = upstream.headers.get("content-disposition");
