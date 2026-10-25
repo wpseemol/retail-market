@@ -34,7 +34,7 @@ const rightProducts: RightProductItem[] = [
         mainImage: "/images/Deals of The Day right product images.png",
         thumbImage: "/images/Deals of The Day product 1.png",
         alt: "AltoPlus Amplified Desk Phone",
-        link: "/shop/product/altoplus-phone",
+        link: "/shop",
     },
     {
         id: 2,
@@ -48,7 +48,7 @@ const rightProducts: RightProductItem[] = [
         mainImage: "/images/Deals of The Day product right 2.png",
         thumbImage: "/images/Deals of The Day product right 2.png",
         alt: "Corsair Desktop Power Supply Unit",
-        link: "/shop/product/corsair-psu",
+        link: "/shop",
     },
     {
         id: 3,
@@ -62,7 +62,7 @@ const rightProducts: RightProductItem[] = [
         mainImage: "/images/Deals of The Day product right 3.png",
         thumbImage: "/images/Deals of The Day product right 3.png",
         alt: "Dell Inspiron Business Laptop",
-        link: "/shop/product/dell-laptop",
+        link: "/shop",
     },
     {
         id: 4,
@@ -76,7 +76,7 @@ const rightProducts: RightProductItem[] = [
         mainImage: "/images/Deals of The Day product right 4.png",
         thumbImage: "/images/Deals of The Day product right 4.png",
         alt: "Beats Solo3 Red Headphones",
-        link: "/shop/product/beats-solo3",
+        link: "/shop",
     },
 ];
 

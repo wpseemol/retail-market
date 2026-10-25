@@ -518,7 +518,7 @@ export default function BestSellerSection(_props: {
 
                                                 <h3 className="text-text-primary text-[13px] sm:text-[14px] font-medium leading-snug line-clamp-2 h-9.5 my-1 hover:text-brand-primary transition-colors">
                                                     <Link
-                                                        href={`/shop/product/${product.id}`}
+                                                        href="/shop"
                                                     >
                                                         {product.name}
                                                     </Link>

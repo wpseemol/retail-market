@@ -187,7 +187,7 @@ export default function LatestItemsSidebar() {
                 {items.map((item) => (
                     <li key={item.id}>
                         <Link
-                            href={`/shop/product/${item.id}`}
+                            href="/shop"
                             className="group flex items-center gap-3.5 transition-transform duration-200 hover:translate-x-0.5"
                         >
                             <div className="relative w-14 h-14 sm:w-15 sm:h-15 shrink-0 rounded-lg bg-bg-subtle border border-border-default/50 p-1 flex items-center justify-center overflow-hidden">

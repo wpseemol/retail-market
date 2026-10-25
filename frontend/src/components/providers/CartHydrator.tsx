@@ -17,10 +17,13 @@ export default function CartHydrator() {
 
     useEffect(() => {
         if (status === "loading") return;
-        const mode = status === "authenticated" && userId && isCustomer ? "user" : "guest";
+        const mode =
+            status === "authenticated" && userId && isCustomer && !data?.error
+                ? "user"
+                : "guest";
         const pending = dispatch(syncCartForSession(mode));
         return () => pending.abort();
-    }, [dispatch, status, userId, isCustomer]);
+    }, [dispatch, status, userId, isCustomer, data?.error]);
 
     return null;
 }

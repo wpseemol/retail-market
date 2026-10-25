@@ -77,6 +77,18 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: resolvedApiUrl,
   },
+  async redirects() {
+    return [
+      { source: "/blog", destination: "/shop", permanent: false },
+      { source: "/category/:slug", destination: "/shop?category=:slug", permanent: false },
+      { source: "/shop/product/:slug", destination: "/shop/:slug", permanent: false },
+      { source: "/quick-links", destination: "/shop", permanent: false },
+      { source: "/track-order", destination: "/account/orders", permanent: false },
+      { source: "/customer-service", destination: "/contact", permanent: false },
+      { source: "/support", destination: "/contact", permanent: false },
+      { source: "/returns", destination: "/faq", permanent: false },
+    ];
+  },
   async headers() {
     return [
       {

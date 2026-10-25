@@ -34,7 +34,7 @@ const centerProducts: CenterProductItem[] = [
         mainImage: "/images/Deals of The Day img_82 3.png",
         thumbImage: "/images/Deals of The Day product center 1.png",
         alt: "Surface Pro 9 Convertible Laptop",
-        link: "/shop/product/surface-pro-9",
+        link: "/shop",
     },
     {
         id: 2,
@@ -48,7 +48,7 @@ const centerProducts: CenterProductItem[] = [
         mainImage: "/images/Deals of The Day product center 2.png",
         thumbImage: "/images/Deals of The Day product center 2.png",
         alt: "Logitech StreamCam 1080p",
-        link: "/shop/product/streamcam-pro",
+        link: "/shop",
     },
     {
         id: 3,
@@ -62,7 +62,7 @@ const centerProducts: CenterProductItem[] = [
         mainImage: "/images/Deals of The Day product center 3.png",
         thumbImage: "/images/Deals of The Day product center 3.png",
         alt: "Razer Basilisk Gaming Mouse",
-        link: "/shop/product/basilisk-v3",
+        link: "/shop",
     },
     {
         id: 4,
@@ -76,7 +76,7 @@ const centerProducts: CenterProductItem[] = [
         mainImage: "/images/Deals of The Day product center 4.png",
         thumbImage: "/images/Deals of The Day product center 4.png",
         alt: "Lenovo Flex 2-in-1 Laptop",
-        link: "/shop/product/ideapad-flex-5",
+        link: "/shop",
     },
 ];
 

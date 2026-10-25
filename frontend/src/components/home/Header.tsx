@@ -56,14 +56,14 @@ function fallbackHeaderNav(nav: Dictionary["nav"]) {
         {
             id: "blog",
             label: nav.blog,
-            href: "/blog",
+            href: "/shop",
             external: false,
             position: 4,
             children: [
                 {
                     id: "blog-main",
                     label: nav["blog-main"],
-                    href: "/blog",
+                    href: "/shop",
                     external: false,
                     position: 0,
                 },

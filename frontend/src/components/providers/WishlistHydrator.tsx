@@ -19,7 +19,7 @@ export default function WishlistHydrator() {
 
     useEffect(() => {
         if (status === "loading") return;
-        if (status !== "authenticated" || !userId) {
+        if (status !== "authenticated" || !userId || data?.error) {
             dispatch(clearWishlist());
             return;
         }
@@ -40,7 +40,7 @@ export default function WishlistHydrator() {
         return () => {
             cancelled = true;
         };
-    }, [dispatch, status, userId]);
+    }, [dispatch, status, userId, data?.error]);
 
     return null;
 }

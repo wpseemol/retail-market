@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import type { NextRequest } from "next/server";
+import { auth } from "@/auth";
 import { backendFetch } from "@/lib/session";
 import type { AuthTokenResponse } from "@/lib/api";
 
@@ -16,15 +17,17 @@ async function proxy(request: NextRequest, context: RouteContext) {
   const targetPath = `/api/${path.join("/")}`;
   const search = new URL(request.url).search;
 
-  let token: Awaited<ReturnType<typeof getToken>> = null;
-  try {
-    token = await getToken({
-      req: request,
-      secret: process.env.AUTH_SECRET,
-    });
-  } catch {
-    token = null;
-  }
+  const session = await auth();
+  const token = await getToken({
+    req: request,
+    secret: process.env.AUTH_SECRET,
+    secureCookie: request.nextUrl.protocol === "https:",
+  });
+  const accessToken =
+    (typeof token?.accessToken === "string" ? token.accessToken : undefined) ??
+    session?.accessToken;
+  const refreshToken =
+    typeof token?.refreshToken === "string" ? token.refreshToken : undefined;
 
   const method = request.method;
   const body =
@@ -39,20 +42,20 @@ async function proxy(request: NextRequest, context: RouteContext) {
     ...(contentType ? { "Content-Type": contentType } : {}),
   };
 
-  let accessToken = token?.accessToken as string | undefined;
+  let bearer = accessToken;
 
   let upstream = await backendFetch(`${targetPath}${search}`, {
     method,
     body,
-    accessToken,
+    accessToken: bearer,
     headers: forwardHeaders,
   });
 
-  if (upstream.status === 401 && token?.refreshToken) {
+  if (upstream.status === 401 && refreshToken) {
     const refreshed = await backendFetch("/api/auth/refresh", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken: token.refreshToken }),
+      body: JSON.stringify({ refreshToken }),
     });
 
     if (!refreshed.ok) {
@@ -60,12 +63,12 @@ async function proxy(request: NextRequest, context: RouteContext) {
     }
 
     const data = (await refreshed.json()) as AuthTokenResponse;
-    accessToken = data.accessToken ?? data.token;
+    bearer = data.accessToken ?? data.token;
 
     upstream = await backendFetch(`${targetPath}${search}`, {
       method,
       body,
-      accessToken,
+      accessToken: bearer,
       headers: forwardHeaders,
     });
   }

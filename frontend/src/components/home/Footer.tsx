@@ -20,25 +20,25 @@ type FooterLinkKey = keyof Dictionary["footer"]["links"];
 type FallbackLink = { key: FooterLinkKey; href: string; external?: boolean };
 
 const findItFastLinks: FallbackLink[] = [
-    { key: "laptops", href: "/category/laptops" },
-    { key: "cameras", href: "/category/cameras" },
-    { key: "smartphones", href: "/category/smartphones" },
-    { key: "gaming", href: "/category/gaming" },
-    { key: "tvAudio", href: "/category/tv-audio" },
-    { key: "gadgets", href: "/category/gadgets" },
-    { key: "headphones", href: "/category/headphones" },
-    { key: "quickLinks", href: "/quick-links" },
+    { key: "laptops", href: "/shop?category=laptops" },
+    { key: "cameras", href: "/shop?category=cameras" },
+    { key: "smartphones", href: "/shop?category=smartphones" },
+    { key: "gaming", href: "/shop?category=gaming" },
+    { key: "tvAudio", href: "/shop?category=tv-audio" },
+    { key: "gadgets", href: "/shop?category=gadgets" },
+    { key: "headphones", href: "/shop?category=headphones" },
+    { key: "quickLinks", href: "/shop" },
 ];
 
 const customerCareLinks: FallbackLink[] = [
     { key: "myAccount", href: "/account" },
-    { key: "trackOrder", href: "/track-order" },
+    { key: "trackOrder", href: "/account/orders" },
     { key: "wishlist", href: "/wishlist" },
     { key: "stores", href: "/stores" },
-    { key: "customerService", href: "/customer-service" },
-    { key: "returns", href: "/returns" },
+    { key: "customerService", href: "/contact" },
+    { key: "returns", href: "/faq" },
     { key: "faq", href: "/faq" },
-    { key: "support", href: "/support" },
+    { key: "support", href: "/contact" },
 ];
 
 const sellAndManageLinks: FallbackLink[] = [
@@ -317,7 +317,7 @@ export default function Footer() {
                             {weeklySelectedProducts.map((product) => (
                                 <Link
                                     key={product.id}
-                                    href={`/shop/product/${product.id}`}
+                                    href="/shop"
                                     className="group flex items-center gap-3"
                                 >
                                     <div className="w-16 h-16 shrink-0 rounded-md border border-border-default/60 bg-bg-subtle flex items-center justify-center p-1.5 overflow-hidden">

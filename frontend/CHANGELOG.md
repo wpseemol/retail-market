@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Storefront console 401 and 404
+
+- `src/app/api/backend/[...path]/route.ts`: the signed-in cart and wishlist calls now read the https session cookie, so those requests are no longer sent without a token.
+- `next.config.ts`: old menu addresses (`/blog`, `/category/laptops`, `/shop/product/1`, and the other footer links) redirect to pages that exist.
+- Home header, footer, and product blocks no longer point at those missing addresses.
+- Cart and wishlist loaders skip the account API when the session is already expired.
+
 ### Storefront proxy accepts an empty visit response
 
 - `src/app/api/backend/[...path]/route.ts`: a 204 from `/api/analytics/visit` is returned with no body. Passing that empty body into `NextResponse` made the beacon a 500. A missing session token no longer fails the proxy.
