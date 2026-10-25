@@ -5,6 +5,18 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-25
 
+### Product tabs sit under the menu
+
+- `src/components/shop/ProductPageContent.tsx`: specification, description, FAQ, and review stay pinned while the page scrolls, directly under the site menu instead of a tall empty gap. Related products use the same offset.
+- English and Bangla dictionaries: those tab labels.
+
+### Shop filters on a phone, and pages you opened stay available offline
+
+- `src/components/shop/ShopPageContent.tsx`, `ShopFilterSheet.tsx`, `ShopSidebar.tsx`, `ShopToolbar.tsx`, `ShopProductCard.tsx`, `types.ts`: on a phone the filters open in a full sheet with larger tap targets, the product grid starts at two columns, and the toolbar keeps sort plus a shorter set of layout buttons.
+- `public/sw.js`, `src/components/providers/OfflineCache.tsx`, `src/app/offline/page.tsx`, `src/app/layout.tsx`, `next.config.ts`: a service worker stores successful page and read responses. A page you already opened loads again without a network. An address you never opened shows a short offline page in the current language.
+- `src/components/shop/useShopCatalog.ts`, `ShopProductGrid.tsx`: a filter refresh that fails while offline keeps the products already on screen.
+- English and Bangla dictionaries, `AGENTS.md`.
+
 ### Offline browsing stays friendly
 
 - Redux keeps a connection flag plus the cart and wishlist. Offline cart edits stay on this device and sync when the browser is online again. A banner explains both states.

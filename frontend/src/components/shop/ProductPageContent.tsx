@@ -22,6 +22,7 @@ import { formatPrice, formatPriceRange } from "@/lib/money";
 import { EMPTY_REVIEWS, type ReviewsPayload } from "@/lib/reviews";
 import ProductReviews from "@/components/reviews/ProductReviews";
 import { StarIcon } from "@/components/reviews/ReviewStars";
+import { useI18n } from "@/components/providers/LocaleProvider";
 
 interface ProductPageContentProps {
     product: ShopProduct;
@@ -80,12 +81,16 @@ function ProductImage({
     );
 }
 
-const TABS: { id: ProductTabId; label: string }[] = [
-    { id: "specification", label: "Specification" },
-    { id: "description", label: "Description" },
-    { id: "qa", label: "Q&A" },
-    { id: "review", label: "Review" },
-];
+const TAB_IDS: ProductTabId[] = ["specification", "description", "qa", "review"];
+
+/** The site menu pins to the top. Product tabs sit directly under that bar. */
+function siteMenu() {
+    return document.querySelector<HTMLElement>("header[role='banner'] > nav");
+}
+
+function stickyOffset(tabs: HTMLElement | null) {
+    return (siteMenu()?.offsetHeight ?? 0) + (tabs?.offsetHeight ?? 0) + 8;
+}
 
 function StarRating({
     rating,
@@ -139,13 +144,6 @@ function BoltIcon() {
     );
 }
 
-const SECTION_GAP = 12;
-
-function stickyOffset(nav: HTMLElement | null) {
-    const header = document.querySelector<HTMLElement>("header[role='banner']");
-    return (header?.offsetHeight ?? 0) + (nav?.offsetHeight ?? 0) + SECTION_GAP;
-}
-
 function CartIcon() {
     return (
         <svg
@@ -172,6 +170,14 @@ export default function ProductPageContent({
     inStock = product.available > 0,
     reviews = null,
 }: ProductPageContentProps) {
+    const { t } = useI18n();
+    const tabs = t.productTabs;
+    const tabLabel: Record<ProductTabId, string> = {
+        specification: tabs.specification,
+        description: tabs.description,
+        qa: tabs.faq,
+        review: tabs.review,
+    };
     const dispatch = useAppDispatch();
     const router = useRouter();
     const gallery = useMemo(() => getProductGallery(product), [product]);
@@ -189,7 +195,7 @@ export default function ProductPageContent({
     const [relatedIndex, setRelatedIndex] = useState(0);
     const [showBackToTop, setShowBackToTop] = useState(false);
     const [buying, setBuying] = useState(false);
-    const [headerHeight, setHeaderHeight] = useState(0);
+    const [menuHeight, setMenuHeight] = useState(0);
 
     const navRef = useRef<HTMLElement>(null);
     const sectionRefs = useRef<Record<ProductTabId, HTMLElement | null>>({
@@ -250,10 +256,10 @@ export default function ProductPageContent({
             setShowBackToTop(window.scrollY > 420);
             if (Date.now() < spyPausedUntil.current) return;
             const line = stickyOffset(navRef.current) + 1;
-            let current: ProductTabId = TABS[0].id;
-            for (const tab of TABS) {
-                const el = sectionRefs.current[tab.id];
-                if (el && el.getBoundingClientRect().top <= line) current = tab.id;
+            let current: ProductTabId = TAB_IDS[0];
+            for (const id of TAB_IDS) {
+                const el = sectionRefs.current[id];
+                if (el && el.getBoundingClientRect().top <= line) current = id;
             }
             setActiveTab(current);
         };
@@ -263,12 +269,12 @@ export default function ProductPageContent({
     }, []);
 
     useEffect(() => {
-        const header = document.querySelector<HTMLElement>("header[role='banner']");
-        if (!header) return;
-        const update = () => setHeaderHeight(header.offsetHeight);
+        const menu = siteMenu();
+        if (!menu) return;
+        const update = () => setMenuHeight(menu.offsetHeight);
         update();
         const observer = new ResizeObserver(update);
-        observer.observe(header);
+        observer.observe(menu);
         return () => observer.disconnect();
     }, []);
 
@@ -581,21 +587,21 @@ export default function ProductPageContent({
                     <div className="lg:col-span-8 xl:col-span-9">
                         <nav
                             ref={navRef}
-                            aria-label="Product information"
-                            style={{ top: headerHeight }}
-                            className="sticky z-30 -mx-1 mb-5 bg-bg-base/95 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-bg-base/80"
+                            aria-label={tabs.menu}
+                            style={{ top: menuHeight }}
+                            className="sticky z-30 -mx-1 mb-3 border-b border-border-default bg-bg-base/95 px-1 py-1.5 backdrop-blur supports-[backdrop-filter]:bg-bg-base/80"
                         >
                             <div className="flex gap-2 sm:gap-3 overflow-x-auto">
-                                {TABS.map((tab) => {
-                                    const isActive = activeTab === tab.id;
+                                {TAB_IDS.map((id) => {
+                                    const isActive = activeTab === id;
                                     return (
                                         <a
-                                            key={tab.id}
-                                            href={`#product-${tab.id}`}
+                                            key={id}
+                                            href={`#product-${id}`}
                                             aria-current={isActive ? "true" : undefined}
                                             onClick={(e) => {
                                                 e.preventDefault();
-                                                scrollToSection(tab.id);
+                                                scrollToSection(id);
                                             }}
                                             className={`h-10 shrink-0 px-4 sm:px-5 inline-flex items-center rounded-md text-[13px] sm:text-[14px] font-medium transition-colors border ${
                                                 isActive
@@ -603,7 +609,7 @@ export default function ProductPageContent({
                                                     : "bg-bg-subtle border-border-default text-text-secondary hover:border-brand-primary hover:text-brand-primary"
                                             }`}
                                         >
-                                            {tab.label}
+                                            {tabLabel[id]}
                                         </a>
                                     );
                                 })}
@@ -624,7 +630,7 @@ export default function ProductPageContent({
                                         id="product-specification-title"
                                         className="text-[18px] font-bold text-text-primary m-0 mb-4"
                                     >
-                                        Specification
+                                        {tabLabel.specification}
                                     </h2>
                                     <div className="overflow-x-auto">
                                         <table className="w-full border-collapse text-[13px] sm:text-[14px]">
@@ -662,7 +668,7 @@ export default function ProductPageContent({
                                         id="product-description-title"
                                         className="text-[18px] font-bold text-text-primary m-0"
                                     >
-                                        Description
+                                        {tabLabel.description}
                                     </h2>
                                     <p className="text-[14px] text-text-secondary leading-relaxed m-0">
                                         {description}
@@ -693,7 +699,7 @@ export default function ProductPageContent({
                                         id="product-qa-title"
                                         className="text-[18px] font-bold text-text-primary m-0"
                                     >
-                                        Questions &amp; Answers
+                                        {tabLabel.qa}
                                     </h2>
                                     {PRODUCT_QUESTIONS.map((item) => (
                                         <article
@@ -739,7 +745,7 @@ export default function ProductPageContent({
                         className="lg:col-span-4 xl:col-span-3"
                     >
                         <div
-                            style={{ top: headerHeight + 16 }}
+                            style={{ top: menuHeight }}
                             className="rounded-lg border border-border-default bg-bg-surface p-4 sm:p-5 sticky"
                         >
                             <div className="flex items-center justify-between gap-2 mb-4">

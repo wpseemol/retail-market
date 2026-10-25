@@ -33,6 +33,8 @@ interface ShopSidebarProps {
     brandsVisible?: number;
     seeAllLabel?: string;
     showLessLabel?: string;
+    /** Sheet drops the sticky column so the same filters can fill a phone panel. */
+    variant?: "sidebar" | "sheet";
 }
 
 /** Matches `lg:top-28` (clears the sticky header). */
@@ -165,8 +167,11 @@ export default function ShopSidebar({
     brandsVisible = 6,
     seeAllLabel = "See all",
     showLessLabel = "Show less",
+    variant = "sidebar",
 }: ShopSidebarProps) {
-    const { locale } = useI18n();
+    const { locale, t } = useI18n();
+    const copy = t.shopPage;
+    const touch = variant === "sheet";
     const [categoriesExpanded, setCategoriesExpanded] = useState(false);
     const [brandsExpanded, setBrandsExpanded] = useState(false);
     const asideRef = useRef<HTMLElement>(null);
@@ -174,6 +179,7 @@ export default function ShopSidebar({
     // No inner scroll box (it hid Brands/Tags and trapped the wheel). A sidebar taller than the
     // viewport gets a negative sticky `top`, so it scrolls with the page and pins by its bottom.
     useEffect(() => {
+        if (variant === "sheet") return;
         const aside = asideRef.current;
         if (!aside) return;
         const update = () => {
@@ -187,7 +193,7 @@ export default function ShopSidebar({
             observer.disconnect();
             window.removeEventListener("resize", update);
         };
-    }, []);
+    }, [variant]);
 
     const span = Math.max(1, priceRange.max - priceRange.min);
     const leftPercent = ((priceMin - priceRange.min) / span) * 100;
@@ -220,11 +226,15 @@ export default function ShopSidebar({
     return (
         <aside
             ref={asideRef}
-            aria-label="Shop filters"
-            className="w-full lg:w-70 xl:w-75 shrink-0 flex flex-col gap-7 lg:sticky lg:top-28 lg:self-start"
+            aria-label={copy.filters}
+            className={
+                touch
+                    ? "flex flex-col gap-7"
+                    : "hidden w-full shrink-0 flex-col gap-7 lg:flex lg:w-70 lg:sticky lg:top-28 lg:self-start xl:w-75"
+            }
         >
             <section>
-                <FilterTitle>Search</FilterTitle>
+                <FilterTitle>{copy.search}</FilterTitle>
                 <form
                     role="search"
                     onSubmit={(e) => e.preventDefault()}
@@ -234,9 +244,9 @@ export default function ShopSidebar({
                         type="search"
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
-                        placeholder="Search products..."
-                        className="w-full bg-transparent outline-none text-[14px] text-text-primary placeholder:text-text-secondary"
-                        aria-label="Search products"
+                        placeholder={copy.searchPlaceholder}
+                        className={`w-full bg-transparent outline-none text-text-primary placeholder:text-text-secondary ${touch ? "min-h-11 text-[16px]" : "text-[14px]"}`}
+                        aria-label={copy.searchLabel}
                         autoComplete="off"
                     />
                     <Image
@@ -253,7 +263,7 @@ export default function ShopSidebar({
             <section>
                 <div className="mb-3.5 flex items-center justify-between gap-2">
                     <h3 className="text-[16px] font-semibold text-text-primary tracking-tight">
-                        Price Filtering
+                        {copy.price}
                     </h3>
                     {isPriceFiltered ? (
                         <button
@@ -261,9 +271,9 @@ export default function ShopSidebar({
                             onClick={() =>
                                 onPriceChange(priceRange.min, priceRange.max)
                             }
-                            className="text-[12px] font-medium text-brand-primary hover:text-brand-hover cursor-pointer"
+                            className={`font-medium text-brand-primary hover:text-brand-hover cursor-pointer ${touch ? "min-h-11 px-2 text-[14px]" : "text-[12px]"}`}
                         >
-                            Reset
+                            {copy.resetPrice}
                         </button>
                     ) : null}
                 </div>
@@ -336,7 +346,7 @@ export default function ShopSidebar({
                     </div>
                     <div className="flex items-center gap-2">
                         <PriceInput
-                            label="Min"
+                            label={copy.minPrice}
                             value={priceMin}
                             fallback={priceRange.min}
                             onCommit={handleMinChange}
@@ -347,7 +357,7 @@ export default function ShopSidebar({
                             aria-hidden="true"
                         />
                         <PriceInput
-                            label="Max"
+                            label={copy.maxPrice}
                             value={priceMax}
                             fallback={priceRange.max}
                             onCommit={handleMaxChange}
@@ -359,7 +369,7 @@ export default function ShopSidebar({
 
             {showColorFilter ? (
                 <section>
-                    <FilterTitle>Color</FilterTitle>
+                    <FilterTitle>{copy.color}</FilterTitle>
                     <div className="flex flex-wrap gap-2.5">
                         {SHOP_COLORS.map((color) => {
                             const isActive = selectedColor === color.id;
@@ -374,7 +384,7 @@ export default function ShopSidebar({
                                             isActive ? null : color.id,
                                         )
                                     }
-                                    className={`h-7 w-7 rounded-full border-2 transition-transform hover:scale-110 cursor-pointer ${
+                                    className={`${touch ? "h-11 w-11" : "h-7 w-7"} rounded-full border-2 transition-transform hover:scale-110 cursor-pointer ${
                                         isActive
                                             ? "border-brand-primary ring-2 ring-brand-primary/30"
                                             : "border-transparent"
@@ -388,14 +398,14 @@ export default function ShopSidebar({
             ) : null}
 
             <section>
-                <FilterTitle>Category</FilterTitle>
+                <FilterTitle>{copy.category}</FilterTitle>
                 {categories.length === 0 ? (
                     <p className="text-[13px] text-text-secondary m-0">
-                        No categories yet
+                        {copy.noCategories}
                     </p>
                 ) : (
                     <>
-                        <ul className="flex flex-col gap-2.5 list-none m-0 p-0">
+                        <ul className={`flex flex-col list-none m-0 p-0 ${touch ? "gap-1" : "gap-2.5"}`}>
                             {visibleCategories.map((category) => {
                                 const isActive =
                                     selectedCategory === category.id;
@@ -410,7 +420,7 @@ export default function ShopSidebar({
                                                         : category.id,
                                                 )
                                             }
-                                            className={`w-full flex items-center justify-between text-[14px] transition-colors cursor-pointer text-left ${
+                                            className={`w-full flex items-center justify-between text-[14px] transition-colors cursor-pointer text-left ${touch ? "min-h-11 py-1" : ""} ${
                                                 isActive
                                                     ? "text-brand-primary font-medium"
                                                     : "text-text-secondary hover:text-brand-primary"
@@ -445,28 +455,28 @@ export default function ShopSidebar({
             </section>
 
             <section>
-                <FilterTitle>Brands</FilterTitle>
+                <FilterTitle>{copy.brands}</FilterTitle>
                 {brands.length === 0 ? (
                     <p className="text-[13px] text-text-secondary m-0">
-                        No brands yet
+                        {copy.noBrands}
                     </p>
                 ) : (
                     <>
-                        <ul className="flex flex-col gap-2.5 list-none m-0 p-0">
+                        <ul className={`flex flex-col list-none m-0 p-0 ${touch ? "gap-1" : "gap-2.5"}`}>
                             {visibleBrands.map((brand) => {
                                 const checked = selectedBrands.includes(
                                     brand.id,
                                 );
                                 return (
                                     <li key={brand.id}>
-                                        <label className="flex items-center gap-2.5 text-[14px] text-text-secondary hover:text-text-primary cursor-pointer">
+                                        <label className={`flex items-center gap-2.5 text-[14px] text-text-secondary hover:text-text-primary cursor-pointer ${touch ? "min-h-11" : ""}`}>
                                             <input
                                                 type="checkbox"
                                                 checked={checked}
                                                 onChange={() =>
                                                     onBrandToggle(brand.id)
                                                 }
-                                                className="h-4 w-4 rounded border-border-default accent-brand-primary cursor-pointer"
+                                                className={`${touch ? "h-5 w-5" : "h-4 w-4"} rounded border-border-default accent-brand-primary cursor-pointer`}
                                             />
                                             <span className="flex-1">
                                                 {(locale === "bn" &&
@@ -492,7 +502,7 @@ export default function ShopSidebar({
 
             {tags.length > 0 ? (
                 <section>
-                    <FilterTitle>Tags</FilterTitle>
+                    <FilterTitle>{copy.tags}</FilterTitle>
                     <div className="flex flex-wrap gap-2">
                         {tags.map((tag) => {
                             const isActive = selectedTag === tag;
@@ -503,7 +513,7 @@ export default function ShopSidebar({
                                     onClick={() =>
                                         onTagChange(isActive ? null : tag)
                                     }
-                                    className={`text-[12px] px-3 py-1.5 rounded border transition-colors cursor-pointer ${
+                                    className={`${touch ? "min-h-11 px-4 text-[14px]" : "px-3 py-1.5 text-[12px]"} rounded border transition-colors cursor-pointer ${
                                         isActive
                                             ? "bg-brand-primary border-brand-primary text-white"
                                             : "bg-bg-subtle border-border-default text-text-secondary hover:border-brand-primary hover:text-brand-primary"

@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { SORT_OPTIONS } from "./data";
+import { format } from "@/i18n/config";
+import { useI18n } from "@/components/providers/LocaleProvider";
 import type { ShopSortOption, ShopViewMode } from "./types";
 
 interface ShopToolbarProps {
@@ -39,12 +40,12 @@ const selectClass =
 
 const VIEW_OPTIONS: {
     mode: ShopViewMode;
-    label: string;
+    className: string;
     icon: ReactNode;
 }[] = [
     {
         mode: "grid4",
-        label: "4 column grid",
+        className: "hidden md:inline-flex",
         icon: (
             <svg
                 width="18"
@@ -70,7 +71,7 @@ const VIEW_OPTIONS: {
     },
     {
         mode: "grid3",
-        label: "3 column grid",
+        className: "hidden sm:inline-flex",
         icon: (
             <svg
                 width="18"
@@ -93,7 +94,7 @@ const VIEW_OPTIONS: {
     },
     {
         mode: "grid2",
-        label: "2 column grid",
+        className: "inline-flex",
         icon: (
             <svg
                 width="18"
@@ -111,7 +112,7 @@ const VIEW_OPTIONS: {
     },
     {
         mode: "list",
-        label: "List view",
+        className: "inline-flex",
         icon: (
             <svg
                 width="18"
@@ -141,39 +142,43 @@ export default function ShopToolbar({
     onPerPageChange,
     showPerPage = true,
 }: ShopToolbarProps) {
+    const { t } = useI18n();
+    const copy = t.shopPage;
+    const viewLabel: Record<ShopViewMode, string> = {
+        grid4: copy.viewGrid4,
+        grid3: copy.viewGrid3,
+        grid2: copy.viewGrid2,
+        list: copy.viewList,
+    };
+    const sortLabel: Record<ShopSortOption, string> = {
+        default: copy.sortDefault,
+        "price-asc": copy.sortPriceAsc,
+        "price-desc": copy.sortPriceDesc,
+        "name-asc": copy.sortName,
+        "rating-desc": copy.sortRating,
+    };
+
     return (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-5 border-b border-border-default">
-            <p className="text-[14px] text-text-secondary m-0">
-                {showPerPage ? (
-                    <>
-                        Showing{" "}
-                        <span className="text-text-primary font-medium">
-                            {total === 0 ? 0 : from}-{to}
-                        </span>{" "}
-                        of{" "}
-                        <span className="text-text-primary font-medium">{total}</span>{" "}
-                        Results
-                    </>
-                ) : (
-                    <>
-                        Showing{" "}
-                        <span className="text-text-primary font-medium">{to}</span>{" "}
-                        of{" "}
-                        <span className="text-text-primary font-medium">{total}</span>{" "}
-                        products
-                    </>
-                )}
+        <div className="mb-4 flex flex-col gap-3 border-b border-border-default pb-4 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="m-0 text-[13px] text-text-secondary sm:text-[14px]">
+                {showPerPage
+                    ? format(copy.showingResults, {
+                          from: total === 0 ? 0 : from,
+                          to,
+                          total,
+                      })
+                    : format(copy.showingProducts, { shown: to, total })}
             </p>
 
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-4">
                 {showPerPage ? (
                     <label className="flex items-center gap-2 text-[13px] text-text-secondary">
-                        Show
+                        {copy.show}
                         <span className="relative">
                             <select
                                 value={perPage}
                                 onChange={(e) => onPerPageChange(Number(e.target.value))}
-                                aria-label="Products per page"
+                                aria-label={copy.perPage}
                                 className={selectClass}
                             >
                                 {perPageOptions.map((n) => (
@@ -190,19 +195,20 @@ export default function ShopToolbar({
                 <div
                     className="flex items-center gap-0.5 sm:gap-1"
                     role="group"
-                    aria-label="Product layout"
+                    aria-label={copy.productLayout}
                 >
                     {VIEW_OPTIONS.map((option) => {
                         const isActive = viewMode === option.mode;
+                        const label = viewLabel[option.mode];
                         return (
                             <button
                                 key={option.mode}
                                 type="button"
-                                aria-label={option.label}
+                                aria-label={label}
                                 aria-pressed={isActive}
-                                title={option.label}
+                                title={label}
                                 onClick={() => onViewModeChange(option.mode)}
-                                className={`p-1.5 rounded transition-colors cursor-pointer ${
+                                className={`${option.className} min-h-9 min-w-9 items-center justify-center rounded p-1.5 transition-colors cursor-pointer ${
                                     isActive
                                         ? "text-brand-primary bg-brand-tint/50"
                                         : "text-text-secondary hover:text-text-primary"
@@ -214,18 +220,18 @@ export default function ShopToolbar({
                     })}
                 </div>
 
-                <div className="relative">
+                <div className="relative min-w-0 flex-1 sm:flex-none">
                     <select
                         value={sortBy}
                         onChange={(e) =>
                             onSortChange(e.target.value as ShopSortOption)
                         }
-                        aria-label="Sort products"
-                        className={selectClass}
+                        aria-label={copy.sortProducts}
+                        className={`${selectClass} w-full sm:w-auto`}
                     >
-                        {SORT_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
+                        {(Object.keys(sortLabel) as ShopSortOption[]).map((value) => (
+                            <option key={value} value={value}>
+                                {sortLabel[value]}
                             </option>
                         ))}
                     </select>

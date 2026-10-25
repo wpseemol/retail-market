@@ -138,6 +138,10 @@ export function useShopCatalog(args: CatalogArgs) {
             })
             .catch(() => {
                 if (requestId.current !== id) return;
+                if (typeof navigator !== "undefined" && navigator.onLine === false) {
+                    setError("offline");
+                    return;
+                }
                 setProducts([]);
                 setTotal(0);
                 setTotalPages(1);
@@ -241,7 +245,7 @@ export function useShopCatalog(args: CatalogArgs) {
                 })
                 .catch(() => {
                     if (requestId.current !== id) return;
-                    setError("load");
+                    setError(typeof navigator !== "undefined" && navigator.onLine === false ? "offline" : "load");
                 })
                 .finally(() => {
                     if (requestId.current === id) setLoading(false);
@@ -264,7 +268,7 @@ export function useShopCatalog(args: CatalogArgs) {
             })
             .catch(() => {
                 if (requestId.current !== id) return;
-                setError("load");
+                setError(typeof navigator !== "undefined" && navigator.onLine === false ? "offline" : "load");
             })
             .finally(() => {
                 if (requestId.current === id) setLoadingMore(false);

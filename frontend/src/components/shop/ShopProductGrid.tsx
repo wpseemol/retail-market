@@ -81,15 +81,21 @@ export default function ShopProductGrid({
                 <p className="py-4 text-center text-sm text-text-secondary">{copy.loadingMore}</p>
             ) : null}
             {error ? (
-                <p className="py-4 text-center text-sm text-error">
-                    {copy.loadFailed}{" "}
-                    <button
-                        type="button"
-                        onClick={onRetry}
-                        className="font-semibold text-brand-primary"
-                    >
-                        {copy.retry}
-                    </button>
+                <p className={`py-4 text-center text-sm ${error === "offline" ? "text-text-secondary" : "text-error"}`}>
+                    {error === "offline" ? (
+                        copy.offlineList
+                    ) : (
+                        <>
+                            {copy.loadFailed}{" "}
+                            <button
+                                type="button"
+                                onClick={onRetry}
+                                className="font-semibold text-brand-primary"
+                            >
+                                {copy.retry}
+                            </button>
+                        </>
+                    )}
                 </p>
             ) : null}
             {showStatus && !hasMore && products.length > 0 && !loadingMore ? (

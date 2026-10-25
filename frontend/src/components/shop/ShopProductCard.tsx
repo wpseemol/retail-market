@@ -272,12 +272,14 @@ function PurchaseButtons({
     onAddToCart,
     onBuyNow,
     compact = false,
+    hideLabelsOnPhone = false,
     className = "",
 }: {
     added: boolean;
     onAddToCart: () => void;
     onBuyNow: () => void;
     compact?: boolean;
+    hideLabelsOnPhone?: boolean;
     className?: string;
 }) {
     const base = `group/btn relative inline-flex flex-1 items-center justify-center gap-1.5 overflow-hidden rounded-lg font-semibold whitespace-nowrap cursor-pointer transition-all duration-150 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface ${
@@ -303,7 +305,7 @@ function PurchaseButtons({
                 <span className="transition-transform duration-150 group-hover/btn:-translate-y-px group-hover/btn:scale-110">
                     {added ? <CheckIcon /> : <CartIcon />}
                 </span>
-                <span>{added ? "Added" : "Add to Cart"}</span>
+                <span className={hideLabelsOnPhone ? "max-sm:sr-only" : ""}>{added ? "Added" : "Add to Cart"}</span>
             </button>
             <button
                 type="button"
@@ -321,7 +323,7 @@ function PurchaseButtons({
                 <span className="transition-transform duration-150 group-hover/btn:scale-110">
                     <BoltIcon />
                 </span>
-                <span>Buy Now</span>
+                <span className={hideLabelsOnPhone ? "max-sm:sr-only" : ""}>Buy Now</span>
             </button>
         </div>
     );
@@ -508,7 +510,7 @@ export default function ShopProductCard({
                                     ? "(max-width: 768px) 50vw, 25vw"
                                     : viewMode === "grid2"
                                       ? "(max-width: 768px) 100vw, 40vw"
-                                      : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                      : "(max-width: 1280px) 50vw, 33vw"
                             }
                             className="object-contain p-3 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105 motion-reduce:transition-none"
                         />
@@ -518,12 +520,12 @@ export default function ShopProductCard({
                 {saved && (
                     <span
                         aria-hidden="true"
-                        className="absolute top-3 right-3 z-10 flex size-8 items-center justify-center rounded-full bg-brand-primary text-white shadow-sm transition-opacity duration-200 group-hover:opacity-0 group-focus-within:opacity-0 motion-reduce:transition-none"
+                        className="absolute top-3 right-3 z-10 flex size-8 items-center justify-center rounded-full bg-brand-primary text-white shadow-sm transition-opacity duration-200 group-hover:opacity-0 group-focus-within:opacity-0 [@media(hover:none)]:hidden motion-reduce:transition-none"
                     >
                         <HeartIcon filled />
                     </span>
                 )}
-                <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 group-focus-within:opacity-100 group-focus-within:translate-x-0 transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] z-20 motion-reduce:transition-none">
+                <div className="absolute top-2 right-2 z-20 flex flex-col gap-1.5 opacity-0 translate-x-2 transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-0 group-hover:opacity-100 group-focus-within:translate-x-0 group-focus-within:opacity-100 [@media(hover:none)]:translate-x-0 [@media(hover:none)]:opacity-100 motion-reduce:transition-none sm:top-3 sm:right-3 sm:gap-2">
                     <ActionButton
                         label={wishlistLabel}
                         tooltipSide="left"
@@ -533,11 +535,13 @@ export default function ShopProductCard({
                     >
                         <HeartIcon filled={saved} />
                     </ActionButton>
-                    {!isCompact && (
-                        <ActionButton label="Compare" tooltipSide="left">
-                            <CompareIcon />
-                        </ActionButton>
-                    )}
+                    {!isCompact ? (
+                        <div className="hidden sm:contents">
+                            <ActionButton label="Compare" tooltipSide="left">
+                                <CompareIcon />
+                            </ActionButton>
+                        </div>
+                    ) : null}
                     <ActionButton
                         label="Quick View"
                         tooltipSide="left"
@@ -545,13 +549,15 @@ export default function ShopProductCard({
                     >
                         <EyeIcon />
                     </ActionButton>
-                    <ActionButton
-                        label="View Full Product"
-                        tooltipSide="left"
-                        onClick={handleExpandProduct}
-                    >
-                        <ExpandIcon />
-                    </ActionButton>
+                    <div className="hidden sm:contents">
+                        <ActionButton
+                            label="View Full Product"
+                            tooltipSide="left"
+                            onClick={handleExpandProduct}
+                        >
+                            <ExpandIcon />
+                        </ActionButton>
+                    </div>
                 </div>
             </div>
 
@@ -594,7 +600,7 @@ export default function ShopProductCard({
                 )}
 
                 <p
-                    className={`text-brand-primary m-0 ${
+                    className={`text-brand-primary m-0 ${isWide ? "" : "max-sm:hidden"} ${
                         isCompact ? "text-[12px]" : "text-[13px]"
                     }`}
                 >
@@ -642,6 +648,7 @@ export default function ShopProductCard({
                                 onAddToCart={handleAddToCart}
                                 onBuyNow={handleBuyNow}
                                 compact={isCompact}
+                                hideLabelsOnPhone
                             />
                         </div>
                     </div>

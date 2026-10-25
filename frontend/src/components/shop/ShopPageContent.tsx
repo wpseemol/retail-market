@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { SlidersHorizontal } from "lucide-react";
 import type { Locale } from "@/i18n/config";
+import { useI18n } from "@/components/providers/LocaleProvider";
 import { usePriceRange } from "@/hooks/usePriceRange";
 import { clampPerPage, PRODUCTS_PER_PAGE, perPageChoices } from "./data";
 import QuickViewModal from "./QuickViewModal";
 import ShopBreadcrumb from "./ShopBreadcrumb";
 import ShopPagination from "./ShopPagination";
 import ShopProductGrid from "./ShopProductGrid";
+import ShopFilterSheet from "./ShopFilterSheet";
 import ShopSidebar from "./ShopSidebar";
 import ShopToolbar from "./ShopToolbar";
 import type { ShopProduct, ShopSortOption, ShopViewMode } from "./types";
@@ -117,6 +120,9 @@ export default function ShopPageContent({
   const [sortBy, setSortBy] = useState<ShopSortOption>("default");
   const [quickViewProduct, setQuickViewProduct] =
     useState<ShopProduct | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+const { t } = useI18n();
+  const copy = t.shopPage;
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [debouncedPrice, setDebouncedPrice] = useState({ min: priceMin, max: priceMax });
   const listRef = useRef<HTMLDivElement>(null);
@@ -224,47 +230,75 @@ export default function ShopPageContent({
     selectedCategory != null ||
     selectedBrands.length > 0 ||
     selectedTag != null;
+  const activeFilterCount =
+    (searchQuery.trim() !== "" ? 1 : 0) +
+    (priceMin > rangeMin || priceMax < rangeMax ? 1 : 0) +
+    (selectedColor != null ? 1 : 0) +
+    (selectedCategory != null ? 1 : 0) +
+    selectedBrands.length +
+    (selectedTag != null ? 1 : 0);
+
+  const sidebar = (variant: "sidebar" | "sheet") => (
+    <ShopSidebar
+      variant={variant}
+      searchQuery={searchQuery}
+      onSearchChange={setSearchQuery}
+      priceMin={priceMin}
+      priceMax={priceMax}
+      priceRange={{ min: rangeMin, max: rangeMax }}
+      priceRangeLoading={priceRangeLoading}
+      onPriceChange={(min, max) => {
+        setPriceMin(min);
+        setPriceMax(max);
+      }}
+      selectedColor={selectedColor}
+      onColorChange={setSelectedColor}
+      showColorFilter={hasColorData}
+      selectedCategory={selectedCategory}
+      onCategoryChange={setSelectedCategory}
+      selectedBrands={selectedBrands}
+      onBrandToggle={handleBrandToggle}
+      selectedTag={selectedTag}
+      onTagChange={setSelectedTag}
+      categories={categories}
+      brands={brands}
+      tags={tags}
+      categoriesVisible={variant === "sheet" ? Math.max(categories.length, 1) : categoriesVisible}
+      brandsVisible={variant === "sheet" ? Math.max(brands.length, 1) : brandsVisible}
+      seeAllLabel={seeAllLabel}
+      showLessLabel={showLessLabel}
+    />
+  );
 
   return (
     <>
       <ShopBreadcrumb />
 
       <section
-        aria-label="Shop products"
-        className="w-full bg-bg-base py-8 sm:py-10 transition-colors duration-200"
+        aria-label={t.nav.shop}
+        className="w-full bg-bg-base py-4 transition-colors duration-200 sm:py-10"
       >
         <div className="container mx-auto px-4 sm:px-6">
-          <div className="flex flex-col lg:flex-row gap-8 xl:gap-10">
-            <ShopSidebar
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              priceMin={priceMin}
-              priceMax={priceMax}
-              priceRange={{ min: rangeMin, max: rangeMax }}
-              priceRangeLoading={priceRangeLoading}
-              onPriceChange={(min, max) => {
-                setPriceMin(min);
-                setPriceMax(max);
-              }}
-              selectedColor={selectedColor}
-              onColorChange={setSelectedColor}
-              showColorFilter={hasColorData}
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-              selectedBrands={selectedBrands}
-              onBrandToggle={handleBrandToggle}
-              selectedTag={selectedTag}
-              onTagChange={setSelectedTag}
-              categories={categories}
-              brands={brands}
-              tags={tags}
-              categoriesVisible={categoriesVisible}
-              brandsVisible={brandsVisible}
-              seeAllLabel={seeAllLabel}
-              showLessLabel={showLessLabel}
-            />
+          <div className="flex flex-col gap-8 lg:flex-row xl:gap-10">
+            {sidebar("sidebar")}
 
-            <div ref={listRef} className="flex-1 min-w-0">
+            <div ref={listRef} className="min-w-0 flex-1">
+              <div className="sticky top-16 z-30 -mx-4 mb-3 flex items-center gap-2 border-b border-border-default bg-bg-base/95 px-4 py-2 backdrop-blur lg:hidden">
+                <button
+                  type="button"
+                  onClick={() => setFiltersOpen(true)}
+                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-border-default bg-bg-surface px-4 text-[14px] font-semibold text-text-primary"
+                >
+                  <SlidersHorizontal className="size-4" aria-hidden="true" />
+                  {copy.filters}
+                  {activeFilterCount > 0 ? (
+                    <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-brand-primary px-2 py-0.5 text-[12px] font-semibold text-white">
+                      {activeFilterCount}
+                    </span>
+                  ) : null}
+                </button>
+              </div>
+
               <ShopToolbar
                 from={rangeStart}
                 to={rangeEnd}
@@ -280,33 +314,37 @@ export default function ShopPageContent({
               />
 
               {hasActiveFilters ? (
-                <div className="mb-4 flex flex-wrap items-center gap-2">
+                <div className="mb-4 hidden flex-wrap items-center gap-2 lg:flex">
                   <button
                     type="button"
                     onClick={clearFilters}
-                    className="text-[13px] font-medium text-brand-primary hover:text-brand-hover cursor-pointer"
+                    className="cursor-pointer text-[13px] font-medium text-brand-primary hover:text-brand-hover"
                   >
-                    Clear all filters
+                    {copy.clearFilters}
                   </button>
                 </div>
               ) : null}
 
               {catalog.loading && visibleProducts.length === 0 ? (
-                <p className="py-16 text-center text-sm text-text-secondary">Loading products…</p>
+                <p className="py-16 text-center text-sm text-text-secondary">{copy.loading}</p>
               ) : visibleProducts.length === 0 ? (
-                <div className="py-20 text-center border border-dashed border-border-default rounded-lg bg-bg-surface">
-                  <p className="text-text-secondary text-[15px] m-0">
-                    {catalog.total === 0
-                      ? "No products available yet."
-                      : "No products match your filters."}
+                <div className="rounded-lg border border-dashed border-border-default bg-bg-surface py-16 text-center sm:py-20">
+                  <p className="m-0 text-[15px] text-text-secondary">
+                    {catalog.error === "offline"
+                      ? copy.offlineList
+                      : catalog.total === 0
+                        ? copy.noProducts
+                        : copy.noMatch}
                   </p>
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    className="mt-4 text-brand-primary text-[14px] font-semibold hover:text-brand-hover cursor-pointer"
-                  >
-                    Clear all filters
-                  </button>
+                  {catalog.error !== "offline" ? (
+                    <button
+                      type="button"
+                      onClick={clearFilters}
+                      className="mt-4 cursor-pointer text-[14px] font-semibold text-brand-primary hover:text-brand-hover"
+                    >
+                      {copy.clearFilters}
+                    </button>
+                  ) : null}
                 </div>
               ) : (
                 <div className={catalog.loading ? "opacity-60" : undefined}>
@@ -336,6 +374,15 @@ export default function ShopPageContent({
           </div>
         </div>
       </section>
+
+      <ShopFilterSheet
+        open={filtersOpen}
+        count={activeFilterCount}
+        onClose={() => setFiltersOpen(false)}
+        onClear={clearFilters}
+      >
+        {sidebar("sheet")}
+      </ShopFilterSheet>
 
       {quickViewProduct && (
         <QuickViewModal
