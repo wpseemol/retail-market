@@ -7,7 +7,7 @@ Options -Indexes
 <IfModule mod_rewrite.c>
   RewriteEngine On
   # Hidden files (.env, .env.prod, .env.dev) and the project folders.
-  RewriteRule (^|/)\.(?!well-known/) - [F,L]
+  RewriteRule (^|/)\. - [F,L]
   RewriteRule ^(src|prisma|node_modules|dist)(/|$) - [F,L]
   RewriteRule \.(json|md|ts|tsx|map|sql|yml|yaml|toml|lock|prisma|pem|key|log)$ - [F,L]
 </IfModule>
