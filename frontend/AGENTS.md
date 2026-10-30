@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # frontend — agent guide
 
-Next.js 16 (App Router, Turbopack) storefront for the Niyenin retail market.
+Next.js 16 (App Router) storefront for the Niyenin retail market. Local `pnpm dev` uses Webpack (`next dev --webpack`) because some Windows Application Control policies block the Turbopack/native SWC binary.
 Data comes from `backend-api` (port 8001).
 
 - **Port:** 3000 (`next dev --port 3000`)
@@ -52,6 +52,8 @@ frontend/src/
 - Server calls go through `src/lib/api.ts`; inside Docker the server side uses `INTERNAL_API_URL`. Current production is Vercel (see [`../DEPLOY.md`](../DEPLOY.md)). Set `PROXY_IP_SECRET` to the same value as the API so login limits see each shopper. `API_PUBLIC_KEY` and `API_SECRET_KEY` are server-only (same values as the API). Browser calls use `/api/backend`, which adds those headers. `next dev` reads `.env.dev`; `next build` and `next start` read `.env.prod`. A value already set on Vercel wins. `docker-compose.prod.yml` stays for a later VPS.
 - The `/api/backend` route is a proxy to `backend-api` — the name is intentional, don't rename it.
 - Guest cart lives in an encrypted cookie; logged-in cart lives in the DB and merges on login. The Redux cart also keeps a local copy and replays edits made while the browser is offline. A service worker (`public/sw.js`) keeps pages, scripts, and read requests you already loaded, and `/offline` is the fallback for an address that was never opened.
+- **Site chrome:** layout passes nav / topbar / footer into `StoreProvider` as Redux preloaded state (no empty-nav flash). `SiteChromeHydrator` also writes `localStorage` (`niyenin.site-chrome.v1`) for the next reload. Header shows pulse skeletons for theme, cart total, and nav until ready.
+- **Product copy:** `short_description` is plain text (cards / PDP blurb). `description` is TipTap HTML — render only through `SafeHtml` / `sanitizeProductHtml` (`src/lib/safeHtml.ts`), never as raw children of a `<p>`.
 - Forms use shadcn `Form` + react-hook-form + `zodResolver`, with safe-input checks on strings. Primitives live in `src/components/ui/` (`form`, `label`, `dialog` — built on the `radix-ui` package). For translated validation messages, build the Zod schema from the dictionary (see `src/lib/validators/review.ts`).
 - Modals that sit above the sticky header use `z-[90]`+; `QuickView` uses `z-[100]`. The page-change bar (`NavigationProgress`, z-index 100000) sits above both.
 - A green top bar shows on a full reload (`bootProgress.ts`, before React) and on client page changes (`nextjs-toploader` in `NavigationProgress`).

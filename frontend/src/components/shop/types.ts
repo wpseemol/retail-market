@@ -25,6 +25,9 @@ export interface ShopProduct {
     tags: string[];
     sku?: string;
     model?: string;
+    /** Plain-text blurb for cards / hero summary (not HTML). */
+    shortDescription?: string;
+    /** TipTap HTML body for the description tab (sanitize before render). */
     description?: string;
     gallery?: string[];
     categoryLabels?: string[];

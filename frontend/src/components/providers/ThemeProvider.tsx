@@ -9,6 +9,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             attribute="class"
             defaultTheme="light"
             enableSystem={false}
+            enableColorScheme
+            storageKey="niyenin-theme"
             disableTransitionOnChange
         >
             {children}

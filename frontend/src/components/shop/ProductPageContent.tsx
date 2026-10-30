@@ -23,6 +23,8 @@ import { EMPTY_REVIEWS, type ReviewsPayload } from "@/lib/reviews";
 import ProductReviews from "@/components/reviews/ProductReviews";
 import { StarIcon } from "@/components/reviews/ReviewStars";
 import { useI18n } from "@/components/providers/LocaleProvider";
+import { SafeHtml } from "@/components/content/SafeHtml";
+import { hasRichText } from "@/lib/safeHtml";
 
 interface ProductPageContentProps {
     product: ShopProduct;
@@ -246,9 +248,12 @@ export default function ProductPageContent({
     const model = product.model ?? `${brandLabel} ${categoryLabel}`;
     const categories =
         product.categoryLabels?.join(", ") ?? `${brandLabel}, ${categoryLabel}`;
-    const description =
-        product.description ??
+    const shortDescription =
+        product.shortDescription?.trim() ||
         `${product.name} delivers reliable everyday performance with modern design. Enjoy smooth multitasking, crisp display quality, and long-lasting value for home, school, or work.`;
+    const richDescription = hasRichText(product.description)
+        ? product.description
+        : null;
     const tags = product.tags.slice(0, 3).map((tag) => tag.toLowerCase());
 
     useEffect(() => {
@@ -367,7 +372,7 @@ export default function ProductPageContent({
                                 alt={product.alt}
                                 fill
                                 sizes="(max-width: 1024px) 100vw, 420px"
-                                className="object-contain p-5 sm:p-8"
+                                className="object-contain object-center p-4 sm:p-6"
                                 priority
                             />
                         </ProductImageZoom>
@@ -385,7 +390,7 @@ export default function ProductPageContent({
                                         onClick={() => setActiveImage(src)}
                                         aria-label={`View image ${index + 1}`}
                                         aria-pressed={isActive}
-                                        className={`relative h-[68px] w-[68px] sm:h-[76px] sm:w-[76px] rounded-md border overflow-hidden bg-bg-subtle shrink-0 cursor-pointer transition-colors ${
+                                        className={`relative h-[68px] w-[68px] sm:h-[76px] sm:w-[76px] rounded-md border overflow-hidden bg-white shrink-0 cursor-pointer transition-colors ${
                                             isActive
                                                 ? "border-brand-primary ring-1 ring-brand-primary/40"
                                                 : "border-border-default hover:border-brand-primary"
@@ -396,7 +401,7 @@ export default function ProductPageContent({
                                             alt=""
                                             fill
                                             sizes="76px"
-                                            className="object-contain p-1.5"
+                                            className="object-contain object-center p-1.5"
                                             aria-hidden
                                         />
                                     </button>
@@ -442,7 +447,7 @@ export default function ProductPageContent({
                         </header>
 
                         <p className="text-[14px] text-text-secondary leading-relaxed m-0 max-w-2xl">
-                            {description}
+                            {shortDescription}
                         </p>
 
                         <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1.5 text-[13px] m-0">
@@ -670,19 +675,13 @@ export default function ProductPageContent({
                                     >
                                         {tabLabel.description}
                                     </h2>
-                                    <p className="text-[14px] text-text-secondary leading-relaxed m-0">
-                                        {description}
-                                    </p>
-                                    <p className="text-[14px] text-text-secondary leading-relaxed m-0">
-                                        Built for everyday multitasking, this
-                                        product combines a bright display,
-                                        responsive performance, and practical
-                                        connectivity so you can work, stream,
-                                        and browse with confidence. Expandable
-                                        storage and long battery life make it a
-                                        dependable companion at home or on the
-                                        go.
-                                    </p>
+                                    {richDescription ? (
+                                        <SafeHtml html={richDescription} />
+                                    ) : (
+                                        <p className="text-[14px] text-text-secondary leading-relaxed m-0">
+                                            {shortDescription}
+                                        </p>
+                                    )}
                                 </div>
                             </section>
 
@@ -799,13 +798,13 @@ export default function ProductPageContent({
                                             href={`/shop/${item.slug}`}
                                             className="flex gap-3 group"
                                         >
-                                            <div className="relative h-[72px] w-[72px] rounded-md border border-border-default bg-bg-subtle overflow-hidden shrink-0">
+                                            <div className="relative h-[72px] w-[72px] rounded-md border border-border-default bg-white overflow-hidden shrink-0">
                                                 <ProductImage
                                                     src={item.image}
                                                     alt={item.alt}
                                                     fill
                                                     sizes="72px"
-                                                    className="object-contain p-1.5"
+                                                    className="object-contain object-center p-1.5"
                                                 />
                                             </div>
                                             <div className="flex flex-col gap-1 min-w-0">

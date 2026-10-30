@@ -135,7 +135,7 @@ export default function QuickViewModal({
     const categories =
         product.categoryLabels?.join(", ") ?? `${brandLabel}, ${categoryLabel}`;
     const description =
-        product.description ??
+        product.shortDescription ??
         `${product.name} delivers reliable everyday performance with modern design. Enjoy smooth multitasking, crisp display quality, and long-lasting value for home, school, or work.`;
     const tags = product.tags.slice(0, 3).map((tag) => tag.toLowerCase());
 
@@ -201,13 +201,13 @@ export default function QuickViewModal({
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 p-5 sm:p-7 lg:p-8">
                     {/* Gallery */}
                     <div className="lg:col-span-5 flex flex-col sm:flex-row gap-3 sm:gap-4">
-                        <div className="relative flex-1 min-h-64 sm:min-h-80 rounded-lg border border-border-default bg-bg-subtle overflow-hidden">
+                        <div className="relative flex-1 min-h-64 sm:min-h-80 rounded-lg border border-border-default bg-white overflow-hidden">
                             <ProductImage
                                 src={activeImage}
                                 alt={product.alt}
                                 fill
                                 sizes="(max-width: 1024px) 100vw, 420px"
-                                className="object-contain p-6"
+                                className="object-contain object-center p-4 sm:p-6"
                                 priority
                             />
                         </div>
@@ -222,7 +222,7 @@ export default function QuickViewModal({
                                         onClick={() => setActiveImage(src)}
                                         aria-label={`View image ${index + 1}`}
                                         aria-pressed={isActive}
-                                        className={`relative h-16 w-16 sm:h-[72px] sm:w-[72px] rounded-md border overflow-hidden bg-bg-subtle shrink-0 cursor-pointer transition-colors ${
+                                        className={`relative h-16 w-16 sm:h-[72px] sm:w-[72px] rounded-md border overflow-hidden bg-white shrink-0 cursor-pointer transition-colors ${
                                             isActive
                                                 ? "border-brand-primary ring-1 ring-brand-primary/40"
                                                 : "border-border-default hover:border-brand-primary"
@@ -233,7 +233,7 @@ export default function QuickViewModal({
                                             alt=""
                                             fill
                                             sizes="72px"
-                                            className="object-contain p-1.5"
+                                            className="object-contain object-center p-1.5"
                                             aria-hidden
                                         />
                                     </button>

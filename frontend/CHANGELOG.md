@@ -5,6 +5,23 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-30
 
+### Dev uses Webpack when Turbopack native SWC is blocked
+
+- `package.json` `dev`: `next dev --webpack --port 3000`. On this Windows machine Application Control blocks `@next/swc-win32-x64-msvc`, so Turbopack exits and the storefront never listens on :3000.
+
+### Product image wells aligned (shop, brand, store)
+
+- Shop cards (`ShopProductCard.tsx`), brand/store showcase cards (`ShowcaseProductCard.tsx`), PDP / quick view / related thumbs: product photos use a white square well with `object-contain object-center` so studio shots (white backgrounds) no longer float in dark `bg-subtle` letterboxing.
+- Removed double padding on shop grid image links; thumbs fill the well edge-to-edge.
+- Stores directory logos (`StoresPageContent.tsx`): white well + centered contain.
+
+### Header chrome cache + product rich text
+
+- `StoreProvider` / `store.ts` / `siteChromeSlice.ts` / `siteChromeCache.ts`: seed header/footer/topbar chrome from the layout payload on first paint, and keep a `localStorage` copy (`niyenin.site-chrome.v1`) so reloads do not flash empty/fallback nav.
+- `Header.tsx`: pulse skeletons for theme toggle, cart total, and nav while those pieces are not ready; theme storage key `niyenin-theme`.
+- `CartHydrator.tsx`: restore the last cart from cache right away so the header total can leave the skeleton sooner.
+- Product short blurb vs TipTap body: `shortDescription` (plain) + `description` (HTML) in `types.ts` / `products.ts`. PDP, cards, and quick view show the plain blurb; the description tab uses `SafeHtml` (`safeHtml.ts` + `SafeHtml.tsx`) with allow-list sanitize + `dangerouslySetInnerHTML`. Meta description strips HTML tags.
+
 ### Production domains on niyenin.com
 
 - `.env.prod`: `NEXT_PUBLIC_API_URL` → `https://api.niyenin.com`, `NEXT_PUBLIC_APP_URL` → `https://www.niyenin.com`, `NEXT_PUBLIC_DASHBOARD_URL` → `https://dashboard.niyenin.com`.

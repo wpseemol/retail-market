@@ -23,7 +23,7 @@ export function ShowcaseProductCard({
             }`}
         >
             <Link href={`/shop/${product.slug}`} className="block">
-                <div className="relative aspect-square bg-bg-subtle">
+                <div className="relative aspect-square overflow-hidden bg-white">
                     {product.thumbnail?.path ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -31,7 +31,7 @@ export function ShowcaseProductCard({
                             alt={product.thumbnail.alt_text ?? product.name}
                             loading="lazy"
                             decoding="async"
-                            className={`size-full object-contain p-3 ${banned ? "grayscale-[40%]" : ""}`}
+                            className={`absolute inset-0 size-full object-contain object-center p-3 transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none ${banned ? "grayscale-[40%]" : ""}`}
                         />
                     ) : (
                         <div className="flex size-full items-center justify-center text-sm text-text-secondary">{t.noImage}</div>

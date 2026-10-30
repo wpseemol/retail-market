@@ -199,7 +199,7 @@ export default async function RootLayout({
                 <SmoothScroll />
                 <ThemeProvider>
                     <LocaleProvider locale={locale}>
-                        <StoreProvider>
+                        <StoreProvider siteChrome={chromePayload}>
                             <AuthSessionProvider>
                                 <ConnectionBanner />
                                 <OfflineCache />

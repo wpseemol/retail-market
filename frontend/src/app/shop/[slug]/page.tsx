@@ -20,6 +20,7 @@ import {
   reviewsJsonLd,
   type ReviewsPayload,
 } from "@/lib/reviews";
+import { hasRichText, stripHtml } from "@/lib/safeHtml";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -35,9 +36,13 @@ function productImages(product: ApiProduct): string[] {
 
 function productDescription(product: ApiProduct): string {
   const brand = product.brand_name || product.brand?.name;
+  const fromShort = product.short_description?.trim();
+  const fromHtml = hasRichText(product.description)
+    ? stripHtml(product.description)
+    : "";
   return toMetaDescription(
-    product.short_description ||
-      product.description ||
+    fromShort ||
+      fromHtml ||
       `Buy ${product.name}${brand ? ` by ${brand}` : ""} online at ${siteConfig.name}. Best price in Bangladesh with fast delivery.`,
   );
 }

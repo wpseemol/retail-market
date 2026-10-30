@@ -10,6 +10,7 @@ import { addCartItem, buyNow, cartSnapshot } from "@/store/cartSlice";
 import { formatPriceRange } from "@/lib/money";
 import { useWishlist } from "@/hooks/useWishlist";
 
+/** Product photos stay centered in a square well (white so studio shots align in dark mode). */
 function ProductThumb({
   src,
   alt,
@@ -21,13 +22,14 @@ function ProductThumb({
   sizes: string;
   className?: string;
 }) {
+  const fit = `object-contain object-center ${className ?? ""}`;
   if (/^https?:\/\//i.test(src)) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
         alt={alt}
-        className={`absolute inset-0 size-full ${className ?? ""}`}
+        className={`absolute inset-0 size-full ${fit}`}
       />
     );
   }
@@ -37,7 +39,7 @@ function ProductThumb({
       alt={alt}
       fill
       sizes={sizes}
-      className={className}
+      className={fit}
     />
   );
 }
@@ -331,7 +333,7 @@ function PurchaseButtons({
 
 function productDescription(product: ShopProduct) {
     return (
-        product.description ??
+        product.shortDescription ??
         `${product.name} offers reliable performance and everyday value with a modern design for home, office, or entertainment use.`
     );
 }
@@ -386,7 +388,7 @@ export default function ShopProductCard({
     if (viewMode === "list") {
         return (
             <article className="group relative flex flex-col sm:flex-row gap-4 sm:gap-6 p-4 sm:p-5 bg-bg-surface border border-border-default rounded-lg transition-all duration-200 hover:border-brand-primary hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
-                <div className="relative w-full sm:w-52 md:w-60 h-48 sm:h-52 shrink-0 rounded-md overflow-hidden bg-bg-subtle">
+                <div className="relative w-full sm:w-52 md:w-60 h-48 sm:h-52 shrink-0 rounded-md overflow-hidden bg-white">
                     {product.isNew && (
                         <span className="absolute top-3 left-0 z-10 -skew-x-12 bg-brand-primary text-white text-[10px] font-bold px-2.5 py-1 tracking-wider">
                             <span className="skew-x-12 inline-block">NEW</span>
@@ -400,7 +402,7 @@ export default function ShopProductCard({
                             src={product.image}
                             alt={product.alt}
                             sizes="240px"
-                            className="object-contain p-4 transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none"
+                            className="p-3 transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none"
                         />
                     </Link>
                 </div>
@@ -486,10 +488,10 @@ export default function ShopProductCard({
                 }`}
             >
                 <div
-                    className={`relative bg-bg-subtle overflow-hidden rounded-t-lg ${
+                    className={`relative overflow-hidden bg-white ${
                         isWide
-                            ? "aspect-4/3 sm:aspect-auto sm:min-h-56 sm:rounded-l-lg sm:rounded-tr-none sm:h-full"
-                            : "w-full aspect-square"
+                            ? "aspect-4/3 sm:aspect-auto sm:min-h-56 rounded-t-lg sm:rounded-l-lg sm:rounded-tr-none sm:h-full"
+                            : "w-full aspect-square rounded-t-lg"
                     }`}
                 >
                     {product.isNew && (
@@ -500,7 +502,7 @@ export default function ShopProductCard({
 
                     <Link
                         href={`/shop/${product.slug}`}
-                        className="absolute inset-0 flex items-center justify-center p-4"
+                        className="absolute inset-0"
                     >
                         <ProductThumb
                             src={product.image}
@@ -512,7 +514,7 @@ export default function ShopProductCard({
                                       ? "(max-width: 768px) 100vw, 40vw"
                                       : "(max-width: 1280px) 50vw, 33vw"
                             }
-                            className="object-contain p-3 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105 motion-reduce:transition-none"
+                            className="p-3 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105 motion-reduce:transition-none"
                         />
                     </Link>
                 </div>

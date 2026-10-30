@@ -21,12 +21,15 @@ export default function CartHydrator() {
     const isCustomer = data?.backendUser?.role === "customer";
 
     useEffect(() => {
+        // Paint last-known cart immediately so the header total is not blank.
+        if (!store.getState().cart.loaded) {
+            const cached = readCartCache();
+            if (cached) dispatch(hydrateCartCache(cached));
+        }
+
         if (status === "loading") return;
 
-        if (!online) {
-            dispatch(hydrateCartCache(readCartCache()));
-            return;
-        }
+        if (!online) return;
 
         let cancelled = false;
         void (async () => {

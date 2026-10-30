@@ -105,10 +105,13 @@ export default function Header({
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const cartCount = useAppSelector(selectCartItemCount);
     const cartTotal = useAppSelector(selectCartSubtotal);
+    const cartLoaded = useAppSelector((state) => state.cart.loaded);
     const wishlistCount = useAppSelector(selectWishlistCount);
+    const chromeHydrated = useAppSelector((state) => state.siteChrome.hydrated);
     const configuredNav = useAppSelector(selectHeaderNav);
     const headerNav =
         configuredNav.length > 0 ? configuredNav : fallbackHeaderNav(t.nav);
+    const navReady = chromeHydrated || configuredNav.length > 0;
 
     function linkActive(href: string) {
         if (href === "/") return pathname === "/";
@@ -269,38 +272,54 @@ export default function Header({
                                 <span className="text-[11px] leading-tight text-text-secondary">
                                     {t.header.shoppingCart}
                                 </span>
-                                <span
-                                    className={`text-[13px] font-semibold ${
-                                        isCart
-                                            ? "text-brand-primary"
-                                            : "text-[#7B61FF]"
-                                    }`}
-                                >
-                                    {formatPrice(cartTotal)}
-                                </span>
+                                {cartLoaded ? (
+                                    <span
+                                        className={`text-[13px] font-semibold ${
+                                            isCart
+                                                ? "text-brand-primary"
+                                                : "text-[#7B61FF]"
+                                        }`}
+                                    >
+                                        {formatPrice(cartTotal)}
+                                    </span>
+                                ) : (
+                                    <span
+                                        className="mt-0.5 h-3.5 w-14 rounded bg-bg-subtle animate-pulse"
+                                        aria-hidden
+                                    />
+                                )}
                             </div>
                         </Link>
 
                         {/* Dark / Light Toggle Switch */}
-                        <button
-                            type="button"
-                            onClick={toggleTheme}
-                            aria-label={
-                                isDark
-                                    ? t.header.lightTheme
-                                    : t.header.darkTheme
-                            }
-                            className={`w-6 h-10 rounded-full p-0.75 transition-colors duration-200 cursor-pointer flex flex-col justify-between items-center ${
-                                isDark ? "bg-brand-primary" : "bg-[#4D4D4D]"
-                            }`}
-                        >
-                            <span
-                                aria-hidden="true"
-                                className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ${
-                                    isDark ? "translate-y-5" : "translate-y-0"
+                        {mounted ? (
+                            <button
+                                type="button"
+                                onClick={toggleTheme}
+                                aria-label={
+                                    isDark
+                                        ? t.header.lightTheme
+                                        : t.header.darkTheme
+                                }
+                                className={`w-6 h-10 rounded-full p-0.75 transition-colors duration-200 cursor-pointer flex flex-col justify-between items-center ${
+                                    isDark ? "bg-brand-primary" : "bg-[#4D4D4D]"
                                 }`}
+                            >
+                                <span
+                                    aria-hidden="true"
+                                    className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ${
+                                        isDark
+                                            ? "translate-y-5"
+                                            : "translate-y-0"
+                                    }`}
+                                />
+                            </button>
+                        ) : (
+                            <span
+                                className="w-6 h-10 rounded-full bg-bg-subtle animate-pulse"
+                                aria-hidden
                             />
-                        </button>
+                        )}
                     </div>
                 </div>
             </section>
@@ -347,7 +366,20 @@ export default function Header({
 
                     {/* Desktop Nav Links */}
                     <ul className="flex items-center gap-6 xl:gap-8 text-[14px] font-medium list-none m-0 p-0">
-                        {headerNav.map((item) => {
+                        {!navReady ? (
+                            <>
+                                {[96, 72, 80, 64, 88].map((w) => (
+                                    <li key={w} aria-hidden>
+                                        <span
+                                            className="block h-4 rounded bg-bg-subtle animate-pulse"
+                                            style={{ width: w }}
+                                        />
+                                    </li>
+                                ))}
+                            </>
+                        ) : null}
+                        {navReady
+                            ? headerNav.map((item) => {
                             const hasChildren = Boolean(item.children?.length);
                             const resolved = resolveStorefrontHref(item.href);
                             const active = linkActive(resolved.href);
@@ -425,19 +457,22 @@ export default function Header({
                                     )}
                                 </li>
                             );
-                        })}
-                        <li>
-                            <Link
-                                href="/bulk-order"
-                                className={`hover:text-brand-hover transition-colors ${
-                                    linkActive("/bulk-order")
-                                        ? "text-brand-primary font-semibold"
-                                        : "text-text-secondary hover:text-brand-primary"
-                                }`}
-                            >
-                                {t.nav.wholesale}
-                            </Link>
-                        </li>
+                        })
+                            : null}
+                        {navReady ? (
+                            <li>
+                                <Link
+                                    href="/bulk-order"
+                                    className={`hover:text-brand-hover transition-colors ${
+                                        linkActive("/bulk-order")
+                                            ? "text-brand-primary font-semibold"
+                                            : "text-text-secondary hover:text-brand-primary"
+                                    }`}
+                                >
+                                    {t.nav.wholesale}
+                                </Link>
+                            </li>
+                        ) : null}
                     </ul>
 
                     {/* Desktop Search Field */}

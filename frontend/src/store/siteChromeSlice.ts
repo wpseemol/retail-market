@@ -47,7 +47,7 @@ export type SiteChromeState = {
   homeSections: HomeSectionState[];
 };
 
-const initialState: SiteChromeState = {
+export const initialSiteChromeState: SiteChromeState = {
   hydrated: false,
   siteName: "Niyenin",
   topbarEmail: "retailmarket@gmail.com",
@@ -84,21 +84,42 @@ export type SiteChromeHydratePayload = {
   homeSections?: HomeSectionState[];
 };
 
+/** Merge a server / cache payload into chrome state (used for sync store seed). */
+export function applySiteChromePayload(
+  base: SiteChromeState,
+  p: SiteChromeHydratePayload,
+): SiteChromeState {
+  return {
+    ...base,
+    siteName: p.siteName || base.siteName,
+    topbarEmail: p.topbarEmail !== undefined ? p.topbarEmail : base.topbarEmail,
+    topbarPhone: p.topbarPhone !== undefined ? p.topbarPhone : base.topbarPhone,
+    footerBlurb: p.footerBlurb !== undefined ? p.footerBlurb : base.footerBlurb,
+    footerPhone: p.footerPhone !== undefined ? p.footerPhone : base.footerPhone,
+    footerCallout:
+      p.footerCallout !== undefined ? p.footerCallout : base.footerCallout,
+    social: p.social ? { ...base.social, ...p.social } : base.social,
+    nav: p.nav ?? base.nav,
+    homeSections: p.homeSections ?? base.homeSections,
+    hydrated: true,
+  };
+}
+
 const siteChromeSlice = createSlice({
   name: "siteChrome",
-  initialState,
+  initialState: initialSiteChromeState,
   reducers: {
     hydrateSiteChrome(state, action: PayloadAction<SiteChromeHydratePayload>) {
-      const p = action.payload;
-      if (p.siteName) state.siteName = p.siteName;
-      if (p.topbarEmail !== undefined) state.topbarEmail = p.topbarEmail;
-      if (p.topbarPhone !== undefined) state.topbarPhone = p.topbarPhone;
-      if (p.footerBlurb !== undefined) state.footerBlurb = p.footerBlurb;
-      if (p.footerPhone !== undefined) state.footerPhone = p.footerPhone;
-      if (p.footerCallout !== undefined) state.footerCallout = p.footerCallout;
-      if (p.social) state.social = { ...state.social, ...p.social };
-      if (p.nav) state.nav = p.nav;
-      if (p.homeSections) state.homeSections = p.homeSections;
+      const next = applySiteChromePayload(state, action.payload);
+      state.siteName = next.siteName;
+      state.topbarEmail = next.topbarEmail;
+      state.topbarPhone = next.topbarPhone;
+      state.footerBlurb = next.footerBlurb;
+      state.footerPhone = next.footerPhone;
+      state.footerCallout = next.footerCallout;
+      state.social = next.social;
+      state.nav = next.nav;
+      state.homeSections = next.homeSections;
       state.hydrated = true;
     },
   },

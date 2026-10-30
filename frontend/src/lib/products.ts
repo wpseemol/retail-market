@@ -1,6 +1,7 @@
 import { apiFetch, appKeyHeaders, publicApiUrl } from "@/lib/api";
 import type { ShopProduct } from "@/components/shop/types";
 import type { Locale } from "@/i18n/config";
+import { hasRichText, stripHtml } from "@/lib/safeHtml";
 
 export type ApiProductMedia = {
   id: string;
@@ -51,11 +52,6 @@ type LocalizableProduct = {
   brand: { name: string; name_bn?: string | null } | null;
   vendor?: { shop_name: string; shop_name_bn?: string | null } | null;
 };
-
-/** TipTap HTML has visible text (an empty editor still yields `<p></p>`). */
-function hasRichText(html: string | null | undefined): html is string {
-  return Boolean(html && html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim());
-}
 
 /**
  * Copy of the product with Bangla text swapped in for `bn` shoppers. Each field (name, short
@@ -162,8 +158,15 @@ export function toShopProduct(apiProduct: ApiProduct, locale: Locale = "en"): Sh
     ].filter(Boolean) as string[],
     sku: product.sku ?? undefined,
     model: product.brand_name || product.brand?.name || undefined,
-    description:
-      product.description || product.short_description || undefined,
+    shortDescription:
+      product.short_description?.trim() ||
+      (hasRichText(product.description)
+        ? stripHtml(product.description)
+        : undefined) ||
+      undefined,
+    description: hasRichText(product.description)
+      ? product.description
+      : undefined,
     gallery,
     categoryLabels: [
       product.vendor?.shop_name,
