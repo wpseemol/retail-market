@@ -90,10 +90,24 @@ function bnTextSchema(max: number) {
     .optional();
 }
 
+/** Form selects send `""` for “none”; treat that as null. Omitted stays omitted. */
+const optionalBrandId = z
+  .union([
+    z.string().regex(/^\d+$/),
+    z.literal("").transform(() => null),
+    z.null(),
+  ])
+  .optional();
+
 const productBodyObject = z.object({
-  vendor_id: z.string().regex(/^\d+$/).optional(),
+  vendor_id: z
+    .union([
+      z.string().regex(/^\d+$/),
+      z.literal("").transform(() => undefined),
+    ])
+    .optional(),
   category_id: z.string().regex(/^\d+$/),
-  brand_id: z.string().regex(/^\d+$/).optional().nullable(),
+  brand_id: optionalBrandId,
   name: withSafeInput(z.string().trim().min(2).max(255)),
   slug: withSafeInput(
     z

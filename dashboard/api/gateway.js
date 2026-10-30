@@ -1,4 +1,4 @@
-const API_ORIGIN = "https://niyenin-api.wpseemol.site";
+const API_ORIGIN = "https://api.niyenin.com";
 
 function header(req, name) {
   const value = req.headers?.[name];
@@ -107,28 +107,41 @@ export default async function handler(req, res) {
     return;
   }
 
-  const targetBase = (process.env.API_PROXY_TARGET || API_ORIGIN).replace(/\/$/, "");
-  const method = req.method || "GET";
-  const upstreamUrl = `${targetBase}${targetPath(req)}${search(req)}`;
-  const body = method === "GET" || method === "HEAD" ? undefined : await readBody(req);
-  const headers = {
-    "X-Public-Key": publicKey,
-    "X-Api-Secret": secretKey,
-    Accept: header(req, "accept") || "application/json",
-  };
-  const bearer = staffBearer(req);
-  const contentType = header(req, "content-type");
-  if (bearer) headers.Authorization = `Bearer ${bearer}`;
-  if (contentType) headers["Content-Type"] = contentType;
+  try {
+    const targetBase = (process.env.API_PROXY_TARGET || API_ORIGIN).replace(/\/$/, "");
+    const method = req.method || "GET";
+    const upstreamUrl = `${targetBase}${targetPath(req)}${search(req)}`;
+    const body = method === "GET" || method === "HEAD" ? undefined : await readBody(req);
+    const headers = {
+      "X-Public-Key": publicKey,
+      "X-Api-Secret": secretKey,
+      Accept: header(req, "accept") || "application/json",
+    };
+    const bearer = staffBearer(req);
+    const contentType = header(req, "content-type");
+    if (bearer) headers.Authorization = `Bearer ${bearer}`;
+    if (contentType) headers["Content-Type"] = contentType;
 
-  const upstream = await fetch(upstreamUrl, { method, headers, body });
-  const payload = Buffer.from(await upstream.arrayBuffer());
-  const out = { "Cache-Control": "private, no-store" };
-  const type = upstream.headers.get("content-type");
-  if (type) out["Content-Type"] = type;
-  const disposition = upstream.headers.get("content-disposition");
-  if (disposition) out["Content-Disposition"] = disposition;
-  const total = upstream.headers.get("x-total-rows");
-  if (total) out["X-Total-Rows"] = total;
-  send(res, upstream.status, payload, out);
+    const upstream = await fetch(upstreamUrl, { method, headers, body });
+    const payload = Buffer.from(await upstream.arrayBuffer());
+    const out = { "Cache-Control": "private, no-store" };
+    const type = upstream.headers.get("content-type");
+    if (type) out["Content-Type"] = type;
+    const disposition = upstream.headers.get("content-disposition");
+    if (disposition) out["Content-Disposition"] = disposition;
+    const total = upstream.headers.get("x-total-rows");
+    if (total) out["X-Total-Rows"] = total;
+    send(res, upstream.status, payload, out);
+  } catch (err) {
+    console.error("[gateway] upstream failed", err);
+    send(
+      res,
+      502,
+      JSON.stringify({
+        message: "The API host did not respond. Check API_PROXY_TARGET on Vercel.",
+        code: "API_GATEWAY_UPSTREAM",
+      }),
+      { "Content-Type": "application/json", "Cache-Control": "private, no-store" },
+    );
+  }
 }

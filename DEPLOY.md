@@ -79,7 +79,7 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
 | `DATABASE_URL` | the MariaDB URL above |
 | `JWT_SECRET` | 32+ bytes, random |
 | `SETTINGS_ENCRYPTION_KEY` | a different 32+ byte random value |
-| `CORS_ORIGINS` | `https://niyenin-frontend.vercel.app,https://niyenin-dashboard.vercel.app` (no spaces, no trailing slash) |
+| `CORS_ORIGINS` | `https://www.niyenin.com,https://niyenin.com,https://dashboard.niyenin.com` (no spaces, no trailing slash) |
 | `API_PUBLIC_KEY` | same value on the API, the storefront, and the dashboard. 32+ bytes |
 | `API_SECRET_KEY` | same secret on those three hosts. Server-only. Do not put it in `NEXT_PUBLIC_` or `VITE_` |
 | `PUBLIC_API_URL` | `https://api.yourdomain.com` |
@@ -121,9 +121,9 @@ Environment (Production):
 
 | Name | Value |
 | --- | --- |
-| `NEXT_PUBLIC_API_URL` | `https://niyenin-api.wpseemol.site` |
-| `NEXT_PUBLIC_APP_URL` | the Vercel storefront URL, then your real domain |
-| `NEXT_PUBLIC_DASHBOARD_URL` | the dashboard Vercel URL |
+| `NEXT_PUBLIC_API_URL` | `https://api.niyenin.com` |
+| `NEXT_PUBLIC_APP_URL` | `https://www.niyenin.com` |
+| `NEXT_PUBLIC_DASHBOARD_URL` | `https://dashboard.niyenin.com` |
 | `NEXT_PUBLIC_MEDIA_URL` | only if images are on S3/R2; otherwise omit it and images load from the API `/uploads` path |
 | `AUTH_SECRET` | 32+ random bytes. Server-only. |
 | `REVALIDATE_SECRET` | same as the API |
@@ -142,13 +142,16 @@ Second Vercel project, same repository, **Root Directory** `dashboard`. Framewor
 
 | Name | Value |
 | --- | --- |
-| `VITE_API_URL` | `https://niyenin-api.wpseemol.site` |
-| `VITE_APP_URL` | `https://niyenin-dashboard.vercel.app` |
-| `VITE_STOREFRONT_URL` | `https://niyenin-frontend.vercel.app` |
+| `VITE_API_URL` | leave empty so the browser uses same-origin `/api` via the gateway |
+| `API_PROXY_TARGET` | `https://api.niyenin.com` |
+| `API_PUBLIC_KEY` | same as the API |
+| `API_SECRET_KEY` | same as the API. Server-only |
+| `VITE_APP_URL` | `https://dashboard.niyenin.com` |
+| `VITE_STOREFRONT_URL` | `https://www.niyenin.com` |
 
-`vercel.json` installs with pnpm, then runs `pnpm run build`. Do not add an npm lockfile in this folder: the old one pointed at a local pnpm store, so Vercel never installed `tsc`. If the `VITE_` variables are left unset on Vercel, `vite.config.ts` still bakes in the three live URLs above.
+`vercel.json` installs with pnpm, then runs `pnpm run build`. Do not add an npm lockfile in this folder: the old one pointed at a local pnpm store, so Vercel never installed `tsc`. If the `VITE_` variables are left unset on Vercel, `vite.config.ts` still bakes in the live `api.niyenin.com` / `dashboard.niyenin.com` / `www.niyenin.com` URLs. The serverless gateway at `api/gateway.js` proxies `/api/*` to `API_PROXY_TARGET`.
 
-The dashboard is a static site. The browser calls the API directly, so `CORS_ORIGINS` on the API must include this origin. Redeploy after changing any `VITE_` variable (Vite bakes them in at build time).
+Redeploy after changing any `VITE_` or gateway variable (Vite bakes `VITE_` in at build time).
 
 Staff sign in here. The storefront login page is for shoppers.
 

@@ -5,6 +5,15 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-30
 
+### Product edit brand list and empty brand id
+
+- `src/routes/dashboardProducts.ts`: empty `brand_id` / `vendor_id` from the form become null instead of failing validation with 400.
+- `src/routes/dashboardBrands.ts`: the brands list no longer loads showcase banners (product edit and brand tables only need the logo). List errors return `BRANDS_LIST_FAILED` instead of a bare 500.
+
+### Dropped legacy API host wpseemol.site
+
+- Root `DEPLOY.md`: API / storefront / dashboard examples use `https://api.niyenin.com` and niyenin.com origins. Removed `https://niyenin-api.wpseemol.site`.
+
 ### Production domains on niyenin.com
 
 - `.env.prod`: `PUBLIC_API_URL` / `NEXT_PUBLIC_API_URL` → `https://api.niyenin.com`, `FRONTEND_URL` → `https://www.niyenin.com`, and `CORS_ORIGINS` → `https://www.niyenin.com`, `https://niyenin.com`, and `https://dashboard.niyenin.com` (www and apex both allowed).

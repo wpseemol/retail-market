@@ -4,9 +4,9 @@ import { defineConfig, loadEnv, type ProxyOptions } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
-const LIVE_API_URL = "https://niyenin-api.wpseemol.site";
-const LIVE_STOREFRONT_URL = "https://niyenin-frontend.vercel.app";
-const LIVE_DASHBOARD_URL = "https://niyenin-dashboard.vercel.app";
+const LIVE_API_URL = "https://api.niyenin.com";
+const LIVE_STOREFRONT_URL = "https://www.niyenin.com";
+const LIVE_DASHBOARD_URL = "https://dashboard.niyenin.com";
 
 function trimUrl(value: string) {
   return value.trim().replace(/\/$/, "");

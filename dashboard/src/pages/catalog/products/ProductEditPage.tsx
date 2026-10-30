@@ -118,32 +118,14 @@ export function ProductEditPage() {
     setLoadError(null);
     void (async () => {
       try {
-        const [prodRes, catRes, brandRes, shopRes] = await Promise.all([
-          apiFetch<{ product: Product }>(`/api/dashboard/products/${id}`, {
-            token,
-          }),
-          apiFetch<{ categories: Category[] }>(
-            "/api/dashboard/categories?limit=100&active=true",
-            { token },
-          ),
-          apiFetch<{ brands: Brand[] }>(
-            "/api/dashboard/brands?limit=100&active=true",
-            { token },
-          ),
-          isElevated
-            ? apiFetch<{ shops: Shop[] }>("/api/dashboard/shops?limit=100", {
-                token,
-              })
-            : Promise.resolve({ shops: [] as Shop[] }),
-        ]);
+        const prodRes = await apiFetch<{ product: Product }>(
+          `/api/dashboard/products/${id}`,
+          { token },
+        );
         if (cancelled) return;
 
         const p = prodRes.product;
         setProduct(p);
-        setCategories(catRes.categories);
-        setBrands(brandRes.brands);
-        setShops(shopRes.shops);
-
         form.reset({
           vendor_id: p.vendor_id ?? "",
           category_id: p.category_id ?? "",
@@ -171,13 +153,47 @@ export function ProductEditPage() {
             ),
           })),
         });
+        if (!cancelled) setLoading(false);
+
+        const [catRes, brandRes, shopRes] = await Promise.allSettled([
+          apiFetch<{ categories: Category[] }>(
+            "/api/dashboard/categories?limit=100&active=true",
+            { token },
+          ),
+          apiFetch<{ brands: Brand[] }>(
+            "/api/dashboard/brands?limit=100&active=true",
+            { token },
+          ),
+          isElevated
+            ? apiFetch<{ shops: Shop[] }>("/api/dashboard/shops?limit=100", {
+                token,
+              })
+            : Promise.resolve({ shops: [] as Shop[] }),
+        ]);
+        if (cancelled) return;
+
+        if (catRes.status === "fulfilled") setCategories(catRes.value.categories);
+        if (brandRes.status === "fulfilled") setBrands(brandRes.value.brands);
+        if (shopRes.status === "fulfilled") setShops(shopRes.value.shops);
+
+        const catalogErrors = [catRes, brandRes, shopRes]
+          .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+          .map((r) =>
+            r.reason instanceof ApiError
+              ? r.reason.message
+              : "A catalog list failed to load",
+          );
+        if (catalogErrors.length > 0) {
+          setSubmitError(
+            `Product loaded, but some lists failed: ${catalogErrors[0]}`,
+          );
+        }
       } catch (err) {
         if (cancelled) return;
         setLoadError(
           err instanceof ApiError ? err.message : "Failed to load product",
         );
-      } finally {
-        if (!cancelled) setLoading(false);
+        setLoading(false);
       }
     })();
     return () => {

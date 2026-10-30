@@ -5,6 +5,16 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-30
 
+### Product edit survives a brands list failure
+
+- `src/pages/catalog/products/ProductEditPage.tsx`: the product loads first. Categories, brands, and shops load next; if brands returns 500 the form still opens and shows a warning instead of blocking the page.
+- `src/lib/validators/product.ts`: empty brand is sent as `null`.
+- `api/gateway.js`: default upstream is `https://api.niyenin.com`, and upstream failures return 502 with a clear message. Set `API_PROXY_TARGET` on Vercel to the same host.
+
+### Dropped legacy API host wpseemol.site
+
+- Root `DEPLOY.md`: dashboard env table uses `API_PROXY_TARGET=https://api.niyenin.com` and niyenin.com app URLs. Removed `https://niyenin-api.wpseemol.site`.
+
 ### Production domains on niyenin.com
 
 - `.env.prod`: `VITE_API_URL` / `API_PROXY_TARGET` → `https://api.niyenin.com`, `VITE_APP_URL` → `https://dashboard.niyenin.com`, `VITE_STOREFRONT_URL` → `https://www.niyenin.com`.
@@ -68,7 +78,7 @@ Format: date heading, then one bullet per change with the files touched.
 
 - `package-lock.json`: removed. It pointed at this machine’s pnpm store, so Vercel’s `npm install` never installed `typescript` and `tsc` exited 127.
 - `pnpm-lock.yaml`, `package.json`: the Vercel install uses pnpm 10.28.0. `vercel.json` runs `pnpm install` and `pnpm run build`.
-- `vite.config.ts`: a Vercel build calls `https://niyenin-api.wpseemol.site` and links the storefront at `https://niyenin-frontend.vercel.app`. The dashboard origin is `https://niyenin-dashboard.vercel.app`. Local `.env` values still win.
+- `vite.config.ts`: a Vercel build falls back to the live API and niyenin.com app URLs when `VITE_` vars are unset. Local `.env` values still win.
 - `.env.example` and `DEPLOY.md` list those hosts.
 
 ### Production start script

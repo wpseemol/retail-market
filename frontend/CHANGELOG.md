@@ -26,6 +26,11 @@ Format: date heading, then one bullet per change with the files touched.
 - `CartHydrator.tsx`: restore the last cart from cache right away so the header total can leave the skeleton sooner.
 - Product short blurb vs TipTap body: `shortDescription` (plain) + `description` (HTML) in `types.ts` / `products.ts`. PDP, cards, and quick view show the plain blurb; the description tab uses `SafeHtml` (`safeHtml.ts` + `SafeHtml.tsx`) with allow-list sanitize + `dangerouslySetInnerHTML`. Meta description strips HTML tags.
 
+### Dropped legacy API host wpseemol.site
+
+- `next.config.ts`: production API fallback and image host is `https://api.niyenin.com` only. Removed `https://niyenin-api.wpseemol.site`.
+- Root `DEPLOY.md`: storefront / dashboard env examples use `api.niyenin.com` and the niyenin.com app domains.
+
 ### Production domains on niyenin.com
 
 - `.env.prod`: `NEXT_PUBLIC_API_URL` → `https://api.niyenin.com`, `NEXT_PUBLIC_APP_URL` → `https://www.niyenin.com`, `NEXT_PUBLIC_DASHBOARD_URL` → `https://dashboard.niyenin.com`.
@@ -90,7 +95,7 @@ Format: date heading, then one bullet per change with the files touched.
 ### Vercel install and live product images
 
 - `pnpm-lock.yaml`: refreshed so it matches `package.json`. Vercel’s frozen `pnpm install` was failing because this copy still listed Next.js 16.3.5 and was missing newer dependencies.
-- `next.config.ts`: product images may load from `https://niyenin-api.wpseemol.site/uploads`. On Vercel, that host is the API URL when `NEXT_PUBLIC_API_URL` is not set. File tracing no longer points at the parent folder, which is not part of a frontend-only upload.
+- `next.config.ts`: product images may load from the live API `/uploads` host. On Vercel, that host is the API URL when `NEXT_PUBLIC_API_URL` is not set. File tracing no longer points at the parent folder, which is not part of a frontend-only upload.
 
 ### Cart images on a local production server
 

@@ -164,7 +164,7 @@ export function toProductApiBody(
 ) {
   const body: Record<string, unknown> = {
     category_id: values.category_id,
-    brand_id: values.brand_id,
+    brand_id: values.brand_id.trim() ? values.brand_id.trim() : null,
     name: values.name,
     slug: values.slug,
     short_description: values.short_description.trim()

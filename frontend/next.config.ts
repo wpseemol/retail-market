@@ -32,7 +32,7 @@ function loadModeEnv(dir: string) {
 loadModeEnv(appDir);
 
 /** Live API. Used for images and as the Vercel fallback when the env var is unset. */
-const PRODUCTION_API_URL = "https://niyenin-api.wpseemol.site";
+const PRODUCTION_API_URL = "https://api.niyenin.com";
 
 const resolvedApiUrl =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ||

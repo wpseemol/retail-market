@@ -140,56 +140,73 @@ const brandInclude = {
   },
 } as const;
 
+/** List views only need the logo + store link, not the showcase banner. */
+const brandListInclude = {
+  image: true,
+  vendor: { select: { id: true, shop_name: true, slug: true } },
+  _count: {
+    select: { products: { where: { deleted_at: null } } },
+  },
+} as const;
+
 dashboardBrandsRouter.get("/", async (req, res) => {
-  const parsed = brandListQuerySchema.safeParse(req.query);
-  if (!parsed.success) {
-    return res.status(400).json({
-      message: parsed.error.issues[0]?.message ?? "Validation failed",
-      errors: parsed.error.flatten().fieldErrors,
+  try {
+    const parsed = brandListQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: parsed.error.issues[0]?.message ?? "Validation failed",
+        errors: parsed.error.flatten().fieldErrors,
+      });
+    }
+
+    const { q, active, page, limit, mine } = parsed.data;
+    const where: Prisma.BrandWhereInput = { deleted_at: null };
+
+    if (mine === "1") {
+      if (req.auth!.role !== "vendor") {
+        return res.status(400).json({ message: "`mine=1` is only for vendor accounts" });
+      }
+      const vendorId = await actorVendorId(req.auth!.userId);
+      if (!vendorId) {
+        return res.json({ brands: [], pagination: { page, limit, total: 0, pages: 0 } });
+      }
+      where.vendor_id = vendorId;
+    }
+
+    if (q) {
+      where.OR = [
+        { name: { contains: q } },
+        { slug: { contains: q } },
+        { description: { contains: q } },
+      ];
+    }
+    if (active === "true") where.is_active = true;
+    if (active === "false") where.is_active = false;
+    if (req.auth!.role === "vendor" && mine !== "1") where.is_active = true;
+
+    const skip = (page - 1) * limit;
+    const [total, rows] = await Promise.all([
+      prisma.brand.count({ where }),
+      prisma.brand.findMany({
+        where,
+        include: brandListInclude,
+        orderBy: [{ sort_order: "asc" }, { name: "asc" }],
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    return res.json({
+      brands: rows.map(toPublicBrand),
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    });
+  } catch (err) {
+    console.error("[dashboard/brands] list failed", err);
+    return res.status(500).json({
+      message: "Failed to load brands",
+      code: "BRANDS_LIST_FAILED",
     });
   }
-
-  const { q, active, page, limit, mine } = parsed.data;
-  const where: Prisma.BrandWhereInput = { deleted_at: null };
-
-  if (mine === "1") {
-    if (req.auth!.role !== "vendor") {
-      return res.status(400).json({ message: "`mine=1` is only for vendor accounts" });
-    }
-    const vendorId = await actorVendorId(req.auth!.userId);
-    if (!vendorId) {
-      return res.json({ brands: [], pagination: { page, limit, total: 0, pages: 0 } });
-    }
-    where.vendor_id = vendorId;
-  }
-
-  if (q) {
-    where.OR = [
-      { name: { contains: q } },
-      { slug: { contains: q } },
-      { description: { contains: q } },
-    ];
-  }
-  if (active === "true") where.is_active = true;
-  if (active === "false") where.is_active = false;
-  if (req.auth!.role === "vendor" && mine !== "1") where.is_active = true;
-
-  const skip = (page - 1) * limit;
-  const [total, rows] = await Promise.all([
-    prisma.brand.count({ where }),
-    prisma.brand.findMany({
-      where,
-      include: brandInclude,
-      orderBy: [{ sort_order: "asc" }, { name: "asc" }],
-      skip,
-      take: limit,
-    }),
-  ]);
-
-  return res.json({
-    brands: rows.map(toPublicBrand),
-    pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-  });
 });
 
 dashboardBrandsRouter.get("/slug-preview", async (req, res) => {
