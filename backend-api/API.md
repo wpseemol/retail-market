@@ -53,7 +53,26 @@ Optional extras:
 | 403 | Wrong role or inactive account |
 | 404 | Not found |
 | 409 | Unique conflict (slug, email, …) |
+| 429 | Rate limited (`code` ends with `_RATE_LIMITED`; `Retry-After` header set) |
 | 500 | Internal error |
+
+### Rate limits and optional Redis
+
+Limits are per client IP (or account field where noted). Storage is **in-memory** by default. Set optional `REDIS_URL` (Upstash or Redis) to share counters and the short public GET cache across workers. Empty `REDIS_URL` is correct for one Passenger process on Spaceship.
+
+| Scope | Limit | Notes |
+|-------|-------|-------|
+| Global `/api/*` | 300 / minute / IP | Skips `GET /api/health` and SSLCOMMERZ success/fail/cancel/IPN |
+| Login (IP / account) | 40 / 15 min · 8 / 15 min | Storefront + dashboard share the IP bucket |
+| Register | 10 / hour IP · 3 / hour email | |
+| Refresh / social | 60 / 15 min · 20 / 15 min | |
+| Place order / wholesale | 10 / 10 min / IP | `POST /api/customer/orders`, `/bulk` |
+| Shipping quote | 40 / 10 min / IP | |
+| Payment retry | 10 / 10 min / IP | `POST /api/payments/sslcommerz/retry` |
+| Coupon preview | 20 / 10 min / IP | existing |
+| Reviews | eligibility / submit / manage | existing |
+
+**Public GET cache (45 s):** `GET /api/home/hero`, `GET /api/site-settings`, `GET /api/categories`, `GET /api/brands`. Skipped when `Authorization` is present. Cleared when dashboard writes call `revalidateFrontend` (and category / home-hero mutations). Response may include `X-Cache: HIT|MISS`.
 
 ### Security (all string bodies)
 

@@ -22,7 +22,7 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 | BE-09 | Medium | Regex HTML sanitizer can be bypassed (latent stored XSS) | Open |
 | BE-10 | Medium | Spoofable `X-Forwarded-For` for rate limits / session IPs | Fixed 2026-10-24 |
 | BE-11 | Medium | Sessions survive password change; no logout endpoint | Open |
-| BE-12 | Medium | No abuse limits on guest checkout; stock never reserved | Open |
+| BE-12 | Medium | No abuse limits on guest checkout; stock never reserved | Partial 2026-10-30 (rate limits); stock still open |
 | BE-13 | Medium | Vendors see other stores' items and full customer contact on orders | Open |
 | BE-14 | Low | Leftover temp uploads inside the public `uploads/` folder | Open |
 | BE-15 | Low | No security headers (`helmet`, `nosniff`, `X-Powered-By`) | Fixed 2026-10-24 |
@@ -105,6 +105,7 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 - **Where:** `src/routes/customerOrders.ts:106, 160-169`
 - **Issue:** Order placement has no rate limit (each order fans out notifications and an SSLCommerz session) and stock is checked but never decremented.
 - **Fix:** Rate-limit order placement and payment retry; decrement stock atomically (`updateMany where stock_qty >= qty`) in the order transaction.
+- **Status:** Partial 2026-10-30 — `orderPlaceLimiter` (10 / 10 min), `shippingQuoteLimiter`, `paymentRetryLimiter`, and a global `/api` limiter (300 / min) in `src/lib/rateLimit.ts` (memory or Redis via `REDIS_URL`). Stock decrement still open.
 
 ### BE-13 · Medium · Vendor order over-exposure
 - **Where:** `src/routes/dashboardOrders.ts:117-177, 198-215, 397-437`

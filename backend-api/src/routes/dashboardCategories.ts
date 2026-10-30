@@ -4,6 +4,7 @@ import { currentMediaDisk } from "../config/storage.config.js";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { parseBigIntId } from "../utils/ids.js";
+import { revalidateFrontend } from "../lib/revalidate.js";
 import { toPublicMedia } from "../lib/user.js";
 import { uniqueVendorSlug } from "../lib/slug.js";
 import { CATEGORY_ICON_CATALOG } from "../lib/categoryIconNames.js";
@@ -299,6 +300,7 @@ dashboardCategoriesRouter.post(
           .catch(() => undefined);
       }
 
+      revalidateFrontend(["categories"]);
       return res.json({
         message: "Category icon updated",
         category: toPublicCategory(row),
@@ -354,6 +356,7 @@ dashboardCategoriesRouter.delete("/:id/image", async (req, res) => {
   });
   if (!row) return res.status(404).json({ message: "Category not found" });
 
+  revalidateFrontend(["categories"]);
   return res.json({
     message: "Category cover removed",
     category: toPublicCategory(row),
@@ -411,6 +414,7 @@ dashboardCategoriesRouter.post("/", async (req, res) => {
     include: categoryInclude,
   });
 
+  revalidateFrontend(["categories"]);
   return res.status(201).json({
     message: "Category created",
     category: toPublicCategory(row),
@@ -485,6 +489,7 @@ dashboardCategoriesRouter.patch("/:id", async (req, res) => {
     include: categoryInclude,
   });
 
+  revalidateFrontend(["categories"]);
   return res.json({
     message: "Category updated",
     category: toPublicCategory(row),
@@ -514,6 +519,7 @@ dashboardCategoriesRouter.delete("/:id", async (req, res) => {
     include: categoryInclude,
   });
 
+  revalidateFrontend(["categories"]);
   return res.json({
     message: "Category deleted",
     category: toPublicCategory(row),

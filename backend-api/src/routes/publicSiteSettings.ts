@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
+import { cacheJsonGet } from "../lib/responseCache.js";
 import {
   ensureSiteChromeDefaults,
   loadHomeSections,
@@ -155,39 +156,43 @@ export function toPublicSiteSettings(
 }
 
 /** Public storefront SEO + chrome + tracking config (no auth). */
-publicSiteSettingsRouter.get("/", async (_req, res) => {
-  const row = await ensureSiteSettings();
-  const [navRows, homeRows] = await Promise.all([
-    loadSiteNavTree(false),
-    loadHomeSections(false),
-  ]);
+publicSiteSettingsRouter.get(
+  "/",
+  cacheJsonGet({ name: "site-settings", ttlMs: 45_000 }),
+  async (_req, res) => {
+    const row = await ensureSiteSettings();
+    const [navRows, homeRows] = await Promise.all([
+      loadSiteNavTree(false),
+      loadHomeSections(false),
+    ]);
 
-  const nav = {
-    header: navRows
-      .filter((n) => n.menu === "header")
-      .map(toPublicNavItem),
-    footer_find: navRows
-      .filter((n) => n.menu === "footer_find")
-      .map(toPublicNavItem),
-    footer_care: navRows
-      .filter((n) => n.menu === "footer_care")
-      .map(toPublicNavItem),
-    footer_sell: navRows
-      .filter((n) => n.menu === "footer_sell")
-      .map(toPublicNavItem),
-  };
+    const nav = {
+      header: navRows
+        .filter((n) => n.menu === "header")
+        .map(toPublicNavItem),
+      footer_find: navRows
+        .filter((n) => n.menu === "footer_find")
+        .map(toPublicNavItem),
+      footer_care: navRows
+        .filter((n) => n.menu === "footer_care")
+        .map(toPublicNavItem),
+      footer_sell: navRows
+        .filter((n) => n.menu === "footer_sell")
+        .map(toPublicNavItem),
+    };
 
-  return res.json({
-    settings: {
-      ...toPublicSiteSettings(row),
-      nav,
-      home_sections: homeRows.map((s) => ({
-        id: s.id.toString(),
-        key: s.key,
-        label: s.label,
-        position: s.position,
-        is_enabled: s.is_enabled,
-      })),
-    },
-  });
-});
+    return res.json({
+      settings: {
+        ...toPublicSiteSettings(row),
+        nav,
+        home_sections: homeRows.map((s) => ({
+          id: s.id.toString(),
+          key: s.key,
+          label: s.label,
+          position: s.position,
+          is_enabled: s.is_enabled,
+        })),
+      },
+    });
+  },
+);

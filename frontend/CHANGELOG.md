@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-30
 
+### Deploy docs note Redis for API rate limits
+
+- Root `DEPLOY.md`: optional `REDIS_URL` on the API for shared rate limits / public GET cache (empty on Spaceship).
+
 ### Product and store image wells in dark mode
 
 - Shop cards, store directory logos, store/brand showcase product cards, PDP thumbs, quick view, and zoom: keep a white image well in light mode, and use `bg-bg-subtle` in dark mode so the card no longer flashes a bright white plate.

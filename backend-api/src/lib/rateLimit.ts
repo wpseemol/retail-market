@@ -2,8 +2,7 @@ import crypto from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
 import { isIP } from "node:net";
 import { env } from "./env.js";
-
-type Bucket = { count: number; resetAt: number };
+import { getKvStore } from "./kvStore.js";
 
 /**
  * Client address for limits and session logs.
@@ -28,9 +27,8 @@ export function clientAddress(req: Request): string {
 }
 
 /**
- * Fixed-window, in-memory limiter. One Passenger process on shared hosting
- * is enough for this store. A future multi-server VPS should move the buckets
- * to a shared store.
+ * Fixed-window limiter. Uses Redis when REDIS_URL is set, otherwise in-memory.
+ * One Passenger process on Spaceship is enough with memory; multi-worker needs Redis.
  */
 export function rateLimit(options: {
   name: string;
@@ -39,31 +37,28 @@ export function rateLimit(options: {
   message: string;
   key?: (req: Request) => string;
 }) {
-  const buckets = new Map<string, Bucket>();
-
   return (req: Request, res: Response, next: NextFunction) => {
-    const now = Date.now();
-    if (buckets.size > 10_000) {
-      for (const [key, bucket] of buckets) if (bucket.resetAt <= now) buckets.delete(key);
-    }
+    void (async () => {
+      const keyPart = options.key ? options.key(req) : clientAddress(req);
+      const storeKey = `rl:${options.name}:${keyPart}`;
+      const { count, resetAt, ttlMs } = await getKvStore().incr(
+        storeKey,
+        options.windowMs,
+      );
 
-    const key = options.key ? options.key(req) : clientAddress(req);
-    const current = buckets.get(key);
-    const bucket =
-      current && current.resetAt > now
-        ? current
-        : { count: 0, resetAt: now + options.windowMs };
-    bucket.count += 1;
-    buckets.set(key, bucket);
-
-    if (bucket.count > options.max) {
-      res.setHeader("Retry-After", Math.ceil((bucket.resetAt - now) / 1000).toString());
-      return res.status(429).json({
-        message: options.message,
-        code: `${options.name}_RATE_LIMITED`,
-      });
-    }
-    return next();
+      if (count > options.max) {
+        const retryAfterSec = Math.max(
+          1,
+          Math.ceil((ttlMs || resetAt - Date.now()) / 1000),
+        );
+        res.setHeader("Retry-After", retryAfterSec.toString());
+        return res.status(429).json({
+          message: options.message,
+          code: `${options.name}_RATE_LIMITED`,
+        });
+      }
+      return next();
+    })().catch(next);
   };
 }
 
@@ -125,3 +120,47 @@ export const socialLoginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   message: "Too many social sign-in attempts. Try again shortly.",
 });
+
+/** Whole `/api` surface — skips health and SSLCOMMERZ gateway callbacks. */
+export const globalApiLimiter = rateLimit({
+  name: "GLOBAL_API",
+  max: 300,
+  windowMs: 60 * 1000,
+  message: "Too many requests. Slow down and try again shortly.",
+});
+
+export const orderPlaceLimiter = rateLimit({
+  name: "ORDER_PLACE",
+  max: 10,
+  windowMs: 10 * 60 * 1000,
+  message: "Too many orders from this network. Try again in a few minutes.",
+});
+
+export const shippingQuoteLimiter = rateLimit({
+  name: "SHIPPING_QUOTE",
+  max: 40,
+  windowMs: 10 * 60 * 1000,
+  message: "Too many shipping quotes. Try again in a few minutes.",
+});
+
+export const paymentRetryLimiter = rateLimit({
+  name: "PAYMENT_RETRY",
+  max: 10,
+  windowMs: 10 * 60 * 1000,
+  message: "Too many payment retries. Try again in a few minutes.",
+});
+
+/** Paths that must stay reachable during an attack (gateway + health). */
+export function isGlobalRateLimitExempt(req: Request): boolean {
+  const path = (req.originalUrl || req.url || "").split("?")[0] ?? "";
+  if (req.method === "GET" && (path === "/api/health" || path === "/api/health/")) {
+    return true;
+  }
+  const paymentCallbacks = [
+    "/api/payments/sslcommerz/success",
+    "/api/payments/sslcommerz/fail",
+    "/api/payments/sslcommerz/cancel",
+    "/api/payments/sslcommerz/ipn",
+  ];
+  return paymentCallbacks.some((p) => path === p || path === `${p}/`);
+}

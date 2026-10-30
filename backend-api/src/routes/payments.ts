@@ -7,6 +7,7 @@ import {
   SslcommerzError,
   startSslcommerzCheckout,
 } from "../lib/sslcommerz.js";
+import { paymentRetryLimiter } from "../lib/rateLimit.js";
 import { optionalAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { retryPaymentSchema, sslczCallbackSchema } from "../validators/payment.js";
@@ -92,6 +93,7 @@ paymentsRouter.post(
 paymentsRouter.post(
   "/sslcommerz/retry",
   optionalAuth,
+  paymentRetryLimiter,
   asyncHandler(async (req, res) => {
     const parsed = retryPaymentSchema.safeParse(req.body);
     if (!parsed.success) {

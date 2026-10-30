@@ -116,6 +116,11 @@ export const env = {
    * dashboard (browser → API) and for direct API calls.
    */
   proxyIpSecret: (process.env.PROXY_IP_SECRET ?? "").trim(),
+  /**
+   * Optional Redis / Upstash URL for shared rate limits and public GET cache.
+   * Empty → in-memory store (correct for one Passenger process on Spaceship).
+   */
+  redisUrl: (process.env.REDIS_URL ?? "").trim(),
   /** Whole-process caps for paid outbound messages. One Passenger process. */
   outbound: {
     emailPerHour: positiveInt(process.env.EMAIL_MAX_PER_HOUR, 200),

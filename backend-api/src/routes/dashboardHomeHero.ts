@@ -9,6 +9,7 @@ import {
 import type { ImagePresetKey } from "../lib/imageOptimize.js";
 import { deleteMediaFile } from "../lib/storage/files.js";
 import { prisma } from "../lib/prisma.js";
+import { revalidateFrontend } from "../lib/revalidate.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
 import { categoryImageUpload, uploadBytes } from "../middleware/upload.js";
 import {
@@ -156,6 +157,7 @@ dashboardHomeHeroRouter.patch("/", async (req, res) => {
     include: HERO_MEDIA_INCLUDE,
   });
 
+  revalidateFrontend(["home", "site-settings"]);
   return res.json({
     message: "Home hero saved",
     hero: toDashboardHero(row),
@@ -259,6 +261,7 @@ dashboardHomeHeroRouter.post(
           .catch(() => undefined);
       }
 
+      revalidateFrontend(["home", "site-settings"]);
       return res.json({
         message: `${meta.label} updated`,
         hero: toDashboardHero(row),

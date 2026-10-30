@@ -86,6 +86,7 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
 | `FRONTEND_URL` | the storefront origin, `https://your-store.vercel.app` |
 | `PROXY_IP_SECRET` | same hex string you put on the Vercel storefront. Server-only. |
 | `REVALIDATE_SECRET` | same value as the storefront, if you want instant cache refresh |
+| `REDIS_URL` | optional. Leave empty on Spaceship (in-memory rate limits + short public GET cache). Set an Upstash or Redis URL when you want shared limits across workers |
 | `APP_NAME` | `Niyenin` |
 | `STORAGE_DRIVER` | `local` on this host, or `s3` if you already have object storage |
 | `SMS_MAX_PER_HOUR` | `40` (whole API, protects the SMS wallet) |

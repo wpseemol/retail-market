@@ -5,6 +5,16 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-30
 
+### Dual memory + Redis rate limits and public GET cache
+
+- `src/lib/kvStore.ts` (new): shared store — in-memory when `REDIS_URL` is empty, Redis when set; falls back to memory if Redis fails.
+- `src/lib/rateLimit.ts`: counters go through the store. Added `globalApiLimiter` (300/min), `orderPlaceLimiter`, `shippingQuoteLimiter`, `paymentRetryLimiter`.
+- `src/server.ts`: init/close KV at boot; apply global limiter on `/api` (skips health + SSLCOMMERZ callbacks).
+- `src/routes/customerOrders.ts` / `payments.ts`: order, shipping-quote, and payment-retry limits.
+- `src/lib/responseCache.ts` (new) + public home / site-settings / categories / brands list: ~45 s JSON cache; `revalidateFrontend` clears matching keys. Category and home-hero writes also revalidate.
+- `.env.example`, `API.md`, `AGENTS.md`, `SECURITY_AUDIT.md` (BE-12 partial), root `DEPLOY.md`: document `REDIS_URL`.
+- Dependency: `redis` ^5.12.1.
+
 ### Product edit brand list and empty brand id
 
 - `src/routes/dashboardProducts.ts`: empty `brand_id` / `vendor_id` from the form become null instead of failing validation with 400.

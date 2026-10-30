@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
+import { cacheJsonGet } from "../lib/responseCache.js";
 import { toPublicMedia } from "../lib/user.js";
 import { productWithCatalogInclude, toPublicProduct } from "../lib/productCatalog.js";
 import { listScopedReviews, reviewSummaryFor } from "../lib/productReviews.js";
@@ -46,6 +47,7 @@ function brandProductScope(brandId: bigint): Prisma.ProductWhereInput {
  */
 publicBrandsRouter.get(
   "/",
+  cacheJsonGet({ name: "brands", ttlMs: 45_000 }),
   asyncHandler(async (req, res) => {
     const parsed = listQuerySchema.safeParse(req.query);
     if (!parsed.success) {

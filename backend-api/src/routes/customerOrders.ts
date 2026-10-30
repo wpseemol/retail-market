@@ -18,7 +18,11 @@ import {
   toPublicShippingSettings,
 } from "../lib/shipping.js";
 import { couponDiscount, findCoupon, publicCoupon } from "../lib/coupons.js";
-import { rateLimit } from "../lib/rateLimit.js";
+import {
+  orderPlaceLimiter,
+  rateLimit,
+  shippingQuoteLimiter,
+} from "../lib/rateLimit.js";
 import { normalizePhone } from "../lib/phone.js";
 import {
   bulkOrderSchema,
@@ -67,6 +71,7 @@ customerOrdersRouter.post(
 /** Shipping for a cart — same calculation the order endpoint uses (no auth). */
 customerOrdersRouter.post(
   "/shipping-quote",
+  shippingQuoteLimiter,
   asyncHandler(async (req, res) => {
     const parsed = shippingQuoteSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -437,6 +442,7 @@ customerOrdersRouter.post(
   "/bulk",
   requireAuth,
   requireRoles("customer"),
+  orderPlaceLimiter,
   asyncHandler(async (req, res) => {
     const account = req.auth!.user;
     if (!account.email_verified_at) {
@@ -463,6 +469,7 @@ customerOrdersRouter.post(
 customerOrdersRouter.post(
   "/",
   optionalAuth,
+  orderPlaceLimiter,
   asyncHandler((req, res) => placeStorefrontOrder(req, res, "retail")),
 );
 

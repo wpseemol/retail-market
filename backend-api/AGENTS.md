@@ -41,7 +41,8 @@ backend-api/
     ├── middleware/          # auth (Bearer), requireRoles, upload (multer)
     ├── validators/          # Zod schemas per domain (order.ts, cart.ts, ...)
     ├── lib/                 # env, prisma, cart, sslcommerz, image helpers, productReviews,
-    │                        # reviewImage, rateLimit (in-memory per-IP), showcase (store/brand page
+    │                        # reviewImage, rateLimit + kvStore (memory or Redis via REDIS_URL),
+    │                        # responseCache (short public GET JSON), showcase (store/brand page
     │                        # JSON), showcaseMedia (banner / share image finalize), revalidate,
     │                        # contentPages (FAQ / Terms defaults + public shaping),
     │                        # productCsv (product CSV parse / export, header aliases, limits),
@@ -75,6 +76,7 @@ backend-api/
 - **Concurrency:** guard state-changing writes with the expected current state in the `where` clause (`updateMany` / `deleteMany`) and return 409 when nothing matched.
 - **CORS:** custom response headers the dashboard reads (`Content-Disposition`, `X-Total-Rows`) must be listed in `exposedHeaders` in `server.ts`.
 - **App keys:** `requireAppKeys` blocks every `/api` route except `GET /api/health` and the SSLCOMMERZ success, fail, cancel, and IPN callbacks. Callers send `X-Public-Key` and `X-Api-Secret`. `/uploads` stays public. Production will not start unless both keys are at least 32 bytes.
+- **Rate limits & cache:** `src/lib/kvStore.ts` is memory when `REDIS_URL` is empty (Spaceship), Redis when set. `rateLimit` and `cacheJsonGet` both use it. Global `/api` limit skips health + SSLCOMMERZ callbacks. Public GETs for home hero, site-settings, categories, and brands list cache ~45 s; `revalidateFrontend` also clears those keys.
 - **Env files:** `.env.dev` locally, `.env.prod` when `NODE_ENV=production`. `.env` stays a copy of `.env.dev` because Prisma reads that name. `index.html` and `.htaccess` are what the host serves when Passenger is stopped, so the folder listing and the env files are not public.
 
 ## Workspace rules

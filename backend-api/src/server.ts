@@ -41,6 +41,11 @@ import { dashboardSeoRouter } from "./routes/dashboardSeo.js";
 import { publicPagesRouter } from "./routes/publicPages.js";
 import { dashboardPagesRouter } from "./routes/dashboardPages.js";
 import { requireAppKeys } from "./middleware/appKeys.js";
+import { closeKvStore, initKvStore } from "./lib/kvStore.js";
+import {
+  globalApiLimiter,
+  isGlobalRateLimitExempt,
+} from "./lib/rateLimit.js";
 
 const app = express();
 
@@ -67,6 +72,10 @@ app.use(
 );
 app.use(requireAppKeys);
 app.use(express.json());
+app.use("/api", (req, res, next) => {
+  if (isGlobalRateLimitExempt(req)) return next();
+  return globalApiLimiter(req, res, next);
+});
 
 // Public uploaded files — e.g. /uploads/users/photos/<file>
 app.use(
@@ -137,14 +146,27 @@ type PassengerRuntime = {
   configure: (opts: { autoInstall: boolean }) => void;
 };
 
-const passenger = (globalThis as { PhusionPassenger?: PassengerRuntime }).PhusionPassenger;
-if (passenger) {
-  passenger.configure({ autoInstall: false });
-  app.listen("passenger" as never, () => {
-    console.log(`Server running on Passenger (storage: ${storage})`);
-  });
-} else {
-  app.listen(env.port, "0.0.0.0", () => {
-    console.log(`Server running on port ${env.port} (storage: ${storage})`);
-  });
+async function start() {
+  await initKvStore();
+
+  const passenger = (globalThis as { PhusionPassenger?: PassengerRuntime }).PhusionPassenger;
+  if (passenger) {
+    passenger.configure({ autoInstall: false });
+    app.listen("passenger" as never, () => {
+      console.log(`Server running on Passenger (storage: ${storage})`);
+    });
+  } else {
+    app.listen(env.port, "0.0.0.0", () => {
+      console.log(`Server running on port ${env.port} (storage: ${storage})`);
+    });
+  }
 }
+
+process.on("SIGTERM", () => {
+  void closeKvStore();
+});
+process.on("SIGINT", () => {
+  void closeKvStore();
+});
+
+void start();

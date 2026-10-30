@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-30
 
+### Deploy docs note Redis for API rate limits
+
+- Root `DEPLOY.md`: optional `REDIS_URL` on the API for shared rate limits / public GET cache (empty on Spaceship).
+
 ### Product edit survives a brands list failure
 
 - `src/pages/catalog/products/ProductEditPage.tsx`: the product loads first. Categories, brands, and shops load next; if brands returns 500 the form still opens and shows a warning instead of blocking the page.
