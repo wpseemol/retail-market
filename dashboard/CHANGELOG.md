@@ -3,6 +3,12 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-30
+
+### Production domains on niyenin.com
+
+- `.env.prod`: `VITE_API_URL` / `API_PROXY_TARGET` → `https://api.niyenin.com`, `VITE_APP_URL` → `https://dashboard.niyenin.com`, `VITE_STOREFRONT_URL` → `https://www.niyenin.com`.
+
 ## 2026-10-25
 
 ### Disabled buttons show a blocked cursor

@@ -3,6 +3,12 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-30
+
+### Production domains on niyenin.com
+
+- `.env.prod`: `PUBLIC_API_URL` / `NEXT_PUBLIC_API_URL` → `https://api.niyenin.com`, `FRONTEND_URL` → `https://www.niyenin.com`, and `CORS_ORIGINS` → `https://www.niyenin.com`, `https://niyenin.com`, and `https://dashboard.niyenin.com` (www and apex both allowed).
+
 ## 2026-10-25
 
 ### Super admin user delete
