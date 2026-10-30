@@ -106,7 +106,7 @@ export function ProductImageZoom({
                 }}
                 onMouseMove={canHover ? (e) => setHover(percentFromEvent(e)) : undefined}
                 onMouseLeave={() => setHover(null)}
-                className={`group relative flex-1 min-h-[280px] sm:min-h-[360px] lg:min-h-[420px] rounded-lg border border-border-default bg-white overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${
+                className={`group relative flex-1 min-h-[280px] sm:min-h-[360px] lg:min-h-[420px] rounded-lg border border-border-default bg-white dark:bg-bg-subtle overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${
                     canHover ? "cursor-zoom-in" : "cursor-pointer"
                 }`}
             >
@@ -115,7 +115,7 @@ export function ProductImageZoom({
                 {hover && src ? (
                     <div
                         aria-hidden="true"
-                        className="pointer-events-none absolute inset-0 bg-white bg-no-repeat"
+                        className="pointer-events-none absolute inset-0 bg-white dark:bg-bg-subtle bg-no-repeat"
                         style={{
                             backgroundImage: cssUrl(src),
                             backgroundSize: `${HOVER_ZOOM * 100}%`,
@@ -295,7 +295,7 @@ function ProductLightbox({
                             }}
                             aria-label={`Show image ${i + 1}`}
                             aria-current={i === index ? "true" : undefined}
-                            className={`h-14 w-14 shrink-0 overflow-hidden rounded-md border-2 bg-white cursor-pointer transition-opacity ${
+                            className={`h-14 w-14 shrink-0 overflow-hidden rounded-md border-2 bg-white dark:bg-bg-subtle cursor-pointer transition-opacity ${
                                 i === index
                                     ? "border-brand-primary opacity-100"
                                     : "border-transparent opacity-60 hover:opacity-100"

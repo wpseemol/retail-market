@@ -388,7 +388,7 @@ export default function ShopProductCard({
     if (viewMode === "list") {
         return (
             <article className="group relative flex flex-col sm:flex-row gap-4 sm:gap-6 p-4 sm:p-5 bg-bg-surface border border-border-default rounded-lg transition-all duration-200 hover:border-brand-primary hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
-                <div className="relative w-full sm:w-52 md:w-60 h-48 sm:h-52 shrink-0 rounded-md overflow-hidden bg-white">
+                <div className="relative w-full sm:w-52 md:w-60 h-48 sm:h-52 shrink-0 rounded-md overflow-hidden bg-white dark:bg-bg-subtle">
                     {product.isNew && (
                         <span className="absolute top-3 left-0 z-10 -skew-x-12 bg-brand-primary text-white text-[10px] font-bold px-2.5 py-1 tracking-wider">
                             <span className="skew-x-12 inline-block">NEW</span>
@@ -488,7 +488,7 @@ export default function ShopProductCard({
                 }`}
             >
                 <div
-                    className={`relative overflow-hidden bg-white ${
+                    className={`relative overflow-hidden bg-white dark:bg-bg-subtle ${
                         isWide
                             ? "aspect-4/3 sm:aspect-auto sm:min-h-56 rounded-t-lg sm:rounded-l-lg sm:rounded-tr-none sm:h-full"
                             : "w-full aspect-square rounded-t-lg"

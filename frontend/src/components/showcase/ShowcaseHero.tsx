@@ -57,7 +57,7 @@ function BannerHero(props: HeroProps) {
                         <Logo
                             logo={logo}
                             name={name}
-                            className="size-20 rounded-2xl border border-white/30 bg-white text-2xl text-[#19191D] sm:size-24"
+                            className="size-20 rounded-2xl border border-white/30 bg-white dark:bg-bg-subtle text-2xl text-[#19191D] dark:text-text-primary sm:size-24"
                         />
                         <div className="min-w-0 flex-1 text-white">
                             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/75">{kicker}</p>

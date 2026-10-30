@@ -23,7 +23,7 @@ export function ShowcaseProductCard({
             }`}
         >
             <Link href={`/shop/${product.slug}`} className="block">
-                <div className="relative aspect-square overflow-hidden bg-white">
+                <div className="relative aspect-square overflow-hidden bg-white dark:bg-bg-subtle">
                     {product.thumbnail?.path ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img

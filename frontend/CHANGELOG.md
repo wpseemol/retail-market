@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-10-30
 
+### Product and store image wells in dark mode
+
+- Shop cards, store directory logos, store/brand showcase product cards, PDP thumbs, quick view, and zoom: keep a white image well in light mode, and use `bg-bg-subtle` in dark mode so the card no longer flashes a bright white plate.
+
 ### Dev uses Webpack when Turbopack native SWC is blocked
 
 - `package.json` `dev`: `next dev --webpack --port 3000`. On this Windows machine Application Control blocks `@next/swc-win32-x64-msvc`, so Turbopack exits and the storefront never listens on :3000.

@@ -29,7 +29,7 @@ function StoreCard({ store, t, locale }: { store: StorefrontStore; t: T; locale:
           ) : null}
         </div>
         <div className="relative px-4 pb-4">
-          <div className="-mt-8 flex size-16 items-center justify-center overflow-hidden rounded-xl border-4 border-bg-surface bg-white text-xl font-semibold text-sc-accent-text shadow-sm">
+          <div className="-mt-8 flex size-16 items-center justify-center overflow-hidden rounded-xl border-4 border-bg-surface bg-white dark:bg-bg-subtle text-xl font-semibold text-sc-accent-text shadow-sm">
             {store.logo?.path ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img

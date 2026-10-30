@@ -390,7 +390,7 @@ export default function ProductPageContent({
                                         onClick={() => setActiveImage(src)}
                                         aria-label={`View image ${index + 1}`}
                                         aria-pressed={isActive}
-                                        className={`relative h-[68px] w-[68px] sm:h-[76px] sm:w-[76px] rounded-md border overflow-hidden bg-white shrink-0 cursor-pointer transition-colors ${
+                                        className={`relative h-[68px] w-[68px] sm:h-[76px] sm:w-[76px] rounded-md border overflow-hidden bg-white dark:bg-bg-subtle shrink-0 cursor-pointer transition-colors ${
                                             isActive
                                                 ? "border-brand-primary ring-1 ring-brand-primary/40"
                                                 : "border-border-default hover:border-brand-primary"
@@ -798,7 +798,7 @@ export default function ProductPageContent({
                                             href={`/shop/${item.slug}`}
                                             className="flex gap-3 group"
                                         >
-                                            <div className="relative h-[72px] w-[72px] rounded-md border border-border-default bg-white overflow-hidden shrink-0">
+                                            <div className="relative h-[72px] w-[72px] rounded-md border border-border-default bg-white dark:bg-bg-subtle overflow-hidden shrink-0">
                                                 <ProductImage
                                                     src={item.image}
                                                     alt={item.alt}

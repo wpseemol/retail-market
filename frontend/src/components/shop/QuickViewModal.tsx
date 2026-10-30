@@ -201,7 +201,7 @@ export default function QuickViewModal({
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 p-5 sm:p-7 lg:p-8">
                     {/* Gallery */}
                     <div className="lg:col-span-5 flex flex-col sm:flex-row gap-3 sm:gap-4">
-                        <div className="relative flex-1 min-h-64 sm:min-h-80 rounded-lg border border-border-default bg-white overflow-hidden">
+                        <div className="relative flex-1 min-h-64 sm:min-h-80 rounded-lg border border-border-default bg-white dark:bg-bg-subtle overflow-hidden">
                             <ProductImage
                                 src={activeImage}
                                 alt={product.alt}
@@ -222,7 +222,7 @@ export default function QuickViewModal({
                                         onClick={() => setActiveImage(src)}
                                         aria-label={`View image ${index + 1}`}
                                         aria-pressed={isActive}
-                                        className={`relative h-16 w-16 sm:h-[72px] sm:w-[72px] rounded-md border overflow-hidden bg-white shrink-0 cursor-pointer transition-colors ${
+                                        className={`relative h-16 w-16 sm:h-[72px] sm:w-[72px] rounded-md border overflow-hidden bg-white dark:bg-bg-subtle shrink-0 cursor-pointer transition-colors ${
                                             isActive
                                                 ? "border-brand-primary ring-1 ring-brand-primary/40"
                                                 : "border-border-default hover:border-brand-primary"
