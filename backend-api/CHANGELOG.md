@@ -3,6 +3,12 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-10-31
+
+### Lock `redis` for Spaceship npm install
+
+- `package-lock.json`: include `redis` ^5.12.1 (and `@redis/*`) so cPanel **Run NPM Install** resolves the new cache/rate-limit dependency. `package.json` dependency order only.
+
 ## 2026-10-30
 
 ### Dual memory + Redis rate limits and public GET cache
