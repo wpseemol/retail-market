@@ -1,8 +1,8 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { useTheme } from "next-themes";
 import { useI18n } from "@/components/providers/LocaleProvider";
+import { useTheme } from "@/components/providers/ThemeProvider";
 import { cn } from "@/lib/utils";
 import { SunIcon } from "./SunIcon";
 import { MoonIcon } from "./MoonIcon";

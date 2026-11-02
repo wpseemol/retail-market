@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### ThemeProvider without next-themes script warning
+
+- Replaced `next-themes` with a small custom `ThemeProvider` / `useTheme` that injects the anti-FOUC init via `useServerInsertedHTML` (no client `<script>` → no React 19 console error).
+- `ThemeToggle.tsx` imports `useTheme` from `@/components/providers/ThemeProvider`; removed `next-themes` dependency. Same `niyenin-theme` localStorage key and `class` on `<html>`.
+
 ### Remove layout `<script>` boot bar (React 19)
 
 - `layout.tsx`: dropped inline `<head><script>` that triggered “Encountered a script tag while rendering React component”.
