@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Login welcome copy + SignUp signIn typing
+
+- `LoginForm.tsx`: short “Sign in to your account” under Welcome.
+- `SignUpForm.tsx`: pull register fields out of `validated.data` before `signIn` (clears async-callback type errors on first/last name).
+
 ### pnpm 12 workspace + eslint 10
 
 - Removed nested `pnpm-workspace.yaml` / `pnpm-lock.yaml` (settings live only at repo root).

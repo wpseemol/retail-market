@@ -142,10 +142,13 @@ export default function LoginForm() {
     <section className="w-full" aria-labelledby="login-heading">
       <h1
         id="login-heading"
-        className="text-[28px] sm:text-[32px] font-semibold text-text-primary leading-tight mb-5"
+        className="text-[28px] sm:text-[32px] font-semibold text-text-primary leading-tight mb-2"
       >
         Welcome
       </h1>
+      <p className="mb-5 text-sm text-text-secondary">
+        Sign in to your account
+      </p>
 
       {social.hasAny ? (
         <>
