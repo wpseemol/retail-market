@@ -3,6 +3,13 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-02
+
+### Local MySQL-only Docker Compose
+
+- Root `docker-compose.db.yml`: MySQL + phpMyAdmin only; reuses volume `retail_market_mysql_data` (same as `docker-compose.yml`) for WSL Ubuntu local-dev continuity.
+- Root `package.json` `docker:db` and `README.md`: how to start DB-only while apps run via `pnpm dev`.
+
 ## 2026-10-31
 
 ### Lock `redis` for Spaceship npm install

@@ -40,6 +40,17 @@ pnpm dev:backend
 | Dashboard | http://localhost:4173 |
 | API | http://localhost:8001 |
 
+### Local database only (MySQL + phpMyAdmin)
+
+For day-to-day work on WSL Ubuntu (apps via `pnpm dev`), start just the database:
+
+```bash
+cp .env.example .env   # once
+pnpm docker:db
+```
+
+Uses `docker-compose.db.yml` and the same volume name as the full local stack (`retail_market_mysql_data`). MySQL: `localhost:3306`, phpMyAdmin: http://localhost:8183. Point `backend-api` `DATABASE_URL` at `127.0.0.1:3306`.
+
 Build:
 
 ```bash

@@ -3,6 +3,12 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-02
+
+### Local MySQL-only Docker Compose
+
+- Root `docker-compose.db.yml`, `package.json` `docker:db`, and `README.md`: DB + phpMyAdmin only with volume `retail_market_mysql_data` for WSL local-dev.
+
 ## 2026-10-30
 
 ### Deploy docs note Redis for API rate limits
