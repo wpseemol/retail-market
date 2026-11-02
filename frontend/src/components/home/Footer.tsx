@@ -157,6 +157,7 @@ export default function Footer() {
     const socialItems = FOOTER_SOCIAL.filter(
         (item) => chrome.social[item.key as keyof typeof chrome.social],
     );
+    const dashboardHref = resolveStorefrontHref("dashboard").href;
 
     return (
         <footer className="w-full overflow-x-hidden bg-bg-surface border-t border-border-default pt-12 pb-6 transition-colors duration-200">
@@ -367,9 +368,8 @@ export default function Footer() {
                         </Link>
                     </div>
 
-                    {/* Social + payments stack on mobile so nothing sits in one overflowing row */}
+                    {/* Social + dashboard CTA + payments — stack/wrap on mobile */}
                     <div className="flex w-full min-w-0 flex-col items-center gap-4 lg:w-auto lg:flex-row lg:gap-6">
-                        {/* Social: forced wrap — 3 per row on mobile, flex-wrap on larger */}
                         <ul className="m-0 flex w-full max-w-[13.5rem] list-none flex-wrap justify-center gap-x-3 gap-y-3 p-0 lg:max-w-none lg:w-auto lg:gap-3">
                             {socialItems.map((item) => {
                                 const href =
@@ -402,9 +402,15 @@ export default function Footer() {
                             })}
                         </ul>
 
-                      
+                        <a
+                            href={dashboardHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-brand-primary px-4 text-[13px] font-semibold text-white transition-colors hover:bg-brand-hover"
+                        >
+                            {t.footer.goToDashboard}
+                        </a>
 
-                        {/* Payments: wrap to 2–3 rows on mobile */}
                         <div className="flex w-full max-w-[13.5rem] flex-wrap justify-center gap-2 lg:max-w-none lg:w-auto">
                             <span className="flex h-6 w-10 shrink-0 items-center justify-center rounded-[3px] bg-[#FF5F00] text-[8px] font-bold italic text-white">
                                 Master

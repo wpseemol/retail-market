@@ -110,6 +110,7 @@ const bn: Dictionary = {
         weeklySelected: "সাপ্তাহিক বাছাই",
         copyright: "কপিরাইট © {year}।",
         rights: "সর্বস্বত্ব সংরক্ষিত।",
+        goToDashboard: "ড্যাশবোর্ডে যান",
         links: {
             laptops: "ল্যাপটপ ও কম্পিউটার",
             cameras: "ক্যামেরা ও ফটোগ্রাফি",

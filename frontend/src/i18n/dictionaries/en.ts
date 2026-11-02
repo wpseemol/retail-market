@@ -108,6 +108,7 @@ const en = {
         weeklySelected: "Weekly Selected",
         copyright: "Copyright © {year}.",
         rights: "All Rights Reserved.",
+        goToDashboard: "Go to Dashboard",
         links: {
             laptops: "Laptops & Computers",
             cameras: "Cameras & Photography",

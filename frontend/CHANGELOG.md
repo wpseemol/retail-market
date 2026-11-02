@@ -5,10 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
-### Footer drops Sell & Manage column
+### Footer drops Sell & Manage; bottom Dashboard button
 
-- `src/components/home/Footer.tsx`: removed the Sell & Manage / Dashboard Login column; grid is Brand (4) + Find (2) + Care (2) + Weekly (4) inside the shared container; bottom social/payment wrap unchanged.
-- `src/i18n/dictionaries/en.ts` / `bn.ts`: removed unused `sellAndManage` / `dashboardLogin` copy.
+- `src/components/home/Footer.tsx`: removed Sell & Manage column; grid is Brand (4) + Find (2) + Care (2) + Weekly (4); bottom bar adds a **Go to Dashboard** button (`bg-brand-primary`, plain `/login` via `resolveStorefrontHref`) between social icons and payments.
+- `src/i18n/dictionaries/en.ts` / `bn.ts`: `goToDashboard` copy; removed unused `sellAndManage` / `dashboardLogin`.
 
 ## 2026-11-02
 
