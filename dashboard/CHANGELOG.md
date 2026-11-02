@@ -3,6 +3,13 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-03
+
+### pnpm 12 workspace settings + dependency bumps
+
+- Root `pnpm-workspace.yaml`: moved `overrides` / `allowBuilds` out of ignored `package.json#pnpm`; removed nested `frontend/pnpm-workspace.yaml` + stale nested lockfiles.
+- `package.json`: React 19.3.1, TipTap 3.32, lucide/radix/zod/zustand/hook-form patches; `eslint@10.14.0`; `packageManager` → `pnpm@12.15.0`.
+
 ## 2026-11-02
 
 ### Local MySQL-only Docker Compose

@@ -3,6 +3,14 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-03
+
+### Dependency bumps + pnpm 12 workspace
+
+- `package.json`: AWS SDK, multer, nodemailer, google-auth-library, zod, tsx patches; `geoip-lite` 1.4 → 2.0.3 (drops deprecated `rimraf`/`glob`/`inflight`); removed unused `allowScripts` (builds allowed via root `pnpm-workspace.yaml`); `packageManager` → `pnpm@12.15.0`.
+- `package-lock.json`: refreshed for Spaceship npm install.
+- Root `pnpm-workspace.yaml`: hosts overrides / allowBuilds / fetch retries (pnpm 12 no longer reads `package.json#pnpm`).
+
 ## 2026-11-02
 
 ### Footer sell nav seed: dashboard login only

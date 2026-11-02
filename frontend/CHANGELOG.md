@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### pnpm 12 workspace + eslint 10
+
+- Removed nested `pnpm-workspace.yaml` / `pnpm-lock.yaml` (settings live only at repo root).
+- `package.json`: `eslint@10.14.0`, `packageManager` → `pnpm@12.15.0`.
+- Root workspace: `peerDependencyRules` so Next’s eslint plugins accept eslint 10.
+
 ### Fix insertBefore NotFoundError (boot bar + theme)
 
 - `BootProgress.tsx`: stop calling `bar.remove()` on the React-owned `#rm-boot-bar` (caused `insertBefore` NotFoundError on re-render/HMR).
