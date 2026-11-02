@@ -5,6 +5,17 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Remove layout `<script>` boot bar (React 19)
+
+- `layout.tsx`: dropped inline `<head><script>` that triggered “Encountered a script tag while rendering React component”.
+- Reload bar is now SSR DOM `#rm-boot-bar` + CSS (`.rm-boot-bar`) finished by client `BootProgress.tsx`; `bootProgress.ts` only exports the id.
+- `NavigationProgress.tsx` / `AGENTS.md`: note the new reload path.
+
+### Filter sheet mobile footer buttons
+
+- `ShopFilterSheet.tsx`: equal `grid-cols-2` footer actions, single-line labels (`Clear all` / `Show products`), taller tap targets — no wrapped “Clear all filters” clipping.
+- `en.ts` / `bn.ts`: added `shopPage.clearAll` short label for the sheet.
+
 ### Filter sheet Lenis scroll + boot Script warning
 
 - `ShopFilterSheet.tsx`: `data-lenis-prevent` on the dialog/scroll pane so mouse wheel works inside filters; lock `html`+`body` overflow while open; `touch-pan-y` / `overscroll-y-contain`.

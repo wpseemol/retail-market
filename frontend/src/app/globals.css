@@ -231,3 +231,43 @@
   --color-sc-accent-soft: var(--sc-accent-soft);
   --color-sc-accent-deep: var(--sc-accent-deep);
 }
+
+/* Full-reload top bar (SSR DOM in layout — no <script>, React 19 safe). */
+.rm-boot-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100000;
+  height: 3px;
+  width: 8%;
+  pointer-events: none;
+  background: #00b207;
+  box-shadow: 0 0 10px #00b207, 0 0 5px #00b207;
+  transition: width 0.2s ease, opacity 0.2s ease;
+  animation: rm-boot-grow 1.4s ease-out forwards;
+}
+
+.rm-boot-bar--done {
+  animation: none;
+  width: 100%;
+}
+
+.rm-boot-bar--hide {
+  opacity: 0;
+}
+
+@keyframes rm-boot-grow {
+  0% {
+    width: 8%;
+  }
+  100% {
+    width: 90%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rm-boot-bar {
+    animation: none;
+    width: 40%;
+  }
+}

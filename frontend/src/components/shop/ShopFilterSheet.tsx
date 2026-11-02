@@ -94,18 +94,18 @@ export default function ShopFilterSheet({
                     {children}
                 </div>
 
-                <div className="flex shrink-0 gap-2 border-t border-border-default bg-bg-surface px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                <div className="grid shrink-0 grid-cols-2 gap-2 border-t border-border-default bg-bg-surface px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                     <button
                         type="button"
                         onClick={onClear}
-                        className="min-h-11 flex-1 rounded-full border border-border-default px-4 text-[14px] font-semibold text-text-primary"
+                        className="inline-flex min-h-12 items-center justify-center rounded-full border border-border-default px-3 text-[13px] font-semibold leading-none whitespace-nowrap text-text-primary"
                     >
-                        {copy.clearFilters}
+                        {copy.clearAll}
                     </button>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="min-h-11 flex-[1.4] rounded-full bg-brand-primary px-4 text-[14px] font-semibold text-white"
+                        className="inline-flex min-h-12 items-center justify-center rounded-full bg-brand-primary px-3 text-[13px] font-semibold leading-none whitespace-nowrap text-white"
                     >
                         {copy.showProducts}
                     </button>

@@ -427,6 +427,7 @@ const bn: Dictionary = {
         filters: "ফিল্টার",
         showProducts: "পণ্য দেখুন",
         clearFilters: "সব ফিল্টার মুছুন",
+        clearAll: "সব মুছুন",
         closeFilters: "ফিল্টার বন্ধ করুন",
         search: "খুঁজুন",
         searchPlaceholder: "পণ্য খুঁজুন...",

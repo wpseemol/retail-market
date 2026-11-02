@@ -2,7 +2,7 @@
 
 import NextTopLoader from "nextjs-toploader";
 
-/** Brand green bar for client-side page changes. Reload uses the boot script. */
+/** Brand green bar for client-side page changes. Full reload uses `BootProgress`. */
 export default function NavigationProgress() {
   return (
     <NextTopLoader

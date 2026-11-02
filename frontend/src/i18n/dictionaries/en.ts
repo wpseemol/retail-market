@@ -439,6 +439,7 @@ const en = {
         filters: "Filters",
         showProducts: "Show products",
         clearFilters: "Clear all filters",
+        clearAll: "Clear all",
         closeFilters: "Close filters",
         search: "Search",
         searchPlaceholder: "Search products...",

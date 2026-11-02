@@ -26,7 +26,8 @@ import { getLocale } from "@/i18n/server";
 import { LOCALE_TAGS } from "@/i18n/config";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getSeoDefaults, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
-import { BOOT_PROGRESS_SCRIPT } from "@/components/providers/bootProgress";
+import { BOOT_BAR_ID } from "@/components/providers/bootProgress";
+import BootProgress from "@/components/providers/BootProgress";
 import NavigationProgress from "@/components/providers/NavigationProgress";
 
 const poppins = Poppins({
@@ -176,14 +177,15 @@ export default async function RootLayout({
             className={`${poppins.variable} ${hindSiliguri.variable} h-full antialiased`}
             suppressHydrationWarning
         >
-            <head>
-                {/* Inline boot bar before React paints — avoid next/script (React 19 client warning). */}
-                <script
-                    id="boot-progress"
-                    dangerouslySetInnerHTML={{ __html: BOOT_PROGRESS_SCRIPT }}
-                />
-            </head>
             <body className="min-h-full flex flex-col font-sans">
+                {/* SSR reload bar (real DOM + CSS). No <script> — React 19 safe. */}
+                <div
+                    id={BOOT_BAR_ID}
+                    className="rm-boot-bar"
+                    role="progressbar"
+                    aria-label="Loading"
+                />
+                <BootProgress />
                 <NavigationProgress />
                 <JsonLd
                     id="site-jsonld"
