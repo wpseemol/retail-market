@@ -3,7 +3,10 @@ import { Hind_Siliguri, Poppins } from "next/font/google";
 import "lenis/dist/lenis.css";
 import "./globals.css";
 import TopBar from "@/components/home/TopBar";
-import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import {
+    ThemeProvider,
+    THEME_INIT_SCRIPT,
+} from "@/components/providers/ThemeProvider";
 import StoreProvider from "@/components/providers/StoreProvider";
 import Header from "@/components/home/Header";
 import Footer from "@/components/home/Footer";
@@ -176,6 +179,13 @@ export default async function RootLayout({
             className={`${poppins.variable} ${hindSiliguri.variable} h-full antialiased`}
             suppressHydrationWarning
         >
+            <head>
+                {/* Server Component script — runs before paint; not a client <script>. */}
+                <script
+                    id="niyenin-theme-init"
+                    dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
+                />
+            </head>
             <body className="min-h-full flex flex-col font-sans">
                 {/* SSR reload bar (real DOM + CSS). No <script> — React 19 safe. */}
                 <div
@@ -183,6 +193,7 @@ export default async function RootLayout({
                     className="rm-boot-bar"
                     role="progressbar"
                     aria-label="Loading"
+                    aria-hidden
                 />
                 <BootProgress />
                 <NavigationProgress />

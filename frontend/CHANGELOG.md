@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Fix insertBefore NotFoundError (boot bar + theme)
+
+- `BootProgress.tsx`: stop calling `bar.remove()` on the React-owned `#rm-boot-bar` (caused `insertBefore` NotFoundError on re-render/HMR).
+- `ThemeProvider.tsx`: drop `useServerInsertedHTML`; export `THEME_INIT_SCRIPT` for the root layout.
+- `layout.tsx`: inject theme anti-FOUC script from the Server Component `<head>`.
+- `globals.css`: hide finished boot bar with opacity/visibility only.
+
 ### Login form: simple Welcome heading
 
 - `LoginForm.tsx`: replaced “Customer login” + staff/dashboard role copy with a plain “Welcome” heading; staff-role reject message is generic (“Invalid email or password”).

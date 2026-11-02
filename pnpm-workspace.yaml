@@ -2,9 +2,40 @@ packages:
   - "frontend"
   - "dashboard"
   - "backend-api"
+
+# Replaces package.json "pnpm.onlyBuiltDependencies" (ignored by pnpm 10+/12).
 allowBuilds:
-  '@prisma/client': true
-  '@prisma/engines': true
+  "@prisma/client": true
+  "@prisma/engines": true
   esbuild: true
   prisma: true
+  sharp: true
   unrs-resolver: true
+
+# Replaces package.json "pnpm.overrides" + frontend/pnpm-workspace.yaml overrides.
+overrides:
+  proxy-addr: ">=2.0.8"
+  qs: ">=6.16.0"
+  sharp: ">=0.35.5"
+  source-map-js: ">=1.2.2"
+  shell-quote: ">=1.11.0"
+  "@types/react": "19.3.0"
+  "@types/react-dom": "19.3.0"
+
+fetchRetries: 5
+fetchRetryMintimeout: 20000
+fetchRetryMaxtimeout: 120000
+
+minimumReleaseAgeExclude:
+  - "@next/env@16.4.4"
+  - "@next/eslint-plugin-next@16.4.4"
+  - "@next/swc-darwin-arm64@16.4.4"
+  - "@next/swc-darwin-x64@16.4.4"
+  - "@next/swc-linux-arm64-gnu@16.4.4"
+  - "@next/swc-linux-arm64-musl@16.4.4"
+  - "@next/swc-linux-x64-gnu@16.4.4"
+  - "@next/swc-linux-x64-musl@16.4.4"
+  - "@next/swc-win32-arm64-msvc@16.4.4"
+  - "@next/swc-win32-x64-msvc@16.4.4"
+  - eslint-config-next@16.4.4
+  - next@16.4.4

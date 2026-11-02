@@ -254,6 +254,8 @@
 
 .rm-boot-bar--hide {
   opacity: 0;
+  /* Keep the node in the DOM (React owns it) — visibility only. */
+  visibility: hidden;
 }
 
 @keyframes rm-boot-grow {

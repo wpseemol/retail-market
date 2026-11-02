@@ -9,9 +9,8 @@ import {
     useState,
     type ReactNode,
 } from "react";
-import { useServerInsertedHTML } from "next/navigation";
 
-const STORAGE_KEY = "niyenin-theme";
+export const THEME_STORAGE_KEY = "niyenin-theme";
 
 type Theme = "light" | "dark";
 
@@ -23,8 +22,8 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-/** Runs in the SSR HTML stream (not as a client React `<script>`) to avoid FOUC. */
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem(${JSON.stringify(STORAGE_KEY)})||"light";var d=document.documentElement;if(t==="dark"){d.classList.add("dark");d.style.colorScheme="dark"}else{d.classList.remove("dark");d.style.colorScheme="light"}}catch(e){}})();`;
+/** Inline in root layout (Server Component) so it runs before paint — no FOUC. */
+export const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)})||"light";var d=document.documentElement;if(t==="dark"){d.classList.add("dark");d.style.colorScheme="dark"}else{d.classList.remove("dark");d.style.colorScheme="light"}}catch(e){}})();`;
 
 function applyTheme(theme: Theme) {
     const root = document.documentElement;
@@ -39,23 +38,16 @@ function applyTheme(theme: Theme) {
 
 /**
  * Brand theme provider (class on `<html>`).
- * Avoids `next-themes` React 19 “script tag while rendering” warning by injecting
- * the anti-FOUC script with `useServerInsertedHTML` instead of a client `<script>`.
+ * Anti-FOUC script lives in `app/layout.tsx` (server), not here — avoids
+ * React 19 client `<script>` warnings and `useServerInsertedHTML` DOM races.
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
     const [theme, setThemeState] = useState<Theme>("light");
 
-    useServerInsertedHTML(() => (
-        <script
-            id="niyenin-theme-init"
-            dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
-        />
-    ));
-
     useEffect(() => {
         let stored: Theme = "light";
         try {
-            const raw = localStorage.getItem(STORAGE_KEY);
+            const raw = localStorage.getItem(THEME_STORAGE_KEY);
             if (raw === "dark" || raw === "light") stored = raw;
         } catch {
             /* ignore */
@@ -67,7 +59,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         applyTheme(theme);
         try {
-            localStorage.setItem(STORAGE_KEY, theme);
+            localStorage.setItem(THEME_STORAGE_KEY, theme);
         } catch {
             /* ignore */
         }

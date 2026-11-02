@@ -6,6 +6,7 @@ const BOOT_BAR_ID = "rm-boot-bar";
 
 /**
  * Finishes the SSR reload bar (real DOM in layout — no `<script>`).
+ * Never removes the node — React owns it; only toggle CSS classes.
  * Client navigations use `NavigationProgress` / nextjs-toploader instead.
  */
 export default function BootProgress() {
@@ -16,7 +17,6 @@ export default function BootProgress() {
     bar.classList.add("rm-boot-bar--done");
     const hide = window.setTimeout(() => {
       bar.classList.add("rm-boot-bar--hide");
-      window.setTimeout(() => bar.remove(), 200);
     }, 180);
 
     return () => window.clearTimeout(hide);
