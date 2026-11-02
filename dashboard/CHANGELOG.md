@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Vercel pnpm install fix
+
+- `vercel.json`: install from the monorepo root with a real pnpm 12 binary (`npm install -g pnpm@12.15.0 && pnpm install --frozen-lockfile --filter dashboard...`). Plain `pnpm install` in Root Directory `dashboard` failed (no local lockfile + Vercel’s broken pnpm 12 bootstrap).
+- Root `DEPLOY.md`: notes the install command and that deploys need the full Git clone.
+
 ### Shop settings Select TypeScript casts
 
 - `src/pages/system/settings/storefront/ShopSettingsPage.tsx`: Radix `onValueChange` is typed as `string`; cast to `shop_default_view` / `shop_pagination_mode` unions before `setValue`.

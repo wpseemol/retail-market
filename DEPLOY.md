@@ -150,7 +150,7 @@ Second Vercel project, same repository, **Root Directory** `dashboard`. Framewor
 | `VITE_APP_URL` | `https://dashboard.niyenin.com` |
 | `VITE_STOREFRONT_URL` | `https://www.niyenin.com` |
 
-`vercel.json` installs with pnpm, then runs `pnpm run build`. Do not add an npm lockfile in this folder: the old one pointed at a local pnpm store, so Vercel never installed `tsc`. If the `VITE_` variables are left unset on Vercel, `vite.config.ts` still bakes in the live `api.niyenin.com` / `dashboard.niyenin.com` / `www.niyenin.com` URLs. The serverless gateway at `api/gateway.js` proxies `/api/*` to `API_PROXY_TARGET`.
+`vercel.json` installs from the **repo root** (`pnpm install --filter dashboard...`) so the workspace lockfile and overrides apply. It also installs pnpm 12 via npm first — Vercel’s default pnpm 12 bootstrap is broken (`--unsafe-perm` / placeholder binary). Keep **Root Directory** as `dashboard` and deploy from the linked Git repo (full clone). Do not add an npm lockfile in `dashboard/`. If the `VITE_` variables are left unset on Vercel, `vite.config.ts` still bakes in the live `api.niyenin.com` / `dashboard.niyenin.com` / `www.niyenin.com` URLs. The serverless gateway at `api/gateway.js` proxies `/api/*` to `API_PROXY_TARGET`.
 
 Redeploy after changing any `VITE_` or gateway variable (Vite bakes `VITE_` in at build time).
 

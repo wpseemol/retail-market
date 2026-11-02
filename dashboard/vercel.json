@@ -1,5 +1,5 @@
 {
-  "installCommand": "pnpm install",
+  "installCommand": "cd .. && npm install -g pnpm@12.15.0 && pnpm install --frozen-lockfile --filter dashboard...",
   "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
   "rewrites": [
