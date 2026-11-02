@@ -7,8 +7,9 @@ Format: date heading, then one bullet per change with the files touched.
 
 ### Header theme toggle with sun/moon animation
 
-- `src/components/home/theme/SunIcon.tsx`, `MoonIcon.tsx`, `ThemeToggle.tsx`: filled sun/moon with explicit `width`/`height`; day↔night sky gradient, stars at night, spring thumb slide + icon rotate (respects `prefers-reduced-motion`); uses `resolvedTheme`.
+- `src/components/home/theme/SunIcon.tsx`, `MoonIcon.tsx`, `ThemeToggle.tsx`: filled sun/moon with explicit px sizes; CSS day↔night sky, track icons, sliding thumb with cross-fade rotate (no framer — icons always paint); uses `resolvedTheme`.
 - `src/components/home/Header.tsx`: uses `<ThemeToggle />`.
+- `public/sw.js`: cache bump `niyenin-pages-v2` so clients drop the old header toggle bundle.
 
 ### Footer drops Sell & Manage; bottom Dashboard button
 

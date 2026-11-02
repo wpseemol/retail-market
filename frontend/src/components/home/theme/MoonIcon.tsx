@@ -1,6 +1,6 @@
 export function MoonIcon({
     className,
-    size = 16,
+    size = 18,
 }: {
     className?: string;
     size?: number;
@@ -10,11 +10,14 @@ export function MoonIcon({
             width={size}
             height={size}
             viewBox="0 0 24 24"
-            fill="currentColor"
             className={className}
             aria-hidden="true"
+            focusable="false"
         >
-            <path d="M20.5 15.2A8.2 8.2 0 0 1 8.8 3.5 8.5 8.5 0 1 0 20.5 15.2z" />
+            <path
+                fill="currentColor"
+                d="M21 14.08A8.1 8.1 0 0 1 9.92 3 8.4 8.4 0 1 0 21 14.08z"
+            />
         </svg>
     );
 }

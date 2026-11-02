@@ -2,7 +2,6 @@
 
 import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useI18n } from "@/components/providers/LocaleProvider";
 import { cn } from "@/lib/utils";
 import { SunIcon } from "./SunIcon";
@@ -14,10 +13,13 @@ type ThemeToggleProps = {
     className?: string;
 };
 
+/**
+ * Day / night theme switch — sun & moon icons slide with the thumb.
+ * Uses CSS transitions (no framer dependency) so icons always paint.
+ */
 export function ThemeToggle({ className }: ThemeToggleProps) {
     const { t } = useI18n();
     const { resolvedTheme, setTheme } = useTheme();
-    const reduceMotion = useReducedMotion();
     const mounted = useSyncExternalStore(
         noopSubscribe,
         () => true,
@@ -28,7 +30,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
         return (
             <span
                 className={cn(
-                    "inline-flex h-9 w-[4.25rem] shrink-0 rounded-full bg-bg-subtle animate-pulse",
+                    "inline-flex h-9 w-16 shrink-0 rounded-full bg-bg-subtle animate-pulse",
                     className,
                 )}
                 aria-hidden
@@ -37,9 +39,6 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
     }
 
     const isDark = resolvedTheme === "dark";
-    const spring = reduceMotion
-        ? { duration: 0 }
-        : { type: "spring" as const, stiffness: 380, damping: 26 };
 
     return (
         <button
@@ -48,96 +47,83 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
             aria-label={isDark ? t.header.lightTheme : t.header.darkTheme}
             aria-pressed={isDark}
             className={cn(
-                "relative inline-flex h-9 w-[4.25rem] shrink-0 cursor-pointer items-center overflow-hidden rounded-full p-1",
+                "group relative inline-flex h-9 w-16 shrink-0 cursor-pointer items-center rounded-full p-1",
+                "transition-[background] duration-500 ease-out",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base",
+                isDark
+                    ? "bg-[linear-gradient(135deg,#0f172a_0%,#1e3a5f_50%,#312e81_100%)]"
+                    : "bg-[linear-gradient(135deg,#38bdf8_0%,#7dd3fc_40%,#fde68a_100%)]",
                 className,
             )}
         >
-            {/* Day / night sky */}
-            <motion.span
+            {/* Static track hints */}
+            <span
                 aria-hidden
-                className="absolute inset-0 rounded-full"
-                initial={false}
-                animate={{
-                    background: isDark
-                        ? "linear-gradient(135deg, #0f172a 0%, #1e3a5f 55%, #312e81 100%)"
-                        : "linear-gradient(135deg, #38bdf8 0%, #7dd3fc 45%, #fde68a 100%)",
-                }}
-                transition={{ duration: reduceMotion ? 0 : 0.45 }}
-            />
-
-            {/* Stars — only in night */}
-            <AnimatePresence>
-                {isDark ? (
-                    <motion.span
-                        key="stars"
-                        aria-hidden
-                        className="pointer-events-none absolute inset-0"
-                        initial={reduceMotion ? false : { opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                    >
-                        <span className="absolute left-2 top-2 size-0.5 rounded-full bg-white/90" />
-                        <span className="absolute left-4 top-5 size-1 rounded-full bg-white/70" />
-                        <span className="absolute left-3.5 top-3 size-0.5 rounded-full bg-white/80" />
-                    </motion.span>
-                ) : null}
-            </AnimatePresence>
-
-            {/* Sliding sun / moon thumb */}
-            <motion.span
-                aria-hidden
-                className="relative z-10 flex size-7 items-center justify-center rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.25)]"
-                initial={false}
-                animate={{
-                    x: isDark ? 32 : 0,
-                    backgroundColor: isDark ? "#e2e8f0" : "#fbbf24",
-                }}
-                transition={spring}
+                className={cn(
+                    "pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-amber-200 transition-opacity duration-300",
+                    isDark ? "opacity-35" : "opacity-90",
+                )}
             >
-                <AnimatePresence mode="wait" initial={false}>
-                    {isDark ? (
-                        <motion.span
-                            key="moon"
-                            className="flex text-slate-700"
-                            initial={
-                                reduceMotion
-                                    ? false
-                                    : { rotate: -110, scale: 0.35, opacity: 0 }
-                            }
-                            animate={{ rotate: 0, scale: 1, opacity: 1 }}
-                            exit={
-                                reduceMotion
-                                    ? undefined
-                                    : { rotate: 80, scale: 0.35, opacity: 0 }
-                            }
-                            transition={{ duration: 0.28 }}
-                        >
-                            <MoonIcon size={16} />
-                        </motion.span>
-                    ) : (
-                        <motion.span
-                            key="sun"
-                            className="flex text-amber-700"
-                            initial={
-                                reduceMotion
-                                    ? false
-                                    : { rotate: 110, scale: 0.35, opacity: 0 }
-                            }
-                            animate={{ rotate: 0, scale: 1, opacity: 1 }}
-                            exit={
-                                reduceMotion
-                                    ? undefined
-                                    : { rotate: -80, scale: 0.35, opacity: 0 }
-                            }
-                            transition={{ duration: 0.28 }}
-                        >
-                            <SunIcon size={16} />
-                        </motion.span>
-                    )}
-                </AnimatePresence>
-            </motion.span>
+                <SunIcon size={12} />
+            </span>
+            <span
+                aria-hidden
+                className={cn(
+                    "pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-white transition-opacity duration-300",
+                    isDark ? "opacity-90" : "opacity-35",
+                )}
+            >
+                <MoonIcon size={12} />
+            </span>
+
+            {/* Night stars */}
+            <span
+                aria-hidden
+                className={cn(
+                    "pointer-events-none absolute inset-0 transition-opacity duration-500",
+                    isDark ? "opacity-100" : "opacity-0",
+                )}
+            >
+                <span className="absolute left-[10px] top-[8px] h-0.5 w-0.5 rounded-full bg-white" />
+                <span className="absolute left-[18px] top-[18px] h-1 w-1 rounded-full bg-white/80" />
+                <span className="absolute left-[14px] top-[12px] h-0.5 w-0.5 rounded-full bg-white/90" />
+            </span>
+
+            {/* Sliding thumb with the active icon */}
+            <span
+                aria-hidden
+                className={cn(
+                    "relative z-10 flex h-7 w-7 items-center justify-center rounded-full shadow-md",
+                    "transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                    isDark
+                        ? "translate-x-[30px] bg-slate-100 text-slate-800"
+                        : "translate-x-0 bg-amber-300 text-amber-800",
+                )}
+            >
+                {/* Both icons stacked; cross-fade + rotate on switch */}
+                <span className="relative flex h-5 w-5 items-center justify-center">
+                    <span
+                        className={cn(
+                            "absolute inset-0 flex items-center justify-center transition-all duration-300",
+                            isDark
+                                ? "rotate-90 scale-50 opacity-0"
+                                : "rotate-0 scale-100 opacity-100",
+                        )}
+                    >
+                        <SunIcon size={18} />
+                    </span>
+                    <span
+                        className={cn(
+                            "absolute inset-0 flex items-center justify-center transition-all duration-300",
+                            isDark
+                                ? "rotate-0 scale-100 opacity-100"
+                                : "-rotate-90 scale-50 opacity-0",
+                        )}
+                    >
+                        <MoonIcon size={18} />
+                    </span>
+                </span>
+            </span>
         </button>
     );
 }
