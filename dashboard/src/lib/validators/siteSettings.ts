@@ -89,12 +89,13 @@ export const siteSettingsFormSchema = z.object({
   meta_pixel_enabled: z.boolean(),
 
   // ── Shop catalog ──────────────────────────────────────────────────────────
+  // Keep z.number() (not coerce) so zodResolver input/output match SiteSettingsFormValues.
+  // Shop Selects already call setValue with Number(v).
   shop_default_view: z.enum(["grid4", "grid3", "grid2", "list"]),
-  // coerce: Radix Select values can land as strings and used to block Save silently
-  shop_products_per_page: z.coerce.number().int().min(4).max(48),
+  shop_products_per_page: z.number().int().min(4).max(48),
   shop_pagination_mode: z.enum(["pages", "infinite"]),
-  shop_categories_visible: z.coerce.number().int().min(1).max(50),
-  shop_brands_visible: z.coerce.number().int().min(1).max(50),
+  shop_categories_visible: z.number().int().min(1).max(50),
+  shop_brands_visible: z.number().int().min(1).max(50),
   shop_see_all_label: withSafeInput(
     z.string().trim().min(1, "See all label is required").max(40),
   ),

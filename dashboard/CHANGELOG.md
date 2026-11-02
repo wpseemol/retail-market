@@ -8,6 +8,7 @@ Format: date heading, then one bullet per change with the files touched.
 ### Shop settings Select TypeScript casts
 
 - `src/pages/system/settings/storefront/ShopSettingsPage.tsx`: Radix `onValueChange` is typed as `string`; cast to `shop_default_view` / `shop_pagination_mode` unions before `setValue`.
+- `src/lib/validators/siteSettings.ts`: shop count fields use `z.number()` again — `z.coerce.number()` made zodResolver input/output diverge and broke `tsc` on `SiteSettingsLayout`.
 
 ### Professional list headers + Inter
 
