@@ -174,8 +174,8 @@ export default function Footer() {
     const logoAlt = format(t.footer.logoAlt, { name: chrome.siteName });
 
     return (
-        <footer className="w-full bg-bg-surface border-t border-border-default pt-12 pb-6 transition-colors duration-200">
-            <div className="container mx-auto px-4 sm:px-6">
+        <footer className="w-full max-w-full overflow-x-hidden bg-bg-surface border-t border-border-default pt-12 pb-6 transition-colors duration-200">
+            <div className="container mx-auto max-w-full px-4 sm:px-6">
                 {/* ================= Top Section: 4 Columns ================= */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10 pb-12">
                     {/* Column 1: Brand, Description, Contact, Apps (Col span 3) */}
@@ -233,7 +233,7 @@ export default function Footer() {
                         </div>
 
                         {/* App Store Buttons */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                             <button
                                 type="button"
                                 className="h-10 px-3 bg-black text-white rounded-md flex items-center gap-2 hover:bg-neutral-800 transition-colors dark:border dark:border-neutral-700"
@@ -379,42 +379,32 @@ export default function Footer() {
                 </div>
 
                 {/* ================= Bottom Copyright & Icons Bar ================= */}
-                <div className="flex flex-col lg:flex-row lg:justify-between items-center gap-5 py-6 border-t border-border-default/60 overflow-x-hidden">
-                    {/* Copyright */}
-                    <p className="text-text-secondary text-[13px] text-center lg:text-left max-w-full text-pretty">
-                        {format(t.footer.copyright, { year: currentYear })}{" "}
-                        <strong className="text-[#00B207] font-semibold">
-                            {chrome.siteName}
-                        </strong>
-                        . {t.footer.rights}
-                        <span
-                            aria-hidden="true"
-                            className="mx-2 text-border-default"
-                        >
+                <div className="flex w-full min-w-0 flex-col items-center gap-4 py-6 border-t border-border-default/60 lg:flex-row lg:justify-between lg:gap-5">
+                    {/* Copyright — wraps on narrow screens instead of forcing page width */}
+                    <div className="flex w-full min-w-0 max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-[13px] text-text-secondary lg:w-auto lg:justify-start lg:text-left">
+                        <span>
+                            {format(t.footer.copyright, { year: currentYear })}{" "}
+                            <strong className="text-[#00B207] font-semibold">
+                                {chrome.siteName}
+                            </strong>
+                            . {t.footer.rights}
+                        </span>
+                        <span className="hidden text-border-default sm:inline" aria-hidden="true">
                             |
                         </span>
-                        <Link
-                            href="/terms"
-                            className="hover:text-brand-primary whitespace-nowrap"
-                        >
+                        <Link href="/terms" className="hover:text-brand-primary">
                             {t.footer.links.terms}
                         </Link>
-                        <span
-                            aria-hidden="true"
-                            className="mx-2 text-border-default"
-                        >
+                        <span className="text-border-default" aria-hidden="true">
                             |
                         </span>
-                        <Link
-                            href="/faq"
-                            className="hover:text-brand-primary whitespace-nowrap"
-                        >
+                        <Link href="/faq" className="hover:text-brand-primary">
                             {t.footer.links.faq}
                         </Link>
-                    </p>
+                    </div>
 
-                    {/* Social Icons — compact icons so mobile never gets a horizontal scrollbar */}
-                    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 shrink-0">
+                    {/* Social Icons — 3 columns / 2 rows on mobile; row from sm up */}
+                    <ul className="m-0 grid w-full max-w-[11rem] list-none grid-cols-3 justify-items-center gap-2 p-0 sm:flex sm:w-auto sm:max-w-none sm:flex-wrap sm:justify-center sm:gap-3">
                         {FOOTER_SOCIAL.map((item) => {
                             const href =
                                 chrome.social[
@@ -422,41 +412,43 @@ export default function Footer() {
                                 ];
                             if (!href) return null;
                             return (
-                                <a
-                                    key={item.key}
-                                    href={href}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    aria-label={item.label}
-                                    className="inline-flex size-8 items-center justify-center rounded-md opacity-80 hover:opacity-100 hover:scale-110 transition-transform"
-                                >
-                                    <Image
-                                        src={item.icon}
-                                        alt={item.label}
-                                        width={18}
-                                        height={18}
-                                        className="brightness-0 dark:invert"
-                                    />
-                                </a>
+                                <li key={item.key}>
+                                    <a
+                                        href={href}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        aria-label={item.label}
+                                        title={item.label}
+                                        className="inline-flex size-8 items-center justify-center rounded-md text-text-primary opacity-80 transition-transform hover:scale-110 hover:opacity-100"
+                                    >
+                                        <Image
+                                            src={item.icon}
+                                            alt=""
+                                            width={16}
+                                            height={16}
+                                            className="size-4 brightness-0 dark:invert"
+                                        />
+                                    </a>
+                                </li>
                             );
                         })}
-                    </div>
+                    </ul>
 
-                    {/* Payment Providers */}
-                    <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
-                        <span className="w-10 h-6 bg-[#FF5F00] text-white rounded-[3px] flex items-center justify-center font-bold text-[8px] italic">
+                    {/* Payment Providers — wrap to 2 rows on mobile */}
+                    <div className="grid w-full max-w-[14rem] grid-cols-3 justify-items-center gap-2 sm:flex sm:w-auto sm:max-w-none sm:flex-wrap sm:justify-center">
+                        <span className="flex h-6 w-10 items-center justify-center rounded-[3px] bg-[#FF5F00] text-[8px] font-bold italic text-white">
                             Master
                         </span>
-                        <span className="w-10 h-6 bg-[#00AEEF] text-white rounded-[3px] flex items-center justify-center font-bold text-[8px]">
+                        <span className="flex h-6 w-10 items-center justify-center rounded-[3px] bg-[#00AEEF] text-[8px] font-bold text-white">
                             AMEX
                         </span>
-                        <span className="w-10 h-6 bg-[#1A1F71] text-white rounded-[3px] flex items-center justify-center font-bold text-[10px] italic">
+                        <span className="flex h-6 w-10 items-center justify-center rounded-[3px] bg-[#1A1F71] text-[10px] font-bold italic text-white">
                             VISA
                         </span>
-                        <span className="w-10 h-6 bg-[#E55C20] text-white rounded-[3px] flex items-center justify-center font-bold text-[7px] uppercase tracking-tighter">
+                        <span className="flex h-6 w-10 items-center justify-center rounded-[3px] bg-[#E55C20] text-[7px] font-bold uppercase tracking-tighter text-white">
                             Discover
                         </span>
-                        <span className="w-10 h-6 bg-[#003087] text-white rounded-[3px] flex items-center justify-center font-bold text-[9px] italic">
+                        <span className="flex h-6 w-10 items-center justify-center rounded-[3px] bg-[#003087] text-[9px] font-bold italic text-white">
                             PayPal
                         </span>
                     </div>
