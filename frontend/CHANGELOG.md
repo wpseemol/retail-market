@@ -13,7 +13,7 @@ Format: date heading, then one bullet per change with the files touched.
 ### Remove layout `<script>` boot bar (React 19)
 
 - `layout.tsx`: dropped inline `<head><script>` that triggered “Encountered a script tag while rendering React component”.
-- Reload bar is now SSR DOM `#rm-boot-bar` + CSS (`.rm-boot-bar`) finished by client `BootProgress.tsx`; `bootProgress.ts` only exports the id.
+- Reload bar is now SSR DOM `#rm-boot-bar` + CSS (`.rm-boot-bar`) finished by client `BootProgress.tsx` (exports `BOOT_BAR_ID`; removed casing-clash `bootProgress.ts`).
 - `NavigationProgress.tsx` / `AGENTS.md`: note the new reload path.
 
 ### Filter sheet mobile footer buttons

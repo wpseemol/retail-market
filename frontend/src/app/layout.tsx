@@ -26,8 +26,7 @@ import { getLocale } from "@/i18n/server";
 import { LOCALE_TAGS } from "@/i18n/config";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getSeoDefaults, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
-import { BOOT_BAR_ID } from "@/components/providers/bootProgress";
-import BootProgress from "@/components/providers/BootProgress";
+import BootProgress, { BOOT_BAR_ID } from "@/components/providers/BootProgress";
 import NavigationProgress from "@/components/providers/NavigationProgress";
 
 const poppins = Poppins({
