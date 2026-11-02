@@ -5,6 +5,17 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Deploy readiness: lint clean + zod patch
+
+- Lint: fixed React Compiler violations (`ThemeProvider` → `useSyncExternalStore`, `StoreProvider`, `ConnectionBanner`, shop refs, `sessionToken` rename, next-auth d.ts).
+- `package.json`: `zod` ^4.6.7 (GHSA-mrhx-c7xc-m3w5). Production `next build` OK.
+
+### Account built-in avatar presets
+
+- `AccountProfile.tsx`: “Or choose a built-in avatar” grid (same presets as dashboard); upload still available.
+- `avatarPresets.tsx` (copied), `AccountMenu.tsx`: show preset in header when no uploaded photo.
+- Backend `PATCH /api/auth/me` accepts `avatar_preset` (clears uploaded avatar).
+
 ### Dark theme persists across reload
 
 - `ThemeProvider.tsx`: wait until localStorage is read before writing it back — the default `"light"` state no longer overwrites a saved `"dark"` preference on reload / Strict Mode remount.

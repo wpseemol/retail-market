@@ -81,7 +81,10 @@ export function useShopCatalog(args: CatalogArgs) {
     const requestId = useRef(0);
     const keyRef = useRef(key);
     const argsRef = useRef(args);
-    argsRef.current = args;
+
+    useEffect(() => {
+        argsRef.current = args;
+    }, [args]);
 
     const fetchPage = useCallback(async (nextPage: number) => {
         const current = argsRef.current;

@@ -14,6 +14,7 @@ export type ApiUser = {
   /** Local password set — email login works alongside social providers. */
   has_password?: boolean;
   avatar_id?: string | null;
+  avatar_preset?: string | null;
   avatar: {
     id: string;
     path: string;

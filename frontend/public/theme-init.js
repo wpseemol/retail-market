@@ -9,5 +9,5 @@
       d.classList.remove("dark");
       d.style.colorScheme = "light";
     }
-  } catch (e) {}
+  } catch (_e) {}
 })();

@@ -29,12 +29,41 @@ import {
 } from "@/lib/validators/avatarImage";
 import AccountVerification from "@/components/account/AccountVerification";
 import AccountPassword from "@/components/account/AccountPassword";
+import {
+  AVATAR_PRESET_IDS,
+  AvatarPresetSvg,
+  isAvatarPresetId,
+  type AvatarPresetId,
+} from "@/lib/avatarPresets";
 
 function initials(user: ApiUser) {
   const a = user.first_name?.trim()?.[0] ?? "";
   const b = user.last_name?.trim()?.[0] ?? "";
   const value = `${a}${b}`.toUpperCase();
   return value || user.email.slice(0, 2).toUpperCase();
+}
+
+function ProfileAvatarFace({ user }: { user: ApiUser }) {
+  if (user.avatar?.path) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        key={user.avatar_id ?? user.avatar.path}
+        src={user.avatar.path}
+        alt=""
+        className="size-full object-cover"
+      />
+    );
+  }
+  if (user.avatar_preset && isAvatarPresetId(user.avatar_preset)) {
+    return (
+      <AvatarPresetSvg
+        id={user.avatar_preset}
+        className="size-full"
+      />
+    );
+  }
+  return <>{initials(user)}</>;
 }
 
 function providerLabel(provider?: string | null) {
@@ -64,6 +93,7 @@ function userFingerprint(u: ApiUser) {
     u.phone_verified_at ?? "",
     u.avatar_id ?? "",
     u.avatar?.path ?? "",
+    u.avatar_preset ?? "",
     u.has_password ? "1" : "0",
   ].join("|");
 }
@@ -85,6 +115,7 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
   const [success, setSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
+  const [presetSaving, setPresetSaving] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<
     Partial<Record<UpdateProfileField, boolean>>
@@ -140,6 +171,25 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
       setError(err instanceof ApiError ? err.message : "Image upload failed");
     } finally {
       setAvatarLoading(false);
+    }
+  };
+
+  const handlePresetSelect = async (id: AvatarPresetId) => {
+    if (presetSaving || avatarLoading) return;
+    setError(null);
+    setSuccess(null);
+    setPresetSaving(id);
+    try {
+      const data = await apiFetch<{ user: ApiUser }>("/api/auth/me", {
+        method: "PATCH",
+        body: { avatar_preset: id },
+      });
+      await applyUser(data.user);
+      setSuccess("Avatar updated");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to set avatar");
+    } finally {
+      setPresetSaving(null);
     }
   };
 
@@ -244,24 +294,14 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
                     className="size-16 sm:size-20 rounded-full bg-brand-primary text-white flex items-center justify-center text-xl sm:text-2xl font-bold shadow-sm ring-4 ring-bg-surface overflow-hidden"
                     aria-hidden
                   >
-                    {user.avatar?.path ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        key={user.avatar_id ?? user.avatar.path}
-                        src={user.avatar.path}
-                        alt=""
-                        className="size-full object-cover"
-                      />
-                    ) : (
-                      initials(user)
-                    )}
-                    {avatarLoading ? (
+                    <ProfileAvatarFace user={user} />
+                    {avatarLoading || presetSaving ? (
                       <span className="absolute inset-0 flex items-center justify-center bg-black/40">
                         <span
                           className="size-6 rounded-full border-2 border-white/30 border-t-white animate-spin"
                           aria-hidden
                         />
-                        <span className="sr-only">Uploading image</span>
+                        <span className="sr-only">Updating avatar</span>
                       </span>
                     ) : null}
                   </div>
@@ -274,7 +314,7 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
                   />
                   <button
                     type="button"
-                    disabled={avatarLoading}
+                    disabled={avatarLoading || Boolean(presetSaving)}
                     onClick={() => avatarInputRef.current?.click()}
                     className="absolute -bottom-1 -right-1 inline-flex size-8 items-center justify-center rounded-full border border-border-default bg-bg-surface text-text-primary shadow-sm hover:border-brand-primary hover:text-brand-primary transition-colors disabled:opacity-60 cursor-pointer"
                     title={`JPEG, PNG, WebP, or GIF · max ${Math.floor(AVATAR_MAX_BYTES / (1024 * 1024))} MB · always resized on the server`}
@@ -322,6 +362,42 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
               >
                 Log out
               </button>
+            </div>
+
+            <div className="relative border-t border-border-default/60 px-5 sm:px-8 py-5">
+              <p className="mb-3 text-sm font-medium text-text-secondary">
+                Or choose a built-in avatar
+              </p>
+              <div className="grid grid-cols-6 gap-2 sm:grid-cols-12">
+                {AVATAR_PRESET_IDS.map((id) => {
+                  const isSelected =
+                    !user.avatar?.path && user.avatar_preset === id;
+                  const isSaving = presetSaving === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      title={id}
+                      disabled={Boolean(presetSaving) || avatarLoading}
+                      onClick={() => void handlePresetSelect(id)}
+                      aria-pressed={isSelected}
+                      aria-label={`Use ${id} avatar`}
+                      className={`relative flex size-10 items-center justify-center overflow-hidden rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/60 disabled:opacity-60 cursor-pointer ${
+                        isSelected
+                          ? "ring-2 ring-brand-primary ring-offset-2 ring-offset-bg-surface"
+                          : "ring-1 ring-border-default/60 hover:ring-brand-primary/40"
+                      }`}
+                    >
+                      <AvatarPresetSvg id={id} className="size-10" />
+                      {isSaving ? (
+                        <span className="absolute inset-0 flex items-center justify-center rounded-full bg-bg-surface/60">
+                          <span className="size-3 animate-spin rounded-full border-2 border-brand-primary border-t-transparent" />
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </section>
 

@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useState } from "react";
 import { Provider } from "react-redux";
-import { makeStore, type AppStore, type StorePreload } from "@/store/store";
+import { makeStore, type StorePreload } from "@/store/store";
 import type { SiteChromeHydratePayload } from "@/store/siteChromeSlice";
 
 export default function StoreProvider({
@@ -13,11 +13,10 @@ export default function StoreProvider({
     /** Server chrome so header/footer match SSR and skip the empty-Redux flash. */
     siteChrome?: SiteChromeHydratePayload | null;
 }) {
-    const storeRef = useRef<AppStore | null>(null);
-    if (!storeRef.current) {
+    const [store] = useState(() => {
         const preload: StorePreload = { siteChrome: siteChrome ?? null };
-        storeRef.current = makeStore(preload);
-    }
+        return makeStore(preload);
+    });
 
-    return <Provider store={storeRef.current}>{children}</Provider>;
+    return <Provider store={store}>{children}</Provider>;
 }

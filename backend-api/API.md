@@ -503,9 +503,10 @@ All three share account resolution: linked provider → sign in; same verified e
 
 ### `PATCH /api/auth/me` — Bearer customer
 
-Optional: `first_name`, `last_name`, `phone`, `gender` (`male`\|`female`\|`other`), `date_of_birth` (`YYYY-MM-DD`).
+Optional: `first_name`, `last_name`, `phone`, `gender` (`male`\|`female`\|`other`), `date_of_birth` (`YYYY-MM-DD`), `avatar_preset` (allowlisted SVG key or `null`).
 
 Changing `phone` clears `phone_verified_at` (the new number must be verified again).
+Setting `avatar_preset` clears the uploaded photo (`avatar_id`). Uploading an avatar clears `avatar_preset`.
 
 ### `POST /api/auth/me/password` — Bearer customer
 

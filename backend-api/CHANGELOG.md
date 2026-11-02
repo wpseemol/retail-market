@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Customer avatar_preset on profile PATCH
+
+- `updateProfileSchema` / `updateMe`: optional allowlisted `avatar_preset` (clears `avatar_id`); `API.md` updated.
+
 ### Customer set/change password + has_password
 
 - `POST /api/auth/me/password`: set password (social, no current) or change (requires current); keeps provider login; Zod `setPasswordSchema` + safe-input.

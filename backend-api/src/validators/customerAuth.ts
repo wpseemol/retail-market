@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isAvatarPresetId } from "../lib/avatarPresets.js";
 import { normalizePhone, PHONE_FORMAT_MESSAGE } from "../lib/phone.js";
 
 const HTML_TAG_RE = /<\s*\/?\s*[a-zA-Z!][^>]*>/;
@@ -176,6 +177,25 @@ export const updateProfileSchema = z
         }
         return trimmed;
       }),
+    /** Allowlisted built-in SVG key, or `null` to clear. Clears uploaded `avatar_id`. */
+    avatar_preset: z
+      .union([z.string(), z.null()])
+      .optional()
+      .transform((value, ctx) => {
+        if (value === undefined) return undefined;
+        if (value === null || value === "") return null;
+        const trimmed = String(value).trim();
+        const reason = findUnsafeInputReason(trimmed);
+        if (reason) {
+          ctx.addIssue({ code: "custom", message: reason });
+          return z.NEVER;
+        }
+        if (!isAvatarPresetId(trimmed)) {
+          ctx.addIssue({ code: "custom", message: "Invalid avatar preset" });
+          return z.NEVER;
+        }
+        return trimmed;
+      }),
   })
   .refine(
     (data) =>
@@ -183,7 +203,8 @@ export const updateProfileSchema = z
       data.last_name !== undefined ||
       data.phone !== undefined ||
       data.gender !== undefined ||
-      data.date_of_birth !== undefined,
+      data.date_of_birth !== undefined ||
+      data.avatar_preset !== undefined,
     { message: "At least one field is required" },
   );
 

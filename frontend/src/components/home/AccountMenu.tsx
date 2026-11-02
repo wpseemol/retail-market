@@ -7,13 +7,17 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logoutSession } from "@/lib/logoutSession";
 import type { ApiUser } from "@/lib/api";
 import { useI18n } from "@/components/providers/LocaleProvider";
+import {
+  AvatarPresetSvg,
+  isAvatarPresetId,
+} from "@/lib/avatarPresets";
 
 function initials(first: string, last: string, email: string) {
   const value = `${first.trim()[0] ?? ""}${last.trim()[0] ?? ""}`.toUpperCase();
   return value || email.slice(0, 2).toUpperCase();
 }
 
-/** Avatar photo if set; otherwise name initials. */
+/** Uploaded photo, built-in preset, or name initials. */
 function UserAvatar({
   user,
   sizeClass,
@@ -34,6 +38,15 @@ function UserAvatar({
         src={photo}
         alt=""
         className={`${sizeClass} rounded-full object-cover bg-bg-subtle shrink-0`}
+      />
+    );
+  }
+
+  if (user.avatar_preset && isAvatarPresetId(user.avatar_preset)) {
+    return (
+      <AvatarPresetSvg
+        id={user.avatar_preset}
+        className={`${sizeClass} shrink-0 rounded-full`}
       />
     );
   }

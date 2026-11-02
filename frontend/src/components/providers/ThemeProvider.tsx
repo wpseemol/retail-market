@@ -4,9 +4,8 @@ import {
     createContext,
     useCallback,
     useContext,
-    useEffect,
     useMemo,
-    useState,
+    useSyncExternalStore,
     type ReactNode,
 } from "react";
 
@@ -43,39 +42,52 @@ function readStoredTheme(): Theme {
     return "light";
 }
 
+function subscribeTheme(onStoreChange: () => void) {
+    const handler = (event: StorageEvent) => {
+        if (event.key === THEME_STORAGE_KEY || event.key === null) {
+            onStoreChange();
+        }
+    };
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
+}
+
+function getThemeSnapshot(): Theme {
+    return readStoredTheme();
+}
+
+function getServerThemeSnapshot(): Theme {
+    return "light";
+}
+
 /**
  * Brand theme provider (class on `<html>`).
  * Anti-FOUC runs from `/theme-init.js` via `next/script` `beforeInteractive`.
- *
- * Persistence: never write localStorage until after the stored value is read,
- * otherwise the default `"light"` state overwrites `"dark"` on reload (Strict Mode).
+ * Theme is stored in localStorage and read via `useSyncExternalStore` (no
+ * hydrate-write race that reset dark → light on reload).
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
-    const [theme, setThemeState] = useState<Theme>("light");
-    const [hydrated, setHydrated] = useState(false);
+    const theme = useSyncExternalStore(
+        subscribeTheme,
+        getThemeSnapshot,
+        getServerThemeSnapshot,
+    );
 
-    useEffect(() => {
-        const stored = readStoredTheme();
-        setThemeState(stored);
-        applyTheme(stored);
-        setHydrated(true);
-    }, []);
-
-    useEffect(() => {
-        if (!hydrated) return;
-        applyTheme(theme);
+    const setTheme = useCallback((next: Theme | ((current: Theme) => Theme)) => {
+        const current = readStoredTheme();
+        const value =
+            typeof next === "function" ? next(current) : next;
+        const resolved = value === "dark" ? "dark" : "light";
         try {
-            localStorage.setItem(THEME_STORAGE_KEY, theme);
+            localStorage.setItem(THEME_STORAGE_KEY, resolved);
         } catch {
             /* ignore */
         }
-    }, [theme, hydrated]);
-
-    const setTheme = useCallback((next: Theme | ((current: Theme) => Theme)) => {
-        setThemeState((current) => {
-            const value = typeof next === "function" ? next(current) : next;
-            return value === "dark" ? "dark" : "light";
-        });
+        applyTheme(resolved);
+        // Notify same-tab subscribers (storage events only fire cross-tab).
+        window.dispatchEvent(
+            new StorageEvent("storage", { key: THEME_STORAGE_KEY }),
+        );
     }, []);
 
     const value = useMemo<ThemeContextValue>(

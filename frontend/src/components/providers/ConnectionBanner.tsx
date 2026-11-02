@@ -25,13 +25,13 @@ export default function ConnectionBanner() {
   const dispatch = useAppDispatch();
   const store = useAppStore();
   const online = useSyncExternalStore(subscribe, onlineNow, () => true);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const [showBack, setShowBack] = useState(false);
   const wasOffline = useRef(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     dispatch(setOnline(online));

@@ -909,6 +909,8 @@ function BulkOrderGate() {
 
     useEffect(() => {
         if (status !== "authenticated" || !userId || role !== "customer") return;
+        // Mount/auth gate fetch — setState in the async callback is intentional.
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- verification status from API
         void loadVerification();
     }, [loadVerification, role, status, userId]);
 

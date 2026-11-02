@@ -615,6 +615,11 @@ export async function updateMe(req: Request, res: Response) {
           : data.date_of_birth
             ? new Date(data.date_of_birth)
             : null,
+      ...(data.avatar_preset === undefined
+        ? {}
+        : data.avatar_preset === null
+          ? { avatar_preset: null }
+          : { avatar_preset: data.avatar_preset, avatar_id: null }),
     },
     include: userWithAvatarInclude,
   });

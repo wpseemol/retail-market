@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 /** HTTPS (including Vercel’s forwarded proto) uses the `__Secure-` session cookie. */
-export function useSecureSessionCookie(request: NextRequest) {
+export function isSecureSessionCookie(request: NextRequest) {
   const forwarded = request.headers.get("x-forwarded-proto");
   if (forwarded) {
     return forwarded.split(",")[0]?.trim() === "https";
@@ -17,7 +17,7 @@ export function sessionCookieName(secure: boolean) {
 
 /** Read the Auth.js login cookie. `getToken` defaults to the non-secure name. */
 export function readSessionToken(request: NextRequest) {
-  const secureCookie = useSecureSessionCookie(request);
+  const secureCookie = isSecureSessionCookie(request);
   const cookieName = sessionCookieName(secureCookie);
   return getToken({
     req: request,
