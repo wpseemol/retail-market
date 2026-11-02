@@ -41,12 +41,44 @@ const customerCareLinks: FallbackLink[] = [
     { key: "support", href: "/contact" },
 ];
 
+/** Public storefront only needs one dashboard entry — staff roles are not linked here. */
 const sellAndManageLinks: FallbackLink[] = [
-    { key: "becomeSeller", href: "dashboard:vendor", external: true },
-    { key: "superAdminLogin", href: "dashboard:super_admin", external: true },
-    { key: "adminLogin", href: "dashboard:admin", external: true },
-    { key: "moderatorLogin", href: "dashboard:moderator", external: true },
+    { key: "dashboardLogin", href: "dashboard", external: true },
 ];
+
+const STAFF_DASHBOARD_HREFS = new Set([
+    "dashboard:super_admin",
+    "dashboard:admin",
+    "dashboard:moderator",
+]);
+
+const FOOTER_SOCIAL = [
+    {
+        key: "facebook",
+        icon: "/icons/fb.svg",
+        label: "Facebook",
+    },
+    {
+        key: "twitter",
+        icon: "/icons/Twitter X.svg",
+        label: "Twitter X",
+    },
+    {
+        key: "youtube",
+        icon: "/icons/youtube.svg",
+        label: "YouTube",
+    },
+    {
+        key: "linkedin",
+        icon: "/icons/linkedIn.svg",
+        label: "LinkedIn",
+    },
+    {
+        key: "instagram",
+        icon: "/icons/insta.svg",
+        label: "Instagram",
+    },
+] as const;
 
 function localizeLinks(
     links: FallbackLink[],
@@ -132,9 +164,12 @@ export default function Footer() {
         chrome.nav.footer_care.length > 0
             ? chrome.nav.footer_care
             : localizeLinks(customerCareLinks, t.footer.links);
+    const chromeSellLinks = chrome.nav.footer_sell.filter(
+        (link) => !STAFF_DASHBOARD_HREFS.has(link.href),
+    );
     const sellLinks =
-        chrome.nav.footer_sell.length > 0
-            ? chrome.nav.footer_sell
+        chromeSellLinks.length > 0
+            ? chromeSellLinks
             : localizeLinks(sellAndManageLinks, t.footer.links);
     const logoAlt = format(t.footer.logoAlt, { name: chrome.siteName });
 
@@ -344,9 +379,9 @@ export default function Footer() {
                 </div>
 
                 {/* ================= Bottom Copyright & Icons Bar ================= */}
-                <div className="flex flex-col md:flex-row justify-between items-center gap-4 py-6 border-t border-border-default/60">
+                <div className="flex flex-col lg:flex-row lg:justify-between items-center gap-5 py-6 border-t border-border-default/60 overflow-x-hidden">
                     {/* Copyright */}
-                    <p className="text-text-secondary text-[13px]">
+                    <p className="text-text-secondary text-[13px] text-center lg:text-left max-w-full text-pretty">
                         {format(t.footer.copyright, { year: currentYear })}{" "}
                         <strong className="text-[#00B207] font-semibold">
                             {chrome.siteName}
@@ -360,7 +395,7 @@ export default function Footer() {
                         </span>
                         <Link
                             href="/terms"
-                            className="hover:text-brand-primary"
+                            className="hover:text-brand-primary whitespace-nowrap"
                         >
                             {t.footer.links.terms}
                         </Link>
@@ -370,39 +405,45 @@ export default function Footer() {
                         >
                             |
                         </span>
-                        <Link href="/faq" className="hover:text-brand-primary">
+                        <Link
+                            href="/faq"
+                            className="hover:text-brand-primary whitespace-nowrap"
+                        >
                             {t.footer.links.faq}
                         </Link>
                     </p>
 
-                    {/* Social Icons */}
-                    <div className="flex items-center gap-5 text-text-primary">
-                        {(
-                            [
-                                ["facebook", chrome.social.facebook],
-                                ["twitter", chrome.social.twitter],
-                                ["youtube", chrome.social.youtube],
-                                ["linkedin", chrome.social.linkedin],
-                                ["instagram", chrome.social.instagram],
-                            ] as const
-                        ).map(([key, href]) =>
-                            href ? (
+                    {/* Social Icons — compact icons so mobile never gets a horizontal scrollbar */}
+                    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 shrink-0">
+                        {FOOTER_SOCIAL.map((item) => {
+                            const href =
+                                chrome.social[
+                                    item.key as keyof typeof chrome.social
+                                ];
+                            if (!href) return null;
+                            return (
                                 <a
-                                    key={key}
+                                    key={item.key}
                                     href={href}
                                     target="_blank"
                                     rel="noreferrer"
-                                    aria-label={key}
-                                    className="hover:text-brand-primary transition-colors capitalize"
+                                    aria-label={item.label}
+                                    className="inline-flex size-8 items-center justify-center rounded-md opacity-80 hover:opacity-100 hover:scale-110 transition-transform"
                                 >
-                                    {key}
+                                    <Image
+                                        src={item.icon}
+                                        alt={item.label}
+                                        width={18}
+                                        height={18}
+                                        className="brightness-0 dark:invert"
+                                    />
                                 </a>
-                            ) : null,
-                        )}
+                            );
+                        })}
                     </div>
 
                     {/* Payment Providers */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
                         <span className="w-10 h-6 bg-[#FF5F00] text-white rounded-[3px] flex items-center justify-center font-bold text-[8px] italic">
                             Master
                         </span>

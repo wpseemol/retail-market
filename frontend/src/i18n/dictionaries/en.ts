@@ -127,10 +127,7 @@ const en = {
             faq: "FAQ",
             terms: "Terms & Conditions",
             support: "Product Support",
-            becomeSeller: "Become a Seller",
-            superAdminLogin: "Super Admin Login",
-            adminLogin: "Admin Login",
-            moderatorLogin: "Moderator Login",
+            dashboardLogin: "Dashboard Login",
         },
     },
     reviews: {

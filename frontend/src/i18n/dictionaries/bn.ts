@@ -129,10 +129,7 @@ const bn: Dictionary = {
             faq: "সাধারণ প্রশ্ন",
             terms: "শর্তাবলি",
             support: "পণ্য সহায়তা",
-            becomeSeller: "বিক্রেতা হন",
-            superAdminLogin: "সুপার অ্যাডমিন লগইন",
-            adminLogin: "অ্যাডমিন লগইন",
-            moderatorLogin: "মডারেটর লগইন",
+            dashboardLogin: "ড্যাশবোর্ড লগইন",
         },
     },
     reviews: {

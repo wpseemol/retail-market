@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-02
 
+### Footer mobile social icons + single dashboard login
+
+- `src/components/home/Footer.tsx`: bottom social row uses compact `/icons` SVGs (same as TopBar) with wrap-friendly layout so mobile no longer gets a horizontal scrollbar from text labels; Sell & Manage fallback is only **Dashboard Login** (staff admin / super-admin / moderator links filtered out of chrome nav).
+- `src/lib/storefrontLinks.ts`: resolve plain `dashboard` href to the dashboard login page.
+- `src/i18n/dictionaries/en.ts` / `bn.ts`: replace role-login copy with `dashboardLogin`.
+
 ### Local MySQL-only Docker Compose
 
 - Root `docker-compose.db.yml`, `package.json` `docker:db`, and `README.md`: DB + phpMyAdmin only with volume `retail_market_mysql_data` for WSL local-dev.

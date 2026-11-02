@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-02
 
+### Footer sell nav seed: dashboard login only
+
+- `src/lib/siteChrome.ts`: default `footer_sell` seed is a single **Dashboard Login** link (`dashboard`); removed Super Admin / Admin / Moderator login entries from the default chrome nav.
+
 ### Local MySQL-only Docker Compose
 
 - Root `docker-compose.db.yml`: MySQL + phpMyAdmin only; reuses volume `retail_market_mysql_data` (same as `docker-compose.yml`) for WSL Ubuntu local-dev continuity.

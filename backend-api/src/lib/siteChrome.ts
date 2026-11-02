@@ -114,31 +114,10 @@ export const DEFAULT_NAV_SEED: Array<{
 
   {
     menu: "footer_sell",
-    label: "Become a Seller",
-    href: "dashboard:vendor",
+    label: "Dashboard Login",
+    href: "dashboard",
     external: true,
     position: 0,
-  },
-  {
-    menu: "footer_sell",
-    label: "Super Admin Login",
-    href: "dashboard:super_admin",
-    external: true,
-    position: 1,
-  },
-  {
-    menu: "footer_sell",
-    label: "Admin Login",
-    href: "dashboard:admin",
-    external: true,
-    position: 2,
-  },
-  {
-    menu: "footer_sell",
-    label: "Moderator Login",
-    href: "dashboard:moderator",
-    external: true,
-    position: 3,
   },
 ];
 
