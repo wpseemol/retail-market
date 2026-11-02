@@ -5,6 +5,101 @@ import { FadeUp } from "@/components/motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+/**
+ * Flat list/analytics header — title + muted subtitle + right actions.
+ * Prefer this over PageHero on Overview, Orders, Users, Stores, Products.
+ */
+export function PageHeader({
+  title,
+  description,
+  actions,
+  className,
+}: {
+  title: string;
+  description?: string;
+  actions?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <FadeUp>
+      <div
+        className={cn(
+          "flex flex-wrap items-end justify-between gap-3",
+          className,
+        )}
+      >
+        <div className="min-w-0 max-w-2xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            {title}
+          </h1>
+          {description ? (
+            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          ) : null}
+        </div>
+        {actions ? (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
+        ) : null}
+      </div>
+    </FadeUp>
+  );
+}
+
+/** Bordered pill group for range filters and similar toggles. */
+export function SegmentedControl({
+  "aria-label": ariaLabel,
+  children,
+  className,
+}: {
+  "aria-label": string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label={ariaLabel}
+      className={cn(
+        "inline-flex rounded-lg border border-border bg-muted/40 p-0.5",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function SegmentedControlItem({
+  active,
+  children,
+  onClick,
+  disabled,
+}: {
+  active: boolean;
+  children: ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+        active
+          ? "bg-background text-foreground shadow-sm"
+          : "text-muted-foreground hover:text-foreground",
+        disabled && "pointer-events-none opacity-50",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Green banner hero for create/edit flows and role workspaces — not list pages. */
 export function PageHero({
   eyebrow,
   title,

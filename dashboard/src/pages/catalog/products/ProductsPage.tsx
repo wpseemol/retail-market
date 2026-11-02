@@ -31,6 +31,7 @@ import { productStatusTone } from "@/components/products/ProductFormShell";
 import { ProductBulkEditDialog } from "@/components/products/ProductBulkEditDialog";
 import { ProductImportDialog } from "@/components/products/ProductImportDialog";
 import { saveBlob } from "@/components/products/productCsvDownload";
+import { PageHeader } from "@/components/dashboard/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -228,56 +229,56 @@ export function ProductsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Products</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {isVendor
-              ? "Add products under your store — category, brand, photos, and variants."
-              : "Manage catalog products across stores. Each product sits under a store and category."}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {permissions.export ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" disabled={exporting}>
-                  {exporting ? <Loader2 className="animate-spin" /> : <Download />}
-                  Export
-                  <ChevronDown className="size-3.5 opacity-60" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60">
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  CSV · opens in Excel, Sheets, Shopify format
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => void exportCsv("filtered")}>
-                  {q || statusFilter !== "all" ? "Export filtered products" : "Export all products"}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={selectedIds.length === 0}
-                  onSelect={() => void exportCsv("selected")}
-                >
-                  Export selected ({selectedIds.length})
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : null}
-          {permissions.import ? (
-            <Button variant="outline" onClick={() => setImportOpen(true)}>
-              <Upload />
-              Import
+      <PageHeader
+        title="Products"
+        description={
+          isVendor
+            ? "Add products under your store — category, brand, photos, and variants."
+            : "Manage catalog products across stores. Each product sits under a store and category."
+        }
+        actions={
+          <>
+            {permissions.export ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" disabled={exporting}>
+                    {exporting ? <Loader2 className="animate-spin" /> : <Download />}
+                    Export
+                    <ChevronDown className="size-3.5 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-60">
+                  <DropdownMenuLabel className="text-xs text-muted-foreground">
+                    CSV · opens in Excel, Sheets, Shopify format
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => void exportCsv("filtered")}>
+                    {q || statusFilter !== "all" ? "Export filtered products" : "Export all products"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={selectedIds.length === 0}
+                    onSelect={() => void exportCsv("selected")}
+                  >
+                    Export selected ({selectedIds.length})
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+            {permissions.import ? (
+              <Button variant="outline" onClick={() => setImportOpen(true)}>
+                <Upload />
+                Import
+              </Button>
+            ) : null}
+            <Button asChild>
+              <Link to="/products/new">
+                <Plus />
+                Add product
+              </Link>
             </Button>
-          ) : null}
-          <Button asChild>
-            <Link to="/products/new">
-              <Plus />
-              Add product
-            </Link>
-          </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Card className="border-border/80">

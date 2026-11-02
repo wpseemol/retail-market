@@ -32,7 +32,7 @@ type NumberField =
     | "shop_brands_visible";
 
 function nearestOption(value: number, options: readonly number[]): number {
-    if (options.includes(value)) return value;
+    if ((options as readonly number[]).includes(value)) return value;
     return options.reduce((best, n) =>
         Math.abs(n - value) < Math.abs(best - value) ? n : best,
     );
@@ -57,13 +57,22 @@ function CountSelect({
             control={form.control}
             name={name}
             render={({ field }) => {
-                const selected = nearestOption(Number(field.value) || options[0], options);
+                const selected = nearestOption(
+                    Number.isFinite(Number(field.value)) ? Number(field.value) : options[0],
+                    options,
+                );
                 return (
                     <FormItem>
                         <FormLabel>{label}</FormLabel>
                         <Select
                             value={String(selected)}
-                            onValueChange={(v) => field.onChange(Number(v))}
+                            onValueChange={(v) => {
+                                form.setValue(name, Number(v), {
+                                    shouldDirty: true,
+                                    shouldTouch: true,
+                                    shouldValidate: true,
+                                });
+                            }}
                             disabled={form.formState.isSubmitting}
                         >
                             <FormControl>
@@ -138,7 +147,13 @@ export function ShopSettingsPage() {
                                 <FormLabel>Default product view</FormLabel>
                                 <Select
                                     value={field.value}
-                                    onValueChange={field.onChange}
+                                    onValueChange={(value) => {
+                                        form.setValue("shop_default_view", value, {
+                                            shouldDirty: true,
+                                            shouldTouch: true,
+                                            shouldValidate: true,
+                                        });
+                                    }}
                                     disabled={form.formState.isSubmitting}
                                 >
                                     <FormControl>
@@ -171,7 +186,11 @@ export function ShopSettingsPage() {
                                 <Select
                                     value={field.value}
                                     onValueChange={(mode) => {
-                                        field.onChange(mode);
+                                        form.setValue("shop_pagination_mode", mode, {
+                                            shouldDirty: true,
+                                            shouldTouch: true,
+                                            shouldValidate: true,
+                                        });
                                         if (mode === "pages") {
                                             const current = Number(
                                                 form.getValues("shop_products_per_page"),

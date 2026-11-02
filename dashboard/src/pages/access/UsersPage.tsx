@@ -12,7 +12,7 @@ import {
 } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { FadeIn, Stagger, StaggerItem } from "@/components/motion";
-import { PageHero } from "@/components/dashboard/page-shell";
+import { PageHeader } from "@/components/dashboard/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -136,8 +136,7 @@ export function UsersPage() {
 
     return (
         <div className="flex flex-col gap-6">
-            <PageHero
-                eyebrow="Access control"
+            <PageHeader
                 title="Users"
                 description="Manage staff and customer accounts — roles, profiles, and restrictions."
             />

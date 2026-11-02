@@ -50,6 +50,11 @@ import {
     type OverviewData,
     type OverviewRange,
 } from "@/lib/overview";
+import {
+    PageHeader,
+    SegmentedControl,
+    SegmentedControlItem,
+} from "@/components/dashboard/page-shell";
 import { STOREFRONT_URL } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
@@ -197,63 +202,46 @@ export function HomePage() {
 
     return (
         <div className="flex flex-col gap-5">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-                <div>
-                    <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                        Overview
-                    </h1>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        Sales, traffic and catalog health for the last {range}{" "}
-                        days
-                        {updatedAt
-                            ? ` · updated ${updatedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`
-                            : ""}
-                        .
-                    </p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div
-                        role="tablist"
-                        aria-label="Date range"
-                        className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5"
-                    >
-                        {OVERVIEW_RANGES.map((r) => (
-                            <button
-                                key={r}
-                                type="button"
-                                role="tab"
-                                aria-selected={range === r}
-                                onClick={() => setRange(r)}
+            <PageHeader
+                title="Overview"
+                description={`Sales, traffic and catalog health for the last ${range} days${
+                    updatedAt
+                        ? ` · updated ${updatedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`
+                        : ""
+                }.`}
+                actions={
+                    <>
+                        <SegmentedControl aria-label="Date range">
+                            {OVERVIEW_RANGES.map((r) => (
+                                <SegmentedControlItem
+                                    key={r}
+                                    active={range === r}
+                                    onClick={() => setRange(r)}
+                                >
+                                    {r} days
+                                </SegmentedControlItem>
+                            ))}
+                        </SegmentedControl>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="size-8"
+                            onClick={() => setRefreshKey((n) => n + 1)}
+                            disabled={loading}
+                            aria-label="Refresh"
+                            title="Refresh"
+                        >
+                            <RefreshCw
                                 className={cn(
-                                    "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                                    range === r
-                                        ? "bg-background text-foreground shadow-sm"
-                                        : "text-muted-foreground hover:text-foreground",
+                                    "size-3.5",
+                                    loading && "animate-spin",
                                 )}
-                            >
-                                {r} days
-                            </button>
-                        ))}
-                    </div>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="size-8"
-                        onClick={() => setRefreshKey((n) => n + 1)}
-                        disabled={loading}
-                        aria-label="Refresh"
-                        title="Refresh"
-                    >
-                        <RefreshCw
-                            className={cn(
-                                "size-3.5",
-                                loading && "animate-spin",
-                            )}
-                        />
-                    </Button>
-                </div>
-            </div>
+                            />
+                        </Button>
+                    </>
+                }
+            />
 
             {error ? (
                 <div

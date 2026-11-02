@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { FieldErrors } from "react-hook-form";
+import { useFormState } from "react-hook-form";
 import { ApiError, apiFetch } from "@/lib/api";
 import type {
     SiteSettingsApiResponse,
@@ -29,6 +30,9 @@ export function GeneralSettingsForm({ children }: { children: ReactNode }) {
     const { token, form, setSettings, error, success, showError, showSuccess } =
         useSiteSettings();
 
+    // Form is created in SiteSettingsLayout — subscribe here so Save re-renders on edits.
+    const { isSubmitting, isDirty } = useFormState({ control: form.control });
+
     async function onSubmit(values: SiteSettingsFormValues) {
         try {
             const data = await apiFetch<SiteSettingsApiResponse>(
@@ -43,7 +47,6 @@ export function GeneralSettingsForm({ children }: { children: ReactNode }) {
         }
     }
 
-    const { isSubmitting, isDirty } = form.formState;
     const save = useEditSave(
         isDirty,
         isSubmitting,

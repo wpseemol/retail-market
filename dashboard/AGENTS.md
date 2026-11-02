@@ -44,7 +44,7 @@ dashboard/
     ├── layouts/
     ├── components/
     │   ├── ui/                     # shadcn primitives
-    │   ├── dashboard/page-shell.tsx  # PageHero, FormSection, StickyFormActions
+    │   ├── dashboard/page-shell.tsx  # PageHeader (lists), PageHero (forms), FormSection, StickyFormActions
     │   ├── motion.tsx              # LazyMotion `m` + useMotionSafe
     │   ├── providers/ConfirmProvider.tsx  # useConfirm()
     │   ├── orders/                 # order badges, drawer, status dialog, invoices
@@ -85,7 +85,7 @@ dashboard/
   - Never use `alert`.
 - **Destructive actions:** always `const confirm = useConfirm()` and `await confirm({ title, description, tone: "destructive" })`. Never `window.confirm`.
 - **Page changes:** `NavigationProgress` in `main.tsx` shows a green top bar on reload and on each route change (`react-top-loading-bar`).
-- **Layout & motion:** pages use `PageHero`, `FormSection`, `StickyFormActions`. Animate with LazyMotion `m` via `useMotionSafe`; no layout animations or `AnimatePresence` on large tables.
+- **Layout & motion:** list/analytics pages use flat `PageHeader` (Inter, title + muted subtitle + actions — see `.cursor/skills/dashboard-design`). Create/edit flows use green `PageHero`, plus `FormSection` / `StickyFormActions`. Animate with LazyMotion `m` via `useMotionSafe`; no layout animations or `AnimatePresence` on large tables.
   - Route changes already fade in through `DashboardLayout`.
   - For small enter effects, use the `tw-animate-css` classes (`animate-in fade-in zoom-in-95 duration-300`, with `key={url}` to replay on change).
   - `prefers-reduced-motion` is handled globally in `index.css`.

@@ -5,12 +5,19 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
-### Theme toggle in top navbar; shop pagination save fix
+### Professional list headers + Inter
+
+- Font switched from Poppins to **Inter** (`index.html`, `src/index.css`).
+- `src/components/dashboard/page-shell.tsx`: added flat `PageHeader` + `SegmentedControl` for list/analytics pages; green `PageHero` stays for create/edit.
+- Overview, Orders, Users, Stores, Products now use `PageHeader` (simple title + subtitle + actions, matching Overview chrome).
+- Project skill: `.cursor/skills/dashboard-design/SKILL.md`; `AGENTS.md` + `.cursor/rules/dashboard-redesign-motion.mdc` updated.
+
+### Theme toggle in top navbar; shop settings Save stays active
 
 - `src/components/dashboard/theme-toggle.tsx` (new) + `site-header.tsx`: light/dark switch lives in the top navbar next to notifications.
 - `src/components/dashboard/nav-user.tsx`: removed the user-menu **Appearance** submenu (Profile / Site settings / Log out stay).
-- `src/pages/system/settings/GeneralSettingsForm.tsx`: reset the shared form after a successful PATCH so Save clears correctly; show the first validation error when submit is blocked.
-- `src/pages/system/settings/storefront/ShopSettingsPage.tsx` + `src/lib/validators/siteSettings.ts`: switching Infinite scroll → Numbered pages clamps **Products per page** to a valid option; shop count fields use `z.coerce.number()` so Select string values no longer fail Save silently.
+- `src/pages/system/settings/GeneralSettingsForm.tsx`: subscribe with `useFormState({ control })` so Save enables after edits (the form lives in `SiteSettingsLayout`, so plain `form.formState.isDirty` never re-rendered this child). Reset after a successful PATCH; surface the first validation error when submit is blocked.
+- `src/pages/system/settings/storefront/ShopSettingsPage.tsx` + `src/lib/validators/siteSettings.ts`: Select changes use `setValue(..., { shouldDirty: true })`; Infinite → Numbered pages clamps **Products per page**; shop counts use `z.coerce.number()`.
 
 ### pnpm 12 workspace settings + dependency bumps
 

@@ -10,7 +10,9 @@ When redesigning or adding dashboard pages/forms, keep this visual and motion la
 
 ## Visual system
 
-- **Hero**: green gradient (`from-brand-deep via-[#0a4a10] to-brand-primary`), soft blur orb, eyebrow + title + short description. Use `PageHero` from `components/dashboard/page-shell.tsx`.
+- **Font**: Inter (`font-sans`). See `.cursor/skills/dashboard-design/SKILL.md`.
+- **List headers**: Overview, Orders, Users, Stores, Products use flat `PageHeader` (title + muted description + right actions) — no green banner.
+- **Form hero**: create/edit and role workspaces keep green `PageHero` (`#14361c`, eyebrow + title + description) from `components/dashboard/page-shell.tsx`.
 - **Sections**: stepped cards (`01` / `02` / …) with `from-brand-tint/50` header strip. Use `FormSection`.
 - **Live preview**: sticky right column with same green hero + summary tiles (stores, users, profile).
 - **Actions**: sticky bottom bar (`StickyFormActions`) — not a lonely footer button.

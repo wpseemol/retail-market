@@ -6,6 +6,7 @@ import { STORE_MANAGE_ROLES } from "@/lib/rbac";
 import type { Shop } from "@/lib/shops";
 import { shopStatusLabel } from "@/lib/shops";
 import { useAuthStore } from "@/store/auth";
+import { PageHeader } from "@/components/dashboard/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,37 +80,26 @@ export function StoresPage() {
 
     return (
         <div className="flex flex-col gap-6">
-            {/* Hero */}
-            <section className="overflow-hidden rounded-2xl border border-black/5 bg-[#14361c] px-5 py-6 text-white shadow-sm sm:px-7 sm:py-8">
-                <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-                    <div className="min-w-0 max-w-xl">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
-                            Marketplace
-                        </p>
-                        <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-                            Stores
-                        </h1>
-                        <p className="mt-2 text-sm leading-relaxed text-white/80">
-                            {isSuper
-                                ? "Partner storefronts — name, slug, logo, status, and owner."
-                                : isAdmin
-                                  ? "Partner storefronts. As admin you can customize any store's public page."
-                                  : "Your store profile and public store page on the Niyenin marketplace."}
-                        </p>
-                    </div>
-                    {canManage ? (
-                        <Button
-                            asChild
-                            className="h-10 shrink-0 self-start rounded-lg bg-white px-4 font-semibold text-[#14361c] shadow-sm ring-1 ring-white/20 hover:bg-white/90 hover:text-[#14361c] sm:self-auto dark:bg-white dark:text-[#14361c] dark:hover:bg-white/90"
-                        >
+            <PageHeader
+                title="Stores"
+                description={
+                    isSuper
+                        ? "Partner storefronts — name, slug, logo, status, and owner."
+                        : isAdmin
+                          ? "Partner storefronts. As admin you can customize any store's public page."
+                          : "Your store profile and public store page on the Niyenin marketplace."
+                }
+                actions={
+                    canManage ? (
+                        <Button asChild>
                             <Link to="/stores/new">
                                 <Plus className="size-4" />
                                 Create store
                             </Link>
                         </Button>
-                    ) : null}
-                </div>
-            </section>
+                    ) : null
+                }
+            />
 
             {/* Stats */}
             <div className="grid gap-3 sm:grid-cols-3">

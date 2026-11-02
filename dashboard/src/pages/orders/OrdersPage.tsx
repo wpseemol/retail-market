@@ -44,7 +44,7 @@ import {
 import { firstZodError, orderSearchSchema } from "@/lib/validators/order";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
-import { PageHero } from "@/components/dashboard/page-shell";
+import { PageHeader } from "@/components/dashboard/page-shell";
 import { FadeUp, Stagger, StaggerItem } from "@/components/motion";
 import {
   OrderStatusPill,
@@ -741,16 +741,14 @@ export function OrdersPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHero
-        eyebrow="Sales"
-        title="Order Management"
+      <PageHeader
+        title="Orders"
         description="Track every storefront order — approve, pack, hand over to the courier and close it out."
         actions={
           <Button
-            variant="secondary"
+            variant="outline"
             onClick={() => void exportCsv()}
             disabled={exporting}
-            className="bg-white text-brand-deep hover:bg-white/90 dark:bg-white dark:text-[#002603]"
           >
             {exporting ? <Loader2 className="animate-spin" /> : <Download />}
             Export to CSV
