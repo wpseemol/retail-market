@@ -14,8 +14,7 @@ type ThemeToggleProps = {
 };
 
 /**
- * Day / night theme switch — sun & moon icons slide with the thumb.
- * Uses CSS transitions (no framer dependency) so icons always paint.
+ * Day / night theme switch — solid brand colors, sliding thumb with sun/moon.
  */
 export function ThemeToggle({ className }: ThemeToggleProps) {
     const { t } = useI18n();
@@ -48,11 +47,9 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
             aria-pressed={isDark}
             className={cn(
                 "group relative inline-flex h-9 w-16 shrink-0 cursor-pointer items-center rounded-full p-1",
-                "transition-[background] duration-500 ease-out",
+                "border border-brand-primary/25 transition-colors duration-300 ease-out",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base",
-                isDark
-                    ? "bg-[linear-gradient(135deg,#0f172a_0%,#1e3a5f_50%,#312e81_100%)]"
-                    : "bg-[linear-gradient(135deg,#38bdf8_0%,#7dd3fc_40%,#fde68a_100%)]",
+                isDark ? "bg-brand-hover" : "bg-brand-tint",
                 className,
             )}
         >
@@ -60,48 +57,37 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
             <span
                 aria-hidden
                 className={cn(
-                    "pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-amber-200 transition-opacity duration-300",
-                    isDark ? "opacity-35" : "opacity-90",
+                    "pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 transition-opacity duration-300",
+                    isDark
+                        ? "text-white/45 opacity-100"
+                        : "text-brand-primary opacity-70",
                 )}
             >
-                <SunIcon className="size-5" />
+                <SunIcon className="size-3.5" />
             </span>
             <span
                 aria-hidden
                 className={cn(
-                    "pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-white transition-opacity duration-300",
-                    isDark ? "opacity-90" : "opacity-35",
+                    "pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 transition-opacity duration-300",
+                    isDark
+                        ? "text-white opacity-80"
+                        : "text-brand-primary/40 opacity-100",
                 )}
             >
-                <MoonIcon size={12} />
-            </span>
-
-            {/* Night stars */}
-            <span
-                aria-hidden
-                className={cn(
-                    "pointer-events-none absolute inset-0 transition-opacity duration-500",
-                    isDark ? "opacity-100" : "opacity-0",
-                )}
-            >
-                <span className="absolute left-[10px] top-[8px] h-0.5 w-0.5 rounded-full bg-white" />
-                <span className="absolute left-[18px] top-[18px] h-1 w-1 rounded-full bg-white/80" />
-                <span className="absolute left-[14px] top-[12px] h-0.5 w-0.5 rounded-full bg-white/90" />
+                <MoonIcon className="size-3.5" />
             </span>
 
             {/* Sliding thumb with the active icon */}
             <span
                 aria-hidden
                 className={cn(
-                    "relative z-10 flex h-7 w-7 items-center justify-center rounded-full shadow-md",
-                    "transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                    isDark
-                        ? "translate-x-[30px] bg-slate-100 text-slate-800"
-                        : "translate-x-0 bg-amber-300 text-amber-800",
+                    "relative z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-sm",
+                    "ring-1 ring-brand-primary/15",
+                    "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                    isDark ? "translate-x-[30px]" : "translate-x-0",
                 )}
             >
-                {/* Both icons stacked; cross-fade + rotate on switch */}
-                <span className="relative flex h-5 w-5 items-center justify-center">
+                <span className="relative flex h-5 w-5 items-center justify-center text-brand-primary">
                     <span
                         className={cn(
                             "absolute inset-0 flex items-center justify-center transition-all duration-300",
@@ -110,7 +96,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
                                 : "rotate-0 scale-100 opacity-100",
                         )}
                     >
-                        <SunIcon className="size-5" />
+                        <SunIcon className="size-4" />
                     </span>
                     <span
                         className={cn(
@@ -120,7 +106,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
                                 : "-rotate-90 scale-50 opacity-0",
                         )}
                     >
-                        <MoonIcon className="size-5" />
+                        <MoonIcon className="size-4" />
                     </span>
                 </span>
             </span>

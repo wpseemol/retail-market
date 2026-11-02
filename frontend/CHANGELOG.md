@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Theme toggle solid brand colors
+
+- `src/components/home/theme/ThemeToggle.tsx`: removed sky/amber gradients and decorative stars; track uses solid `brand-tint` / `brand-hover`; white thumb with `brand-primary` sun/moon icons for a cleaner brand look.
+
 ### Header theme toggle with sun/moon animation
 
 - `src/components/home/theme/SunIcon.tsx`, `MoonIcon.tsx`, `ThemeToggle.tsx`: filled sun/moon with explicit px sizes; CSS day↔night sky, track icons, sliding thumb with cross-fade rotate (no framer — icons always paint); uses `resolvedTheme`.

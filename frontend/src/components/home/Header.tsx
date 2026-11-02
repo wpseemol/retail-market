@@ -11,10 +11,7 @@ import HeaderSearch from "./HeaderSearch";
 import { ThemeToggle } from "./theme/ThemeToggle";
 import { useAppSelector } from "@/store/hooks";
 import { formatPrice } from "@/lib/money";
-import {
-    selectCartItemCount,
-    selectCartSubtotal,
-} from "@/store/cartSlice";
+import { selectCartItemCount, selectCartSubtotal } from "@/store/cartSlice";
 import { selectHeaderNav } from "@/store/siteChromeSlice";
 import { selectWishlistCount } from "@/store/wishlistSlice";
 import { resolveStorefrontHref } from "@/lib/storefrontLinks";
@@ -25,8 +22,20 @@ import type { Dictionary } from "@/i18n/dictionaries";
 
 function fallbackHeaderNav(nav: Dictionary["nav"]) {
     return [
-        { id: "home", label: nav.home, href: "/", external: false, position: 0 },
-        { id: "shop", label: nav.shop, href: "/shop", external: false, position: 1 },
+        {
+            id: "home",
+            label: nav.home,
+            href: "/",
+            external: false,
+            position: 0,
+        },
+        {
+            id: "shop",
+            label: nav.shop,
+            href: "/shop",
+            external: false,
+            position: 1,
+        },
         {
             id: "stores",
             label: nav.stores,
@@ -41,7 +50,13 @@ function fallbackHeaderNav(nav: Dictionary["nav"]) {
             external: false,
             position: 3,
             children: [
-                { id: "faq", label: nav.faq, href: "/faq", external: false, position: 0 },
+                {
+                    id: "faq",
+                    label: nav.faq,
+                    href: "/faq",
+                    external: false,
+                    position: 0,
+                },
                 {
                     id: "terms",
                     label: nav.terms,
@@ -276,10 +291,7 @@ export default function Header({
                                 )}
                             </div>
                         </Link>
-
                         <ThemeToggle />
-
-                        Hello World Test
                     </div>
                 </div>
             </section>
@@ -317,7 +329,10 @@ export default function Header({
                         </svg>
                     </button>
                     <div className="min-w-0 flex-1">
-                        <HeaderSearch variant="mobile" categories={categories} />
+                        <HeaderSearch
+                            variant="mobile"
+                            categories={categories}
+                        />
                     </div>
                 </div>
                 <div className="container mx-auto hidden items-center justify-between gap-4 px-6 py-2.5 lg:flex">
@@ -340,84 +355,90 @@ export default function Header({
                         ) : null}
                         {navReady
                             ? headerNav.map((item) => {
-                            const hasChildren = Boolean(item.children?.length);
-                            const resolved = resolveStorefrontHref(item.href);
-                            const active = linkActive(resolved.href);
-                            if (hasChildren) {
-                                return (
-                                    <li
-                                        key={item.id}
-                                        className="relative group cursor-pointer"
-                                    >
-                                        <span className="flex items-center gap-1 text-text-secondary hover:text-brand-primary transition-colors">
-                                            {item.label}
-                                            <svg
-                                                width="10"
-                                                height="6"
-                                                viewBox="0 0 10 6"
-                                                fill="none"
-                                                className="stroke-current stroke-[1.5]"
-                                                aria-hidden="true"
-                                            >
-                                                <path
-                                                    d="M1 1L5 5L9 1"
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                />
-                                            </svg>
-                                        </span>
-                                        <div className="invisible absolute left-0 top-full z-20 min-w-40 rounded-md border border-border-default bg-bg-base py-2 opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100">
-                                            {item.children!.map((child) => {
-                                                const c =
-                                                    resolveStorefrontHref(
-                                                        child.href,
-                                                    );
-                                                return c.external ? (
-                                                    <a
-                                                        key={child.id}
-                                                        href={c.href}
-                                                        className="block px-3 py-1.5 text-text-secondary hover:text-brand-primary"
-                                                    >
-                                                        {child.label}
-                                                    </a>
-                                                ) : (
-                                                    <Link
-                                                        key={child.id}
-                                                        href={c.href}
-                                                        className="block px-3 py-1.5 text-text-secondary hover:text-brand-primary"
-                                                    >
-                                                        {child.label}
-                                                    </Link>
-                                                );
-                                            })}
-                                        </div>
-                                    </li>
-                                );
-                            }
-                            return (
-                                <li key={item.id}>
-                                    {resolved.external ? (
-                                        <a
-                                            href={resolved.href}
-                                            className="text-text-secondary hover:text-brand-primary transition-colors"
-                                        >
-                                            {item.label}
-                                        </a>
-                                    ) : (
-                                        <Link
-                                            href={resolved.href}
-                                            className={`hover:text-brand-hover transition-colors ${
-                                                active
-                                                    ? "text-brand-primary font-semibold"
-                                                    : "text-text-secondary hover:text-brand-primary"
-                                            }`}
-                                        >
-                                            {item.label}
-                                        </Link>
-                                    )}
-                                </li>
-                            );
-                        })
+                                  const hasChildren = Boolean(
+                                      item.children?.length,
+                                  );
+                                  const resolved = resolveStorefrontHref(
+                                      item.href,
+                                  );
+                                  const active = linkActive(resolved.href);
+                                  if (hasChildren) {
+                                      return (
+                                          <li
+                                              key={item.id}
+                                              className="relative group cursor-pointer"
+                                          >
+                                              <span className="flex items-center gap-1 text-text-secondary hover:text-brand-primary transition-colors">
+                                                  {item.label}
+                                                  <svg
+                                                      width="10"
+                                                      height="6"
+                                                      viewBox="0 0 10 6"
+                                                      fill="none"
+                                                      className="stroke-current stroke-[1.5]"
+                                                      aria-hidden="true"
+                                                  >
+                                                      <path
+                                                          d="M1 1L5 5L9 1"
+                                                          strokeLinecap="round"
+                                                          strokeLinejoin="round"
+                                                      />
+                                                  </svg>
+                                              </span>
+                                              <div className="invisible absolute left-0 top-full z-20 min-w-40 rounded-md border border-border-default bg-bg-base py-2 opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100">
+                                                  {item.children!.map(
+                                                      (child) => {
+                                                          const c =
+                                                              resolveStorefrontHref(
+                                                                  child.href,
+                                                              );
+                                                          return c.external ? (
+                                                              <a
+                                                                  key={child.id}
+                                                                  href={c.href}
+                                                                  className="block px-3 py-1.5 text-text-secondary hover:text-brand-primary"
+                                                              >
+                                                                  {child.label}
+                                                              </a>
+                                                          ) : (
+                                                              <Link
+                                                                  key={child.id}
+                                                                  href={c.href}
+                                                                  className="block px-3 py-1.5 text-text-secondary hover:text-brand-primary"
+                                                              >
+                                                                  {child.label}
+                                                              </Link>
+                                                          );
+                                                      },
+                                                  )}
+                                              </div>
+                                          </li>
+                                      );
+                                  }
+                                  return (
+                                      <li key={item.id}>
+                                          {resolved.external ? (
+                                              <a
+                                                  href={resolved.href}
+                                                  className="text-text-secondary hover:text-brand-primary transition-colors"
+                                              >
+                                                  {item.label}
+                                              </a>
+                                          ) : (
+                                              <Link
+                                                  href={resolved.href}
+                                                  className={`hover:text-brand-hover transition-colors ${
+                                                      active
+                                                          ? "text-brand-primary font-semibold"
+                                                          : "text-text-secondary hover:text-brand-primary"
+                                                  }`}
+                                              >
+                                                  {item.label}
+                                              </Link>
+                                          )}
+                                      </li>
+                                  );
+                              })
                             : null}
                         {navReady ? (
                             <li>
@@ -624,7 +645,9 @@ export default function Header({
                                 <span>{t.header.wishlist}</span>
                                 {wishlistCount > 0 ? (
                                     <span className="bg-brand-primary text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                                        {wishlistCount > 99 ? "99+" : wishlistCount}
+                                        {wishlistCount > 99
+                                            ? "99+"
+                                            : wishlistCount}
                                     </span>
                                 ) : null}
                             </Link>
