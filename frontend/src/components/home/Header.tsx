@@ -1,16 +1,14 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useSyncExternalStore } from "react";
-
-const noopSubscribe = () => () => {};
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTheme } from "next-themes";
 import PromoAdSlider from "./PromoAdSlider";
 import AccountMenu from "./AccountMenu";
 import CategoryBrowseMenu from "./CategoryBrowseMenu";
 import HeaderSearch from "./HeaderSearch";
+import { ThemeToggle } from "./theme/ThemeToggle";
 import { useAppSelector } from "@/store/hooks";
 import { formatPrice } from "@/lib/money";
 import {
@@ -93,12 +91,6 @@ export default function Header({
 }) {
     const pathname = usePathname();
     const { t } = useI18n();
-    const { theme, setTheme } = useTheme();
-    const mounted = useSyncExternalStore(
-        noopSubscribe,
-        () => true,
-        () => false,
-    );
     const menuRef = useRef<HTMLElement | null>(null);
     const menuSpacerRef = useRef<HTMLDivElement | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -155,15 +147,9 @@ export default function Header({
         };
     }, [isMobileMenuOpen]);
 
-    const toggleTheme = () => {
-        setTheme(theme === "dark" ? "light" : "dark");
-    };
-
     const toggleDropdown = (name: string) => {
         setOpenDropdown(openDropdown === name ? null : name);
     };
-
-    const isDark = mounted && theme === "dark";
 
     return (
         <header role="banner" className="w-full bg-bg-base">
@@ -291,35 +277,7 @@ export default function Header({
                             </div>
                         </Link>
 
-                        {/* Dark / Light Toggle Switch */}
-                        {mounted ? (
-                            <button
-                                type="button"
-                                onClick={toggleTheme}
-                                aria-label={
-                                    isDark
-                                        ? t.header.lightTheme
-                                        : t.header.darkTheme
-                                }
-                                className={`w-6 h-10 rounded-full p-0.75 transition-colors duration-200 cursor-pointer flex flex-col justify-between items-center ${
-                                    isDark ? "bg-brand-primary" : "bg-[#4D4D4D]"
-                                }`}
-                            >
-                                <span
-                                    aria-hidden="true"
-                                    className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ${
-                                        isDark
-                                            ? "translate-y-5"
-                                            : "translate-y-0"
-                                    }`}
-                                />
-                            </button>
-                        ) : (
-                            <span
-                                className="w-6 h-10 rounded-full bg-bg-subtle animate-pulse"
-                                aria-hidden
-                            />
-                        )}
+                        <ThemeToggle />
                     </div>
                 </div>
             </section>

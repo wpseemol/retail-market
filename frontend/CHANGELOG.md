@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Header theme toggle with sun/moon animation
+
+- `src/components/home/theme/SunIcon.tsx`, `MoonIcon.tsx`, `ThemeToggle.tsx` (new): separate sun/moon icons + pill switch with spring thumb slide and icon rotate/fade (respects `prefers-reduced-motion`).
+- `src/components/home/Header.tsx`: replaced the plain vertical knob with `<ThemeToggle />`.
+
 ### Footer drops Sell & Manage; bottom Dashboard button
 
 - `src/components/home/Footer.tsx`: removed Sell & Manage column; grid is Brand (4) + Find (2) + Care (2) + Weekly (4); bottom bar adds a **Go to Dashboard** button (`bg-brand-primary`, plain `/login` via `resolveStorefrontHref`) between social icons and payments.
