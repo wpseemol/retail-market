@@ -20,7 +20,7 @@ Data comes from `backend-api` (port 8001).
 
 ## Stack
 
-Next 16.4.1, React, next-auth 5 (beta), Redux Toolkit, framer-motion, Tailwind.
+Next 16.4.4, React, next-auth 5 (beta), Redux Toolkit, framer-motion, Tailwind.
 
 ## Scripts
 
@@ -44,7 +44,7 @@ frontend/src/
 ├── store/          # Redux slices: cart, wishlist, auth, siteChrome, connection
 ├── types/
 ├── auth.ts         # next-auth config
-└── middleware.ts
+└── proxy.ts        # auth redirects / protected routes (Next.js 16; was middleware.ts)
 ```
 
 ## Conventions

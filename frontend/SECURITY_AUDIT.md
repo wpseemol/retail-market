@@ -46,8 +46,8 @@ Update the **Status** column when an item is fixed (`Open` → `Fixed YYYY-MM-DD
 - **Status:** Fixed 2026-10-15 — `applyCoupon` is now a thunk calling `POST /api/customer/orders/coupon`; hard-coded codes and the "Try SAVE10 or SAVE20" hint removed; checkout sends `coupon_code` only and clears the coupon on `COUPON_INVALID`.
 
 ### FE-04 · Medium · Open redirect
-- **Where:** `src/middleware.ts:40-50`, `src/lib/authRedirect.ts:5`, `LoginForm.tsx:67`, `SignUpForm.tsx:49`
-- **Issue:** The check allows `/\evil.com` (middleware) and `/%09/evil.com` (tab, login pages); both resolve to `evil.com`.
+- **Where:** `src/proxy.ts:40-50`, `src/lib/authRedirect.ts:5`, `LoginForm.tsx:67`, `SignUpForm.tsx:49`
+- **Issue:** The check allows `/\evil.com` (proxy) and `/%09/evil.com` (tab, login pages); both resolve to `evil.com`.
 - **Fix:** One shared `safeNextPath`: reject `\` and control chars, then require `new URL(raw, origin).origin === origin` and use only `pathname + search`.
 
 ### FE-05 · Medium · Access token in client session

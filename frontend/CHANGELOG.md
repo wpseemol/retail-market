@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Next.js upgrade to 16.4.4 + middleware → proxy
+
+- Ran `pnpm dlx @next/codemod@canary upgrade latest` — already on / bumped to `next@16.4.4`, `eslint-config-next@16.4.4`, React `19.3.1`, matching `@types/react*`.
+- Ran `middleware-to-proxy`: `src/middleware.ts` → `src/proxy.ts` (`export async function proxy`); matchers and redirects unchanged (`/account`, `/wishlist`, `/login`, `/register`, `/auth/*` → `/login|/register`).
+- Route audit: app pages already use async `params` / `searchParams` (`Promise<…>` + `await`); API `params` already async. No route path or page URL changes required. `pnpm type-check` passes.
+- `AGENTS.md`, `SECURITY_AUDIT.md`: point at `proxy.ts` / Next 16.4.4.
+
 ### Theme toggle vertical switch with sun/moon icons
 
 - `src/components/home/theme/ThemeToggle.tsx`: vertical pill switch; sun at top / moon at bottom; white thumb slides with brand-primary active icon (no preferences dropdown).
