@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Hind_Siliguri, Poppins } from "next/font/google";
-import Script from "next/script";
 import "lenis/dist/lenis.css";
 import "./globals.css";
 import TopBar from "@/components/home/TopBar";
@@ -177,14 +176,14 @@ export default async function RootLayout({
             className={`${poppins.variable} ${hindSiliguri.variable} h-full antialiased`}
             suppressHydrationWarning
         >
-            <body
-                className="min-h-full flex flex-col font-sans"
-            >
-                <Script
+            <head>
+                {/* Inline boot bar before React paints — avoid next/script (React 19 client warning). */}
+                <script
                     id="boot-progress"
-                    strategy="beforeInteractive"
                     dangerouslySetInnerHTML={{ __html: BOOT_PROGRESS_SCRIPT }}
                 />
+            </head>
+            <body className="min-h-full flex flex-col font-sans">
                 <NavigationProgress />
                 <JsonLd
                     id="site-jsonld"

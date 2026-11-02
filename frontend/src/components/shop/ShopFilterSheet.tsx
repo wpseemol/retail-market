@@ -20,20 +20,31 @@ export default function ShopFilterSheet({
     const { t } = useI18n();
     const copy = t.shopPage;
     const closeRef = useRef<HTMLButtonElement>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
     const onCloseRef = useRef(onClose);
     onCloseRef.current = onClose;
 
     useEffect(() => {
         if (!open) return;
-        const previous = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
+
+        const body = document.body;
+        const html = document.documentElement;
+        const previousBody = body.style.overflow;
+        const previousHtml = html.style.overflow;
+        body.style.overflow = "hidden";
+        html.style.overflow = "hidden";
+
         closeRef.current?.focus();
+        scrollRef.current?.scrollTo({ top: 0 });
+
         const onKey = (event: KeyboardEvent) => {
             if (event.key === "Escape") onCloseRef.current();
         };
         window.addEventListener("keydown", onKey);
+
         return () => {
-            document.body.style.overflow = previous;
+            body.style.overflow = previousBody;
+            html.style.overflow = previousHtml;
             window.removeEventListener("keydown", onKey);
         };
     }, [open]);
@@ -45,13 +56,14 @@ export default function ShopFilterSheet({
             <button
                 type="button"
                 aria-label={copy.closeFilters}
-                className="absolute inset-0 bg-overlay-scrim"
+                className="absolute inset-0 border-0 bg-overlay-scrim"
                 onClick={onClose}
             />
             <div
                 role="dialog"
                 aria-modal="true"
                 aria-label={copy.filters}
+                data-lenis-prevent
                 className="absolute inset-x-0 bottom-0 flex h-[min(92dvh,820px)] max-h-[min(92dvh,820px)] flex-col overflow-hidden rounded-t-2xl bg-bg-surface shadow-2xl"
             >
                 <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border-default px-4 py-3">
@@ -73,9 +85,15 @@ export default function ShopFilterSheet({
                         <span className="sr-only">{copy.closeFilters}</span>
                     </button>
                 </div>
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 [-webkit-overflow-scrolling:touch]">
+
+                <div
+                    ref={scrollRef}
+                    data-lenis-prevent
+                    className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 touch-pan-y [-webkit-overflow-scrolling:touch]"
+                >
                     {children}
                 </div>
+
                 <div className="flex shrink-0 gap-2 border-t border-border-default bg-bg-surface px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                     <button
                         type="button"

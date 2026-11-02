@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Filter sheet Lenis scroll + boot Script warning
+
+- `ShopFilterSheet.tsx`: `data-lenis-prevent` on the dialog/scroll pane so mouse wheel works inside filters; lock `html`+`body` overflow while open; `touch-pan-y` / `overscroll-y-contain`.
+- `src/app/layout.tsx`: boot progress runs from an inline `<head><script>` instead of `next/script` `beforeInteractive` (fixes React 19 “script tag while rendering” console error on shop and other pages).
+
 ### Shop mobile list/grid cards + filter sheet scroll
 
 - `ShopFilterSheet.tsx`: fixed sheet height (`h-[min(92dvh,820px)]` + `overflow-hidden`) so the middle pane scrolls brands/tags on phones; sticky footer actions.
