@@ -47,7 +47,7 @@ export default function LoginForm() {
   const finishAuth = useCallback(
     (user: ApiUser) => {
       if (STAFF_ROLES.has(user.role) || user.role !== "customer") {
-        setError("This page is for shoppers. Staff accounts sign in on the dashboard.");
+        setError("Invalid email or password");
         return;
       }
 
@@ -142,14 +142,10 @@ export default function LoginForm() {
     <section className="w-full" aria-labelledby="login-heading">
       <h1
         id="login-heading"
-        className="text-[28px] sm:text-[32px] font-semibold text-text-primary leading-tight mb-2"
+        className="text-[28px] sm:text-[32px] font-semibold text-text-primary leading-tight mb-5"
       >
-        Customer login
+        Welcome
       </h1>
-      <p className="mb-5 text-sm text-text-secondary">
-        For shoppers only. Super Admin, Admin, Moderator, and Vendor sign in on
-        the dashboard.
-      </p>
 
       {social.hasAny ? (
         <>

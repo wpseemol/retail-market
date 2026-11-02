@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Login form: simple Welcome heading
+
+- `LoginForm.tsx`: replaced “Customer login” + staff/dashboard role copy with a plain “Welcome” heading; staff-role reject message is generic (“Invalid email or password”).
+
 ### Footer mobile bottom bar layout
 
 - `Footer.tsx`: social icons and payment badges stay on one row on phones (removed `max-w-[13.5rem]` / `%` basis that forced uneven wraps); tighter gaps; full-width dashboard CTA on small screens.
