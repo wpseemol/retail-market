@@ -2,9 +2,9 @@
 
 import { useCallback, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { ApiError } from "@/lib/api";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { selectAuthHydrated, selectAuthUser } from "@/store/authSlice";
 import {
     addWishlistId,
     removeWishlistId,
@@ -22,15 +22,25 @@ import { queueWishlistChange } from "@/store/wishlistCache";
 /**
  * Wishlist is account-only. Guests are sent to /login (then back here) and the
  * product they clicked is saved automatically after sign-in.
+ *
+ * Auth comes from Redux (synced by AuthHydrator) — avoids next-auth `useSession`
+ * so product cards never throw outside SessionProvider during SSR/HMR.
  */
 export function useWishlist() {
     const dispatch = useAppDispatch();
     const router = useRouter();
     const pathname = usePathname();
-    const { status } = useSession();
+    const user = useAppSelector(selectAuthUser);
+    const hydrated = useAppSelector(selectAuthHydrated);
     const ids = useAppSelector(selectWishlistIds);
     const [pendingIds, setPendingIds] = useState<number[]>([]);
     const [error, setError] = useState<string | null>(null);
+
+    const status = !hydrated
+        ? "loading"
+        : user
+          ? "authenticated"
+          : "unauthenticated";
 
     const isWishlisted = useCallback((productId: number) => ids.includes(productId), [ids]);
     const isPending = useCallback(
@@ -79,5 +89,12 @@ export function useWishlist() {
         [dispatch, ids, pathname, pendingIds, router, status],
     );
 
-    return { ids, isWishlisted, isPending, toggle, error, isLoggedIn: status === "authenticated" };
+    return {
+        ids,
+        isWishlisted,
+        isPending,
+        toggle,
+        error,
+        isLoggedIn: status === "authenticated",
+    };
 }

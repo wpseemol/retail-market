@@ -68,4 +68,9 @@ const authSlice = createSlice({
 
 export const { hydrateAuth, setSessionUser, setCredentials, setUser, logout } =
   authSlice.actions;
+
+export const selectAuthUser = (state: { auth: AuthState }) => state.auth.user;
+export const selectAuthHydrated = (state: { auth: AuthState }) =>
+  state.auth.hydrated;
+
 export default authSlice.reducer;

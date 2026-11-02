@@ -5,6 +5,15 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Footer mobile bottom bar layout
+
+- `Footer.tsx`: social icons and payment badges stay on one row on phones (removed `max-w-[13.5rem]` / `%` basis that forced uneven wraps); tighter gaps; full-width dashboard CTA on small screens.
+
+### useWishlist uses Redux auth (no useSession)
+
+- `useWishlist.ts`: read login state from Redux (`selectAuthUser` / `selectAuthHydrated`) instead of next-auth `useSession`, so shop cards no longer throw “must be wrapped in a SessionProvider” during SSR/HMR.
+- `authSlice.ts`: exported those selectors (same pattern as AccountMenu).
+
 ### ThemeProvider without next-themes script warning
 
 - Replaced `next-themes` with a small custom `ThemeProvider` / `useTheme` that injects the anti-FOUC init via `useServerInsertedHTML` (no client `<script>` → no React 19 console error).

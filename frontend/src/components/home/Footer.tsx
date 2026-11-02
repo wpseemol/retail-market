@@ -347,57 +347,53 @@ export default function Footer() {
                 </div>
 
                 {/* ================= Bottom Copyright & Icons Bar ================= */}
-                <div className="flex w-full min-w-0 flex-col items-stretch gap-5 py-6 border-t border-border-default/60 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex w-full min-w-0 flex-col items-stretch gap-4 border-t border-border-default/60 py-5 sm:gap-5 sm:py-6 lg:flex-row lg:items-center lg:justify-between">
                     {/* Copyright */}
-                    <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-[12px] leading-relaxed text-text-secondary sm:text-[13px] lg:justify-start lg:text-left">
-                        <span className="w-full sm:w-auto">
+                    <div className="flex min-w-0 flex-col items-center gap-1 text-center text-[12px] leading-relaxed text-text-secondary sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-2 sm:text-[13px] lg:items-start lg:justify-start lg:text-left">
+                        <span>
                             {format(footer.copyright, { year: currentYear })}{" "}
-                            <strong className="text-[#00B207] font-semibold">
+                            <strong className="font-semibold text-[#00B207]">
                                 {chrome.siteName}
                             </strong>
                             . {footer.rights}
                         </span>
-                        <span className="hidden text-border-default sm:inline" aria-hidden="true">
-                            |
+                        <span className="inline-flex items-center gap-2">
+                            <Link href="/terms" className="hover:text-brand-primary">
+                                {footer.links.terms}
+                            </Link>
+                            <span className="text-border-default" aria-hidden="true">
+                                |
+                            </span>
+                            <Link href="/faq" className="hover:text-brand-primary">
+                                {footer.links.faq}
+                            </Link>
                         </span>
-                        <Link href="/terms" className="hover:text-brand-primary">
-                            {footer.links.terms}
-                        </Link>
-                        <span className="text-border-default" aria-hidden="true">
-                            |
-                        </span>
-                        <Link href="/faq" className="hover:text-brand-primary">
-                            {footer.links.faq}
-                        </Link>
                     </div>
 
-                    {/* Social + dashboard CTA + payments — stack/wrap on mobile */}
-                    <div className="flex w-full min-w-0 flex-col items-center gap-4 lg:w-auto lg:flex-row lg:gap-6">
-                        <ul className="m-0 flex w-full max-w-[13.5rem] list-none flex-wrap justify-center gap-x-3 gap-y-3 p-0 lg:max-w-none lg:w-auto lg:gap-3">
+                    {/* Social + dashboard CTA + payments — single rows on mobile */}
+                    <div className="flex w-full min-w-0 flex-col items-center gap-3 sm:gap-3.5 lg:w-auto lg:flex-row lg:gap-5">
+                        <ul className="m-0 flex list-none flex-nowrap items-center justify-center gap-1.5 p-0 sm:gap-2.5">
                             {socialItems.map((item) => {
                                 const href =
                                     chrome.social[
                                         item.key as keyof typeof chrome.social
                                     ]!;
                                 return (
-                                    <li
-                                        key={item.key}
-                                        className="flex basis-[28%] justify-center lg:basis-auto"
-                                    >
+                                    <li key={item.key} className="shrink-0">
                                         <a
                                             href={href}
                                             target="_blank"
                                             rel="noreferrer"
                                             aria-label={item.label}
                                             title={item.label}
-                                            className="inline-flex size-9 items-center justify-center rounded-md text-text-primary opacity-80 transition-transform hover:scale-110 hover:opacity-100"
+                                            className="inline-flex size-8 items-center justify-center rounded-md text-text-primary opacity-80 transition-transform hover:scale-110 hover:opacity-100 sm:size-9"
                                         >
                                             <Image
                                                 src={item.icon}
                                                 alt=""
                                                 width={18}
                                                 height={18}
-                                                className="size-[18px] brightness-0 dark:invert"
+                                                className="size-4 brightness-0 sm:size-[18px] dark:invert"
                                             />
                                         </a>
                                     </li>
@@ -409,25 +405,25 @@ export default function Footer() {
                             href={dashboardHref}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-brand-primary px-4 text-[13px] font-semibold text-white transition-colors hover:bg-brand-hover"
+                            className="inline-flex h-9 w-full max-w-xs shrink-0 items-center justify-center rounded-md bg-brand-primary px-4 text-[13px] font-semibold text-white transition-colors hover:bg-brand-hover sm:w-auto"
                         >
                             {goToDashboard}
                         </a>
 
-                        <div className="flex w-full max-w-[13.5rem] flex-wrap justify-center gap-2 lg:max-w-none lg:w-auto">
-                            <span className="flex h-6 w-10 shrink-0 items-center justify-center rounded-[3px] bg-[#FF5F00] text-[8px] font-bold italic text-white">
+                        <div className="flex flex-nowrap items-center justify-center gap-1.5 sm:gap-2">
+                            <span className="flex h-5 w-9 shrink-0 items-center justify-center rounded-[3px] bg-[#FF5F00] text-[7px] font-bold italic text-white sm:h-6 sm:w-10 sm:text-[8px]">
                                 Master
                             </span>
-                            <span className="flex h-6 w-10 shrink-0 items-center justify-center rounded-[3px] bg-[#00AEEF] text-[8px] font-bold text-white">
+                            <span className="flex h-5 w-9 shrink-0 items-center justify-center rounded-[3px] bg-[#00AEEF] text-[7px] font-bold text-white sm:h-6 sm:w-10 sm:text-[8px]">
                                 AMEX
                             </span>
-                            <span className="flex h-6 w-10 shrink-0 items-center justify-center rounded-[3px] bg-[#1A1F71] text-[10px] font-bold italic text-white">
+                            <span className="flex h-5 w-9 shrink-0 items-center justify-center rounded-[3px] bg-[#1A1F71] text-[9px] font-bold italic text-white sm:h-6 sm:w-10 sm:text-[10px]">
                                 VISA
                             </span>
-                            <span className="flex h-6 w-10 shrink-0 items-center justify-center rounded-[3px] bg-[#E55C20] text-[7px] font-bold uppercase tracking-tighter text-white">
+                            <span className="flex h-5 w-9 shrink-0 items-center justify-center rounded-[3px] bg-[#E55C20] text-[6px] font-bold uppercase tracking-tighter text-white sm:h-6 sm:w-10 sm:text-[7px]">
                                 Discover
                             </span>
-                            <span className="flex h-6 w-10 shrink-0 items-center justify-center rounded-[3px] bg-[#003087] text-[9px] font-bold italic text-white">
+                            <span className="flex h-5 w-9 shrink-0 items-center justify-center rounded-[3px] bg-[#003087] text-[8px] font-bold italic text-white sm:h-6 sm:w-10 sm:text-[9px]">
                                 PayPal
                             </span>
                         </div>
