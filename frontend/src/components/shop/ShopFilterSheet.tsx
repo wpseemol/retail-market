@@ -52,9 +52,9 @@ export default function ShopFilterSheet({
                 role="dialog"
                 aria-modal="true"
                 aria-label={copy.filters}
-                className="absolute inset-x-0 bottom-0 flex max-h-[min(92dvh,820px)] flex-col rounded-t-2xl bg-bg-surface shadow-2xl"
+                className="absolute inset-x-0 bottom-0 flex h-[min(92dvh,820px)] max-h-[min(92dvh,820px)] flex-col overflow-hidden rounded-t-2xl bg-bg-surface shadow-2xl"
             >
-                <div className="flex items-center justify-between gap-3 border-b border-border-default px-4 py-3">
+                <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border-default px-4 py-3">
                     <h2 className="m-0 flex items-center gap-2 text-[17px] font-semibold text-text-primary">
                         {copy.filters}
                         {count > 0 ? (
@@ -73,8 +73,10 @@ export default function ShopFilterSheet({
                         <span className="sr-only">{copy.closeFilters}</span>
                     </button>
                 </div>
-                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">{children}</div>
-                <div className="flex gap-2 border-t border-border-default px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 [-webkit-overflow-scrolling:touch]">
+                    {children}
+                </div>
+                <div className="flex shrink-0 gap-2 border-t border-border-default bg-bg-surface px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                     <button
                         type="button"
                         onClick={onClear}

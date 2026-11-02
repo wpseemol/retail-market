@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Shop mobile list/grid cards + filter sheet scroll
+
+- `ShopFilterSheet.tsx`: fixed sheet height (`h-[min(92dvh,820px)]` + `overflow-hidden`) so the middle pane scrolls brands/tags on phones; sticky footer actions.
+- `ShopProductCard.tsx`: mobile list is a compact horizontal row (thumb + stacked actions/buy); grid cards tighten padding, shorten review label, keep wishlist/quick-view only on the image, and put buy buttons in normal flow on touch (no stuck hover lift).
+- `types.ts` / `ShopPageContent.tsx`: slightly tighter mobile grid gaps; filter bar polish.
+
 ### Next.js upgrade to 16.4.4 + middleware → proxy
 
 - Ran `pnpm dlx @next/codemod@canary upgrade latest` — already on / bumped to `next@16.4.4`, `eslint-config-next@16.4.4`, React `19.3.1`, matching `@types/react*`.

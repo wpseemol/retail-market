@@ -283,13 +283,13 @@ const { t } = useI18n();
             {sidebar("sidebar")}
 
             <div ref={listRef} className="min-w-0 flex-1">
-              <div className="sticky top-16 z-30 -mx-4 mb-3 flex items-center gap-2 border-b border-border-default bg-bg-base/95 px-4 py-2 backdrop-blur lg:hidden">
+              <div className="sticky top-16 z-30 -mx-4 mb-3 flex items-center gap-2 border-b border-border-default bg-bg-base/95 px-4 py-2.5 backdrop-blur supports-backdrop-filter:bg-bg-base/90 lg:hidden">
                 <button
                   type="button"
                   onClick={() => setFiltersOpen(true)}
-                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-border-default bg-bg-surface px-4 text-[14px] font-semibold text-text-primary"
+                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-border-default bg-bg-surface px-4 text-[14px] font-semibold text-text-primary shadow-sm"
                 >
-                  <SlidersHorizontal className="size-4" aria-hidden="true" />
+                  <SlidersHorizontal className="size-4 shrink-0" aria-hidden="true" />
                   {copy.filters}
                   {activeFilterCount > 0 ? (
                     <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-brand-primary px-2 py-0.5 text-[12px] font-semibold text-white">

@@ -48,17 +48,19 @@ function StarRating({
     rating,
     reviewCount,
     size = 14,
+    compact = false,
 }: {
     rating: number;
     reviewCount: number;
     size?: number;
+    compact?: boolean;
 }) {
     return (
         <div
-            className="flex items-center gap-1.5"
+            className="flex min-w-0 items-center gap-1.5"
             aria-label={`Rating: ${rating} out of 5 stars, ${reviewCount} reviews`}
         >
-            <div className="flex items-center gap-0.5">
+            <div className="flex shrink-0 items-center gap-0.5">
                 {[1, 2, 3, 4, 5].map((star) => (
                     <svg
                         key={star}
@@ -74,8 +76,13 @@ function StarRating({
                     </svg>
                 ))}
             </div>
-            <span className="text-[12px] text-text-secondary">
-                ({reviewCount}) Reviews
+            <span
+                className={`truncate text-[12px] text-text-secondary ${
+                    compact ? "max-sm:text-[11px]" : ""
+                }`}
+            >
+                ({reviewCount})
+                <span className={compact ? "max-sm:hidden" : ""}> Reviews</span>
             </span>
         </div>
     );
@@ -387,10 +394,10 @@ export default function ShopProductCard({
 
     if (viewMode === "list") {
         return (
-            <article className="group relative flex flex-col sm:flex-row gap-4 sm:gap-6 p-4 sm:p-5 bg-bg-surface border border-border-default rounded-lg transition-all duration-200 hover:border-brand-primary hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
-                <div className="relative w-full sm:w-52 md:w-60 h-48 sm:h-52 shrink-0 rounded-md overflow-hidden bg-white dark:bg-bg-subtle">
+            <article className="group relative flex flex-row gap-3 p-3 sm:gap-6 sm:p-5 bg-bg-surface border border-border-default rounded-lg transition-all duration-200 hover:border-brand-primary hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+                <div className="relative w-28 shrink-0 aspect-square sm:aspect-auto sm:h-52 sm:w-52 md:w-60 rounded-md overflow-hidden bg-white dark:bg-bg-subtle">
                     {product.isNew && (
-                        <span className="absolute top-3 left-0 z-10 -skew-x-12 bg-brand-primary text-white text-[10px] font-bold px-2.5 py-1 tracking-wider">
+                        <span className="absolute top-2 left-0 z-10 -skew-x-12 bg-brand-primary text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 sm:top-3 sm:px-2.5 sm:py-1 tracking-wider">
                             <span className="skew-x-12 inline-block">NEW</span>
                         </span>
                     )}
@@ -401,69 +408,78 @@ export default function ShopProductCard({
                         <ProductThumb
                             src={product.image}
                             alt={product.alt}
-                            sizes="240px"
-                            className="p-3 transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none"
+                            sizes="(max-width: 640px) 112px, 240px"
+                            className="p-2 sm:p-3 transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none"
                         />
                     </Link>
                 </div>
 
-                <div className="flex-1 flex flex-col justify-center gap-2 min-w-0 py-1">
+                <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 py-0.5 sm:gap-2 sm:py-1">
                     <StarRating
                         rating={product.rating}
                         reviewCount={product.reviewCount}
-                        size={15}
+                        size={13}
+                        compact
                     />
 
-                    <h3 className="text-[16px] sm:text-[18px] font-semibold text-text-primary leading-snug m-0">
+                    <h3 className="m-0 text-[14px] font-semibold leading-snug text-text-primary sm:text-[18px]">
                         <Link
                             href={`/shop/${product.slug}`}
-                            className="hover:text-brand-primary transition-colors"
+                            className="hover:text-brand-primary transition-colors line-clamp-2"
                         >
                             {product.name}
                         </Link>
                     </h3>
 
-                    <p className="text-[16px] font-bold text-brand-primary m-0">
-                            {formatPriceRange(product.priceMin, product.priceMax)}
+                    <p className="m-0 text-[14px] font-bold text-brand-primary sm:text-[16px]">
+                        {formatPriceRange(product.priceMin, product.priceMax)}
                     </p>
 
-                    <p className="text-[13px] text-text-secondary leading-relaxed m-0 line-clamp-2 max-w-2xl">
+                    <p className="m-0 hidden max-w-2xl text-[13px] leading-relaxed text-text-secondary line-clamp-2 sm:block">
                         {productDescription(product)}
                     </p>
 
-                    <p className="text-[13px] text-brand-primary m-0">
+                    <p className="m-0 text-[12px] text-brand-primary sm:text-[13px]">
                         Available: {product.available}
                     </p>
 
-                    <div className="flex items-center gap-2 pt-2">
-                        <ActionButton
-                            label={wishlistLabel}
-                            pressed={saved}
-                            disabled={savingWishlist}
-                            onClick={toggleWishlist}
-                        >
-                            <HeartIcon filled={saved} />
-                        </ActionButton>
-                        <ActionButton label="Compare">
-                            <CompareIcon />
-                        </ActionButton>
-                        <ActionButton
-                            label="Quick View"
-                            onClick={() => onQuickView(product)}
-                        >
-                            <EyeIcon />
-                        </ActionButton>
-                        <ActionButton
-                            label="View Full Product"
-                            onClick={handleExpandProduct}
-                        >
-                            <ExpandIcon />
-                        </ActionButton>
+                    <div className="flex flex-col gap-2 pt-1.5 sm:flex-row sm:items-center sm:gap-2 sm:pt-2">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                            <ActionButton
+                                label={wishlistLabel}
+                                pressed={saved}
+                                disabled={savingWishlist}
+                                onClick={toggleWishlist}
+                            >
+                                <HeartIcon filled={saved} />
+                            </ActionButton>
+                            <div className="hidden sm:contents">
+                                <ActionButton label="Compare">
+                                    <CompareIcon />
+                                </ActionButton>
+                            </div>
+                            <ActionButton
+                                label="Quick View"
+                                onClick={() => onQuickView(product)}
+                            >
+                                <EyeIcon />
+                            </ActionButton>
+                            <div className="hidden sm:contents">
+                                <ActionButton
+                                    label="View Full Product"
+                                    onClick={handleExpandProduct}
+                                >
+                                    <ExpandIcon />
+                                </ActionButton>
+                            </div>
+                        </div>
                         <PurchaseButtons
                             added={added}
                             onAddToCart={handleAddToCart}
                             onBuyNow={handleBuyNow}
-                            className="ml-1 w-full max-w-xs"
+                            compact
+                            hideLabelsOnPhone
+                            className="w-full sm:ml-1 sm:max-w-xs"
                         />
                     </div>
                 </div>
@@ -476,10 +492,10 @@ export default function ShopProductCard({
 
     return (
         <article
-            className={`group relative flex flex-col bg-bg-surface border border-border-default rounded-lg hover:border-brand-primary ${
+            className={`group relative flex h-full flex-col bg-bg-surface border border-border-default rounded-lg hover:border-brand-primary ${
                 isWide
                     ? "transition-[border-color,box-shadow] duration-300 sm:flex-row sm:items-stretch hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)]"
-                    : "[transition:border-color_200ms,box-shadow_200ms,transform_200ms_cubic-bezier(0.22,1,0.36,1),border-bottom-left-radius_0s_200ms,border-bottom-right-radius_0s_200ms,z-index_0s_200ms] hover:[transition:border-color_200ms,box-shadow_200ms,transform_200ms_cubic-bezier(0.22,1,0.36,1),border-bottom-left-radius_0s,border-bottom-right-radius_0s,z-index_0s] [@media(hover:hover)]:focus-within:[transition:border-color_200ms,box-shadow_200ms,transform_200ms_cubic-bezier(0.22,1,0.36,1),border-bottom-left-radius_0s,border-bottom-right-radius_0s,z-index_0s] after:pointer-events-auto after:absolute after:inset-x-0 after:top-full after:hidden after:h-2 after:content-[''] hover:after:block hover:z-30 hover:-translate-y-1 hover:rounded-b-none hover:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_28px_-12px_rgba(0,0,0,0.22)] dark:hover:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_12px_28px_-12px_rgba(0,0,0,0.7)] [@media(hover:hover)]:focus-within:z-30 [@media(hover:hover)]:focus-within:-translate-y-1 [@media(hover:hover)]:focus-within:rounded-b-none [@media(hover:hover)]:focus-within:border-brand-primary motion-reduce:hover:translate-y-0"
+                    : "[transition:border-color_200ms,box-shadow_200ms,transform_200ms_cubic-bezier(0.22,1,0.36,1),border-bottom-left-radius_0s_200ms,border-bottom-right-radius_0s_200ms,z-index_0s_200ms] [@media(hover:hover)]:hover:[transition:border-color_200ms,box-shadow_200ms,transform_200ms_cubic-bezier(0.22,1,0.36,1),border-bottom-left-radius_0s,border-bottom-right-radius_0s,z-index_0s] [@media(hover:hover)]:focus-within:[transition:border-color_200ms,box-shadow_200ms,transform_200ms_cubic-bezier(0.22,1,0.36,1),border-bottom-left-radius_0s,border-bottom-right-radius_0s,z-index_0s] after:pointer-events-auto after:absolute after:inset-x-0 after:top-full after:hidden after:h-2 after:content-[''] [@media(hover:hover)]:hover:after:block [@media(hover:hover)]:hover:z-30 [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:rounded-b-none [@media(hover:hover)]:hover:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_28px_-12px_rgba(0,0,0,0.22)] dark:[@media(hover:hover)]:hover:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_12px_28px_-12px_rgba(0,0,0,0.7)] [@media(hover:hover)]:focus-within:z-30 [@media(hover:hover)]:focus-within:-translate-y-1 [@media(hover:hover)]:focus-within:rounded-b-none [@media(hover:hover)]:focus-within:border-brand-primary motion-reduce:hover:translate-y-0"
             }`}
         >
             <div
@@ -544,14 +560,14 @@ export default function ShopProductCard({
                             </ActionButton>
                         </div>
                     ) : null}
-                    <ActionButton
-                        label="Quick View"
-                        tooltipSide="left"
-                        onClick={() => onQuickView(product)}
-                    >
-                        <EyeIcon />
-                    </ActionButton>
                     <div className="hidden sm:contents">
+                        <ActionButton
+                            label="Quick View"
+                            tooltipSide="left"
+                            onClick={() => onQuickView(product)}
+                        >
+                            <EyeIcon />
+                        </ActionButton>
                         <ActionButton
                             label="View Full Product"
                             tooltipSide="left"
@@ -560,31 +576,41 @@ export default function ShopProductCard({
                             <ExpandIcon />
                         </ActionButton>
                     </div>
+                    <div className="sm:hidden">
+                        <ActionButton
+                            label="Quick View"
+                            tooltipSide="left"
+                            onClick={() => onQuickView(product)}
+                        >
+                            <EyeIcon />
+                        </ActionButton>
+                    </div>
                 </div>
             </div>
 
             <div
-                className={`flex flex-col ${
+                className={`flex flex-1 flex-col ${
                     isWide
-                        ? "flex-1 justify-center px-5 py-5 gap-2"
+                        ? "justify-center px-4 py-4 gap-2 sm:px-5 sm:py-5"
                         : isCompact
-                          ? "px-3 pt-2.5 pb-4 gap-1"
-                          : "px-4 pt-3 pb-5 gap-1.5"
+                          ? "px-2.5 pt-2 pb-3 gap-1 sm:px-3 sm:pt-2.5 sm:pb-4"
+                          : "px-3 pt-2.5 pb-3 gap-1 sm:px-4 sm:pt-3 sm:pb-5 sm:gap-1.5"
                 }`}
             >
                 <StarRating
                     rating={product.rating}
                     reviewCount={product.reviewCount}
-                    size={isCompact ? 12 : 14}
+                    size={isCompact ? 11 : 13}
+                    compact
                 />
 
                 <h3
                     className={`font-medium text-text-primary leading-snug line-clamp-2 m-0 ${
                         isWide
-                            ? "text-[16px] sm:text-[17px]"
+                            ? "text-[15px] sm:text-[17px]"
                             : isCompact
-                              ? "text-[13px]"
-                              : "text-[14px] sm:text-[15px]"
+                              ? "text-[12px] sm:text-[13px]"
+                              : "text-[13px] sm:text-[15px]"
                     }`}
                 >
                     <Link
@@ -610,15 +636,15 @@ export default function ShopProductCard({
                 </p>
 
                 <p
-                    className={`font-semibold text-brand-primary m-0 ${
+                    className={`mt-auto font-semibold text-brand-primary m-0 tabular-nums ${
                         isWide
-                            ? "text-[17px] mt-1"
+                            ? "text-[16px] mt-1 sm:text-[17px]"
                             : isCompact
-                              ? "text-[13px] mt-0.5"
-                              : "text-[15px] mt-0.5"
+                              ? "text-[12px] mt-1 sm:text-[13px]"
+                              : "text-[13px] mt-1 sm:text-[15px]"
                     }`}
                 >
-                            {formatPriceRange(product.priceMin, product.priceMax)}
+                    {formatPriceRange(product.priceMin, product.priceMax)}
                 </p>
 
                 {isWide && (
@@ -626,30 +652,32 @@ export default function ShopProductCard({
                         added={added}
                         onAddToCart={handleAddToCart}
                         onBuyNow={handleBuyNow}
+                        compact
+                        hideLabelsOnPhone
                         className="mt-2 w-full max-w-xs"
                     />
                 )}
             </div>
 
             {!isWide && (
-                <div className="absolute -inset-x-px top-full grid grid-rows-[0fr] invisible pointer-events-none rounded-b-lg border border-t-0 border-border-default bg-bg-surface shadow-[0_16px_28px_-14px_rgba(0,0,0,0.25)] dark:shadow-[0_16px_28px_-14px_rgba(0,0,0,0.7)] [clip-path:inset(0_-40px_-40px_-40px)] transition-[grid-template-rows,visibility,border-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:grid-rows-[1fr] group-hover:visible group-hover:pointer-events-auto group-hover:border-brand-primary [@media(hover:hover)]:group-focus-within:grid-rows-[1fr] [@media(hover:hover)]:group-focus-within:visible [@media(hover:hover)]:group-focus-within:pointer-events-auto [@media(hover:hover)]:group-focus-within:border-brand-primary [@media(hover:none)]:static [@media(hover:none)]:grid-rows-[1fr] [@media(hover:none)]:visible [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:border-0 [@media(hover:none)]:shadow-none motion-reduce:transition-none">
+                <div className="absolute -inset-x-px top-full grid grid-rows-[0fr] invisible pointer-events-none rounded-b-lg border border-t-0 border-border-default bg-bg-surface shadow-[0_16px_28px_-14px_rgba(0,0,0,0.25)] dark:shadow-[0_16px_28px_-14px_rgba(0,0,0,0.7)] [clip-path:inset(0_-40px_-40px_-40px)] transition-[grid-template-rows,visibility,border-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] [@media(hover:hover)]:group-hover:grid-rows-[1fr] [@media(hover:hover)]:group-hover:visible [@media(hover:hover)]:group-hover:pointer-events-auto [@media(hover:hover)]:group-hover:border-brand-primary [@media(hover:hover)]:group-focus-within:grid-rows-[1fr] [@media(hover:hover)]:group-focus-within:visible [@media(hover:hover)]:group-focus-within:pointer-events-auto [@media(hover:hover)]:group-focus-within:border-brand-primary [@media(hover:none)]:static [@media(hover:none)]:mt-auto [@media(hover:none)]:grid-rows-[1fr] [@media(hover:none)]:visible [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:border-0 [@media(hover:none)]:shadow-none [@media(hover:none)]:[clip-path:none] motion-reduce:transition-none">
                     <div className="min-h-0 overflow-hidden">
                         <div
-                            className={`translate-y-1.5 opacity-0 transition-all duration-150 ease-out delay-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:duration-200 group-hover:delay-75 [@media(hover:hover)]:group-focus-within:translate-y-0 [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100 motion-reduce:transition-none ${
-                                isCompact ? "px-3 pb-3" : "px-4 pb-4"
+                            className={`translate-y-1.5 opacity-0 transition-all duration-150 ease-out delay-0 [@media(hover:hover)]:group-hover:translate-y-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:duration-200 [@media(hover:hover)]:group-hover:delay-75 [@media(hover:hover)]:group-focus-within:translate-y-0 [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100 motion-reduce:transition-none ${
+                                isCompact ? "px-2.5 pb-2.5 sm:px-3 sm:pb-3" : "px-3 pb-3 sm:px-4 sm:pb-4"
                             }`}
                         >
                             <div
                                 aria-hidden="true"
                                 className={`h-px bg-border-default/70 ${
-                                    isCompact ? "mb-2.5" : "mb-3"
+                                    isCompact ? "mb-2" : "mb-2.5 sm:mb-3"
                                 }`}
                             />
                             <PurchaseButtons
                                 added={added}
                                 onAddToCart={handleAddToCart}
                                 onBuyNow={handleBuyNow}
-                                compact={isCompact}
+                                compact
                                 hideLabelsOnPhone
                             />
                         </div>
