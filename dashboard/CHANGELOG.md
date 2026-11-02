@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Theme toggle in top navbar; shop pagination save fix
+
+- `src/components/dashboard/theme-toggle.tsx` (new) + `site-header.tsx`: light/dark switch lives in the top navbar next to notifications.
+- `src/components/dashboard/nav-user.tsx`: removed the user-menu **Appearance** submenu (Profile / Site settings / Log out stay).
+- `src/pages/system/settings/GeneralSettingsForm.tsx`: reset the shared form after a successful PATCH so Save clears correctly; show the first validation error when submit is blocked.
+- `src/pages/system/settings/storefront/ShopSettingsPage.tsx` + `src/lib/validators/siteSettings.ts`: switching Infinite scroll → Numbered pages clamps **Products per page** to a valid option; shop count fields use `z.coerce.number()` so Select string values no longer fail Save silently.
+
 ### pnpm 12 workspace settings + dependency bumps
 
 - Root `pnpm-workspace.yaml`: moved `overrides` / `allowBuilds` out of ignored `package.json#pnpm`; removed nested `frontend/pnpm-workspace.yaml` + stale nested lockfiles.

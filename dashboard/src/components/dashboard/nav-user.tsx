@@ -1,14 +1,9 @@
-import { useEffect, useState } from "react";
 import {
   ChevronsUpDown,
   LogOut,
-  Moon,
-  Settings,
   Settings2,
-  Sun,
   UserRound,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -16,12 +11,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -76,20 +66,12 @@ export function NavUser({ user }: { user: StaffUser }) {
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
   const name =
     `${user.first_name} ${user.last_name}`.trim() ||
     user.username ||
     user.email;
   const roleLabel = user.role.replaceAll("_", " ");
   const subtitle = user.email;
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const currentTheme = mounted ? (theme ?? "dark") : "dark";
 
   return (
     <SidebarMenu>
@@ -148,30 +130,6 @@ export function NavUser({ user }: { user: StaffUser }) {
                 Site settings
               </DropdownMenuItem>
             )}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Settings />
-                Appearance
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="min-w-44">
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  Preferences
-                </DropdownMenuLabel>
-                <DropdownMenuRadioGroup
-                  value={currentTheme}
-                  onValueChange={setTheme}
-                >
-                  <DropdownMenuRadioItem value="light">
-                    <Sun />
-                    Light mode
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="dark">
-                    <Moon />
-                    Dark mode
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => {

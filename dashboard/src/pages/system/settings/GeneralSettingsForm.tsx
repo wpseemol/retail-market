@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { FieldErrors } from "react-hook-form";
 import { ApiError, apiFetch } from "@/lib/api";
 import type {
     SiteSettingsApiResponse,
@@ -11,7 +12,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { useEditSave } from "@/hooks/use-edit-save";
-import { useSiteSettings } from "./settingsContext";
+import { toSiteSettingsFormValues, useSiteSettings } from "./settingsContext";
+
+function firstFormError(errors: FieldErrors<SiteSettingsFormValues>): string {
+    for (const value of Object.values(errors)) {
+        if (!value) continue;
+        if (typeof value === "object" && "message" in value && value.message) {
+            return String(value.message);
+        }
+    }
+    return "Fix the highlighted fields, then save again.";
+}
 
 /** Identity, Shop, Analytics and Pixels share this form and its single PATCH. */
 export function GeneralSettingsForm({ children }: { children: ReactNode }) {
@@ -25,6 +36,7 @@ export function GeneralSettingsForm({ children }: { children: ReactNode }) {
                 { method: "PATCH", token, body: values },
             );
             setSettings(data.settings);
+            form.reset(toSiteSettingsFormValues(data.settings));
             showSuccess("Site settings saved");
         } catch (err) {
             showError(err instanceof ApiError ? err.message : "Failed to save site settings");
@@ -41,7 +53,13 @@ export function GeneralSettingsForm({ children }: { children: ReactNode }) {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5" noValidate>
+            <form
+                onSubmit={form.handleSubmit(onSubmit, (errors) => {
+                    showError(firstFormError(errors));
+                })}
+                className="space-y-5"
+                noValidate
+            >
                 {children}
                 <StickyFormActions
                     message={

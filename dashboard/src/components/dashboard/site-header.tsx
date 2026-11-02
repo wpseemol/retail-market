@@ -1,5 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { NotificationsMenu } from "@/components/dashboard/notifications-menu";
+import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -59,6 +60,7 @@ export function SiteHeader() {
         </Breadcrumb>
       </div>
       <div className="flex items-center gap-1">
+        <ThemeToggle />
         <NotificationsMenu />
       </div>
     </header>

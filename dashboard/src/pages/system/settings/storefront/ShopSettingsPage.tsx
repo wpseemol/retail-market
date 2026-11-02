@@ -31,6 +31,13 @@ type NumberField =
     | "shop_categories_visible"
     | "shop_brands_visible";
 
+function nearestOption(value: number, options: readonly number[]): number {
+    if (options.includes(value)) return value;
+    return options.reduce((best, n) =>
+        Math.abs(n - value) < Math.abs(best - value) ? n : best,
+    );
+}
+
 function CountSelect({
     name,
     label,
@@ -49,31 +56,34 @@ function CountSelect({
         <FormField
             control={form.control}
             name={name}
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel>{label}</FormLabel>
-                    <Select
-                        value={String(field.value)}
-                        onValueChange={(v) => field.onChange(Number(v))}
-                        disabled={form.formState.isSubmitting}
-                    >
-                        <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select count" />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            {options.map((n) => (
-                                <SelectItem key={n} value={String(n)}>
-                                    {n} {suffix}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <FormDescription>{description}</FormDescription>
-                    <FormMessage />
-                </FormItem>
-            )}
+            render={({ field }) => {
+                const selected = nearestOption(Number(field.value) || options[0], options);
+                return (
+                    <FormItem>
+                        <FormLabel>{label}</FormLabel>
+                        <Select
+                            value={String(selected)}
+                            onValueChange={(v) => field.onChange(Number(v))}
+                            disabled={form.formState.isSubmitting}
+                        >
+                            <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select count" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {options.map((n) => (
+                                    <SelectItem key={n} value={String(n)}>
+                                        {n} {suffix}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <FormDescription>{description}</FormDescription>
+                        <FormMessage />
+                    </FormItem>
+                );
+            }}
         />
     );
 }
@@ -160,7 +170,22 @@ export function ShopSettingsPage() {
                                 <FormLabel>Pagination</FormLabel>
                                 <Select
                                     value={field.value}
-                                    onValueChange={field.onChange}
+                                    onValueChange={(mode) => {
+                                        field.onChange(mode);
+                                        if (mode === "pages") {
+                                            const current = Number(
+                                                form.getValues("shop_products_per_page"),
+                                            );
+                                            form.setValue(
+                                                "shop_products_per_page",
+                                                nearestOption(
+                                                    Number.isFinite(current) ? current : 12,
+                                                    SHOP_PER_PAGE_OPTIONS,
+                                                ),
+                                                { shouldDirty: true, shouldValidate: true },
+                                            );
+                                        }
+                                    }}
                                     disabled={form.formState.isSubmitting}
                                 >
                                     <FormControl>
