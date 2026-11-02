@@ -3,13 +3,19 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-03
+
+### Footer drops Sell & Manage column
+
+- `src/components/home/Footer.tsx`: removed the Sell & Manage / Dashboard Login column; grid is Brand (4) + Find (2) + Care (2) + Weekly (4) inside the shared container; bottom social/payment wrap unchanged.
+- `src/i18n/dictionaries/en.ts` / `bn.ts`: removed unused `sellAndManage` / `dashboardLogin` copy.
+
 ## 2026-11-02
 
 ### Footer mobile social icons + single dashboard login
 
-- `src/components/home/Footer.tsx`: mobile bottom bar stacks copyright / social / payments; social icons use `flex-wrap` with ~28% basis (3 per row → wraps to 2–3 lines); payments wrap inside a capped width. Sell & Manage always shows only **Dashboard Login** (CMS role links ignored).
+- `src/components/home/Footer.tsx`: keep all footer content inside the shared `container mx-auto` (same as Header); mobile bottom bar stacks copyright / social / payments with wrap so icons do not overflow.
 - `src/lib/storefrontLinks.ts`: any `dashboard` / `dashboard:*` href resolves to plain dashboard `/login` (no role query).
-- `src/i18n/dictionaries/en.ts` / `bn.ts`: replace role-login copy with `dashboardLogin`.
 
 ### Local MySQL-only Docker Compose
 

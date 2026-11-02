@@ -107,7 +107,6 @@ const bn: Dictionary = {
         downloadOn: "ডাউনলোড করুন",
         findItFast: "দ্রুত খুঁজুন",
         customerCare: "গ্রাহক সেবা",
-        sellAndManage: "বিক্রি ও পরিচালনা",
         weeklySelected: "সাপ্তাহিক বাছাই",
         copyright: "কপিরাইট © {year}।",
         rights: "সর্বস্বত্ব সংরক্ষিত।",
@@ -129,7 +128,6 @@ const bn: Dictionary = {
             faq: "সাধারণ প্রশ্ন",
             terms: "শর্তাবলি",
             support: "পণ্য সহায়তা",
-            dashboardLogin: "ড্যাশবোর্ড লগইন",
         },
     },
     reviews: {

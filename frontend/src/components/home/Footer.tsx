@@ -41,11 +41,6 @@ const customerCareLinks: FallbackLink[] = [
     { key: "support", href: "/contact" },
 ];
 
-/** Storefront footer: one plain dashboard login only (no role URLs). */
-const sellAndManageLinks: FallbackLink[] = [
-    { key: "dashboardLogin", href: "dashboard", external: true },
-];
-
 const FOOTER_SOCIAL = [
     {
         key: "facebook",
@@ -158,20 +153,18 @@ export default function Footer() {
         chrome.nav.footer_care.length > 0
             ? chrome.nav.footer_care
             : localizeLinks(customerCareLinks, t.footer.links);
-    // Always a single Dashboard Login — ignore CMS role links (admin / super_admin / moderator).
-    const sellLinks = localizeLinks(sellAndManageLinks, t.footer.links);
     const logoAlt = format(t.footer.logoAlt, { name: chrome.siteName });
     const socialItems = FOOTER_SOCIAL.filter(
         (item) => chrome.social[item.key as keyof typeof chrome.social],
     );
 
     return (
-        <footer className="w-full max-w-full overflow-x-hidden bg-bg-surface border-t border-border-default pt-12 pb-6 transition-colors duration-200">
-            <div className="container mx-auto max-w-full px-4 sm:px-6">
-                {/* ================= Top Section: 4 Columns ================= */}
+        <footer className="w-full overflow-x-hidden bg-bg-surface border-t border-border-default pt-12 pb-6 transition-colors duration-200">
+            <div className="container mx-auto px-4 sm:px-6">
+                {/* ================= Top Section: Brand + Find + Care + Weekly ================= */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10 pb-12">
-                    {/* Column 1: Brand, Description, Contact, Apps (Col span 3) */}
-                    <div className="lg:col-span-3 flex flex-col items-start">
+                    {/* Column 1: Brand, Description, Contact, Apps */}
+                    <div className="lg:col-span-4 flex flex-col items-start">
                         {/* Dark / Light Mode Logo Toggle */}
                         <Link
                             href="/"
@@ -314,29 +307,8 @@ export default function Footer() {
                         </ul>
                     </div>
 
-                    {/* Column 4: Sell & Manage (Col span 2) */}
-                    <div className="lg:col-span-2 flex flex-col">
-                        <h3 className="text-[#00B207] text-[15px] font-bold uppercase tracking-wider mb-5">
-                            {t.footer.sellAndManage}
-                        </h3>
-                        <ul className="flex flex-col gap-3 list-none p-0 m-0">
-                            {sellLinks.map((link) => (
-                                <li
-                                    key={
-                                        "id" in link &&
-                                        typeof link.id === "string"
-                                            ? link.id
-                                            : link.label
-                                    }
-                                >
-                                    <FooterNavLink link={link} />
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Column 5: Weekly Selected (Col span 3) */}
-                    <div className="lg:col-span-3 flex flex-col">
+                    {/* Column 4: Weekly Selected */}
+                    <div className="lg:col-span-4 flex flex-col">
                         <h3 className="text-[#00B207] text-[15px] font-bold uppercase tracking-wider mb-5">
                             {t.footer.weeklySelected}
                         </h3>
@@ -429,6 +401,8 @@ export default function Footer() {
                                 );
                             })}
                         </ul>
+
+                      
 
                         {/* Payments: wrap to 2–3 rows on mobile */}
                         <div className="flex w-full max-w-[13.5rem] flex-wrap justify-center gap-2 lg:max-w-none lg:w-auto">

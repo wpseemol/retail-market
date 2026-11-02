@@ -105,7 +105,6 @@ const en = {
         downloadOn: "Download on the",
         findItFast: "Find It Fast",
         customerCare: "Customer Care",
-        sellAndManage: "Sell & Manage",
         weeklySelected: "Weekly Selected",
         copyright: "Copyright © {year}.",
         rights: "All Rights Reserved.",
@@ -127,7 +126,6 @@ const en = {
             faq: "FAQ",
             terms: "Terms & Conditions",
             support: "Product Support",
-            dashboardLogin: "Dashboard Login",
         },
     },
     reviews: {
