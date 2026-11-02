@@ -278,6 +278,8 @@ export default function Header({
                         </Link>
 
                         <ThemeToggle />
+
+                        Hello World Test
                     </div>
                 </div>
             </section>

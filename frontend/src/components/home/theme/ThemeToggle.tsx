@@ -64,7 +64,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
                     isDark ? "opacity-35" : "opacity-90",
                 )}
             >
-                <SunIcon size={12} />
+                <SunIcon className="size-5" />
             </span>
             <span
                 aria-hidden
@@ -110,7 +110,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
                                 : "rotate-0 scale-100 opacity-100",
                         )}
                     >
-                        <SunIcon size={18} />
+                        <SunIcon className="size-5" />
                     </span>
                     <span
                         className={cn(
@@ -120,7 +120,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
                                 : "-rotate-90 scale-50 opacity-0",
                         )}
                     >
-                        <MoonIcon size={18} />
+                        <MoonIcon className="size-5" />
                     </span>
                 </span>
             </span>
