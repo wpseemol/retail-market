@@ -1,24 +1,30 @@
-export function SunIcon({ className }: { className?: string }) {
+export function SunIcon({
+    className,
+    size = 16,
+}: {
+    className?: string;
+    size?: number;
+}) {
     return (
         <svg
+            width={size}
+            height={size}
             viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            fill="currentColor"
             className={className}
             aria-hidden="true"
         >
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2" />
-            <path d="M12 20v2" />
-            <path d="M4.93 4.93l1.41 1.41" />
-            <path d="M17.66 17.66l1.41 1.41" />
-            <path d="M2 12h2" />
-            <path d="M20 12h2" />
-            <path d="M4.93 19.07l1.41-1.41" />
-            <path d="M17.66 6.34l1.41-1.41" />
+            <circle cx="12" cy="12" r="5" />
+            <g stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M12 1.5v2.5" fill="none" />
+                <path d="M12 20v2.5" fill="none" />
+                <path d="M1.5 12h2.5" fill="none" />
+                <path d="M20 12h2.5" fill="none" />
+                <path d="M4.2 4.2l1.8 1.8" fill="none" />
+                <path d="M18 18l1.8 1.8" fill="none" />
+                <path d="M4.2 19.8l1.8-1.8" fill="none" />
+                <path d="M18 6l1.8-1.8" fill="none" />
+            </g>
         </svg>
     );
 }

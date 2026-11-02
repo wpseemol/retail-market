@@ -7,8 +7,8 @@ Format: date heading, then one bullet per change with the files touched.
 
 ### Header theme toggle with sun/moon animation
 
-- `src/components/home/theme/SunIcon.tsx`, `MoonIcon.tsx`, `ThemeToggle.tsx` (new): separate sun/moon icons + pill switch with spring thumb slide and icon rotate/fade (respects `prefers-reduced-motion`).
-- `src/components/home/Header.tsx`: replaced the plain vertical knob with `<ThemeToggle />`.
+- `src/components/home/theme/SunIcon.tsx`, `MoonIcon.tsx`, `ThemeToggle.tsx`: filled sun/moon with explicit `width`/`height`; day↔night sky gradient, stars at night, spring thumb slide + icon rotate (respects `prefers-reduced-motion`); uses `resolvedTheme`.
+- `src/components/home/Header.tsx`: uses `<ThemeToggle />`.
 
 ### Footer drops Sell & Manage; bottom Dashboard button
 
