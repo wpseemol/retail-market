@@ -507,6 +507,18 @@ Optional: `first_name`, `last_name`, `phone`, `gender` (`male`\|`female`\|`other
 
 Changing `phone` clears `phone_verified_at` (the new number must be verified again).
 
+### `POST /api/auth/me/password` — Bearer customer
+
+Set or change the local password (safe-input validated).
+
+| Field | Notes |
+|-------|--------|
+| `new_password` | Required · 8–128 chars |
+| `confirm_password` | Required · must match `new_password` |
+| `current_password` | Required when `has_password` is already true; omit when setting the first password on a Google/Facebook/Apple account |
+
+Does **not** unlink social providers — email+password and Google (etc.) both stay available. Public user includes `has_password: boolean`.
+
 ### `POST /api/auth/me/avatar` — Bearer customer
 
 Multipart field: **`avatar`** · max **5 MB** · JPEG/PNG/WebP/GIF · always resized on the server.

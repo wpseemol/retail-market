@@ -50,6 +50,8 @@ export function toPublicUser(user: UserWithAvatar) {
     email_verified_at: user.email_verified_at,
     phone_verified_at: user.phone_verified_at,
     provider_name: user.provider_name,
+    /** True when a local password is set (email login and/or social + password). */
+    has_password: Boolean(user.password),
     avatar_id: user.avatar_id?.toString() ?? null,
     avatar_preset: user.avatar_preset ?? null,
     last_login_at: user.last_login_at,

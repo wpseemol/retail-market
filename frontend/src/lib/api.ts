@@ -11,6 +11,8 @@ export type ApiUser = {
   email_verified_at?: string | null;
   phone_verified_at?: string | null;
   provider_name?: string | null;
+  /** Local password set — email login works alongside social providers. */
+  has_password?: boolean;
   avatar_id?: string | null;
   avatar: {
     id: string;

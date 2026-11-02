@@ -30,6 +30,7 @@ function UserAvatar({
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
+        key={user.avatar_id ?? photo}
         src={photo}
         alt=""
         className={`${sizeClass} rounded-full object-cover bg-bg-subtle shrink-0`}

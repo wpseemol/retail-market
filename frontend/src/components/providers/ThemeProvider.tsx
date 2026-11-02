@@ -22,9 +22,6 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-/** Inline in root layout (Server Component) so it runs before paint — no FOUC. */
-export const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)})||"light";var d=document.documentElement;if(t==="dark"){d.classList.add("dark");d.style.colorScheme="dark"}else{d.classList.remove("dark");d.style.colorScheme="light"}}catch(e){}})();`;
-
 function applyTheme(theme: Theme) {
     const root = document.documentElement;
     if (theme === "dark") {
@@ -36,34 +33,43 @@ function applyTheme(theme: Theme) {
     }
 }
 
+function readStoredTheme(): Theme {
+    try {
+        const raw = localStorage.getItem(THEME_STORAGE_KEY);
+        if (raw === "dark" || raw === "light") return raw;
+    } catch {
+        /* ignore */
+    }
+    return "light";
+}
+
 /**
  * Brand theme provider (class on `<html>`).
- * Anti-FOUC script lives in `app/layout.tsx` (server), not here — avoids
- * React 19 client `<script>` warnings and `useServerInsertedHTML` DOM races.
+ * Anti-FOUC runs from `/theme-init.js` via `next/script` `beforeInteractive`.
+ *
+ * Persistence: never write localStorage until after the stored value is read,
+ * otherwise the default `"light"` state overwrites `"dark"` on reload (Strict Mode).
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
     const [theme, setThemeState] = useState<Theme>("light");
+    const [hydrated, setHydrated] = useState(false);
 
     useEffect(() => {
-        let stored: Theme = "light";
-        try {
-            const raw = localStorage.getItem(THEME_STORAGE_KEY);
-            if (raw === "dark" || raw === "light") stored = raw;
-        } catch {
-            /* ignore */
-        }
+        const stored = readStoredTheme();
         setThemeState(stored);
         applyTheme(stored);
+        setHydrated(true);
     }, []);
 
     useEffect(() => {
+        if (!hydrated) return;
         applyTheme(theme);
         try {
             localStorage.setItem(THEME_STORAGE_KEY, theme);
         } catch {
             /* ignore */
         }
-    }, [theme]);
+    }, [theme, hydrated]);
 
     const setTheme = useCallback((next: Theme | ((current: Theme) => Theme)) => {
         setThemeState((current) => {

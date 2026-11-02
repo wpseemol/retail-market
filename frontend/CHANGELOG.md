@@ -5,6 +5,17 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Dark theme persists across reload
+
+- `ThemeProvider.tsx`: wait until localStorage is read before writing it back — the default `"light"` state no longer overwrites a saved `"dark"` preference on reload / Strict Mode remount.
+
+### Account avatar sync, password, theme script
+
+- `layout.tsx` + `public/theme-init.js`: theme anti-FOUC via `next/script` `beforeInteractive` (fixes React 19 inline `<script>` console error).
+- `AccountProfile.tsx` / `AccountMenu.tsx` / `AuthHydrator.tsx`: after avatar/profile updates call `useSession().update({ backendUser })` so header avatar updates without logout; Image icon replace “Photo”.
+- `AccountPassword.tsx` + validators: set/change password; Google users optional first password; email users keep current-password required.
+- `api.ts`: `has_password` on `ApiUser`.
+
 ### Footer dashboard CTA as plain link
 
 - `Footer.tsx`: “Go to Dashboard” is a simple text link with a Lucide `LayoutDashboard` icon (no green button chrome).

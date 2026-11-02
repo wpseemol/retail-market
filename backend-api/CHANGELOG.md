@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Customer set/change password + has_password
+
+- `POST /api/auth/me/password`: set password (social, no current) or change (requires current); keeps provider login; Zod `setPasswordSchema` + safe-input.
+- `toPublicUser`: adds `has_password`.
+- `API.md`: documents the endpoint.
+
 ### Dependency bumps + pnpm 12 workspace
 
 - `package.json`: AWS SDK, multer, nodemailer, google-auth-library, zod, tsx patches; `geoip-lite` 1.4 → 2.0.3 (drops deprecated `rimraf`/`glob`/`inflight`); removed unused `allowScripts` (builds allowed via root `pnpm-workspace.yaml`); `packageManager` → `pnpm@12.15.0`.

@@ -52,6 +52,7 @@ import {
   refreshSchema,
   registerSchema,
   sendPhoneCodeSchema,
+  setPasswordSchema,
   updateProfileSchema,
 } from "../validators/customerAuth.js";
 
@@ -621,6 +622,61 @@ export async function updateMe(req: Request, res: Response) {
   return res.json({
     message: "Profile updated",
     user: toPublicUser(user),
+  });
+}
+
+/**
+ * Set or change the local password.
+ * Google/Facebook/Apple accounts may set a password without a current one;
+ * email accounts must confirm the current password. Provider login stays linked.
+ */
+export async function setPassword(req: Request, res: Response) {
+  const parsed = setPasswordSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: "Validation failed",
+      errors: parsed.error.flatten().fieldErrors,
+    });
+  }
+
+  const user = await prisma.user.findFirst({
+    where: { id: req.auth!.userId, deleted_at: null },
+    include: userWithAvatarInclude,
+  });
+  if (!user) {
+    return res.status(401).json({ message: "User not found" });
+  }
+
+  const { current_password, new_password } = parsed.data;
+  const hasPassword = Boolean(user.password);
+
+  if (hasPassword) {
+    if (!current_password) {
+      return res.status(400).json({
+        message: "Current password is required",
+        errors: { current_password: ["Current password is required"] },
+        code: "CURRENT_PASSWORD_REQUIRED",
+      });
+    }
+    if (!(await verifyPassword(current_password, user.password!))) {
+      return res.status(401).json({
+        message: "Current password is incorrect",
+        code: "CURRENT_PASSWORD_INVALID",
+      });
+    }
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: user.id },
+    data: { password: await hashPassword(new_password) },
+    include: userWithAvatarInclude,
+  });
+
+  return res.json({
+    message: hasPassword
+      ? "Password updated successfully"
+      : "Password set successfully. You can also sign in with email and password.",
+    user: toPublicUser(updated),
   });
 }
 

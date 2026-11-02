@@ -1,12 +1,10 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Hind_Siliguri, Poppins } from "next/font/google";
 import "lenis/dist/lenis.css";
 import "./globals.css";
 import TopBar from "@/components/home/TopBar";
-import {
-    ThemeProvider,
-    THEME_INIT_SCRIPT,
-} from "@/components/providers/ThemeProvider";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import StoreProvider from "@/components/providers/StoreProvider";
 import Header from "@/components/home/Header";
 import Footer from "@/components/home/Footer";
@@ -179,14 +177,13 @@ export default async function RootLayout({
             className={`${poppins.variable} ${hindSiliguri.variable} h-full antialiased`}
             suppressHydrationWarning
         >
-            <head>
-                {/* Server Component script — runs before paint; not a client <script>. */}
-                <script
-                    id="niyenin-theme-init"
-                    dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
-                />
-            </head>
             <body className="min-h-full flex flex-col font-sans">
+                {/* External file + beforeInteractive — avoids React 19 inline <script> warning. */}
+                <Script
+                    id="niyenin-theme-init"
+                    src="/theme-init.js"
+                    strategy="beforeInteractive"
+                />
                 {/* SSR reload bar (real DOM + CSS). No <script> — React 19 safe. */}
                 <div
                     id={BOOT_BAR_ID}

@@ -12,7 +12,7 @@ export default function AuthHydrator() {
   const backendUser = data?.backendUser;
   const sessionError = data?.error;
   const userKey = backendUser
-    ? `${backendUser.id}|${backendUser.email_verified_at ?? ""}|${backendUser.phone_verified_at ?? ""}|${backendUser.avatar_id ?? ""}|${sessionError ?? ""}`
+    ? `${backendUser.id}|${backendUser.email_verified_at ?? ""}|${backendUser.phone_verified_at ?? ""}|${backendUser.avatar_id ?? ""}|${backendUser.avatar?.path ?? ""}|${backendUser.has_password ? "1" : "0"}|${sessionError ?? ""}`
     : "";
 
   useEffect(() => {

@@ -207,8 +207,41 @@ export const confirmCodeSchema = z.object({
     .regex(/^\d{6}$/, "Enter the 6-digit code"),
 });
 
+/**
+ * Set or change storefront password.
+ * Social accounts without a password may omit `current_password`.
+ * Email accounts must send the current password.
+ */
+export const setPasswordSchema = z
+  .object({
+    current_password: withSafeInput(z.string().min(1).max(128)).optional(),
+    new_password: withSafeInput(z.string().min(8).max(128)),
+    confirm_password: withSafeInput(z.string().min(8).max(128)),
+  })
+  .strict()
+  .superRefine((data, ctx) => {
+    if (data.new_password !== data.confirm_password) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Passwords do not match",
+        path: ["confirm_password"],
+      });
+    }
+    if (
+      data.current_password !== undefined &&
+      data.current_password === data.new_password
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "New password must be different from the current password",
+        path: ["new_password"],
+      });
+    }
+  });
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RefreshInput = z.infer<typeof refreshSchema>;
 export type GoogleAuthInput = z.infer<typeof googleAuthSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export type SetPasswordInput = z.infer<typeof setPasswordSchema>;

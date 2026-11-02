@@ -12,6 +12,7 @@ import {
   register,
   sendEmailCode,
   sendPhoneCode,
+  setPassword,
   socialProviders,
   updateMe,
   uploadAvatar,
@@ -75,6 +76,13 @@ customerAuthRouter.patch(
   requireAuth,
   requireRoles("customer"),
   asyncHandler(updateMe),
+);
+
+customerAuthRouter.post(
+  "/me/password",
+  requireAuth,
+  requireRoles("customer"),
+  asyncHandler(setPassword),
 );
 
 const customerOnly = [requireAuth, requireRoles("customer")];

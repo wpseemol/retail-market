@@ -9,7 +9,9 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
+import { ImageIcon } from "lucide-react";
 import AuthInput from "@/components/auth/AuthInput";
 import { apiFetch, apiUpload, ApiError, type ApiUser } from "@/lib/api";
 import { useAppDispatch } from "@/store/hooks";
@@ -25,8 +27,8 @@ import {
   AVATAR_MAX_BYTES,
   validateAvatarFile,
 } from "@/lib/validators/avatarImage";
-import { syncSessionUserAction } from "@/app/actions/auth";
 import AccountVerification from "@/components/account/AccountVerification";
+import AccountPassword from "@/components/account/AccountPassword";
 
 function initials(user: ApiUser) {
   const a = user.first_name?.trim()?.[0] ?? "";
@@ -62,12 +64,14 @@ function userFingerprint(u: ApiUser) {
     u.phone_verified_at ?? "",
     u.avatar_id ?? "",
     u.avatar?.path ?? "",
+    u.has_password ? "1" : "0",
   ].join("|");
 }
 
 export default function AccountProfile({ initialUser }: AccountProfileProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const { update: updateSession } = useSession();
   const [user, setLocalUser] = useState(initialUser);
   const [prevFingerprint, setPrevFingerprint] = useState(() =>
     userFingerprint(initialUser),
@@ -92,9 +96,11 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
     dispatch(setSessionUser(initialUser));
   }, [dispatch, nextFingerprint]); // eslint-disable-line react-hooks/exhaustive-deps -- fingerprint tracks meaningful user changes
 
-  const applyUser = (next: ApiUser) => {
+  const applyUser = async (next: ApiUser) => {
     setLocalUser(next);
     dispatch(setUser(next));
+    // Keep Auth.js JWT + header avatar in sync (logout was otherwise required).
+    await updateSession({ backendUser: next });
   };
 
   const markTouched = (field: UpdateProfileField, value: string) => {
@@ -128,11 +134,10 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
         "/api/auth/me/avatar",
         formData,
       );
-      applyUser(data.user);
-      await syncSessionUserAction();
-      setSuccess("Profile photo updated");
+      await applyUser(data.user);
+      setSuccess("Profile image updated");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Photo upload failed");
+      setError(err instanceof ApiError ? err.message : "Image upload failed");
     } finally {
       setAvatarLoading(false);
     }
@@ -172,8 +177,7 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
         method: "PATCH",
         body: validated.data,
       });
-      applyUser(data.user);
-      await syncSessionUserAction();
+      await applyUser(data.user);
       setFieldErrors({});
       setSuccess("Profile updated successfully");
     } catch (err) {
@@ -243,6 +247,7 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
                     {user.avatar?.path ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
+                        key={user.avatar_id ?? user.avatar.path}
                         src={user.avatar.path}
                         alt=""
                         className="size-full object-cover"
@@ -256,7 +261,7 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
                           className="size-6 rounded-full border-2 border-white/30 border-t-white animate-spin"
                           aria-hidden
                         />
-                        <span className="sr-only">Uploading photo</span>
+                        <span className="sr-only">Uploading image</span>
                       </span>
                     ) : null}
                   </div>
@@ -271,10 +276,11 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
                     type="button"
                     disabled={avatarLoading}
                     onClick={() => avatarInputRef.current?.click()}
-                    className="absolute -bottom-1 -right-1 h-8 rounded-full border border-border-default bg-bg-surface px-2.5 text-[11px] font-semibold text-text-primary shadow-sm hover:border-brand-primary hover:text-brand-primary transition-colors disabled:opacity-60 cursor-pointer"
-                    title={`JPEG, PNG, WebP, or GIF · max ${Math.floor(AVATAR_MAX_BYTES / (1024 * 1024))} MB`}
+                    className="absolute -bottom-1 -right-1 inline-flex size-8 items-center justify-center rounded-full border border-border-default bg-bg-surface text-text-primary shadow-sm hover:border-brand-primary hover:text-brand-primary transition-colors disabled:opacity-60 cursor-pointer"
+                    title={`JPEG, PNG, WebP, or GIF · max ${Math.floor(AVATAR_MAX_BYTES / (1024 * 1024))} MB · always resized on the server`}
+                    aria-label="Upload profile image"
                   >
-                    Photo
+                    <ImageIcon className="size-3.5" strokeWidth={1.75} aria-hidden />
                   </button>
                 </div>
                 <div className="min-w-0">
@@ -543,8 +549,14 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
           <AccountVerification
             user={user}
             onUserChange={async (next) => {
-              applyUser(next);
-              await syncSessionUserAction();
+              await applyUser(next);
+            }}
+          />
+
+          <AccountPassword
+            user={user}
+            onUserChange={async (next) => {
+              await applyUser(next);
             }}
           />
         </motion.div>

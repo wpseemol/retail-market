@@ -352,6 +352,91 @@ export function validateUpdateProfileField(
   return result.error.issues[0]?.message;
 }
 
+export type SetPasswordField =
+  | "current_password"
+  | "new_password"
+  | "confirm_password";
+
+export function validateSetPasswordForm(
+  data: {
+    current_password: string;
+    new_password: string;
+    confirm_password: string;
+  },
+  options: { requireCurrent: boolean },
+):
+  | {
+      success: true;
+      data: {
+        current_password?: string;
+        new_password: string;
+        confirm_password: string;
+      };
+    }
+  | { success: false; errors: Partial<Record<SetPasswordField, string>> } {
+  const errors: Partial<Record<SetPasswordField, string>> = {};
+  const current = data.current_password;
+  const next = data.new_password;
+  const confirm = data.confirm_password;
+
+  if (options.requireCurrent) {
+    if (!current) {
+      errors.current_password = "Current password is required";
+    } else {
+      const unsafe = findUnsafeInputReason(current);
+      if (unsafe) errors.current_password = unsafe;
+    }
+  } else if (current) {
+    const unsafe = findUnsafeInputReason(current);
+    if (unsafe) errors.current_password = unsafe;
+  }
+
+  const unsafeNew = findUnsafeInputReason(next);
+  if (unsafeNew) {
+    errors.new_password = unsafeNew;
+  } else if (!next) {
+    errors.new_password = "Password is required";
+  } else if (next.length < 8) {
+    errors.new_password = "Password must be at least 8 characters";
+  } else if (next.length > 128) {
+    errors.new_password = "Password is too long";
+  }
+
+  const unsafeConfirm = findUnsafeInputReason(confirm);
+  if (unsafeConfirm) {
+    errors.confirm_password = unsafeConfirm;
+  } else if (!confirm) {
+    errors.confirm_password = "Confirm your password";
+  } else if (next !== confirm) {
+    errors.confirm_password = "Passwords do not match";
+  }
+
+  if (
+    options.requireCurrent &&
+    current &&
+    next &&
+    current === next &&
+    !errors.new_password
+  ) {
+    errors.new_password = "New password must be different from the current password";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return { success: false, errors };
+  }
+
+  return {
+    success: true,
+    data: {
+      ...(options.requireCurrent || current
+        ? { current_password: current }
+        : {}),
+      new_password: next,
+      confirm_password: confirm,
+    },
+  };
+}
+
 export function validateUpdateProfileForm(data: {
   first_name: string;
   last_name: string;
