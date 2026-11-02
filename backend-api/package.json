@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@12.15.0",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "prisma generate && tsc",
@@ -19,14 +20,14 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1156.0",
-    "@aws-sdk/s3-request-presigner": "^3.1156.0",
+    "@aws-sdk/client-s3": "^3.1161.0",
+    "@aws-sdk/s3-request-presigner": "^3.1161.0",
     "@prisma/client": "^6.19.3",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/geoip-lite": "^1.4.4",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/multer": "^2.2.0",
+    "@types/multer": "^2.3.0",
     "@types/node": "^22.10.2",
     "@types/nodemailer": "^8.0.2",
     "bcryptjs": "^3.0.3",
@@ -35,24 +36,18 @@
     "express": "^4.21.2",
     "express-async-errors": "^3.1.1",
     "fflate": "^0.8.3",
-    "geoip-lite": "1.4.10",
-    "google-auth-library": "^11.1.0",
+    "geoip-lite": "^2.0.3",
+    "google-auth-library": "^11.3.2",
     "jsonwebtoken": "^9.0.3",
-    "multer": "^2.4.0",
-    "nodemailer": "^10.0.12",
+    "multer": "^2.5.0",
+    "nodemailer": "^10.3.1",
     "prisma": "^6.19.3",
     "redis": "^5.12.1",
     "sharp": "^0.35.5",
     "typescript": "^5.7.2",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "tsx": "^4.19.2"
-  },
-  "allowScripts": {
-    "@prisma/client": true,
-    "@prisma/engines": true,
-    "prisma": true,
-    "esbuild": true
+    "tsx": "^4.23.15"
   }
 }
