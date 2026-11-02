@@ -178,7 +178,7 @@ export default function Header({
                     <Link
                         href="/"
                         aria-label={t.header.homeLabel}
-                        className="relative flex h-8 w-[120px] shrink-0 items-center sm:h-10 sm:w-[150px]"
+                        className="relative flex h-8 w-30 shrink-0 items-center sm:h-10 sm:w-37.5"
                     >
                         <Image
                             src="/logo/niyenin-white.png"
@@ -300,7 +300,7 @@ export default function Header({
             <nav
                 ref={menuRef}
                 aria-label={t.header.primaryNav}
-                className="relative z-50 w-full border-y border-border-default/50 bg-bg-base data-[stuck]:fixed data-[stuck]:inset-x-0 data-[stuck]:top-0 data-[stuck]:shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:data-[stuck]:shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
+                className="relative z-50 w-full border-y border-border-default/50 bg-bg-base data-stuck:fixed data-stuck:inset-x-0 data-stuck:top-0 data-stuck:shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:data-stuck:shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
             >
                 <div className="flex items-center gap-2 px-4 py-2 lg:hidden">
                     <button
@@ -467,7 +467,7 @@ export default function Header({
 
             {/* ================= 4. Mobile & Tablet Slide-over Drawer ================= */}
             <div
-                className={`lg:hidden fixed inset-0 z-[70] bg-black/50 ${
+                className={`lg:hidden fixed inset-0 z-70 bg-black/50 ${
                     isMobileMenuOpen ? "block" : "hidden"
                 }`}
                 onClick={() => setIsMobileMenuOpen(false)}

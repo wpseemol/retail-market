@@ -1,5 +1,5 @@
 /* Caches successful same-origin reads so a page you already opened can load again while offline. */
-const CACHE = "niyenin-pages-v2";
+const CACHE = "niyenin-pages-v3";
 let locale = "en";
 
 self.addEventListener("message", (event) => {

@@ -5,6 +5,16 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Theme toggle vertical switch with sun/moon icons
+
+- `src/components/home/theme/ThemeToggle.tsx`: vertical pill switch; sun at top / moon at bottom; white thumb slides with brand-primary active icon (no preferences dropdown).
+
+### Theme toggle preferences-style vertical menu
+
+- `src/components/home/theme/ThemeToggle.tsx`: replaced sliding switch with a dashboard-like vertical Preferences menu (Light mode / Dark mode radio rows, brand-primary icons).
+- `src/i18n/dictionaries/en.ts` / `bn.ts`: added `themePreferences`, `lightMode`, `darkMode`.
+- `public/sw.js`: cache bump `niyenin-pages-v3`.
+
 ### Theme toggle solid brand colors
 
 - `src/components/home/theme/ThemeToggle.tsx`: removed sky/amber gradients and decorative stars; track uses solid `brand-tint` / `brand-hover`; white thumb with `brand-primary` sun/moon icons for a cleaner brand look.
