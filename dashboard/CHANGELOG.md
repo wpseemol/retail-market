@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Shop settings Select TypeScript casts
+
+- `src/pages/system/settings/storefront/ShopSettingsPage.tsx`: Radix `onValueChange` is typed as `string`; cast to `shop_default_view` / `shop_pagination_mode` unions before `setValue`.
+
 ### Professional list headers + Inter
 
 - Font switched from Poppins to **Inter** (`index.html`, `src/index.css`).

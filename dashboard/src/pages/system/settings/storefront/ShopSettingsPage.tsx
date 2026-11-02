@@ -6,6 +6,9 @@ import {
     SHOP_VIEW_OPTIONS,
     type SiteSettingsFormValues,
 } from "@/lib/validators/siteSettings";
+
+type ShopDefaultView = SiteSettingsFormValues["shop_default_view"];
+type ShopPaginationMode = SiteSettingsFormValues["shop_pagination_mode"];
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import {
     FormControl,
@@ -148,11 +151,15 @@ export function ShopSettingsPage() {
                                 <Select
                                     value={field.value}
                                     onValueChange={(value) => {
-                                        form.setValue("shop_default_view", value, {
-                                            shouldDirty: true,
-                                            shouldTouch: true,
-                                            shouldValidate: true,
-                                        });
+                                        form.setValue(
+                                            "shop_default_view",
+                                            value as ShopDefaultView,
+                                            {
+                                                shouldDirty: true,
+                                                shouldTouch: true,
+                                                shouldValidate: true,
+                                            },
+                                        );
                                     }}
                                     disabled={form.formState.isSubmitting}
                                 >
@@ -185,7 +192,8 @@ export function ShopSettingsPage() {
                                 <FormLabel>Pagination</FormLabel>
                                 <Select
                                     value={field.value}
-                                    onValueChange={(mode) => {
+                                    onValueChange={(value) => {
+                                        const mode = value as ShopPaginationMode;
                                         form.setValue("shop_pagination_mode", mode, {
                                             shouldDirty: true,
                                             shouldTouch: true,
