@@ -5,10 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
-### Vercel pnpm install fix
+### Vercel install uses npm (dashboard is Root Directory)
 
-- `vercel.json`: install from the monorepo root with a real pnpm 12 binary (`npm install -g pnpm@12.15.0 && pnpm install --frozen-lockfile --filter dashboard...`). Plain `pnpm install` in Root Directory `dashboard` failed (no local lockfile + Vercel’s broken pnpm 12 bootstrap).
-- Root `DEPLOY.md`: notes the install command and that deploys need the full Git clone.
+- Why it failed: `vercel` from `dashboard/` only uploads that folder (244 files). `cd .. && pnpm …` had no `pnpm-lock.yaml`, and global `pnpm@12` install scripts were blocked on Vercel.
+- `package-lock.json` (new): lockfile for Vercel `npm ci`.
+- `vercel.json`: `npm ci` + `npm run build`.
+- `package.json`: removed `packageManager` pnpm pin so Vercel does not try pnpm 12.
+- `DEPLOY.md` / `AGENTS.md`: document npm-on-Vercel vs pnpm-locally.
 
 ### Shop settings Select TypeScript casts
 
