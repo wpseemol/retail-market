@@ -5,6 +5,14 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-03
 
+### Footer dashboard CTA as plain link
+
+- `Footer.tsx`: “Go to Dashboard” is a simple text link with a Lucide `LayoutDashboard` icon (no green button chrome).
+
+### Session backendUser typing for Auth.js client
+
+- `types/next-auth.d.ts`: also augment `@auth/core/types` (and JWT) so `getSession()` / `useSession()` see `backendUser` — Auth.js types Session from core, not only `next-auth`.
+
 ### Login welcome copy + SignUp signIn typing
 
 - `LoginForm.tsx`: short “Sign in to your account” under Welcome.

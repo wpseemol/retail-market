@@ -1,30 +1,46 @@
 import type { DefaultSession } from "next-auth";
 import type { ApiUser } from "@/lib/api";
 
-declare module "next-auth" {
-  interface Session {
-    backendUser?: ApiUser;
-    /** Short-lived backend access JWT (prefer server-only use). */
-    accessToken?: string;
-    error?: string;
-    user: DefaultSession["user"] & {
-      id?: string;
-    };
-  }
+/** Shared session fields (Auth.js client uses `@auth/core/types.Session`). */
+type AppSessionFields = {
+  backendUser?: ApiUser;
+  /** Short-lived backend access JWT (prefer server-only use). */
+  accessToken?: string;
+  error?: string;
+  user: DefaultSession["user"] & {
+    id?: string;
+  };
+};
 
-  interface User {
-    accessToken?: string;
-    refreshToken?: string;
-    backendUser?: ApiUser;
-  }
+type AppUserFields = {
+  accessToken?: string;
+  refreshToken?: string;
+  backendUser?: ApiUser;
+};
+
+type AppJwtFields = {
+  accessToken?: string;
+  refreshToken?: string;
+  accessTokenExpires?: number;
+  backendUser?: ApiUser;
+  error?: string;
+};
+
+declare module "next-auth" {
+  interface Session extends AppSessionFields {}
+  interface User extends AppUserFields {}
+}
+
+/** Required: `getSession()` / `useSession()` return this Session, not `next-auth`'s re-export. */
+declare module "@auth/core/types" {
+  interface Session extends AppSessionFields {}
+  interface User extends AppUserFields {}
 }
 
 declare module "next-auth/jwt" {
-  interface JWT {
-    accessToken?: string;
-    refreshToken?: string;
-    accessTokenExpires?: number;
-    backendUser?: ApiUser;
-    error?: string;
-  }
+  interface JWT extends AppJwtFields {}
+}
+
+declare module "@auth/core/jwt" {
+  interface JWT extends AppJwtFields {}
 }

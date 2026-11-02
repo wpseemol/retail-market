@@ -3,6 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { LayoutDashboard } from "lucide-react";
 import { useAppSelector } from "@/store/hooks";
 import { selectSiteChrome } from "@/store/siteChromeSlice";
 import { resolveStorefrontHref } from "@/lib/storefrontLinks";
@@ -405,8 +406,13 @@ export default function Footer() {
                             href={dashboardHref}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex h-9 w-full max-w-xs shrink-0 items-center justify-center rounded-md bg-brand-primary px-4 text-[13px] font-semibold text-white transition-colors hover:bg-brand-hover sm:w-auto"
+                            className="inline-flex shrink-0 items-center gap-1.5 text-[13px] text-text-secondary transition-colors hover:text-brand-primary"
                         >
+                            <LayoutDashboard
+                                className="size-3.5 shrink-0"
+                                strokeWidth={1.75}
+                                aria-hidden
+                            />
                             {goToDashboard}
                         </a>
 
