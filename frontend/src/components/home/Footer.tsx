@@ -8,6 +8,7 @@ import { selectSiteChrome } from "@/store/siteChromeSlice";
 import { resolveStorefrontHref } from "@/lib/storefrontLinks";
 import { useI18n } from "@/components/providers/LocaleProvider";
 import { format } from "@/i18n/config";
+import { dashboardCtaLabel } from "@/i18n/dashboardCta";
 import type { Dictionary } from "@/i18n/dictionaries";
 
 interface FooterLink {
@@ -144,16 +145,18 @@ const weeklySelectedProducts = [
 export default function Footer() {
     const currentYear = 2026;
     const chrome = useAppSelector(selectSiteChrome);
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
+    const footer = t.footer;
+    const goToDashboard = dashboardCtaLabel(locale);
     const findLinks =
         chrome.nav.footer_find.length > 0
             ? chrome.nav.footer_find
-            : localizeLinks(findItFastLinks, t.footer.links);
+            : localizeLinks(findItFastLinks, footer.links);
     const careLinks =
         chrome.nav.footer_care.length > 0
             ? chrome.nav.footer_care
-            : localizeLinks(customerCareLinks, t.footer.links);
-    const logoAlt = format(t.footer.logoAlt, { name: chrome.siteName });
+            : localizeLinks(customerCareLinks, footer.links);
+    const logoAlt = format(footer.logoAlt, { name: chrome.siteName });
     const socialItems = FOOTER_SOCIAL.filter(
         (item) => chrome.social[item.key as keyof typeof chrome.social],
     );
@@ -188,7 +191,7 @@ export default function Footer() {
                         </Link>
 
                         <p className="text-text-secondary text-sm leading-relaxed mb-6 max-w-sm">
-                            {chrome.footerBlurb || t.footer.blurb}
+                            {chrome.footerBlurb || footer.blurb}
                         </p>
 
                         {/* Support Contact */}
@@ -210,7 +213,7 @@ export default function Footer() {
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-brand-primary text-xs font-bold uppercase tracking-wider">
-                                    {chrome.footerCallout || t.footer.callout}
+                                    {chrome.footerCallout || footer.callout}
                                 </span>
                                 <span className="text-text-primary text-[19px] font-bold tracking-tight">
                                     {chrome.footerPhone || "+1(000)000-000"}
@@ -234,7 +237,7 @@ export default function Footer() {
                                 </svg>
                                 <div className="flex flex-col items-start leading-none">
                                     <span className="text-[8px] uppercase tracking-wider">
-                                        {t.footer.getItOn}
+                                        {footer.getItOn}
                                     </span>
                                     <span className="text-[13px] font-semibold">
                                         Google Play
@@ -256,7 +259,7 @@ export default function Footer() {
                                 </svg>
                                 <div className="flex flex-col items-start leading-none">
                                     <span className="text-[8px] uppercase tracking-wider">
-                                        {t.footer.downloadOn}
+                                        {footer.downloadOn}
                                     </span>
                                     <span className="text-[13px] font-semibold">
                                         App Store
@@ -269,7 +272,7 @@ export default function Footer() {
                     {/* Column 2: Find It Fast (Col span 2) */}
                     <div className="lg:col-span-2 flex flex-col">
                         <h3 className="text-[#00B207] text-[15px] font-bold uppercase tracking-wider mb-5">
-                            {t.footer.findItFast}
+                            {footer.findItFast}
                         </h3>
                         <ul className="flex flex-col gap-3 list-none p-0 m-0">
                             {findLinks.map((link) => (
@@ -290,7 +293,7 @@ export default function Footer() {
                     {/* Column 3: Customer Care (Col span 2) */}
                     <div className="lg:col-span-2 flex flex-col">
                         <h3 className="text-[#00B207] text-[15px] font-bold uppercase tracking-wider mb-5">
-                            {t.footer.customerCare}
+                            {footer.customerCare}
                         </h3>
                         <ul className="flex flex-col gap-3 list-none p-0 m-0">
                             {careLinks.map((link) => (
@@ -311,7 +314,7 @@ export default function Footer() {
                     {/* Column 4: Weekly Selected */}
                     <div className="lg:col-span-4 flex flex-col">
                         <h3 className="text-[#00B207] text-[15px] font-bold uppercase tracking-wider mb-5">
-                            {t.footer.weeklySelected}
+                            {footer.weeklySelected}
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5">
                             {weeklySelectedProducts.map((product) => (
@@ -348,23 +351,23 @@ export default function Footer() {
                     {/* Copyright */}
                     <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-[12px] leading-relaxed text-text-secondary sm:text-[13px] lg:justify-start lg:text-left">
                         <span className="w-full sm:w-auto">
-                            {format(t.footer.copyright, { year: currentYear })}{" "}
+                            {format(footer.copyright, { year: currentYear })}{" "}
                             <strong className="text-[#00B207] font-semibold">
                                 {chrome.siteName}
                             </strong>
-                            . {t.footer.rights}
+                            . {footer.rights}
                         </span>
                         <span className="hidden text-border-default sm:inline" aria-hidden="true">
                             |
                         </span>
                         <Link href="/terms" className="hover:text-brand-primary">
-                            {t.footer.links.terms}
+                            {footer.links.terms}
                         </Link>
                         <span className="text-border-default" aria-hidden="true">
                             |
                         </span>
                         <Link href="/faq" className="hover:text-brand-primary">
-                            {t.footer.links.faq}
+                            {footer.links.faq}
                         </Link>
                     </div>
 
@@ -408,7 +411,7 @@ export default function Footer() {
                             rel="noopener noreferrer"
                             className="inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-brand-primary px-4 text-[13px] font-semibold text-white transition-colors hover:bg-brand-hover"
                         >
-                            {t.footer.goToDashboard}
+                            {goToDashboard}
                         </a>
 
                         <div className="flex w-full max-w-[13.5rem] flex-wrap justify-center gap-2 lg:max-w-none lg:w-auto">

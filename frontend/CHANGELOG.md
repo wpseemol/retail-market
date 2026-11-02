@@ -8,7 +8,8 @@ Format: date heading, then one bullet per change with the files touched.
 ### Footer drops Sell & Manage; bottom Dashboard button
 
 - `src/components/home/Footer.tsx`: removed Sell & Manage column; grid is Brand (4) + Find (2) + Care (2) + Weekly (4); bottom bar adds a **Go to Dashboard** button (`bg-brand-primary`, plain `/login` via `resolveStorefrontHref`) between social icons and payments.
-- `src/i18n/dictionaries/en.ts` / `bn.ts`: `goToDashboard` copy; removed unused `sellAndManage` / `dashboardLogin`.
+- `src/i18n/dashboardCta.ts` (new): locale CTA labels for the footer dashboard button (avoids stale `Dictionary` cache still typing `sellAndManage`).
+- `src/i18n/dictionaries/en.ts` / `bn.ts`: `goToDashboard` on footer; `Dictionary` omits `sellAndManage` and requires `goToDashboard`.
 
 ## 2026-11-02
 

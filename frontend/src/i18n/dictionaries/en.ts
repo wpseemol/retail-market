@@ -108,6 +108,7 @@ const en = {
         weeklySelected: "Weekly Selected",
         copyright: "Copyright © {year}.",
         rights: "All Rights Reserved.",
+        /** Bottom-bar CTA — opens the staff/seller dashboard login. */
         goToDashboard: "Go to Dashboard",
         links: {
             laptops: "Laptops & Computers",
@@ -128,6 +129,19 @@ const en = {
             terms: "Terms & Conditions",
             support: "Product Support",
         },
+    } satisfies {
+        logoAlt: string;
+        blurb: string;
+        callout: string;
+        getItOn: string;
+        downloadOn: string;
+        findItFast: string;
+        customerCare: string;
+        weeklySelected: string;
+        copyright: string;
+        rights: string;
+        goToDashboard: string;
+        links: Record<string, string>;
     },
     reviews: {
         title: "Customer Reviews",
@@ -475,5 +489,14 @@ const en = {
     },
 };
 
-export type Dictionary = typeof en;
+/**
+ * Explicit footer shape so `goToDashboard` is always on the type (and the
+ * removed `sellAndManage` key cannot linger in a stale language-service cache).
+ */
+type En = typeof en;
+export type Dictionary = Omit<En, "footer"> & {
+    footer: Omit<En["footer"], "sellAndManage"> & {
+        goToDashboard: string;
+    };
+};
 export default en;
