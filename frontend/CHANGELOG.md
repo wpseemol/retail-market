@@ -7,8 +7,8 @@ Format: date heading, then one bullet per change with the files touched.
 
 ### Footer mobile social icons + single dashboard login
 
-- `src/components/home/Footer.tsx`: footer + bottom bar capped with `max-w-full` / `min-w-0`; copyright wraps; social icons use a 3-col / 2-row SVG grid on mobile; payment badges wrap in a 3-col grid — removes the mobile horizontal scrollbar. Sell & Manage fallback is only **Dashboard Login** (staff admin / super-admin / moderator links filtered out of chrome nav).
-- `src/lib/storefrontLinks.ts`: resolve plain `dashboard` href to the dashboard login page.
+- `src/components/home/Footer.tsx`: mobile bottom bar stacks copyright / social / payments; social icons use `flex-wrap` with ~28% basis (3 per row → wraps to 2–3 lines); payments wrap inside a capped width. Sell & Manage always shows only **Dashboard Login** (CMS role links ignored).
+- `src/lib/storefrontLinks.ts`: any `dashboard` / `dashboard:*` href resolves to plain dashboard `/login` (no role query).
 - `src/i18n/dictionaries/en.ts` / `bn.ts`: replace role-login copy with `dashboardLogin`.
 
 ### Local MySQL-only Docker Compose

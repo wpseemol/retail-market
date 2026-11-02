@@ -1,19 +1,12 @@
-import {
-  dashboardLoginUrl,
-  type DashboardLoginRole,
-} from "@/config/site";
+import { dashboardLoginUrl } from "@/config/site";
 
-/** Resolve storefront / dashboard[:role] hrefs. */
+/** Resolve storefront / dashboard hrefs. Role suffixes are ignored — always plain login. */
 export function resolveStorefrontHref(href: string): {
   href: string;
   external: boolean;
 } {
-  if (href === "dashboard" || href === "dashboard:") {
+  if (href === "dashboard" || href.startsWith("dashboard:")) {
     return { href: dashboardLoginUrl(), external: true };
-  }
-  if (href.startsWith("dashboard:")) {
-    const role = href.slice("dashboard:".length) as DashboardLoginRole;
-    return { href: dashboardLoginUrl(role), external: true };
   }
   if (/^https?:\/\//i.test(href)) {
     return { href, external: true };

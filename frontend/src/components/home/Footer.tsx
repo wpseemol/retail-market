@@ -41,16 +41,10 @@ const customerCareLinks: FallbackLink[] = [
     { key: "support", href: "/contact" },
 ];
 
-/** Public storefront only needs one dashboard entry — staff roles are not linked here. */
+/** Storefront footer: one plain dashboard login only (no role URLs). */
 const sellAndManageLinks: FallbackLink[] = [
     { key: "dashboardLogin", href: "dashboard", external: true },
 ];
-
-const STAFF_DASHBOARD_HREFS = new Set([
-    "dashboard:super_admin",
-    "dashboard:admin",
-    "dashboard:moderator",
-]);
 
 const FOOTER_SOCIAL = [
     {
@@ -164,14 +158,12 @@ export default function Footer() {
         chrome.nav.footer_care.length > 0
             ? chrome.nav.footer_care
             : localizeLinks(customerCareLinks, t.footer.links);
-    const chromeSellLinks = chrome.nav.footer_sell.filter(
-        (link) => !STAFF_DASHBOARD_HREFS.has(link.href),
-    );
-    const sellLinks =
-        chromeSellLinks.length > 0
-            ? chromeSellLinks
-            : localizeLinks(sellAndManageLinks, t.footer.links);
+    // Always a single Dashboard Login — ignore CMS role links (admin / super_admin / moderator).
+    const sellLinks = localizeLinks(sellAndManageLinks, t.footer.links);
     const logoAlt = format(t.footer.logoAlt, { name: chrome.siteName });
+    const socialItems = FOOTER_SOCIAL.filter(
+        (item) => chrome.social[item.key as keyof typeof chrome.social],
+    );
 
     return (
         <footer className="w-full max-w-full overflow-x-hidden bg-bg-surface border-t border-border-default pt-12 pb-6 transition-colors duration-200">
@@ -379,10 +371,10 @@ export default function Footer() {
                 </div>
 
                 {/* ================= Bottom Copyright & Icons Bar ================= */}
-                <div className="flex w-full min-w-0 flex-col items-center gap-4 py-6 border-t border-border-default/60 lg:flex-row lg:justify-between lg:gap-5">
-                    {/* Copyright — wraps on narrow screens instead of forcing page width */}
-                    <div className="flex w-full min-w-0 max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-[13px] text-text-secondary lg:w-auto lg:justify-start lg:text-left">
-                        <span>
+                <div className="flex w-full min-w-0 flex-col items-stretch gap-5 py-6 border-t border-border-default/60 lg:flex-row lg:items-center lg:justify-between">
+                    {/* Copyright */}
+                    <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-[12px] leading-relaxed text-text-secondary sm:text-[13px] lg:justify-start lg:text-left">
+                        <span className="w-full sm:w-auto">
                             {format(t.footer.copyright, { year: currentYear })}{" "}
                             <strong className="text-[#00B207] font-semibold">
                                 {chrome.siteName}
@@ -403,54 +395,59 @@ export default function Footer() {
                         </Link>
                     </div>
 
-                    {/* Social Icons — 3 columns / 2 rows on mobile; row from sm up */}
-                    <ul className="m-0 grid w-full max-w-[11rem] list-none grid-cols-3 justify-items-center gap-2 p-0 sm:flex sm:w-auto sm:max-w-none sm:flex-wrap sm:justify-center sm:gap-3">
-                        {FOOTER_SOCIAL.map((item) => {
-                            const href =
-                                chrome.social[
-                                    item.key as keyof typeof chrome.social
-                                ];
-                            if (!href) return null;
-                            return (
-                                <li key={item.key}>
-                                    <a
-                                        href={href}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        aria-label={item.label}
-                                        title={item.label}
-                                        className="inline-flex size-8 items-center justify-center rounded-md text-text-primary opacity-80 transition-transform hover:scale-110 hover:opacity-100"
+                    {/* Social + payments stack on mobile so nothing sits in one overflowing row */}
+                    <div className="flex w-full min-w-0 flex-col items-center gap-4 lg:w-auto lg:flex-row lg:gap-6">
+                        {/* Social: forced wrap — 3 per row on mobile, flex-wrap on larger */}
+                        <ul className="m-0 flex w-full max-w-[13.5rem] list-none flex-wrap justify-center gap-x-3 gap-y-3 p-0 lg:max-w-none lg:w-auto lg:gap-3">
+                            {socialItems.map((item) => {
+                                const href =
+                                    chrome.social[
+                                        item.key as keyof typeof chrome.social
+                                    ]!;
+                                return (
+                                    <li
+                                        key={item.key}
+                                        className="flex basis-[28%] justify-center lg:basis-auto"
                                     >
-                                        <Image
-                                            src={item.icon}
-                                            alt=""
-                                            width={16}
-                                            height={16}
-                                            className="size-4 brightness-0 dark:invert"
-                                        />
-                                    </a>
-                                </li>
-                            );
-                        })}
-                    </ul>
+                                        <a
+                                            href={href}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            aria-label={item.label}
+                                            title={item.label}
+                                            className="inline-flex size-9 items-center justify-center rounded-md text-text-primary opacity-80 transition-transform hover:scale-110 hover:opacity-100"
+                                        >
+                                            <Image
+                                                src={item.icon}
+                                                alt=""
+                                                width={18}
+                                                height={18}
+                                                className="size-[18px] brightness-0 dark:invert"
+                                            />
+                                        </a>
+                                    </li>
+                                );
+                            })}
+                        </ul>
 
-                    {/* Payment Providers — wrap to 2 rows on mobile */}
-                    <div className="grid w-full max-w-[14rem] grid-cols-3 justify-items-center gap-2 sm:flex sm:w-auto sm:max-w-none sm:flex-wrap sm:justify-center">
-                        <span className="flex h-6 w-10 items-center justify-center rounded-[3px] bg-[#FF5F00] text-[8px] font-bold italic text-white">
-                            Master
-                        </span>
-                        <span className="flex h-6 w-10 items-center justify-center rounded-[3px] bg-[#00AEEF] text-[8px] font-bold text-white">
-                            AMEX
-                        </span>
-                        <span className="flex h-6 w-10 items-center justify-center rounded-[3px] bg-[#1A1F71] text-[10px] font-bold italic text-white">
-                            VISA
-                        </span>
-                        <span className="flex h-6 w-10 items-center justify-center rounded-[3px] bg-[#E55C20] text-[7px] font-bold uppercase tracking-tighter text-white">
-                            Discover
-                        </span>
-                        <span className="flex h-6 w-10 items-center justify-center rounded-[3px] bg-[#003087] text-[9px] font-bold italic text-white">
-                            PayPal
-                        </span>
+                        {/* Payments: wrap to 2–3 rows on mobile */}
+                        <div className="flex w-full max-w-[13.5rem] flex-wrap justify-center gap-2 lg:max-w-none lg:w-auto">
+                            <span className="flex h-6 w-10 shrink-0 items-center justify-center rounded-[3px] bg-[#FF5F00] text-[8px] font-bold italic text-white">
+                                Master
+                            </span>
+                            <span className="flex h-6 w-10 shrink-0 items-center justify-center rounded-[3px] bg-[#00AEEF] text-[8px] font-bold text-white">
+                                AMEX
+                            </span>
+                            <span className="flex h-6 w-10 shrink-0 items-center justify-center rounded-[3px] bg-[#1A1F71] text-[10px] font-bold italic text-white">
+                                VISA
+                            </span>
+                            <span className="flex h-6 w-10 shrink-0 items-center justify-center rounded-[3px] bg-[#E55C20] text-[7px] font-bold uppercase tracking-tighter text-white">
+                                Discover
+                            </span>
+                            <span className="flex h-6 w-10 shrink-0 items-center justify-center rounded-[3px] bg-[#003087] text-[9px] font-bold italic text-white">
+                                PayPal
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
