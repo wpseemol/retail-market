@@ -1,7 +1,7 @@
 ---
 name: dashboard-design
 description: >-
-  Niyenin admin dashboard visual system — Inter typography, simple list-page
+  Niyenin admin dashboard visual system — Geist Sans typography, simple list-page
   headers (title + muted subtitle + right actions), and when to use PageHeader
   vs green PageHero. Use when redesigning dashboard pages, list headers,
   Overview/Orders/Users/Stores/Products chrome, or when the user asks for a
@@ -12,8 +12,8 @@ description: >-
 
 ## Typography
 
-- Font: **Inter** (`font-sans`). Loaded from Google Fonts in `dashboard/index.html`.
-- Do not use Poppins on the dashboard.
+- Font: **Geist Sans** (`font-sans`). Self-hosted via `@fontsource/geist-sans` in `src/index.css`.
+- Do not use Poppins or Google Fonts CDN on the dashboard.
 
 ## List / analytics page header (`PageHeader`)
 

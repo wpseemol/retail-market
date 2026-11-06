@@ -3,6 +3,14 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-07
+
+### Geist Sans as the storefront UI font
+
+- `src/app/layout.tsx`: replaced Poppins with Vercel **Geist Sans** (`geist/font/sans`). Hind Siliguri stays for Bengali glyphs.
+- `src/app/globals.css`: `--font-sans` uses `--font-geist-sans` then Bengali fallback.
+- Dependency: `geist`.
+
 ## 2026-11-03
 
 ### Deploy readiness: lint clean + zod patch

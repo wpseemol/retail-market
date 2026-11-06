@@ -3,6 +3,16 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-07
+
+### Geist Sans replaces Inter CDN
+
+- `index.html`: removed Google Fonts Inter links.
+- `src/index.css`: self-hosted **Geist Sans** via `@fontsource/geist-sans` (400–700); `--font-sans` and body use `"Geist Sans"`.
+- `vercel.json` CSP: dropped `fonts.googleapis.com` / `fonts.gstatic.com` (fonts are same-origin now).
+- `AGENTS.md` + `.cursor/skills/dashboard-design`: typography docs say Geist Sans.
+- Dependency: `@fontsource/geist-sans`.
+
 ## 2026-11-03
 
 ### Vercel install uses npm (dashboard is Root Directory)

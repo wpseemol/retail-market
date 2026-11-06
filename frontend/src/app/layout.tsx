@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Hind_Siliguri, Poppins } from "next/font/google";
+import { Hind_Siliguri } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
 import "lenis/dist/lenis.css";
 import "./globals.css";
 import TopBar from "@/components/home/TopBar";
@@ -30,14 +31,7 @@ import { getSeoDefaults, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import BootProgress, { BOOT_BAR_ID } from "@/components/providers/BootProgress";
 import NavigationProgress from "@/components/providers/NavigationProgress";
 
-const poppins = Poppins({
-    variable: "--font-poppins",
-    subsets: ["latin"],
-    weight: ["400", "500", "600", "700", "800", "900"],
-    display: "swap",
-});
-
-// Poppins has no Bengali glyphs; the browser falls back to this per character.
+// Geist has no Bengali glyphs; the browser falls back to this per character.
 const hindSiliguri = Hind_Siliguri({
     variable: "--font-bengali",
     subsets: ["bengali"],
@@ -174,7 +168,7 @@ export default async function RootLayout({
     return (
         <html
             lang={locale}
-            className={`${poppins.variable} ${hindSiliguri.variable} h-full antialiased`}
+            className={`${GeistSans.variable} ${hindSiliguri.variable} h-full antialiased`}
             suppressHydrationWarning
         >
             <body className="min-h-full flex flex-col font-sans">
