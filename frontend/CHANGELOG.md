@@ -5,6 +5,16 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-07
 
+### Sticky header nav hides on scroll down
+
+- `Header.tsx`: when the primary nav is stuck, scrolling down slides it off-screen; scrolling up (or returning to the top) brings it back. Stays visible while the mobile menu is open.
+
+### Privacy policy page for Meta App Review
+
+- `src/app/privacy-policy/page.tsx`: storefront page from `GET /api/pages/privacy` (editable defaults).
+- `lib/contentPages.ts`, i18n `en`/`bn`, footer + signup links to `/privacy-policy`.
+- Shows Meta deletion confirmation when `?deletion_code=` is present.
+
 ### Geist Sans as the storefront UI font
 
 - `src/app/layout.tsx`: replaced Poppins with Vercel **Geist Sans** (`geist/font/sans`). Hind Siliguri stays for Bengali glyphs.

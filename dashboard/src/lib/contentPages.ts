@@ -1,4 +1,4 @@
-export type ContentPageKey = "faq" | "terms";
+export type ContentPageKey = "faq" | "terms" | "privacy";
 
 export type ContentHero = { eyebrow: string; title: string; subtitle: string };
 
@@ -36,7 +36,7 @@ export type TermsContent = {
   contact_cta: ContactCta;
 };
 
-export type ContentByKey = { faq: FaqContent; terms: TermsContent };
+export type ContentByKey = { faq: FaqContent; terms: TermsContent; privacy: TermsContent };
 
 export type ContentPage<K extends ContentPageKey> = {
   key: K;
@@ -52,6 +52,7 @@ export type ContentPage<K extends ContentPageKey> = {
 export const CONTENT_PAGE_META: Record<ContentPageKey, { label: string; path: string; api: string }> = {
   faq: { label: "FAQ page", path: "/faq", api: "/api/dashboard/pages/faq" },
   terms: { label: "Terms & conditions", path: "/terms", api: "/api/dashboard/pages/terms" },
+  privacy: { label: "Privacy policy", path: "/privacy-policy", api: "/api/dashboard/pages/privacy" },
 };
 
 /** Matches the API id rule `^[a-z0-9][a-z0-9-]{0,39}$`. */

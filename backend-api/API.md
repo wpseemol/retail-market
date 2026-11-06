@@ -97,7 +97,7 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/shops` | `routes/publicShops.ts` | Public |
 | `/api/brands` | `routes/publicBrands.ts` | Public |
 | `/api/sitemap-entries` | `routes/publicSitemap.ts` | Public |
-| `/api/pages` | `routes/publicPages.ts` | Public (FAQ, Terms) |
+| `/api/pages` | `routes/publicPages.ts` | Public (FAQ, Terms, Privacy) |
 | `/api/products/:idOrSlug/reviews` | `routes/productReviews.ts` | Public (verified buyers submit) |
 | `/api/products` | `routes/publicProducts.ts` | Public |
 | `/api/categories` | `routes/publicCategories.ts` | Public |
@@ -231,20 +231,20 @@ No auth. `GET /` → `{ products, categories, stores, brands }`, each `[{ slug, 
 
 ## Public content pages — `/api/pages`
 
-No auth. `GET /:key` with `key` = `faq` | `terms` → `{ page }`:
+No auth. `GET /:key` with `key` = `faq` | `terms` | `privacy` → `{ page }`:
 
 ```ts
 page: {
-  key: "faq" | "terms";
+  key: "faq" | "terms" | "privacy";
   is_published: boolean; noindex: boolean;
   seo_title: string | null; seo_description: string | null;
-  content: FaqContent | TermsContent;   // see "Dashboard content pages"
+  content: FaqContent | TermsContent;   // privacy uses the TermsContent shape
   is_default: boolean;                  // true = no edits saved yet, built-in text
   updated_at: string | null;
 }
 ```
 
-Hidden categories, questions and sections (`enabled: false`) are removed; FAQ categories with no visible questions are dropped too. **404** for an unknown key or an unpublished page. Storefront cache tags: `pages`, `page:<key>`.
+Hidden categories, questions and sections (`enabled: false`) are removed; FAQ categories with no visible questions are dropped too. **404** for an unknown key or an unpublished page. Storefront cache tags: `pages`, `page:<key>`. Paths: `/faq`, `/terms`, `/privacy-policy`.
 
 ---
 
@@ -1050,11 +1050,11 @@ Auth: Bearer **`super_admin`** or **`admin`** (vendors / moderators → 403). On
 
 ## Dashboard content pages — `/api/dashboard/pages`
 
-Auth: Bearer **`super_admin`** or **`admin`** (others → 403). Edits the storefront `/faq` and `/terms` pages. Until the first save, the built-in default content is returned (`is_default: true`). Saves are logged to `site_settings_histories` (`page_faq_updated`, `page_terms_reset`, …) and refresh the storefront cache (`pages`, `page:<key>`). Validator: `src/validators/contentPage.ts`; safe-input guards on every string (HTML, script, PHP, JS and SQL-like text such as “select … from” on one line are rejected).
+Auth: Bearer **`super_admin`** or **`admin`** (others → 403). Edits the storefront `/faq`, `/terms` and `/privacy-policy` pages. Until the first save, the built-in default content is returned (`is_default: true`). Saves are logged to `site_settings_histories` (`page_faq_updated`, `page_privacy_reset`, …) and refresh the storefront cache (`pages`, `page:<key>`). Validator: `src/validators/contentPage.ts`; safe-input guards on every string (HTML, script, PHP, JS and SQL-like text such as “select … from” on one line are rejected).
 
 | Method | Path | Notes |
 |--------|------|-------|
-| GET | `/:key` | `key` = `faq` \| `terms` → `{ page }` (same shape as the public one, but hidden items are included) |
+| GET | `/:key` | `key` = `faq` \| `terms` \| `privacy` → `{ page }` (same shape as the public one, but hidden items are included) |
 | PATCH | `/:key` | Any of `is_published`, `noindex`, `seo_title` (≤70), `seo_description` (≤170), `content` (the **whole** body, validated per page). Omitted → unchanged; `""`/`null` clears SEO text. → `{ message, page }`. 400 includes `issues[] { path, message }` (e.g. `content.categories.0.items.2.answer`) |
 | DELETE | `/:key` | **Reset to defaults** — deletes the saved row so the built-in content shows again. Cannot be undone. → `{ message, page }` |
 
@@ -1062,7 +1062,11 @@ Auth: Bearer **`super_admin`** or **`admin`** (others → 403). Edits the storef
 
 **`faq` content:** `hero`, `layout` (`accordion` | `grid`), `show_search`, `show_category_nav`, `expand_first`, `categories[]` (1–20) `{ id, title 2–80, description ≤200, enabled, items[] (≤50) { id, question 3–200, answer 1–3000, enabled } }`, `contact_cta`.
 
-**`terms` content:** `hero`, `effective_date` (`YYYY-MM-DD` or `""`), `intro` ≤3000, `show_toc`, `numbered`, `sections[]` (1–50) `{ id, title 2–120, body 1–10000, enabled }`, `contact_cta`.
+**`terms` / `privacy` content:** `hero`, `effective_date` (`YYYY-MM-DD` or `""`), `intro` ≤3000, `show_toc`, `numbered`, `sections[]` (1–50) `{ id, title 2–120, body 1–10000, enabled }`, `contact_cta`. Privacy defaults cover Facebook Login and data deletion for Meta App Review.
+
+### Facebook data deletion callback
+
+`POST /api/auth/facebook/data-deletion` — no app keys (Meta calls it). Body: `application/x-www-form-urlencoded` with `signed_request`. Verifies HMAC with the Facebook app secret from Dashboard → Social login. Unlinks or soft-deletes the matching customer, then returns `{ url, confirmation_code }` where `url` is the storefront privacy page with that code. Rate limit 60 / 15 min / IP.
 
 **Text formatting** (answers, intro, section bodies): plain text only. A blank line starts a new paragraph; lines starting with `- ` become a bullet list.
 

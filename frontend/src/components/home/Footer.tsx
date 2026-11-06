@@ -359,6 +359,12 @@ export default function Footer() {
                             . {footer.rights}
                         </span>
                         <span className="inline-flex items-center gap-2">
+                            <Link href="/privacy-policy" className="hover:text-brand-primary">
+                                {footer.links.privacy}
+                            </Link>
+                            <span className="text-border-default" aria-hidden="true">
+                                |
+                            </span>
                             <Link href="/terms" className="hover:text-brand-primary">
                                 {footer.links.terms}
                             </Link>

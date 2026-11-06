@@ -1,4 +1,4 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import {
   appleLogin,
   confirmEmailCode,
@@ -17,6 +17,12 @@ import {
   updateMe,
   uploadAvatar,
 } from "../controllers/customerAuthController.js";
+import {
+  facebookDeletionStatusUrl,
+  getFacebookAppSecret,
+  honourFacebookDataDeletion,
+  parseFacebookSignedRequest,
+} from "../lib/facebookDataDeletion.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
 import { avatarUpload } from "../middleware/upload.js";
 import { AVATAR_MAX_BYTES } from "../lib/avatarImage.js";
@@ -68,6 +74,55 @@ customerAuthRouter.post("/google", socialLoginLimiter, asyncHandler(googleLogin)
 customerAuthRouter.post("/facebook", socialLoginLimiter, asyncHandler(facebookLogin));
 customerAuthRouter.post("/apple", socialLoginLimiter, asyncHandler(appleLogin));
 customerAuthRouter.post("/refresh", refreshLimiter, asyncHandler(refresh));
+
+/**
+ * Meta App Review — User data deletion callback.
+ * Meta POSTs `application/x-www-form-urlencoded` with `signed_request`.
+ * Exempt from app keys (see `requireAppKeys`). Set this URL in Meta:
+ * `{PUBLIC_API_URL}/api/auth/facebook/data-deletion`
+ */
+const facebookDeletionLimiter = rateLimit({
+  name: "FACEBOOK_DELETION",
+  max: 60,
+  windowMs: 15 * 60 * 1000,
+  message: "Too many deletion callbacks. Try again shortly.",
+});
+
+customerAuthRouter.post(
+  "/facebook/data-deletion",
+  express.urlencoded({ extended: false, limit: "32kb" }),
+  facebookDeletionLimiter,
+  asyncHandler(async (req, res) => {
+    const creds = await getFacebookAppSecret();
+    if (!creds) {
+      return res.status(503).json({
+        message: "Facebook Login is not configured.",
+        code: "FACEBOOK_NOT_CONFIGURED",
+      });
+    }
+
+    const signed =
+      typeof req.body?.signed_request === "string" ? req.body.signed_request.trim() : "";
+    if (!signed) {
+      return res.status(400).json({
+        message: "signed_request is required.",
+        code: "SIGNED_REQUEST_REQUIRED",
+      });
+    }
+
+    const parsed = parseFacebookSignedRequest(signed, creds.appSecret);
+    if (!parsed) {
+      return res.status(400).json({
+        message: "Invalid signed_request.",
+        code: "SIGNED_REQUEST_INVALID",
+      });
+    }
+
+    const confirmationCode = await honourFacebookDataDeletion(parsed.userId);
+    const url = await facebookDeletionStatusUrl(confirmationCode);
+    return res.status(200).json({ url, confirmation_code: confirmationCode });
+  }),
+);
 
 customerAuthRouter.get("/me", requireAuth, requireRoles("customer"), getMe);
 

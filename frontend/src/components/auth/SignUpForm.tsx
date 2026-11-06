@@ -277,14 +277,20 @@ export default function SignUpForm() {
                         className="mt-0.5 size-4 shrink-0 rounded border-border-default accent-brand-primary cursor-pointer"
                     />
                     <span className="text-sm text-text-secondary leading-snug">
-                        I agree to all{" "}
+                        I agree to the{" "}
                         <Link
                             href="/terms"
                             className="text-brand-primary font-medium hover:underline"
                         >
-                            Terms &amp; Condition
+                            Terms &amp; Conditions
                         </Link>{" "}
-                        and feeds
+                        and{" "}
+                        <Link
+                            href="/privacy-policy"
+                            className="text-brand-primary font-medium hover:underline"
+                        >
+                            Privacy Policy
+                        </Link>
                     </span>
                 </label>
 

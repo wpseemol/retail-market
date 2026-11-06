@@ -1194,11 +1194,11 @@ model SiteSettingsHistory {
   @@map("site_settings_histories")
 }
 
-/// Editable storefront content pages (`/faq`, `/terms`). One row per `page_key`;
+/// Editable storefront content pages (`/faq`, `/terms`, `/privacy-policy`). One row per `page_key`;
 /// a missing row means the built-in defaults from `src/lib/contentPages.ts` are shown.
 model ContentPage {
   id              BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  /// `faq` | `terms`
+  /// `faq` | `terms` | `privacy`
   page_key        String   @unique @db.VarChar(40)
   is_published    Boolean  @default(true)
   seo_title       String?  @db.VarChar(70)

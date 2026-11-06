@@ -4,7 +4,7 @@ import { prisma } from "../lib/prisma.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { contentPageKeySchema } from "../validators/contentPage.js";
 
-/** Storefront content pages — `GET /api/pages/:key` (`faq` | `terms`). */
+/** Storefront content pages — `GET /api/pages/:key` (`faq` | `terms` | `privacy`). */
 export const publicPagesRouter = Router();
 
 publicPagesRouter.get(

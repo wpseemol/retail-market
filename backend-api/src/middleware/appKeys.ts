@@ -4,6 +4,7 @@ import { env } from "../lib/env.js";
 
 const PAYMENT_CALLBACK =
   /^\/api\/payments\/sslcommerz\/(?:success|fail|cancel|ipn)$/;
+const FACEBOOK_DATA_DELETION = /^\/api\/auth\/facebook\/data-deletion\/?$/;
 
 function sameSecret(given: string, expected: string) {
   const left = Buffer.from(given);
@@ -18,12 +19,13 @@ function isOpen(req: Request) {
   // Product images and other files live under /uploads, not /api.
   if (!path.startsWith("/api")) return true;
   if (path === "/api/health" || path.startsWith("/api/health/")) return true;
+  if (FACEBOOK_DATA_DELETION.test(path)) return true;
   return PAYMENT_CALLBACK.test(path);
 }
 
 /**
- * Every `/api` route except health and the payment gateway callbacks
- * requires the app public key and the server secret.
+ * Every `/api` route except health, payment gateway callbacks, and the
+ * Facebook data-deletion callback requires the app public key and secret.
  * `/uploads` is not under `/api`, so product images stay reachable.
  */
 export function requireAppKeys(req: Request, res: Response, next: NextFunction) {

@@ -28,6 +28,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/seo": "Search & SEO",
   "/content/faq": "FAQ page",
   "/content/terms": "Terms page",
+  "/content/privacy": "Privacy policy",
 };
 
 export function SiteHeader() {

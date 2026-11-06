@@ -130,6 +130,7 @@ const en = {
             returns: "Returns/Exchange",
             faq: "FAQ",
             terms: "Terms & Conditions",
+            privacy: "Privacy Policy",
             support: "Product Support",
         },
     } satisfies {
@@ -323,6 +324,7 @@ const en = {
         home: "Home",
         faq: "FAQ",
         terms: "Terms & conditions",
+        privacy: "Privacy policy",
         searchLabel: "Search the FAQ",
         searchPlaceholder: "Search questions, e.g. delivery or refund",
         clearSearch: "Clear search",
@@ -345,6 +347,11 @@ const en = {
         print: "Print",
         faqFallbackDescription: "Answers to common questions about shopping on {site}.",
         termsFallbackDescription: "Terms and conditions for using {site}.",
+        privacyFallbackDescription: "How {site} collects, uses and protects your personal information.",
+        deletionConfirmedTitle: "Facebook data deletion request received",
+        deletionConfirmedBody:
+            "We have processed your Facebook Login data-deletion request for Niyenin. Keep this confirmation code for your records.",
+        deletionCodeLabel: "Confirmation code",
     },
     bulk: {
         title: "Wholesale order",

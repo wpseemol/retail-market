@@ -156,11 +156,12 @@ export function isGlobalRateLimitExempt(req: Request): boolean {
   if (req.method === "GET" && (path === "/api/health" || path === "/api/health/")) {
     return true;
   }
-  const paymentCallbacks = [
+  const openPaths = [
     "/api/payments/sslcommerz/success",
     "/api/payments/sslcommerz/fail",
     "/api/payments/sslcommerz/cancel",
     "/api/payments/sslcommerz/ipn",
+    "/api/auth/facebook/data-deletion",
   ];
-  return paymentCallbacks.some((p) => path === p || path === `${p}/`);
+  return openPaths.some((p) => path === p || path === `${p}/`);
 }

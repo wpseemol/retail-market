@@ -3,6 +3,15 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-07
+
+### Privacy policy content page + Facebook data deletion
+
+- `validators/contentPage.ts` / `lib/contentPages.ts`: new `privacy` page key (same section layout as terms) with Niyenin defaults for Meta App Review (Facebook Login, deletion rights).
+- `routes/dashboardPages.ts` / `publicPages.ts` / `API.md` / `AGENTS.md`: `privacy` supported.
+- `lib/facebookDataDeletion.ts` + `POST /api/auth/facebook/data-deletion`: Meta signed_request callback (no app keys); unlinks or soft-deletes Facebook customers and returns confirmation URL on `/privacy-policy`.
+- `middleware/appKeys.ts` / global rate-limit exempt list updated for that callback.
+
 ## 2026-11-03
 
 ### Customer avatar_preset on profile PATCH

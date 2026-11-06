@@ -21,7 +21,7 @@ import { StoreCreatePage, StoreDesignPage, StoreEditPage, StoresPage } from "./p
 import { UserEditPage, UsersPage } from "./pages/access";
 import { ReviewsModerationPage } from "./pages/support";
 import { SeoSettingsPage } from "./pages/marketing";
-import { FaqPageEditor, TermsPageEditor } from "./pages/content";
+import { FaqPageEditor, PrivacyPageEditor, TermsPageEditor } from "./pages/content";
 import {
   AnalyticsSettingsPage,
   EmailProviderSettingsPage,
@@ -113,6 +113,7 @@ export default function App() {
           <Route element={<ProtectedRoute roles={CONTENT_PAGE_ROLES} />}>
             <Route path="content/faq" element={<FaqPageEditor />} />
             <Route path="content/terms" element={<TermsPageEditor />} />
+            <Route path="content/privacy" element={<PrivacyPageEditor />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={STAFF_MANAGEMENT_ROLES} />}>

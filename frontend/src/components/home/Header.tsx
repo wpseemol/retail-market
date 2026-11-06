@@ -131,16 +131,51 @@ export default function Header({
         const menu = menuRef.current;
         const spacer = menuSpacerRef.current;
         if (!menu || !spacer) return;
+
         let threshold = 0;
+        let lastY = window.scrollY;
+        let hidden = false;
+
+        const showNav = () => {
+            if (!hidden) return;
+            menu.removeAttribute("data-nav-hidden");
+            hidden = false;
+        };
+
+        const hideNav = () => {
+            if (hidden || isMobileMenuOpen) return;
+            menu.setAttribute("data-nav-hidden", "");
+            hidden = true;
+        };
+
         const mark = () => {
             if (!menu.hasAttribute("data-stuck")) {
                 threshold = menu.getBoundingClientRect().top + window.scrollY;
             }
-            const stuck = window.scrollY > threshold;
-            if (stuck) menu.setAttribute("data-stuck", "");
-            else menu.removeAttribute("data-stuck");
+
+            const y = window.scrollY;
+            const stuck = y > threshold;
+
+            if (stuck) {
+                menu.setAttribute("data-stuck", "");
+            } else {
+                menu.removeAttribute("data-stuck");
+                showNav();
+            }
             spacer.style.height = stuck ? `${menu.offsetHeight}px` : "0px";
+
+            // Hide while scrolling down; show again when scrolling up (or menu open).
+            if (stuck && !isMobileMenuOpen) {
+                const delta = y - lastY;
+                if (delta > 6 && y > threshold + 64) hideNav();
+                else if (delta < -6) showNav();
+            } else {
+                showNav();
+            }
+
+            lastY = y;
         };
+
         mark();
         window.addEventListener("scroll", mark, { passive: true });
         window.addEventListener("resize", mark);
@@ -148,7 +183,7 @@ export default function Header({
             window.removeEventListener("scroll", mark);
             window.removeEventListener("resize", mark);
         };
-    }, []);
+    }, [isMobileMenuOpen]);
 
     // Prevent background scroll when mobile drawer is open
     useEffect(() => {
@@ -296,11 +331,11 @@ export default function Header({
                 </div>
             </section>
 
-            {/* Menu stays fixed. Logo, promo, cart, and theme scroll away. */}
+            {/* Sticky nav: pins on scroll, slides away on scroll down, returns on scroll up. */}
             <nav
                 ref={menuRef}
                 aria-label={t.header.primaryNav}
-                className="relative z-50 w-full border-y border-border-default/50 bg-bg-base data-stuck:fixed data-stuck:inset-x-0 data-stuck:top-0 data-stuck:shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:data-stuck:shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
+                className="relative z-50 w-full border-y border-border-default/50 bg-bg-base transition-transform duration-300 ease-out will-change-transform data-stuck:fixed data-stuck:inset-x-0 data-stuck:top-0 data-stuck:shadow-[0_4px_20px_rgba(0,0,0,0.12)] data-nav-hidden:-translate-y-full dark:data-stuck:shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
             >
                 <div className="flex items-center gap-2 px-4 py-2 lg:hidden">
                     <button

@@ -13,7 +13,7 @@ import {
 import { ensureSiteSettings } from "./publicSiteSettings.js";
 
 /**
- * Storefront content pages (FAQ, Terms) — `/api/dashboard/pages/:key`.
+ * Storefront content pages (FAQ, Terms, Privacy) — `/api/dashboard/pages/:key`.
  * super_admin and admin only.
  */
 export const dashboardPagesRouter = Router();
@@ -42,14 +42,14 @@ const pageTags = (key: ContentPageKey) => ["pages", `page:${key}`];
 
 dashboardPagesRouter.get("/:key", async (req, res) => {
   const key = parseKey(req.params.key);
-  if (!key) return res.status(404).json({ message: "Unknown page — use faq or terms" });
+  if (!key) return res.status(404).json({ message: "Unknown page — use faq, terms or privacy" });
   const row = await prisma.contentPage.findUnique({ where: { page_key: key } });
   return res.json({ page: toContentPage(key, row) });
 });
 
 dashboardPagesRouter.patch("/:key", async (req, res) => {
   const key = parseKey(req.params.key);
-  if (!key) return res.status(404).json({ message: "Unknown page — use faq or terms" });
+  if (!key) return res.status(404).json({ message: "Unknown page — use faq, terms or privacy" });
 
   const meta = updateContentPageMetaSchema.safeParse(req.body);
   if (!meta.success) {
@@ -121,7 +121,7 @@ dashboardPagesRouter.patch("/:key", async (req, res) => {
 /** Throw away all edits and go back to the built-in default content. */
 dashboardPagesRouter.delete("/:key", async (req, res) => {
   const key = parseKey(req.params.key);
-  if (!key) return res.status(404).json({ message: "Unknown page — use faq or terms" });
+  if (!key) return res.status(404).json({ message: "Unknown page — use faq, terms or privacy" });
 
   const deleted = await prisma.contentPage.deleteMany({ where: { page_key: key } });
   if (deleted.count > 0) {

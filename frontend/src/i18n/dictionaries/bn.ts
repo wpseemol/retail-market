@@ -131,6 +131,7 @@ const bn: Dictionary = {
             returns: "রিটার্ন/এক্সচেঞ্জ",
             faq: "সাধারণ প্রশ্ন",
             terms: "শর্তাবলি",
+            privacy: "গোপনীয়তা নীতি",
             support: "পণ্য সহায়তা",
         },
     },
@@ -311,6 +312,7 @@ const bn: Dictionary = {
         home: "হোম",
         faq: "সাধারণ প্রশ্ন",
         terms: "শর্তাবলি",
+        privacy: "গোপনীয়তা নীতি",
         searchLabel: "প্রশ্ন খুঁজুন",
         searchPlaceholder: "প্রশ্ন খুঁজুন, যেমন ডেলিভারি বা রিফান্ড",
         clearSearch: "খোঁজা মুছুন",
@@ -333,6 +335,11 @@ const bn: Dictionary = {
         print: "প্রিন্ট",
         faqFallbackDescription: "{site} এ কেনাকাটা নিয়ে সাধারণ প্রশ্নের উত্তর।",
         termsFallbackDescription: "{site} ব্যবহারের শর্তাবলি।",
+        privacyFallbackDescription: "{site} কীভাবে আপনার ব্যক্তিগত তথ্য সংগ্রহ, ব্যবহার ও সুরক্ষা করে।",
+        deletionConfirmedTitle: "ফেসবুক ডেটা মুছে ফেলার অনুরোধ গৃহীত হয়েছে",
+        deletionConfirmedBody:
+            "নিয়েনিনে আপনার ফেসবুক লগইন ডেটা মুছে ফেলার অনুরোধ আমরা প্রক্রিয়া করেছি। এই নিশ্চিতকরণ কোডটি সংরক্ষণ করুন।",
+        deletionCodeLabel: "নিশ্চিতকরণ কোড",
     },
     bulk: {
         title: "পাইকারি অর্ডার",

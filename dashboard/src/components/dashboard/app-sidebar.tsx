@@ -148,6 +148,12 @@ const marketingLinks: Array<{
     roles: CONTENT_PAGE_ROLES,
   },
   {
+    to: "/content/privacy",
+    label: "Privacy policy",
+    icon: Shield,
+    roles: CONTENT_PAGE_ROLES,
+  },
+  {
     to: "/stores",
     label: "My store page",
     icon: Palette,

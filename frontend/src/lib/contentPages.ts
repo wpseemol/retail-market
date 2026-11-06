@@ -1,6 +1,6 @@
 import { appKeyHeaders, publicApiUrl } from "@/lib/api";
 
-export type ContentPageKey = "faq" | "terms";
+export type ContentPageKey = "faq" | "terms" | "privacy";
 
 export type ContentHero = { eyebrow: string; title: string; subtitle: string };
 
@@ -37,7 +37,7 @@ export type TermsContent = {
     contact_cta: ContactCta;
 };
 
-type ContentByKey = { faq: FaqContent; terms: TermsContent };
+type ContentByKey = { faq: FaqContent; terms: TermsContent; privacy: TermsContent };
 
 export type ContentPage<K extends ContentPageKey> = {
     key: K;

@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-07
 
+### Privacy policy content editor
+
+- `pages/content/PrivacyPageEditor.tsx`: edit `/privacy-policy` like Terms (sections, effective date, SEO).
+- Sidebar + routes + `CONTENT_PAGE_META.privacy` → `/api/dashboard/pages/privacy`.
+
 ### Geist Sans replaces Inter CDN
 
 - `index.html`: removed Google Fonts Inter links.

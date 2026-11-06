@@ -1,10 +1,12 @@
 import { z } from "zod";
 import { withSafeInput } from "./customerAuth.js";
 
-export const CONTENT_PAGE_KEYS = ["faq", "terms"] as const;
+export const CONTENT_PAGE_KEYS = ["faq", "terms", "privacy"] as const;
 export type ContentPageKey = (typeof CONTENT_PAGE_KEYS)[number];
 
-export const contentPageKeySchema = z.enum(CONTENT_PAGE_KEYS, { message: "Unknown page — use faq or terms" });
+export const contentPageKeySchema = z.enum(CONTENT_PAGE_KEYS, {
+  message: "Unknown page — use faq, terms or privacy",
+});
 
 const safe = (min: number, max: number, label: string) =>
   withSafeInput(
@@ -120,11 +122,14 @@ export const termsContentSchema = z
 
 export type FaqContent = z.infer<typeof faqContentSchema>;
 export type TermsContent = z.infer<typeof termsContentSchema>;
-export type ContentByKey = { faq: FaqContent; terms: TermsContent };
+/** Privacy uses the same sectioned layout as terms. */
+export type PrivacyContent = TermsContent;
+export type ContentByKey = { faq: FaqContent; terms: TermsContent; privacy: PrivacyContent };
 
 export const contentSchemaByKey = {
   faq: faqContentSchema,
   terms: termsContentSchema,
+  privacy: termsContentSchema,
 } as const;
 
 /** Omitted → unchanged; empty → cleared. */
