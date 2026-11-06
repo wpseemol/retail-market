@@ -5,9 +5,9 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-07
 
-### Sticky header nav hides on scroll down
+### Sticky header chrome (logo, ad, cart, nav)
 
-- `Header.tsx`: when the primary nav is stuck, scrolling down slides it off-screen; scrolling up (or returning to the top) brings it back. Stays visible while the mobile menu is open.
+- `Header.tsx`: sticky block is logo + promo ad + cart/wishlist/theme + primary nav (TopBar is skipped and scrolls away). Scroll down hides the chrome; scroll up / back to top shows it again. Stays visible while the mobile menu is open.
 
 ### Privacy policy page for Meta App Review
 

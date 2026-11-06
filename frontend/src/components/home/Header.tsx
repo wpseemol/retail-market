@@ -106,8 +106,9 @@ export default function Header({
 }) {
     const pathname = usePathname();
     const { t } = useI18n();
-    const menuRef = useRef<HTMLElement | null>(null);
-    const menuSpacerRef = useRef<HTMLDivElement | null>(null);
+    /** Logo + ad + cart + primary nav (TopBar stays above and scrolls away). */
+    const chromeRef = useRef<HTMLDivElement | null>(null);
+    const chromeSpacerRef = useRef<HTMLDivElement | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const cartCount = useAppSelector(selectCartItemCount);
@@ -128,49 +129,50 @@ export default function Header({
     const isCart = linkActive("/cart");
 
     useEffect(() => {
-        const menu = menuRef.current;
-        const spacer = menuSpacerRef.current;
-        if (!menu || !spacer) return;
+        const chrome = chromeRef.current;
+        const spacer = chromeSpacerRef.current;
+        if (!chrome || !spacer) return;
 
         let threshold = 0;
         let lastY = window.scrollY;
         let hidden = false;
 
-        const showNav = () => {
+        const showChrome = () => {
             if (!hidden) return;
-            menu.removeAttribute("data-nav-hidden");
+            chrome.removeAttribute("data-nav-hidden");
             hidden = false;
         };
 
-        const hideNav = () => {
+        const hideChrome = () => {
             if (hidden || isMobileMenuOpen) return;
-            menu.setAttribute("data-nav-hidden", "");
+            chrome.setAttribute("data-nav-hidden", "");
             hidden = true;
         };
 
         const mark = () => {
-            if (!menu.hasAttribute("data-stuck")) {
-                threshold = menu.getBoundingClientRect().top + window.scrollY;
+            if (!chrome.hasAttribute("data-stuck")) {
+                threshold = chrome.getBoundingClientRect().top + window.scrollY;
             }
 
             const y = window.scrollY;
             const stuck = y > threshold;
 
             if (stuck) {
-                menu.setAttribute("data-stuck", "");
+                chrome.setAttribute("data-stuck", "");
             } else {
-                menu.removeAttribute("data-stuck");
-                showNav();
+                chrome.removeAttribute("data-stuck");
+                showChrome();
             }
-            spacer.style.height = stuck ? `${menu.offsetHeight}px` : "0px";
+            spacer.style.height = stuck ? `${chrome.offsetHeight}px` : "0px";
 
-            // Hide while scrolling down; show again when scrolling up (or menu open).
+            // Hide on scroll down; show on scroll up / top / mobile menu open.
+            // TopBar is outside this chrome, so it never sticks.
             if (stuck && !isMobileMenuOpen) {
                 const delta = y - lastY;
-                if (delta > 6 && y > threshold + 64) hideNav();
-                else if (delta < -6) showNav();
+                if (delta > 6 && y > threshold + 64) hideChrome();
+                else if (delta < -6) showChrome();
             } else {
-                showNav();
+                showChrome();
             }
 
             lastY = y;
@@ -203,6 +205,11 @@ export default function Header({
 
     return (
         <header role="banner" className="w-full bg-bg-base">
+            {/* Sticky chrome: logo, ad, cart, nav — TopBar above scrolls away and never sticks. */}
+            <div
+                ref={chromeRef}
+                className="relative z-50 w-full bg-bg-base transition-transform duration-300 ease-out will-change-transform data-stuck:fixed data-stuck:inset-x-0 data-stuck:top-0 data-stuck:shadow-[0_4px_20px_rgba(0,0,0,0.12)] data-nav-hidden:-translate-y-full dark:data-stuck:shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
+            >
             {/* ================= 1. Middle Main Section ================= */}
             <section
                 aria-label={t.header.mainInfo}
@@ -331,11 +338,9 @@ export default function Header({
                 </div>
             </section>
 
-            {/* Sticky nav: pins on scroll, slides away on scroll down, returns on scroll up. */}
             <nav
-                ref={menuRef}
                 aria-label={t.header.primaryNav}
-                className="relative z-50 w-full border-y border-border-default/50 bg-bg-base transition-transform duration-300 ease-out will-change-transform data-stuck:fixed data-stuck:inset-x-0 data-stuck:top-0 data-stuck:shadow-[0_4px_20px_rgba(0,0,0,0.12)] data-nav-hidden:-translate-y-full dark:data-stuck:shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
+                className="relative w-full border-y border-border-default/50 bg-bg-base"
             >
                 <div className="flex items-center gap-2 px-4 py-2 lg:hidden">
                     <button
@@ -498,7 +503,8 @@ export default function Header({
                     <AccountMenu />
                 </div>
             </nav>
-            <div ref={menuSpacerRef} aria-hidden="true" />
+            </div>
+            <div ref={chromeSpacerRef} aria-hidden="true" />
 
             {/* ================= 4. Mobile & Tablet Slide-over Drawer ================= */}
             <div
