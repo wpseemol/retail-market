@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SlidersHorizontal } from "lucide-react";
+import { Loader2, Package, SlidersHorizontal } from "lucide-react";
 import type { Locale } from "@/i18n/config";
 import { useI18n } from "@/components/providers/LocaleProvider";
 import { usePriceRange } from "@/hooks/usePriceRange";
@@ -326,7 +326,21 @@ const { t } = useI18n();
               ) : null}
 
               {catalog.loading && visibleProducts.length === 0 ? (
-                <p className="py-16 text-center text-sm text-text-secondary">{copy.loading}</p>
+                <div
+                  className="flex flex-col items-center justify-center gap-3 py-16"
+                  role="status"
+                  aria-live="polite"
+                  aria-busy="true"
+                >
+                  <div className="relative flex size-14 items-center justify-center rounded-2xl border border-border-default bg-bg-surface shadow-sm">
+                    <Package className="size-6 text-brand-primary/80" aria-hidden="true" />
+                    <Loader2
+                      className="absolute -right-1 -bottom-1 size-5 animate-spin text-brand-primary"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <p className="m-0 text-sm text-text-secondary">{copy.loading}</p>
+                </div>
               ) : visibleProducts.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-border-default bg-bg-surface py-16 text-center sm:py-20">
                   <p className="m-0 text-[15px] text-text-secondary">

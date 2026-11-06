@@ -25,6 +25,7 @@ const bn: Dictionary = {
         darkMode: "ডার্ক মোড",
         primaryNav: "প্রধান সাইট নেভিগেশন",
         mainInfo: "প্রধান হেডার তথ্য",
+        backToTop: "উপরে যান",
     },
     nav: {
         home: "হোম",

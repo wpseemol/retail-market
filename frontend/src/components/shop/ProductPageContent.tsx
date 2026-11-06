@@ -195,7 +195,6 @@ export default function ProductPageContent({
     const [quantity, setQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState<ProductTabId>("specification");
     const [relatedIndex, setRelatedIndex] = useState(0);
-    const [showBackToTop, setShowBackToTop] = useState(false);
     const [buying, setBuying] = useState(false);
     const [menuHeight, setMenuHeight] = useState(0);
 
@@ -258,7 +257,6 @@ export default function ProductPageContent({
 
     useEffect(() => {
         const onScroll = () => {
-            setShowBackToTop(window.scrollY > 420);
             if (Date.now() < spyPausedUntil.current) return;
             const line = stickyOffset(navRef.current) + 1;
             let current: ProductTabId = TAB_IDS[0];
@@ -832,30 +830,6 @@ export default function ProductPageContent({
                     </aside>
                 </div>
             </article>
-
-            {/* Back to top */}
-            {showBackToTop && (
-                <button
-                    type="button"
-                    aria-label="Back to top"
-                    onClick={() =>
-                        window.scrollTo({ top: 0, behavior: "smooth" })
-                    }
-                    className="fixed bottom-6 right-5 z-40 h-11 w-11 rounded-full bg-brand-primary hover:bg-brand-hover text-white shadow-lg cursor-pointer flex items-center justify-center transition-colors"
-                >
-                    <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.4"
-                        aria-hidden="true"
-                    >
-                        <path d="M12 19V5M5 12l7-7 7 7" />
-                    </svg>
-                </button>
-            )}
         </div>
     );
 }

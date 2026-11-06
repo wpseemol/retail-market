@@ -68,6 +68,11 @@ function readRestore(key: string) {
     }
 }
 
+function appendUnique(prev: ShopProduct[], next: ShopProduct[]) {
+    const seen = new Set(prev.map((product) => product.id));
+    return [...prev, ...next.filter((product) => !seen.has(product.id))];
+}
+
 export function useShopCatalog(args: CatalogArgs) {
     const key = catalogKey(args);
     const [products, setProducts] = useState(args.initialProducts);
@@ -78,13 +83,28 @@ export function useShopCatalog(args: CatalogArgs) {
     const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [restoreScrollY, setRestoreScrollY] = useState<number | null>(null);
-    const requestId = useRef(0);
+
+    /** Bumped only when filters/sort/page-size change — invalidates in-flight filter fetches. */
+    const filterGen = useRef(0);
     const keyRef = useRef(key);
     const argsRef = useRef(args);
+    const pageRef = useRef(page);
+    const totalPagesRef = useRef(totalPages);
+    const loadingMoreRef = useRef(false);
+    const modeRef = useRef(args.mode);
 
     useEffect(() => {
         argsRef.current = args;
+        modeRef.current = args.mode;
     }, [args]);
+
+    useEffect(() => {
+        pageRef.current = page;
+    }, [page]);
+
+    useEffect(() => {
+        totalPagesRef.current = totalPages;
+    }, [totalPages]);
 
     const fetchPage = useCallback(async (nextPage: number) => {
         const current = argsRef.current;
@@ -106,31 +126,36 @@ export function useShopCatalog(args: CatalogArgs) {
         );
     }, []);
 
-    const applyPage = useCallback((data: ProductsListPayload, replace: boolean) => {
-        const mapped = (data.products ?? []).map((product) =>
+    const mapProducts = useCallback((data: ProductsListPayload) => {
+        return (data.products ?? []).map((product) =>
             toShopProduct(product, argsRef.current.locale),
         );
-        setProducts((prev) => {
-            if (replace) return mapped;
-            const seen = new Set(prev.map((product) => product.id));
-            return [...prev, ...mapped.filter((product) => !seen.has(product.id))];
-        });
-        setTotal(data.pagination?.total ?? mapped.length);
-        setTotalPages(Math.max(1, data.pagination?.total_pages ?? 1));
-        setPage(data.pagination?.page ?? 1);
     }, []);
+
+    const applyPage = useCallback(
+        (data: ProductsListPayload, replace: boolean, fallbackPage: number) => {
+            const mapped = mapProducts(data);
+            setProducts((prev) => (replace ? mapped : appendUnique(prev, mapped)));
+            setTotal(data.pagination?.total ?? mapped.length);
+            setTotalPages(Math.max(1, data.pagination?.total_pages ?? 1));
+            setPage(data.pagination?.page ?? fallbackPage);
+        },
+        [mapProducts],
+    );
 
     useEffect(() => {
         if (keyRef.current === key) return;
         keyRef.current = key;
-        const id = ++requestId.current;
+        const gen = ++filterGen.current;
+        loadingMoreRef.current = false;
+        setLoadingMore(false);
         setLoading(true);
         setError(null);
         setRestoreScrollY(null);
         void fetchPage(1)
             .then((data) => {
-                if (requestId.current !== id) return;
-                applyPage(data, true);
+                if (filterGen.current !== gen) return;
+                applyPage(data, true, 1);
                 if (argsRef.current.mode === "pages") {
                     const url = new URL(window.location.href);
                     if (url.searchParams.has("page")) {
@@ -140,7 +165,7 @@ export function useShopCatalog(args: CatalogArgs) {
                 }
             })
             .catch(() => {
-                if (requestId.current !== id) return;
+                if (filterGen.current !== gen) return;
                 if (typeof navigator !== "undefined" && navigator.onLine === false) {
                     setError("offline");
                     return;
@@ -152,7 +177,7 @@ export function useShopCatalog(args: CatalogArgs) {
                 setError("load");
             })
             .finally(() => {
-                if (requestId.current === id) setLoading(false);
+                if (filterGen.current === gen) setLoading(false);
             });
     }, [applyPage, fetchPage, key]);
 
@@ -165,39 +190,50 @@ export function useShopCatalog(args: CatalogArgs) {
             return;
         }
         let cancelled = false;
+        const gen = filterGen.current;
+        loadingMoreRef.current = true;
         setLoadingMore(true);
         void (async () => {
             let latest = args.initialProducts;
             let pages = 1;
             let reportedTotal = args.initialTotal;
             let reportedPages = args.initialTotalPages;
-            for (let next = 2; next <= saved.pages && next <= reportedPages; next += 1) {
-                if (cancelled || keyRef.current !== savedKey) return;
-                try {
-                    const data = await fetchPage(next);
-                    if (cancelled || keyRef.current !== savedKey) return;
-                    const mapped = (data.products ?? []).map((product) =>
-                        toShopProduct(product, args.locale),
-                    );
-                    const seen = new Set(latest.map((product) => product.id));
-                    latest = [...latest, ...mapped.filter((product) => !seen.has(product.id))];
-                    pages = data.pagination?.page ?? next;
-                    reportedTotal = data.pagination?.total ?? reportedTotal;
-                    reportedPages = Math.max(1, data.pagination?.total_pages ?? reportedPages);
-                } catch {
-                    break;
+            try {
+                for (let next = 2; next <= saved.pages && next <= reportedPages; next += 1) {
+                    if (cancelled || keyRef.current !== savedKey || filterGen.current !== gen) {
+                        return;
+                    }
+                    try {
+                        const data = await fetchPage(next);
+                        if (cancelled || keyRef.current !== savedKey || filterGen.current !== gen) {
+                            return;
+                        }
+                        const mapped = mapProducts(data);
+                        latest = appendUnique(latest, mapped);
+                        pages = data.pagination?.page ?? next;
+                        reportedTotal = data.pagination?.total ?? reportedTotal;
+                        reportedPages = Math.max(1, data.pagination?.total_pages ?? reportedPages);
+                    } catch {
+                        break;
+                    }
+                }
+                if (cancelled || keyRef.current !== savedKey || filterGen.current !== gen) return;
+                setProducts(latest);
+                setPage(pages);
+                setTotal(reportedTotal);
+                setTotalPages(reportedPages);
+                setRestoreScrollY(saved.scrollY);
+            } finally {
+                if (!cancelled && filterGen.current === gen) {
+                    loadingMoreRef.current = false;
+                    setLoadingMore(false);
                 }
             }
-            if (cancelled || keyRef.current !== savedKey) return;
-            setProducts(latest);
-            setPage(pages);
-            setTotal(reportedTotal);
-            setTotalPages(reportedPages);
-            setRestoreScrollY(saved.scrollY);
-            setLoadingMore(false);
         })();
         return () => {
             cancelled = true;
+            loadingMoreRef.current = false;
+            setLoadingMore(false);
         };
         // Restore once for the first filter key. Later filter changes start from page 1.
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -211,7 +247,7 @@ export function useShopCatalog(args: CatalogArgs) {
             try {
                 sessionStorage.setItem(
                     `shop-infinite:${keyRef.current}`,
-                    JSON.stringify({ pages: page, scrollY: window.scrollY }),
+                    JSON.stringify({ pages: pageRef.current, scrollY: window.scrollY }),
                 );
             } catch {
                 /* private mode */
@@ -227,61 +263,84 @@ export function useShopCatalog(args: CatalogArgs) {
             if (frame) window.cancelAnimationFrame(frame);
             save();
         };
-    }, [args.mode, page]);
+    }, [args.mode]);
 
     const goToPage = useCallback(
         (nextPage: number) => {
-            if (args.mode !== "pages") return;
-            const target = Math.min(Math.max(1, nextPage), totalPages);
-            if (target === page) return;
-            const id = ++requestId.current;
+            if (modeRef.current !== "pages") return;
+            const target = Math.min(Math.max(1, nextPage), totalPagesRef.current);
+            if (target === pageRef.current) return;
+            const gen = ++filterGen.current;
             setLoading(true);
             setError(null);
             void fetchPage(target)
                 .then((data) => {
-                    if (requestId.current !== id) return;
-                    applyPage(data, true);
+                    if (filterGen.current !== gen) return;
+                    applyPage(data, true, target);
                     const url = new URL(window.location.href);
                     if (target <= 1) url.searchParams.delete("page");
                     else url.searchParams.set("page", String(target));
                     window.history.replaceState(window.history.state, "", url);
                 })
                 .catch(() => {
-                    if (requestId.current !== id) return;
-                    setError(typeof navigator !== "undefined" && navigator.onLine === false ? "offline" : "load");
+                    if (filterGen.current !== gen) return;
+                    setError(
+                        typeof navigator !== "undefined" && navigator.onLine === false
+                            ? "offline"
+                            : "load",
+                    );
                 })
                 .finally(() => {
-                    if (requestId.current === id) setLoading(false);
+                    if (filterGen.current === gen) setLoading(false);
                 });
         },
-        [applyPage, args.mode, fetchPage, page, totalPages],
+        [applyPage, fetchPage],
     );
 
     const loadMore = useCallback(() => {
-        if (args.mode !== "infinite" || loading || loadingMore || page >= totalPages) return;
-        const id = ++requestId.current;
+        if (modeRef.current !== "infinite") return;
+        if (loadingMoreRef.current) return;
+        const currentPage = pageRef.current;
+        const pages = totalPagesRef.current;
+        if (currentPage >= pages) return;
+
+        const next = currentPage + 1;
+        const gen = filterGen.current;
+        loadingMoreRef.current = true;
         setLoadingMore(true);
         setError(null);
-        void fetchPage(page + 1)
+
+        void fetchPage(next)
             .then((data) => {
-                if (requestId.current !== id) return;
-                const nextPage = data.pagination?.page ?? page + 1;
-                if (nextPage <= page) return;
-                applyPage(data, false);
+                // Filter change while loading — drop this page.
+                if (filterGen.current !== gen) return;
+                // Another append may have moved us forward; only apply if still needed.
+                if (pageRef.current >= next) return;
+                const reported = data.pagination?.page ?? next;
+                if (reported < next) return;
+                applyPage(data, false, next);
             })
             .catch(() => {
-                if (requestId.current !== id) return;
-                setError(typeof navigator !== "undefined" && navigator.onLine === false ? "offline" : "load");
+                if (filterGen.current !== gen) return;
+                setError(
+                    typeof navigator !== "undefined" && navigator.onLine === false
+                        ? "offline"
+                        : "load",
+                );
             })
             .finally(() => {
-                if (requestId.current === id) setLoadingMore(false);
+                // Always clear the in-flight lock for this attempt when still current filter.
+                if (filterGen.current === gen) {
+                    loadingMoreRef.current = false;
+                    setLoadingMore(false);
+                }
             });
-    }, [args.mode, fetchPage, loading, loadingMore, page, totalPages]);
+    }, [applyPage, fetchPage]);
 
     const retry = useCallback(() => {
-        if (args.mode === "infinite" && products.length > 0) loadMore();
-        else goToPage(page || 1);
-    }, [args.mode, goToPage, loadMore, page, products.length]);
+        if (modeRef.current === "infinite" && products.length > 0) loadMore();
+        else goToPage(pageRef.current || 1);
+    }, [goToPage, loadMore, products.length]);
 
     return {
         products,

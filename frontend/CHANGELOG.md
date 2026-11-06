@@ -5,6 +5,16 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-07
 
+### Shop infinite scroll: products append + product loading icon
+
+- `useShopCatalog.ts`: stop discarding page-2+ API results when `requestId` raced (double observer / Strict Mode). Filter changes use a generation counter; load-more uses a sync in-flight lock and always clears loading state. Verified `/api/backend/products?page=2` appends (23/23).
+- `ShopProductGrid.tsx` + `ShopPageContent.tsx`: product Package + spinner loading icon (and skeletons on load-more) instead of plain text.
+
+### Global back-to-top button
+
+- `ScrollToTopButton.tsx` mounted in root `layout.tsx`: bottom-right control appears after scrolling (~420px) on every route.
+- Removed the duplicate button from `ProductPageContent.tsx`.
+
 ### Sticky header chrome (logo, ad, cart, nav)
 
 - `Header.tsx`: sticky block is logo + promo ad + cart/wishlist/theme + primary nav (TopBar is skipped and scrolls away). Scroll down hides the chrome; scroll up / back to top shows it again. Stays visible while the mobile menu is open.

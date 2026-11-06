@@ -23,6 +23,7 @@ const en = {
         darkMode: "Dark mode",
         primaryNav: "Primary Site Navigation",
         mainInfo: "Main Header Information",
+        backToTop: "Back to top",
     },
     nav: {
         home: "Home",

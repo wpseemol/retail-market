@@ -5,6 +5,7 @@ import { GeistSans } from "geist/font/sans";
 import "lenis/dist/lenis.css";
 import "./globals.css";
 import TopBar from "@/components/home/TopBar";
+import ScrollToTopButton from "@/components/home/ScrollToTopButton";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import StoreProvider from "@/components/providers/StoreProvider";
 import Header from "@/components/home/Header";
@@ -213,6 +214,7 @@ export default async function RootLayout({
                                 <Header categories={categories} />
                                 {children}
                                 <Footer />
+                                <ScrollToTopButton />
                             </AuthSessionProvider>
                         </StoreProvider>
                     </LocaleProvider>

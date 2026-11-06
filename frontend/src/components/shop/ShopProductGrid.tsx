@@ -1,9 +1,49 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { Loader2, Package } from "lucide-react";
 import { useI18n } from "@/components/providers/LocaleProvider";
 import ShopProductCard from "./ShopProductCard";
 import { VIEW_MODE_GRID_CLASS, type ShopProduct, type ShopViewMode } from "./types";
+
+function ProductLoadMoreStatus({ label }: { label: string }) {
+    return (
+        <div
+            className="flex flex-col items-center justify-center gap-3 py-8"
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+        >
+            <div className="relative flex size-14 items-center justify-center rounded-2xl border border-border-default bg-bg-surface shadow-sm">
+                <Package className="size-6 text-brand-primary/80" aria-hidden="true" />
+                <Loader2
+                    className="absolute -right-1 -bottom-1 size-5 animate-spin text-brand-primary"
+                    aria-hidden="true"
+                />
+            </div>
+            <p className="m-0 text-sm text-text-secondary">{label}</p>
+            <div
+                className={
+                    "grid w-full max-w-3xl grid-cols-2 gap-2.5 opacity-70 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4"
+                }
+                aria-hidden="true"
+            >
+                {Array.from({ length: 4 }, (_, index) => (
+                    <div
+                        key={index}
+                        className="overflow-hidden rounded-lg border border-border-default bg-bg-surface"
+                    >
+                        <div className="aspect-square animate-pulse bg-bg-subtle" />
+                        <div className="space-y-2 p-3">
+                            <div className="h-3 w-3/4 animate-pulse rounded bg-bg-subtle" />
+                            <div className="h-3 w-1/2 animate-pulse rounded bg-bg-subtle" />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
 
 export default function ShopProductGrid({
     products,
@@ -31,6 +71,8 @@ export default function ShopProductGrid({
     const { t } = useI18n();
     const copy = t.shopPage;
     const sentinelRef = useRef<HTMLDivElement>(null);
+    const onNearEndRef = useRef(onNearEnd);
+    onNearEndRef.current = onNearEnd;
 
     useEffect(() => {
         if (restoreScrollY == null || restoreScrollY <= 0) return;
@@ -45,7 +87,9 @@ export default function ShopProductGrid({
         if (!node || !onNearEnd || !hasMore || loadingMore) return;
         const observer = new IntersectionObserver(
             (entries) => {
-                if (entries.some((entry) => entry.isIntersecting)) onNearEnd();
+                if (entries.some((entry) => entry.isIntersecting)) {
+                    onNearEndRef.current?.();
+                }
             },
             { rootMargin: "720px 0px" },
         );
@@ -78,7 +122,7 @@ export default function ShopProductGrid({
                 ) : null}
             </div>
             {showStatus && loadingMore ? (
-                <p className="py-4 text-center text-sm text-text-secondary">{copy.loadingMore}</p>
+                <ProductLoadMoreStatus label={copy.loadingMore} />
             ) : null}
             {error ? (
                 <p className={`py-4 text-center text-sm ${error === "offline" ? "text-text-secondary" : "text-error"}`}>
