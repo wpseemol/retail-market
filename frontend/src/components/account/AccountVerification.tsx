@@ -438,7 +438,7 @@ export default function AccountVerification({
       aria-labelledby="verification-heading"
       className="relative overflow-hidden rounded-2xl border border-border-default bg-bg-surface p-5 sm:p-7 shadow-sm"
     >
-      <PhoneShieldDecor className="pointer-events-none absolute -right-1 bottom-4 hidden w-[110px] opacity-90 sm:block lg:w-[130px]" />
+      <PhoneShieldDecor className="pointer-events-none absolute -right-2 bottom-2 hidden w-[120px] sm:block lg:w-[150px]" />
 
       <h2
         id="verification-heading"

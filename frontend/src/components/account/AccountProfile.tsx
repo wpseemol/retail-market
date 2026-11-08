@@ -11,7 +11,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { ImageIcon } from "lucide-react";
 import AuthInput from "@/components/auth/AuthInput";
 import { apiFetch, apiUpload, ApiError, type ApiUser } from "@/lib/api";
 import { useAppDispatch } from "@/store/hooks";
@@ -31,10 +30,50 @@ import AccountVerification from "@/components/account/AccountVerification";
 import AccountPassword from "@/components/account/AccountPassword";
 import { IdCardDecor } from "@/components/account/AccountDecor";
 import {
+  BannerArrowIcon,
+  BannerCameraIcon,
+  BannerCrownIcon,
+  BannerGoogleMark,
+  BannerMailIcon,
+  BannerUserWatermark,
+} from "@/components/account/AccountBannerIcons";
+import {
   AVATAR_PRESET_IDS,
   AvatarPresetSvg,
+  isAvatarPresetId,
   type AvatarPresetId,
 } from "@/lib/avatarPresets";
+
+function initials(user: ApiUser) {
+  const a = user.first_name?.trim()?.[0] ?? "";
+  const b = user.last_name?.trim()?.[0] ?? "";
+  const value = `${a}${b}`.toUpperCase();
+  return value || user.email.slice(0, 2).toUpperCase();
+}
+
+function ProfileAvatarFace({ user }: { user: ApiUser }) {
+  if (user.avatar?.path) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        key={user.avatar_id ?? user.avatar.path}
+        src={user.avatar.path}
+        alt=""
+        className="size-full object-cover"
+      />
+    );
+  }
+  if (user.avatar_preset && isAvatarPresetId(user.avatar_preset)) {
+    return <AvatarPresetSvg id={user.avatar_preset} className="size-full" />;
+  }
+  return <>{initials(user)}</>;
+}
+
+function providerLabel(provider?: string | null) {
+  if (!provider) return "Email account";
+  if (provider === "google") return "Google Account";
+  return `${provider} account`;
+}
 
 type FieldErrors = Partial<Record<UpdateProfileField, string>>;
 
@@ -86,7 +125,6 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
   >({});
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
-  // Keep Redux / header in sync without waiting on client session fetch.
   useEffect(() => {
     dispatch(setSessionUser(initialUser));
   }, [dispatch, nextFingerprint]); // eslint-disable-line react-hooks/exhaustive-deps -- fingerprint tracks meaningful user changes
@@ -94,7 +132,6 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
   const applyUser = async (next: ApiUser) => {
     setLocalUser(next);
     dispatch(setUser(next));
-    // Keep Auth.js JWT + header avatar in sync (logout was otherwise required).
     await updateSession({ backendUser: next });
   };
 
@@ -212,6 +249,7 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
   };
 
   const fullName = `${user.first_name} ${user.last_name}`.trim();
+  const isGoogle = user.provider_name === "google";
 
   return (
     <main className="min-w-0 flex-1">
@@ -223,30 +261,101 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
       >
         <section
           aria-labelledby="account-heading"
-          className="overflow-hidden rounded-2xl border border-border-default bg-bg-surface shadow-sm"
+          className="overflow-hidden rounded-2xl border border-border-default/80 bg-bg-surface shadow-[0_8px_30px_rgba(0,178,7,0.08)]"
         >
-          <div className="relative overflow-hidden bg-linear-to-br from-brand-primary via-brand-primary to-brand-hover px-5 py-7 sm:px-8 sm:py-8 text-white">
+          {/* Soft mint hero — matches design (not solid brand green) */}
+          <div className="relative overflow-hidden bg-linear-to-br from-[#E8FCEC] via-[#D8F5DF] to-[#C6EED1] px-5 py-7 sm:px-8 sm:py-8">
             <div
-              className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-white/10"
+              className="pointer-events-none absolute -right-8 -top-10 size-44 rounded-full bg-[#7ED992]/35 blur-2xl"
               aria-hidden
             />
             <div
-              className="pointer-events-none absolute -bottom-16 right-24 size-48 rounded-full bg-white/10"
+              className="pointer-events-none absolute -bottom-16 right-16 size-52 rounded-full bg-[#00B207]/18 blur-3xl"
               aria-hidden
             />
-            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <span className="inline-flex items-center rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white/95 ring-1 ring-white/25">
-                  Customer Profile
-                </span>
-                <h1
-                  id="account-heading"
-                  className="mt-2 truncate text-2xl sm:text-[28px] font-semibold leading-tight"
-                >
-                  {fullName || "My account"}
-                </h1>
-                <p className="mt-1 truncate text-sm text-white/85">{user.email}</p>
+            <div
+              className="pointer-events-none absolute right-6 top-1/2 hidden -translate-y-1/2 opacity-[0.12] lg:block"
+              aria-hidden
+            >
+              <svg width="140" height="140" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="8" r="4" fill="#002603" />
+                <path
+                  d="M4 20c0-4 3.6-7 8-7s8 3 8 7"
+                  fill="#002603"
+                />
+              </svg>
+            </div>
+
+            <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-4 sm:gap-5">
+                <div className="relative shrink-0">
+                  <div
+                    className="flex size-[72px] sm:size-[84px] items-center justify-center overflow-hidden rounded-full bg-brand-primary text-xl font-bold text-white shadow-[0_10px_28px_rgba(0,178,7,0.28)] ring-4 ring-white/80"
+                    aria-hidden
+                  >
+                    <ProfileAvatarFace user={user} />
+                    {avatarLoading || presetSaving ? (
+                      <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
+                        <span
+                          className="size-6 rounded-full border-2 border-white/30 border-t-white animate-spin"
+                          aria-hidden
+                        />
+                        <span className="sr-only">Updating avatar</span>
+                      </span>
+                    ) : null}
+                  </div>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept={AVATAR_ALLOWED_MIMES.join(",")}
+                    className="sr-only"
+                    onChange={handleAvatarChange}
+                  />
+                  <button
+                    type="button"
+                    disabled={avatarLoading || Boolean(presetSaving)}
+                    onClick={() => avatarInputRef.current?.click()}
+                    title={`JPEG, PNG, WebP, or GIF · max ${Math.floor(AVATAR_MAX_BYTES / (1024 * 1024))} MB · always resized on the server`}
+                    aria-label="Upload profile image"
+                    className="absolute -bottom-0.5 -right-0.5 inline-flex size-8 items-center justify-center rounded-full border border-white bg-white text-brand-primary shadow-[0_6px_16px_rgba(0,0,0,0.12)] transition-colors hover:text-brand-hover disabled:opacity-60 cursor-pointer"
+                  >
+                    <Camera className="size-3.5" strokeWidth={2} aria-hidden />
+                  </button>
+                </div>
+
+                <div className="min-w-0">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E7FFE4] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-hover shadow-[0_2px_8px_rgba(0,178,7,0.12)] ring-1 ring-[#00B207]/15">
+                    <Crown className="size-3 text-brand-primary" aria-hidden />
+                    Customer Profile
+                  </span>
+                  <h1
+                    id="account-heading"
+                    className="mt-2 truncate text-2xl sm:text-[28px] font-semibold leading-tight text-text-primary"
+                  >
+                    {fullName || "My account"}
+                  </h1>
+                  <p className="mt-1 flex min-w-0 items-center gap-1.5 truncate text-sm text-text-secondary">
+                    <Mail className="size-3.5 shrink-0 opacity-70" aria-hidden />
+                    <span className="truncate">{user.email}</span>
+                  </p>
+                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-text-secondary shadow-[0_4px_14px_rgba(0,0,0,0.06)] ring-1 ring-black/4">
+                      {isGoogle ? (
+                        <GoogleMark className="size-3.5" />
+                      ) : null}
+                      {providerLabel(user.provider_name)}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-brand-hover">
+                      <span
+                        className="size-1.5 rounded-full bg-brand-primary shadow-[0_0_0_3px_rgba(0,178,7,0.2)]"
+                        aria-hidden
+                      />
+                      {user.status === "active" ? "Active" : user.status}
+                    </span>
+                  </div>
+                </div>
               </div>
+
               <button
                 type="button"
                 onClick={() => {
@@ -254,38 +363,18 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
                     router.push("/login");
                   });
                 }}
-                className="self-start sm:self-auto h-10 shrink-0 rounded-md border border-white/35 bg-white/10 px-4 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white hover:text-brand-primary cursor-pointer"
+                className="self-start sm:self-auto inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-white px-5 text-sm font-semibold text-text-primary shadow-[0_8px_24px_rgba(0,0,0,0.08)] ring-1 ring-black/5 transition-colors hover:text-brand-primary cursor-pointer"
               >
                 Log out
+                <ArrowRight className="size-4" strokeWidth={2} aria-hidden />
               </button>
             </div>
           </div>
 
           <div className="border-t border-border-default/60 px-5 sm:px-8 py-5">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <p className="m-0 text-sm font-medium text-text-secondary">
-                Or choose a built-in avatar
-              </p>
-              <div>
-                <input
-                  ref={avatarInputRef}
-                  type="file"
-                  accept={AVATAR_ALLOWED_MIMES.join(",")}
-                  className="sr-only"
-                  onChange={handleAvatarChange}
-                />
-                <button
-                  type="button"
-                  disabled={avatarLoading || Boolean(presetSaving)}
-                  onClick={() => avatarInputRef.current?.click()}
-                  title={`JPEG, PNG, WebP, or GIF · max ${Math.floor(AVATAR_MAX_BYTES / (1024 * 1024))} MB · always resized on the server`}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border-default bg-bg-base px-2.5 text-xs font-medium text-text-secondary transition-colors hover:border-brand-primary hover:text-brand-primary disabled:opacity-60 cursor-pointer"
-                >
-                  <ImageIcon className="size-3.5" strokeWidth={1.75} aria-hidden />
-                  {avatarLoading ? "Uploading…" : "Upload photo"}
-                </button>
-              </div>
-            </div>
+            <p className="mb-3 text-sm font-medium text-text-secondary">
+              Or choose a built-in avatar
+            </p>
             <div className="grid grid-cols-6 gap-2 sm:grid-cols-12">
               {AVATAR_PRESET_IDS.map((id) => {
                 const isSelected =
@@ -302,7 +391,7 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
                     aria-label={`Use ${id} avatar`}
                     className={`relative flex size-10 items-center justify-center overflow-hidden rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/60 disabled:opacity-60 cursor-pointer ${
                       isSelected
-                        ? "ring-2 ring-brand-primary ring-offset-2 ring-offset-bg-surface"
+                        ? "ring-2 ring-brand-primary ring-offset-2 ring-offset-bg-surface shadow-[0_4px_12px_rgba(0,178,7,0.25)]"
                         : "ring-1 ring-border-default/60 hover:ring-brand-primary/40"
                     }`}
                   >
@@ -324,9 +413,9 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.28, delay: 0.04, ease: "easeOut" }}
           aria-labelledby="details-heading"
-          className="relative overflow-hidden rounded-2xl border border-border-default bg-bg-surface p-5 sm:p-8 shadow-sm"
+          className="relative overflow-hidden rounded-2xl border border-border-default bg-bg-surface p-5 sm:p-8 shadow-[0_6px_24px_rgba(0,0,0,0.04)]"
         >
-          <IdCardDecor className="pointer-events-none absolute -right-2 bottom-2 hidden w-[140px] opacity-90 sm:block lg:w-[160px]" />
+          <IdCardDecor className="pointer-events-none absolute -right-3 bottom-0 hidden w-[150px] sm:block lg:w-[180px]" />
 
           <div className="relative mb-6 max-w-2xl">
             <h2
@@ -518,7 +607,7 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex h-11 min-w-36 items-center justify-center gap-2 rounded-md bg-brand-primary px-6 text-sm font-semibold text-white hover:bg-brand-hover transition-colors cursor-pointer disabled:opacity-60"
+                className="inline-flex h-11 min-w-36 items-center justify-center gap-2 rounded-md bg-brand-primary px-6 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(0,178,7,0.28)] hover:bg-brand-hover transition-colors cursor-pointer disabled:opacity-60"
               >
                 {saving ? (
                   <>
@@ -534,7 +623,7 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
               </button>
               <Link
                 href="/"
-                className="h-11 inline-flex items-center rounded-md border border-border-default bg-bg-base px-4 text-sm font-semibold text-text-primary transition-colors hover:border-brand-primary hover:text-brand-primary"
+                className="h-11 inline-flex items-center rounded-md border border-border-default bg-white px-4 text-sm font-semibold text-text-primary shadow-[0_4px_12px_rgba(0,0,0,0.04)] transition-colors hover:border-brand-primary hover:text-brand-primary"
               >
                 Back to shop
               </Link>
