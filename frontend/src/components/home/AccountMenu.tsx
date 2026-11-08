@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logoutSession } from "@/lib/logoutSession";
 import type { ApiUser } from "@/lib/api";
@@ -11,6 +11,7 @@ import {
   AvatarPresetSvg,
   isAvatarPresetId,
 } from "@/lib/avatarPresets";
+import { authSwitchHref } from "@/lib/authRedirect";
 
 function initials(first: string, last: string, email: string) {
   const value = `${first.trim()[0] ?? ""}${last.trim()[0] ?? ""}`.toUpperCase();
@@ -77,12 +78,16 @@ export default function AccountMenu({
   variant = "desktop",
 }: AccountMenuProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { t } = useI18n();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const hydrated = useAppSelector((state) => state.auth.hydrated);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  // Keep product/shop URL so login returns here (not a bare /login → /account bounce).
+  const loginHref = authSwitchHref("/login", pathname);
+  const registerHref = authSwitchHref("/register", pathname);
 
   useEffect(() => {
     if (!open) return;
@@ -106,14 +111,14 @@ export default function AccountMenu({
       return (
         <div className="grid grid-cols-2 gap-2">
           <Link
-            href="/login"
+            href={loginHref}
             onClick={onNavigate}
             className="text-center border border-brand-primary text-brand-primary text-sm font-semibold py-2.5 rounded hover:bg-brand-primary hover:text-white transition-colors"
           >
             {t.account.login}
           </Link>
           <Link
-            href="/register"
+            href={registerHref}
             onClick={onNavigate}
             className="text-center bg-brand-primary text-white text-sm font-semibold py-2.5 rounded hover:bg-brand-hover transition-colors"
           >
@@ -126,13 +131,13 @@ export default function AccountMenu({
     return (
       <div className="flex items-center gap-2">
         <Link
-          href="/login"
+          href={loginHref}
           className="text-text-primary hover:text-brand-primary text-[13px] font-semibold px-2 py-2 transition-colors whitespace-nowrap"
         >
           {t.account.login}
         </Link>
         <Link
-          href="/register"
+          href={registerHref}
           className="bg-brand-primary hover:bg-brand-hover text-white text-[13px] font-semibold px-4 py-2 rounded transition-colors whitespace-nowrap"
         >
           {t.account.signUp}

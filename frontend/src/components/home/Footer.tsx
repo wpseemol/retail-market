@@ -5,12 +5,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { LayoutDashboard } from "lucide-react";
 import { useAppSelector } from "@/store/hooks";
+import { selectAuthHydrated, selectAuthUser } from "@/store/authSlice";
 import { selectSiteChrome } from "@/store/siteChromeSlice";
 import { resolveStorefrontHref } from "@/lib/storefrontLinks";
 import { useI18n } from "@/components/providers/LocaleProvider";
 import { format } from "@/i18n/config";
 import { dashboardCtaLabel } from "@/i18n/dashboardCta";
 import type { Dictionary } from "@/i18n/dictionaries";
+
+/** Guests hitting /account are bounced to login — link them there directly. */
+function guestAwareHref(href: string, loggedIn: boolean): string {
+  if (loggedIn) return href;
+  if (href === "/account" || href.startsWith("/account/") || href === "/wishlist") {
+    return `/login?next=${encodeURIComponent(href)}`;
+  }
+  return href;
+}
 
 interface FooterLink {
     label: string;
@@ -78,10 +88,16 @@ function localizeLinks(
     return links.map(({ key, ...rest }) => ({ ...rest, label: labels[key] }));
 }
 
-function FooterNavLink({ link }: { link: FooterLink }) {
+function FooterNavLink({
+    link,
+    loggedIn,
+}: {
+    link: FooterLink;
+    loggedIn: boolean;
+}) {
     const className =
         "text-text-secondary hover:text-brand-primary text-[14px] transition-colors";
-    const resolved = resolveStorefrontHref(link.href);
+    const resolved = resolveStorefrontHref(guestAwareHref(link.href, loggedIn));
     const external = link.external || resolved.external;
 
     if (external) {
@@ -146,6 +162,9 @@ const weeklySelectedProducts = [
 export default function Footer() {
     const currentYear = 2026;
     const chrome = useAppSelector(selectSiteChrome);
+    const authUser = useAppSelector(selectAuthUser);
+    const authHydrated = useAppSelector(selectAuthHydrated);
+    const loggedIn = authHydrated && Boolean(authUser);
     const { t, locale } = useI18n();
     const footer = t.footer;
     const goToDashboard = dashboardCtaLabel(locale);
@@ -285,7 +304,7 @@ export default function Footer() {
                                             : link.label
                                     }
                                 >
-                                    <FooterNavLink link={link} />
+                                    <FooterNavLink link={link} loggedIn={loggedIn} />
                                 </li>
                             ))}
                         </ul>
@@ -306,7 +325,7 @@ export default function Footer() {
                                             : link.label
                                     }
                                 >
-                                    <FooterNavLink link={link} />
+                                    <FooterNavLink link={link} loggedIn={loggedIn} />
                                 </li>
                             ))}
                         </ul>

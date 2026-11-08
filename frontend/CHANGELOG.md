@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-09
 
+### Product page Login / Account when guest
+
+- `AccountMenu`: Login/Sign up keep `?next=` as the current product/shop path so after sign-in you return here (not a bare bounce to `/account`).
+- `Footer`: guest “My Account” / orders / wishlist go to `/login?next=…` instead of hitting protected routes first.
+- `AuthHydrator`: do not clear the SSR-seeded user while Auth.js status is still `loading` (stopped the header flipping to Login on product pages).
+- `logoutSession`: also call client `signOut` so SessionProvider matches the cleared cookie.
+
 ### Keep login + cart count on reload (SSR cookies)
 
 - Theme switch was already cookie-based; the “logged out / cart loading” flash on reload came from client-only hydration waiting on `useSession` + cart API.

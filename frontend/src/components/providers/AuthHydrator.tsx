@@ -16,16 +16,29 @@ export default function AuthHydrator() {
     : "";
 
   useEffect(() => {
+    // Keep SSR-seeded Redux user while Auth.js is still resolving — wiping here
+    // made the header flip to Login on product pages before the session settled.
     if (status === "loading") return;
 
-    dispatch(hydrateAuth());
-    if (status === "authenticated" && backendUser && sessionError !== "RefreshTokenError") {
+    if (
+      status === "authenticated" &&
+      backendUser &&
+      sessionError !== "RefreshTokenError"
+    ) {
       dispatch(setSessionUser(backendUser));
-    } else {
-      dispatch(setSessionUser(null));
+      return;
     }
+
+    if (status === "unauthenticated" || sessionError === "RefreshTokenError") {
+      dispatch(setSessionUser(null));
+      return;
+    }
+
+    // Authenticated shell without a customer profile — treat as guest.
+    dispatch(hydrateAuth());
+    if (!backendUser) dispatch(setSessionUser(null));
     // userKey tracks meaningful profile fields; avoid depending on session object identity.
-  }, [dispatch, status, userKey]); // eslint-disable-line react-hooks/exhaustive-deps -- backendUser via userKey
+  }, [dispatch, status, userKey, sessionError, backendUser]);
 
   return null;
 }
