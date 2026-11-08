@@ -83,7 +83,7 @@ const PROVIDER_META: Record<
     icon: GoogleMark,
     clientIdLabel: "OAuth client ID",
     clientIdHint: "Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Web client.",
-    docs: "Add your storefront URL to Authorized JavaScript origins.",
+    docs: "Google Cloud → Credentials → your Web client → Authorized JavaScript origins: https://www.niyenin.com, https://niyenin.com, and http://localhost:3000 (no trailing slash). Missing production origin → Error 400: origin_mismatch.",
   },
   facebook: {
     label: "Facebook",

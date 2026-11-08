@@ -4,6 +4,7 @@ import Link from "next/link";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { apiFetch, ApiError, type ApiUser } from "@/lib/api";
+import { PhoneShieldDecor } from "@/components/account/AccountDecor";
 import {
   normalizePhone,
   phoneSchema,
@@ -435,8 +436,10 @@ export default function AccountVerification({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: "easeOut", delay: 0.05 }}
       aria-labelledby="verification-heading"
-      className="mt-6 rounded-2xl border border-border-default bg-bg-surface p-5 sm:p-7"
+      className="relative overflow-hidden rounded-2xl border border-border-default bg-bg-surface p-5 sm:p-7 shadow-sm"
     >
+      <PhoneShieldDecor className="pointer-events-none absolute -right-1 bottom-4 hidden w-[110px] opacity-90 sm:block lg:w-[130px]" />
+
       <h2
         id="verification-heading"
         className="relative m-0 inline-block pb-2 text-lg font-semibold text-text-primary"
@@ -444,7 +447,7 @@ export default function AccountVerification({
         Verify email &amp; mobile
         <span className="absolute bottom-0 left-0 h-0.5 w-7 bg-brand-primary" />
       </h2>
-      <p className="m-0 mt-2 text-sm text-text-secondary">
+      <p className="relative m-0 mt-2 max-w-2xl text-sm text-text-secondary">
         Verified contacts keep your account secure and automatically bring orders you placed as
         a guest into{" "}
         <Link href="/account/orders" className="font-medium text-brand-primary hover:underline">
@@ -453,7 +456,7 @@ export default function AccountVerification({
         .
       </p>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+      <div className="relative mt-5 grid max-w-3xl gap-4 sm:grid-cols-2">
         <VerifyRow
           channel="email"
           label="Email"

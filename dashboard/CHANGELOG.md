@@ -3,6 +3,13 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-08
+
+### Google OAuth origin_mismatch hint
+
+- `SocialLoginSettingsPanel.tsx`: Social login docs spell out Authorized JavaScript origins for www / apex / localhost (fixes production Error 400: origin_mismatch).
+- Root `DEPLOY.md`: same Console checklist for storefront Google Sign-In.
+
 ## 2026-11-07
 
 ### Privacy policy content editor

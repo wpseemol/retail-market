@@ -3,6 +3,7 @@
 import { type FormEvent, useState } from "react";
 import AuthInput from "@/components/auth/AuthInput";
 import { LockIcon } from "@/components/auth/icons";
+import { PadlockDecor } from "@/components/account/AccountDecor";
 import { apiFetch, ApiError, type ApiUser } from "@/lib/api";
 import {
   type SetPasswordField,
@@ -100,9 +101,11 @@ export default function AccountPassword({ user, onUserChange }: Props) {
   return (
     <section
       aria-labelledby="password-heading"
-      className="mt-6 rounded-2xl border border-border-default bg-bg-surface p-5 sm:p-8"
+      className="relative overflow-hidden rounded-2xl border border-border-default bg-bg-surface p-5 sm:p-8 shadow-sm"
     >
-      <div className="mb-6">
+      <PadlockDecor className="pointer-events-none absolute -right-1 bottom-2 hidden w-[120px] opacity-90 sm:block lg:w-[140px]" />
+
+      <div className="relative mb-6 max-w-2xl">
         <h2
           id="password-heading"
           className="relative inline-block text-lg sm:text-xl font-semibold text-text-primary pb-2"
@@ -122,7 +125,7 @@ export default function AccountPassword({ user, onUserChange }: Props) {
       <form
         key={formKey}
         onSubmit={handleSubmit}
-        className="flex flex-col gap-4"
+        className="relative flex max-w-xl flex-col gap-4"
         noValidate
       >
         {requireCurrent ? (

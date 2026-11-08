@@ -3,6 +3,21 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-08
+
+### Account page sidebar layout (design match)
+
+- `AccountSidebar.tsx`: left column with avatar, provider/status badges, nav (Profile / Orders / Addresses / Wishlist / Logout), and Browse Shop promo.
+- `account/layout.tsx`: sidebar + main grid; removed the old horizontal tab bar.
+- `AccountProfile.tsx`: solid green Customer Profile hero, avatar presets + upload, personal details with ID-card decor.
+- `AccountVerification.tsx` / `AccountPassword.tsx`: section decorations; drop nested top margin (gap from parent).
+- `AccountDecor.tsx`: lightweight SVG marks (ID card, phone shield, padlock).
+- Orders / addresses / loading: drop nested containers so they sit in the shared account shell.
+
+### Google Sign-In production `origin_mismatch`
+
+- Root `DEPLOY.md`: document Google Cloud **Authorized JavaScript origins** (`https://www.niyenin.com`, `https://niyenin.com`, localhost). Error 400 is a Console config miss, not storefront code.
+
 ## 2026-11-07
 
 ### Shop infinite scroll: products append + product loading icon

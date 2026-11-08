@@ -3,6 +3,12 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-08
+
+### Google Sign-In origin_mismatch deploy note
+
+- Root `DEPLOY.md`: Authorized JavaScript origins checklist for production Google login (`www.niyenin.com` / `niyenin.com` / localhost). Fixes Error 400: origin_mismatch when the Console list only had local or preview hosts.
+
 ## 2026-11-07
 
 ### Privacy policy content page + Facebook data deletion

@@ -156,12 +156,32 @@ Redeploy after changing any `VITE_` or gateway variable (Vite bakes `VITE_` in a
 
 Staff sign in here. The storefront login page is for shoppers.
 
-## 4. After the first boot
+## 4. Google Sign-In (Authorized JavaScript origins)
+
+Shopper Google login uses the GIS token popup (`useGoogleIdToken`). Google checks the **browser origin** against the OAuth Web client. If production shows **Error 400: origin_mismatch**, the live storefront URL is missing from Google Cloud Console — this is not an app code bug.
+
+1. Open [Google Cloud Console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials).
+2. Open the **OAuth 2.0 Client ID** that matches `NEXT_PUBLIC_GOOGLE_CLIENT_ID` / dashboard Social login.
+3. Under **Authorized JavaScript origins**, add every storefront origin shoppers use (no path, no trailing slash):
+
+   ```text
+   https://www.niyenin.com
+   https://niyenin.com
+   http://localhost:3000
+   ```
+
+   Also add any Vercel preview / alternate host you still use for login tests (e.g. `https://niyenin-frontend.vercel.app`).
+4. Save. Changes can take a few minutes. Retry Sign in with Google from the live site.
+
+`CORS_ORIGINS` on the API is separate — that only allows the browser to call the API. Google’s origin list is what fixes `origin_mismatch`.
+
+## 5. After the first boot
 
 1. Open the dashboard, sign in as super admin, and set the email provider and SMS gateway. Send one test. Tests are limited to one every 30 seconds and 8 per hour per staff user, and they count toward the process-wide hourly caps.
 2. Confirm a shopper can register on the storefront and that a verification code arrives.
 3. In SSLCommerz (when you take payments), set the callback / IPN URL to `https://api.yourdomain.com`. `PUBLIC_API_URL` must be that public https origin.
 4. Attach your real domains in Vercel and add those origins to `CORS_ORIGINS`, then restart the Node app.
+5. Add the same storefront origins to Google **Authorized JavaScript origins** (section 4).
 
 ## Rate limits (shared hosting)
 

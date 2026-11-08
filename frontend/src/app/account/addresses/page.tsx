@@ -240,15 +240,14 @@ export default function AddressesPage() {
   };
 
   return (
-    <main className="flex-1 bg-bg-base">
-      <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-10">
-        <motion.section
+    <main className="min-w-0 flex-1">
+      <motion.section
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="mx-auto max-w-3xl"
+          className="min-w-0"
         >
-          <div className="rounded-2xl border border-border-default bg-bg-surface p-6 sm:p-8">
+          <div className="rounded-2xl border border-border-default bg-bg-surface p-6 sm:p-8 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h1 className="relative inline-block text-xl sm:text-2xl font-semibold text-text-primary pb-2">
@@ -603,7 +602,6 @@ export default function AddressesPage() {
             ) : null}
           </AnimatePresence>
         </motion.section>
-      </div>
     </main>
   );
 }
