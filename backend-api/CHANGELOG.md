@@ -3,6 +3,12 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-09
+
+### Fix default storefront nav hrefs (no more `/category/…` 404s)
+
+- `lib/siteChrome.ts` `DEFAULT_NAV_SEED`: footer find links use `/shop?category=…`; care links use real routes (`/account/orders`, `/contact`, `/faq`). Existing DB rows are unchanged — edit them in Dashboard → Site settings, or rely on the storefront normalizer/redirects.
+
 ## 2026-11-08
 
 ### Default site SEO title / description

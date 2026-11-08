@@ -307,7 +307,10 @@ export function SiteNavMenuEditor({
                 <FormItem>
                   <FormLabel>Path / URL</FormLabel>
                   <FormControl>
-                    <Input placeholder="/shop" {...field} />
+                    <Input
+                      placeholder="/shop?category=laptops"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

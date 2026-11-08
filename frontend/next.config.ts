@@ -87,6 +87,10 @@ const nextConfig: NextConfig = {
       { source: "/customer-service", destination: "/contact", permanent: false },
       { source: "/support", destination: "/contact", permanent: false },
       { source: "/returns", destination: "/faq", permanent: false },
+      // CMS nav sometimes stores bare category paths (prefetch was 404ing these).
+      { source: "/automotive", destination: "/shop?category=automotive", permanent: false },
+      { source: "/appliances", destination: "/shop?category=appliances", permanent: false },
+      { source: "/super_deals", destination: "/shop?category=super_deals", permanent: false },
     ];
   },
   async headers() {

@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-09
 
+### Fix CMS nav 404s (`/automotive`, `/appliances`, `/super_deals`)
+
+- Root cause: Dashboard header/footer links stored bare paths with no App Router page; Next RSC prefetch logged `GET …?_rsc=… 404`.
+- `lib/storefrontLinks.ts`: normalize `/category/:slug` and unknown single-segment paths to `/shop?category=…` before `<Link>` (stops prefetch 404s).
+- `next.config.ts`: redirects for the three live broken paths plus existing legacy seeds.
+- Backend `DEFAULT_NAV_SEED` now uses `/shop?category=…` (and real care URLs) for new installs.
+
 ### Product page Login / Account when guest
 
 - `AccountMenu`: Login/Sign up keep `?next=` as the current product/shop path so after sign-in you return here (not a bare bounce to `/account`).
