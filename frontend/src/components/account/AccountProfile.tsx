@@ -261,36 +261,40 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
       >
         <section
           aria-labelledby="account-heading"
-          className="overflow-hidden rounded-2xl border border-border-default/80 bg-bg-surface shadow-[0_8px_30px_rgba(0,178,7,0.08)]"
+          className="overflow-hidden rounded-[22px] border border-[#D7EFE0] bg-bg-surface shadow-[0_10px_32px_rgba(0,178,7,0.10)]"
         >
-          {/* Soft mint hero — matches design (not solid brand green) */}
-          <div className="relative overflow-hidden bg-linear-to-br from-[#E8FCEC] via-[#D8F5DF] to-[#C6EED1] px-5 py-7 sm:px-8 sm:py-8">
+          {/*
+            Banner 3 color layers (design):
+            1) base pale mint  2) mid seafoam wash  3) user watermark circle
+          */}
+          <div className="relative overflow-hidden px-5 py-7 sm:px-8 sm:py-8">
+            {/* Layer 1 — base pale mint */}
             <div
-              className="pointer-events-none absolute -right-8 -top-10 size-44 rounded-full bg-[#7ED992]/35 blur-2xl"
+              className="pointer-events-none absolute inset-0 bg-[#EAF8F0]"
+              aria-hidden
+            />
+            {/* Layer 2 — mid seafoam / mint wash (right-weighted) */}
+            <div
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_78%_45%,#B5E6C4_0%,#C9EFD6_38%,#EAF8F0_72%)]"
               aria-hidden
             />
             <div
-              className="pointer-events-none absolute -bottom-16 right-16 size-52 rounded-full bg-[#00B207]/18 blur-3xl"
+              className="pointer-events-none absolute inset-y-0 right-0 w-[55%] bg-linear-to-l from-[#A8DFB8]/70 via-[#C3EFD8]/35 to-transparent"
               aria-hidden
             />
+            {/* Layer 3 — watermark circle + user SVG */}
             <div
-              className="pointer-events-none absolute right-6 top-1/2 hidden -translate-y-1/2 opacity-[0.12] lg:block"
+              className="pointer-events-none absolute -right-6 top-1/2 hidden size-[168px] -translate-y-1/2 text-[#1B7A2F] sm:block lg:-right-2 lg:size-[196px]"
               aria-hidden
             >
-              <svg width="140" height="140" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="8" r="4" fill="#002603" />
-                <path
-                  d="M4 20c0-4 3.6-7 8-7s8 3 8 7"
-                  fill="#002603"
-                />
-              </svg>
+              <BannerUserWatermark className="size-full" />
             </div>
 
-            <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 items-center gap-4 sm:gap-5">
                 <div className="relative shrink-0">
                   <div
-                    className="flex size-[72px] sm:size-[84px] items-center justify-center overflow-hidden rounded-full bg-brand-primary text-xl font-bold text-white shadow-[0_10px_28px_rgba(0,178,7,0.28)] ring-4 ring-white/80"
+                    className="flex size-[76px] sm:size-[88px] items-center justify-center overflow-hidden rounded-full bg-brand-primary text-xl font-bold text-white shadow-[0_0_0_3px_#ffffff,0_0_0_6px_rgba(0,178,7,0.22),0_12px_28px_rgba(0,178,7,0.22)]"
                     aria-hidden
                   >
                     <ProfileAvatarFace user={user} />
@@ -317,37 +321,37 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
                     onClick={() => avatarInputRef.current?.click()}
                     title={`JPEG, PNG, WebP, or GIF · max ${Math.floor(AVATAR_MAX_BYTES / (1024 * 1024))} MB · always resized on the server`}
                     aria-label="Upload profile image"
-                    className="absolute -bottom-0.5 -right-0.5 inline-flex size-8 items-center justify-center rounded-full border border-white bg-white text-brand-primary shadow-[0_6px_16px_rgba(0,0,0,0.12)] transition-colors hover:text-brand-hover disabled:opacity-60 cursor-pointer"
+                    className="absolute -bottom-0.5 -right-0.5 inline-flex size-8 items-center justify-center rounded-full bg-white text-[#00B207] shadow-[0_6px_16px_rgba(0,0,0,0.12)] ring-1 ring-black/5 transition-colors hover:text-brand-hover disabled:opacity-60 cursor-pointer"
                   >
-                    <Camera className="size-3.5" strokeWidth={2} aria-hidden />
+                    <BannerCameraIcon className="size-3.5" />
                   </button>
                 </div>
 
                 <div className="min-w-0">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E7FFE4] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-hover shadow-[0_2px_8px_rgba(0,178,7,0.12)] ring-1 ring-[#00B207]/15">
-                    <Crown className="size-3 text-brand-primary" aria-hidden />
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#DDF6E5] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.04em] text-[#1B7A2F] shadow-[0_2px_8px_rgba(0,178,7,0.10)]">
+                    <BannerCrownIcon className="size-3.5 text-[#00B207]" />
                     Customer Profile
                   </span>
                   <h1
                     id="account-heading"
-                    className="mt-2 truncate text-2xl sm:text-[28px] font-semibold leading-tight text-text-primary"
+                    className="mt-2 truncate text-2xl sm:text-[28px] font-semibold leading-tight text-[#19191D]"
                   >
                     {fullName || "My account"}
                   </h1>
-                  <p className="mt-1 flex min-w-0 items-center gap-1.5 truncate text-sm text-text-secondary">
-                    <Mail className="size-3.5 shrink-0 opacity-70" aria-hidden />
+                  <p className="mt-1 flex min-w-0 items-center gap-1.5 truncate text-sm text-[#5F6B66]">
+                    <BannerMailIcon className="size-3.5 shrink-0 text-[#7A8A84]" />
                     <span className="truncate">{user.email}</span>
                   </p>
                   <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-text-secondary shadow-[0_4px_14px_rgba(0,0,0,0.06)] ring-1 ring-black/4">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-[#4A5560] shadow-[0_4px_14px_rgba(0,0,0,0.07)]">
                       {isGoogle ? (
-                        <GoogleMark className="size-3.5" />
+                        <BannerGoogleMark className="size-3.5" />
                       ) : null}
                       {providerLabel(user.provider_name)}
                     </span>
-                    <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-brand-hover">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#DDF6E5] px-2.5 py-1 text-[11px] font-semibold text-[#1B7A2F]">
                       <span
-                        className="size-1.5 rounded-full bg-brand-primary shadow-[0_0_0_3px_rgba(0,178,7,0.2)]"
+                        className="size-1.5 rounded-full bg-[#00B207]"
                         aria-hidden
                       />
                       {user.status === "active" ? "Active" : user.status}
@@ -363,10 +367,10 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
                     router.push("/login");
                   });
                 }}
-                className="self-start sm:self-auto inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-white px-5 text-sm font-semibold text-text-primary shadow-[0_8px_24px_rgba(0,0,0,0.08)] ring-1 ring-black/5 transition-colors hover:text-brand-primary cursor-pointer"
+                className="self-start sm:self-auto inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-[#19191D] shadow-[0_8px_24px_rgba(0,0,0,0.10)] transition-colors hover:text-[#00B207] cursor-pointer"
               >
                 Log out
-                <ArrowRight className="size-4" strokeWidth={2} aria-hidden />
+                <BannerArrowIcon className="size-4" />
               </button>
             </div>
           </div>

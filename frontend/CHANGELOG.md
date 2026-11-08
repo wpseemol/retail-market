@@ -7,8 +7,8 @@ Format: date heading, then one bullet per change with the files touched.
 
 ### Account soft mint hero + SVG decor
 
-- `AccountProfile.tsx`: soft mint/emerald gradient hero (avatar + camera shadow, crown badge, Google pill, Active, Log out with arrow).
-- `AccountDecor.tsx`: soft SVG ID card / phone-shield / padlock (gradients + drop-shadow filters) based on the design art — no PNG assets.
+- `AccountProfile.tsx` + `AccountBannerIcons.tsx`: banner uses 3 color layers (pale mint base, seafoam wash, user watermark SVG), design color coding, and custom SVG crown/mail/camera/arrow/Google icons.
+- `AccountDecor.tsx`: soft SVG ID card / phone-shield / padlock (gradients + drop-shadow filters).
 - `lib/validators/customerAuth.ts`: client `findUnsafeInputReason` now mirrors API JS/PHP code payload checks.
 
 ### Account page sidebar layout (design match)
