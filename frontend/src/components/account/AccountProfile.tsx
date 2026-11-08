@@ -261,40 +261,40 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
       >
         <section
           aria-labelledby="account-heading"
-          className="overflow-hidden rounded-[22px] border border-[#D7EFE0] bg-bg-surface shadow-[0_10px_32px_rgba(0,178,7,0.10)]"
+          className="overflow-hidden rounded-[22px] border border-[#D7EFE0] bg-bg-surface shadow-[0_10px_32px_rgba(0,178,7,0.10)] dark:border-[#1f5a2c] dark:shadow-[0_10px_32px_rgba(0,0,0,0.35)]"
         >
           {/*
             Banner 3 color layers (design):
             1) base pale mint  2) mid seafoam wash  3) user watermark circle
           */}
           <div className="relative overflow-hidden px-5 py-7 sm:px-8 sm:py-8">
-            {/* Layer 1 — base pale mint */}
+            {/* Layer 1 — base (light mint / dark brand tint) */}
             <div
-              className="pointer-events-none absolute inset-0 bg-[#EAF8F0]"
+              className="pointer-events-none absolute inset-0 bg-[#EAF8F0] dark:bg-[#14361c]"
               aria-hidden
             />
-            {/* Layer 2 — mid seafoam / mint wash (right-weighted) */}
+            {/* Layer 2 — mid seafoam wash (right-weighted) */}
             <div
-              className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_78%_45%,#B5E6C4_0%,#C9EFD6_38%,#EAF8F0_72%)]"
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_78%_45%,#B5E6C4_0%,#C9EFD6_38%,#EAF8F0_72%)] dark:bg-[radial-gradient(120%_90%_at_78%_45%,#1f5a2c_0%,#184626_42%,#14361c_74%)]"
               aria-hidden
             />
             <div
-              className="pointer-events-none absolute inset-y-0 right-0 w-[55%] bg-linear-to-l from-[#A8DFB8]/70 via-[#C3EFD8]/35 to-transparent"
+              className="pointer-events-none absolute inset-y-0 right-0 w-[55%] bg-linear-to-l from-[#A8DFB8]/70 via-[#C3EFD8]/35 to-transparent dark:from-[#00B207]/28 dark:via-[#00B207]/12 dark:to-transparent"
               aria-hidden
             />
             {/* Layer 3 — watermark circle + user SVG */}
             <div
-              className="pointer-events-none absolute -right-6 top-1/2 hidden size-[168px] -translate-y-1/2 text-[#1B7A2F] sm:block lg:-right-2 lg:size-[196px]"
+              className="pointer-events-none absolute -right-6 top-1/2 hidden size-[168px] -translate-y-1/2 text-[#1B7A2F] dark:text-[#7ED992] sm:block lg:-right-2 lg:size-[196px]"
               aria-hidden
             >
-              <BannerUserWatermark className="size-full" />
+              <BannerUserWatermark className="size-full opacity-90 dark:opacity-40" />
             </div>
 
             <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 items-center gap-4 sm:gap-5">
                 <div className="relative shrink-0">
                   <div
-                    className="flex size-[76px] sm:size-[88px] items-center justify-center overflow-hidden rounded-full bg-brand-primary text-xl font-bold text-white shadow-[0_0_0_3px_#ffffff,0_0_0_6px_rgba(0,178,7,0.22),0_12px_28px_rgba(0,178,7,0.22)]"
+                    className="flex size-[76px] sm:size-[88px] items-center justify-center overflow-hidden rounded-full bg-brand-primary text-xl font-bold text-white shadow-[0_0_0_3px_#ffffff,0_0_0_6px_rgba(0,178,7,0.22),0_12px_28px_rgba(0,178,7,0.22)] dark:shadow-[0_0_0_3px_#232329,0_0_0_6px_rgba(0,178,7,0.35),0_12px_28px_rgba(0,178,7,0.28)]"
                     aria-hidden
                   >
                     <ProfileAvatarFace user={user} />
@@ -321,37 +321,37 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
                     onClick={() => avatarInputRef.current?.click()}
                     title={`JPEG, PNG, WebP, or GIF · max ${Math.floor(AVATAR_MAX_BYTES / (1024 * 1024))} MB · always resized on the server`}
                     aria-label="Upload profile image"
-                    className="absolute -bottom-0.5 -right-0.5 inline-flex size-8 items-center justify-center rounded-full bg-white text-[#00B207] shadow-[0_6px_16px_rgba(0,0,0,0.12)] ring-1 ring-black/5 transition-colors hover:text-brand-hover disabled:opacity-60 cursor-pointer"
+                    className="absolute -bottom-0.5 -right-0.5 inline-flex size-9 items-center justify-center rounded-full bg-white text-brand-primary shadow-[0_6px_16px_rgba(0,0,0,0.12)] ring-1 ring-black/5 transition-colors hover:text-brand-hover disabled:opacity-60 cursor-pointer dark:bg-bg-surface dark:ring-white/10"
                   >
-                    <BannerCameraIcon className="size-3.5" />
+                    <BannerCameraIcon className="size-4.5" />
                   </button>
                 </div>
 
                 <div className="min-w-0">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#DDF6E5] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.04em] text-[#1B7A2F] shadow-[0_2px_8px_rgba(0,178,7,0.10)]">
-                    <BannerCrownIcon className="size-3.5 text-[#00B207]" />
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#DDF6E5] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-[#1B7A2F] shadow-[0_2px_8px_rgba(0,178,7,0.10)] dark:bg-[#1f5a2c] dark:text-[#B8F0C4]">
+                    <BannerCrownIcon className="size-4 text-brand-primary dark:text-[#7ED992]" />
                     Customer Profile
                   </span>
                   <h1
                     id="account-heading"
-                    className="mt-2 truncate text-2xl sm:text-[28px] font-semibold leading-tight text-[#19191D]"
+                    className="mt-2 truncate text-2xl sm:text-[28px] font-semibold leading-tight text-text-primary"
                   >
                     {fullName || "My account"}
                   </h1>
-                  <p className="mt-1 flex min-w-0 items-center gap-1.5 truncate text-sm text-[#5F6B66]">
-                    <BannerMailIcon className="size-3.5 shrink-0 text-[#7A8A84]" />
+                  <p className="mt-1 flex min-w-0 items-center gap-1.5 truncate text-sm text-text-secondary">
+                    <BannerMailIcon className="size-4 shrink-0 opacity-80" />
                     <span className="truncate">{user.email}</span>
                   </p>
                   <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-[#4A5560] shadow-[0_4px_14px_rgba(0,0,0,0.07)]">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1.5 text-[12px] font-medium text-text-secondary shadow-[0_4px_14px_rgba(0,0,0,0.07)] dark:bg-bg-surface dark:shadow-[0_4px_14px_rgba(0,0,0,0.35)] dark:ring-1 dark:ring-white/8">
                       {isGoogle ? (
-                        <BannerGoogleMark className="size-3.5" />
+                        <BannerGoogleMark className="size-4" />
                       ) : null}
                       {providerLabel(user.provider_name)}
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#DDF6E5] px-2.5 py-1 text-[11px] font-semibold text-[#1B7A2F]">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#DDF6E5] px-2.5 py-1.5 text-[12px] font-semibold text-[#1B7A2F] dark:bg-[#1f5a2c] dark:text-[#B8F0C4]">
                       <span
-                        className="size-1.5 rounded-full bg-[#00B207]"
+                        className="size-2 rounded-full bg-brand-primary"
                         aria-hidden
                       />
                       {user.status === "active" ? "Active" : user.status}
@@ -367,19 +367,19 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
                     router.push("/login");
                   });
                 }}
-                className="self-start sm:self-auto inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-[#19191D] shadow-[0_8px_24px_rgba(0,0,0,0.10)] transition-colors hover:text-[#00B207] cursor-pointer"
+                className="self-start sm:self-auto inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-text-primary shadow-[0_8px_24px_rgba(0,0,0,0.10)] transition-colors hover:text-brand-primary cursor-pointer dark:bg-bg-surface dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)] dark:ring-1 dark:ring-white/10"
               >
                 Log out
-                <BannerArrowIcon className="size-4" />
+                <BannerArrowIcon className="size-5" />
               </button>
             </div>
           </div>
 
-          <div className="border-t border-border-default/60 px-5 sm:px-8 py-5">
-            <p className="mb-3 text-sm font-medium text-text-secondary">
+          <div className="border-t border-border-default/60 bg-bg-surface px-5 sm:px-8 py-5 dark:bg-bg-subtle/40">
+            <p className="mb-4 text-sm font-medium text-text-secondary">
               Or choose a built-in avatar
             </p>
-            <div className="grid grid-cols-6 gap-2 sm:grid-cols-12">
+            <div className="grid grid-cols-4 gap-3 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12">
               {AVATAR_PRESET_IDS.map((id) => {
                 const isSelected =
                   !user.avatar?.path && user.avatar_preset === id;
@@ -393,16 +393,16 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
                     onClick={() => void handlePresetSelect(id)}
                     aria-pressed={isSelected}
                     aria-label={`Use ${id} avatar`}
-                    className={`relative flex size-10 items-center justify-center overflow-hidden rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/60 disabled:opacity-60 cursor-pointer ${
+                    className={`relative mx-auto flex size-12 sm:size-14 items-center justify-center overflow-hidden rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/60 disabled:opacity-60 cursor-pointer ${
                       isSelected
                         ? "ring-2 ring-brand-primary ring-offset-2 ring-offset-bg-surface shadow-[0_4px_12px_rgba(0,178,7,0.25)]"
                         : "ring-1 ring-border-default/60 hover:ring-brand-primary/40"
                     }`}
                   >
-                    <AvatarPresetSvg id={id} className="size-10" />
+                    <AvatarPresetSvg id={id} className="size-12 sm:size-14" />
                     {isSaving ? (
                       <span className="absolute inset-0 flex items-center justify-center rounded-full bg-bg-surface/60">
-                        <span className="size-3 animate-spin rounded-full border-2 border-brand-primary border-t-transparent" />
+                        <span className="size-3.5 animate-spin rounded-full border-2 border-brand-primary border-t-transparent" />
                       </span>
                     ) : null}
                   </button>

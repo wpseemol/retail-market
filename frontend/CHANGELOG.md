@@ -8,6 +8,8 @@ Format: date heading, then one bullet per change with the files touched.
 ### Account soft mint hero + SVG decor
 
 - `AccountProfile.tsx` + `AccountBannerIcons.tsx`: banner uses 3 color layers (pale mint base, seafoam wash, user watermark SVG), design color coding, and custom SVG crown/mail/camera/arrow/Google icons.
+- Banner dark mode: deep green layers (`#14361c` / `#184626`) instead of staying mint-white; badges/buttons use surface tokens.
+- Built-in avatar presets enlarged (`size-12` / `sm:size-14`); banner icons bumped up.
 - `AccountDecor.tsx`: soft SVG ID card / phone-shield / padlock (gradients + drop-shadow filters).
 - `lib/validators/customerAuth.ts`: client `findUnsafeInputReason` now mirrors API JS/PHP code payload checks.
 
