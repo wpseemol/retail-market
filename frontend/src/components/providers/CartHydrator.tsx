@@ -6,6 +6,10 @@ import { useAppDispatch, useAppSelector, useAppStore } from "@/store/hooks";
 import { readCartCache } from "@/store/cartCache";
 import { selectOnline } from "@/store/connectionSlice";
 import { flushOfflineCart, hydrateCartCache, syncCartForSession } from "@/store/cartSlice";
+import {
+    snapshotFromCartLines,
+    writeCartUiCookie,
+} from "@/lib/cartUiCookie";
 
 /**
  * Guests use the encrypted cookie cart. On sign-in the guest cart is merged
@@ -24,7 +28,10 @@ export default function CartHydrator() {
         // Paint last-known cart immediately so the header total is not blank.
         if (!store.getState().cart.loaded) {
             const cached = readCartCache();
-            if (cached) dispatch(hydrateCartCache(cached));
+            if (cached) {
+                dispatch(hydrateCartCache(cached));
+                writeCartUiCookie(snapshotFromCartLines(cached.items));
+            }
         }
 
         if (status === "loading") return;

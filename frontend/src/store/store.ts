@@ -1,5 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
-import cartReducer from "./cartSlice";
+import cartReducer, { seedCartState } from "./cartSlice";
 import authReducer from "./authSlice";
 import siteChromeReducer, {
     applySiteChromePayload,
@@ -10,9 +10,17 @@ import siteChromeReducer, {
 import wishlistReducer from "./wishlistSlice";
 import connectionReducer from "./connectionSlice";
 import { readSiteChromeCache } from "./siteChromeCache";
+import type { ApiUser } from "@/lib/api";
+import type { CartUiSnapshot } from "@/lib/cartUiCookie";
 
 export type StorePreload = {
     siteChrome?: SiteChromeHydratePayload | null;
+    /** From Auth.js `auth()` in the root layout — skips the account-menu skeleton. */
+    authUser?: ApiUser | null;
+    /** True once the server has resolved the session (logged in or guest). */
+    authReady?: boolean;
+    /** Readable cart count/total cookie for the header on first paint. */
+    cartUi?: CartUiSnapshot | null;
 };
 
 function seedSiteChrome(preload?: SiteChromeHydratePayload | null): SiteChromeState {
@@ -36,6 +44,11 @@ export const makeStore = (preload?: StorePreload) =>
         },
         preloadedState: {
             siteChrome: seedSiteChrome(preload?.siteChrome),
+            auth: {
+                user: preload?.authUser ?? null,
+                hydrated: preload?.authReady === true,
+            },
+            cart: seedCartState(preload?.cartUi ?? null),
         },
     });
 

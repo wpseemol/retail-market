@@ -3,6 +3,16 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-09
+
+### Keep login + cart count on reload (SSR cookies)
+
+- Theme switch was already cookie-based; the “logged out / cart loading” flash on reload came from client-only hydration waiting on `useSession` + cart API.
+- `app/layout.tsx`: read Auth.js session via `auth()`, seed Redux `authUser` / `authReady`, pass `session` into `AuthSessionProvider`.
+- `lib/cartUiCookie.ts` + `ConnectionBanner` / `CartHydrator`: keep a small readable `niyenin-cart-ui` cookie (`count|subtotal`) so the header badge/total paint on SSR; guest encrypted cart count is a fallback.
+- `store/store.ts`, `StoreProvider`, `cartSlice`, `Header`: preload preview numbers; `selectCartHeaderReady` skips the pulse when a cookie seed exists.
+- `AGENTS.md`: document Auth.js cookie + cart UI cookie seeding.
+
 ## 2026-11-08
 
 ### Seal localStorage caches (login stays in httpOnly cookie)

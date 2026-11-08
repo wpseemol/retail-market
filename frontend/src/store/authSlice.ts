@@ -6,11 +6,12 @@ import { scrubLegacyAuthLocalStorage } from "@/lib/secureLocalStorage";
  * Client auth state — UI only.
  *
  * Tokens are NOT kept in localStorage or readable cookies.
- * After login, JWTs live in the encrypted httpOnly `rm_session` cookie
- * (set by Server Actions). That is the standard, safer approach:
+ * After login, JWTs live in the Auth.js httpOnly session cookie
+ * (`authjs.session-token` / `__Secure-authjs.session-token`).
  * JS cannot read/steal the token (XSS-resistant).
  *
  * Redux only mirrors the public user profile for Header / account UI.
+ * Root layout seeds that profile from `auth()` so reload skips the skeleton.
  */
 type AuthState = {
   user: ApiUser | null;

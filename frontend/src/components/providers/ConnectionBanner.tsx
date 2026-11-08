@@ -5,6 +5,11 @@ import { useAppDispatch, useAppStore } from "@/store/hooks";
 import { writeCartCache } from "@/store/cartCache";
 import { setOnline } from "@/store/connectionSlice";
 import { useI18n } from "@/components/providers/LocaleProvider";
+import {
+  clearCartUiCookie,
+  snapshotFromCartLines,
+  writeCartUiCookie,
+} from "@/lib/cartUiCookie";
 
 function subscribe(onChange: () => void) {
   window.addEventListener("online", onChange);
@@ -63,6 +68,10 @@ export default function ConnectionBanner() {
         items: cart.items,
         offlineOps: cart.offlineOps,
       });
+      // Readable cookie so the next SSR paint can show badge + total immediately.
+      const snap = snapshotFromCartLines(cart.items);
+      if (snap.count === 0) clearCartUiCookie();
+      else writeCartUiCookie(snap);
     });
   }, [store]);
 

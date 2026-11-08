@@ -19,6 +19,7 @@ import {
     updateCartLineApi,
 } from "@/lib/cart";
 import { type CartDto, type CartLine, MAX_LINE_QUANTITY } from "@/lib/cartTypes";
+import type { CartUiSnapshot } from "@/lib/cartUiCookie";
 import type { ShopProduct } from "@/components/shop/types";
 import { type CartCache, type OfflineCartOp } from "@/store/cartCache";
 
@@ -28,6 +29,11 @@ export interface CartState {
     items: CartLine[];
     mode: CartMode;
     loaded: boolean;
+    /**
+     * SSR/cookie header numbers until real lines hydrate.
+     * Keeps badge + total visible on reload (no pulse skeleton).
+     */
+    preview: CartUiSnapshot | null;
     /** Only the newest mutation's response is applied, so quick clicks can't roll each other back. */
     latestRequestId: string | null;
     error: string | null;
@@ -42,12 +48,19 @@ const initialState: CartState = {
     items: [],
     mode: "guest",
     loaded: false,
+    preview: null,
     latestRequestId: null,
     error: null,
     couponCode: null,
     couponDiscount: 0,
     offlineOps: [],
 };
+
+/** Build initial cart state for StoreProvider (SSR cookie seed). */
+export function seedCartState(preview?: CartUiSnapshot | null): CartState {
+    if (!preview) return initialState;
+    return { ...initialState, preview };
+}
 
 type ThunkApi = { state: { cart: CartState }; rejectValue: string };
 
@@ -303,6 +316,7 @@ const cartSlice = createSlice({
             })
             .addCase(syncCartForSession.fulfilled, (state, action) => {
                 state.loaded = true;
+                state.preview = null;
                 if (state.latestRequestId !== action.meta.requestId) return;
                 state.items = action.payload.items;
             })
@@ -315,6 +329,7 @@ const cartSlice = createSlice({
             })
             .addCase(fetchCart.fulfilled, (state, action) => {
                 state.loaded = true;
+                state.preview = null;
                 if (state.latestRequestId !== action.meta.requestId) return;
                 state.items = action.payload.items;
             })
@@ -327,6 +342,7 @@ const cartSlice = createSlice({
                 if (!cached || cached.mode !== state.mode) return;
                 if (state.items.length === 0) state.items = cached.items;
                 if (state.offlineOps.length === 0) state.offlineOps = cached.offlineOps;
+                state.preview = null;
             })
             .addCase(queueOfflineOp, (state, action) => {
                 const op = action.payload;
@@ -347,6 +363,7 @@ const cartSlice = createSlice({
             })
             .addCase(flushOfflineCart.fulfilled, (state, action) => {
                 state.loaded = true;
+                state.preview = null;
                 state.items = action.payload.items;
                 state.offlineOps = [];
                 state.error = null;
@@ -447,14 +464,28 @@ export function selectCartError(state: CartRoot) {
     return state.cart.error;
 }
 
-/** Sum of quantities across all lines (header badge). */
+/** Sum of quantities across all lines (header badge). Falls back to cookie preview. */
 export function selectCartItemCount(state: CartRoot) {
-    return state.cart.items.reduce((sum, item) => sum + item.quantity, 0);
+    if (state.cart.loaded || state.cart.items.length > 0) {
+        return state.cart.items.reduce((sum, item) => sum + item.quantity, 0);
+    }
+    return state.cart.preview?.count ?? 0;
 }
 
-/** Value of everything in the cart (header). */
+/** Value of everything in the cart (header). Falls back to cookie preview. */
 export function selectCartSubtotal(state: CartRoot) {
-    return state.cart.items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
+    if (state.cart.loaded || state.cart.items.length > 0) {
+        return state.cart.items.reduce(
+            (sum, item) => sum + item.unit_price * item.quantity,
+            0,
+        );
+    }
+    return state.cart.preview?.subtotal ?? 0;
+}
+
+/** Header can show total when lines are loaded or a cookie preview exists. */
+export function selectCartHeaderReady(state: CartRoot) {
+    return state.cart.loaded || state.cart.preview != null;
 }
 
 /** Lines that go to checkout: ticked and in stock. */

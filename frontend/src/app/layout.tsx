@@ -40,6 +40,13 @@ import {
     THEME_COOKIE_KEY,
     THEME_INIT_SCRIPT,
 } from "@/lib/theme";
+import {
+    CART_UI_COOKIE_KEY,
+    parseCartUiCookie,
+    type CartUiSnapshot,
+} from "@/lib/cartUiCookie";
+import { readGuestCart } from "@/lib/guestCartCookie";
+import { auth } from "@/auth";
 import BootProgress, { BOOT_BAR_ID } from "@/components/providers/BootProgress";
 import NavigationProgress from "@/components/providers/NavigationProgress";
 
@@ -161,16 +168,32 @@ export const viewport: Viewport = {
 export default async function RootLayout({
     children,
 }: LayoutProps<"/">) {
-    const [settings, categories, locale, seoDefaults, cookieStore] =
+    const [settings, categories, locale, seoDefaults, cookieStore, session, guestLines] =
         await Promise.all([
             getSiteSettings(),
             getCategories(),
             getLocale(),
             getSeoDefaults(),
             cookies(),
+            auth(),
+            readGuestCart().catch(() => []),
         ]);
     // Cookie lets SSR paint dark immediately (no light→dark flash on reload).
     const theme = parseTheme(cookieStore.get(THEME_COOKIE_KEY)?.value);
+    const authUser =
+        session?.backendUser &&
+        session.error !== "RefreshTokenError" &&
+        session.backendUser.role === "customer"
+            ? session.backendUser
+            : null;
+    // Header cart badge/total: prefer the small UI cookie; else guest line count.
+    let cartUi: CartUiSnapshot | null = parseCartUiCookie(
+        cookieStore.get(CART_UI_COOKIE_KEY)?.value,
+    );
+    if (!cartUi && !authUser) {
+        const guestCount = guestLines.reduce((sum, line) => sum + line.quantity, 0);
+        if (guestCount > 0) cartUi = { count: guestCount, subtotal: 0 };
+    }
     const chromePayload = {
         siteName: settings.site_name,
         topbarEmail: settings.chrome?.topbar_email ?? null,
@@ -226,8 +249,13 @@ export default async function RootLayout({
                 <SmoothScroll />
                 <ThemeProvider>
                     <LocaleProvider locale={locale}>
-                        <StoreProvider siteChrome={chromePayload}>
-                            <AuthSessionProvider>
+                        <StoreProvider
+                            siteChrome={chromePayload}
+                            authUser={authUser}
+                            authReady
+                            cartUi={cartUi}
+                        >
+                            <AuthSessionProvider session={session}>
                                 <ConnectionBanner />
                                 <OfflineCache />
                                 <AuthHydrator />

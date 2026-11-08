@@ -11,7 +11,11 @@ import HeaderSearch from "./HeaderSearch";
 import { ThemeToggle } from "./theme/ThemeToggle";
 import { useAppSelector } from "@/store/hooks";
 import { formatPrice } from "@/lib/money";
-import { selectCartItemCount, selectCartSubtotal } from "@/store/cartSlice";
+import {
+    selectCartHeaderReady,
+    selectCartItemCount,
+    selectCartSubtotal,
+} from "@/store/cartSlice";
 import { selectHeaderNav } from "@/store/siteChromeSlice";
 import { selectWishlistCount } from "@/store/wishlistSlice";
 import { resolveStorefrontHref } from "@/lib/storefrontLinks";
@@ -113,7 +117,12 @@ export default function Header({
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const cartCount = useAppSelector(selectCartItemCount);
     const cartTotal = useAppSelector(selectCartSubtotal);
-    const cartLoaded = useAppSelector((state) => state.cart.loaded);
+    const cartHeaderReady = useAppSelector(selectCartHeaderReady);
+    const cartLinesLoaded = useAppSelector((state) => state.cart.loaded);
+    // Guest count-only cookie fallback has subtotal 0 — keep a short price skeleton.
+    const cartPriceReady =
+        cartLinesLoaded ||
+        (cartHeaderReady && !(cartCount > 0 && cartTotal <= 0));
     const wishlistCount = useAppSelector(selectWishlistCount);
     const chromeHydrated = useAppSelector((state) => state.siteChrome.hydrated);
     const configuredNav = useAppSelector(selectHeaderNav);
@@ -315,7 +324,7 @@ export default function Header({
                                 <span className="text-[11px] leading-tight text-text-secondary">
                                     {t.header.shoppingCart}
                                 </span>
-                                {cartLoaded ? (
+                                {cartPriceReady ? (
                                     <span
                                         className={`text-[13px] font-semibold ${
                                             isCart
