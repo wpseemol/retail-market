@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-08
 
+### Fix dark-mode flash on reload (deploy-ready)
+
+- Root cause: SSR HTML had no `dark` class while `/theme-init.js` loaded after paint → ~1s light flash.
+- `lib/theme.ts` + `ThemeProvider`: persist theme in **cookie + localStorage**.
+- `app/layout.tsx`: read cookie on the server and put `dark` on `<html>` immediately; blocking inline head script syncs cookie/localStorage before paint.
+- `body` uses `bg-bg-base text-text-primary` so first paint matches the theme tokens.
+
 ### Homepage + product SEO square (search + AI crawlers)
 
 - `config/site.ts` + API `publicSiteSettings` defaults: home title ≥30 chars (`Niyenin Retail Market | Electronics & Gadgets Online`); clearer Bangladesh-focused description/keywords; default URL `www.niyenin.com`.

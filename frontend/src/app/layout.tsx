@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
+import { cookies } from "next/headers";
 import { Hind_Siliguri } from "next/font/google";
 import { GeistSans } from "geist/font/sans";
 import "lenis/dist/lenis.css";
@@ -35,6 +35,11 @@ import { LOCALE_TAGS } from "@/i18n/config";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getSeoDefaults, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { preferSeoTitle } from "@/lib/seoTitle";
+import {
+    parseTheme,
+    THEME_COOKIE_KEY,
+    THEME_INIT_SCRIPT,
+} from "@/lib/theme";
 import BootProgress, { BOOT_BAR_ID } from "@/components/providers/BootProgress";
 import NavigationProgress from "@/components/providers/NavigationProgress";
 
@@ -156,10 +161,16 @@ export const viewport: Viewport = {
 export default async function RootLayout({
     children,
 }: LayoutProps<"/">) {
-    const settings = await getSiteSettings();
-    const categories = await getCategories();
-    const locale = await getLocale();
-    const seoDefaults = await getSeoDefaults();
+    const [settings, categories, locale, seoDefaults, cookieStore] =
+        await Promise.all([
+            getSiteSettings(),
+            getCategories(),
+            getLocale(),
+            getSeoDefaults(),
+            cookies(),
+        ]);
+    // Cookie lets SSR paint dark immediately (no light→dark flash on reload).
+    const theme = parseTheme(cookieStore.get(THEME_COOKIE_KEY)?.value);
     const chromePayload = {
         siteName: settings.site_name,
         topbarEmail: settings.chrome?.topbar_email ?? null,
@@ -180,16 +191,18 @@ export default async function RootLayout({
     return (
         <html
             lang={locale}
-            className={`${GeistSans.variable} ${hindSiliguri.variable} h-full antialiased`}
+            className={`${GeistSans.variable} ${hindSiliguri.variable} h-full antialiased${theme === "dark" ? " dark" : ""}`}
+            style={{ colorScheme: theme }}
             suppressHydrationWarning
         >
-            <body className="min-h-full flex flex-col font-sans">
-                {/* External file + beforeInteractive — avoids React 19 inline <script> warning. */}
-                <Script
+            <head>
+                {/* Blocking — applies theme before first paint when cookie is missing. */}
+                <script
                     id="niyenin-theme-init"
-                    src="/theme-init.js"
-                    strategy="beforeInteractive"
+                    dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
                 />
+            </head>
+            <body className="min-h-full flex flex-col font-sans bg-bg-base text-text-primary">
                 {/* SSR reload bar (real DOM + CSS). No <script> — React 19 safe. */}
                 <div
                     id={BOOT_BAR_ID}
