@@ -32,9 +32,10 @@ export {
 } from "./users";
 
 import {
-  STAFF_REFRESH_KEY,
-  STAFF_TOKEN_KEY,
   clearStaffSessionStorage,
+  readStaffAccessToken,
+  readStaffRefreshToken,
+  writeStaffTokens,
 } from "./authKeys";
 import { useAuthStore } from "../store/auth";
 
@@ -69,30 +70,15 @@ function bearerHeaders(token: string | null): Record<string, string> {
 }
 
 function readStoredAccessToken() {
-  try {
-    return sessionStorage.getItem(STAFF_TOKEN_KEY);
-  } catch {
-    return null;
-  }
+  return readStaffAccessToken();
 }
 
 function readStoredRefreshToken() {
-  try {
-    return sessionStorage.getItem(STAFF_REFRESH_KEY);
-  } catch {
-    return null;
-  }
+  return readStaffRefreshToken();
 }
 
 function persistTokens(accessToken: string, refreshToken?: string | null) {
-  try {
-    sessionStorage.setItem(STAFF_TOKEN_KEY, accessToken);
-    if (refreshToken) {
-      sessionStorage.setItem(STAFF_REFRESH_KEY, refreshToken);
-    }
-  } catch {
-    /* ignore */
-  }
+  writeStaffTokens(accessToken, refreshToken);
 
   const state = useAuthStore.getState();
   if (state.user) {

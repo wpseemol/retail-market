@@ -1,16 +1,18 @@
 import { create } from "zustand";
 import type { StaffUser } from "../lib/api";
 import {
-  STAFF_REFRESH_KEY,
-  STAFF_TOKEN_KEY,
-  STAFF_USER_KEY,
   clearStaffSessionStorage,
+  readStaffAccessToken,
+  readStaffRefreshToken,
+  STAFF_USER_KEY,
   writeAccessCookie,
+  writeStaffTokens,
 } from "../lib/authKeys";
+import { readSealedJson, writeSealedJson } from "../lib/secureStorage";
 
 /**
  * Dashboard is Vite (not Next.js) — NextAuth cannot run here.
- * Tokens are kept in sessionStorage (tab-scoped), not localStorage.
+ * Tokens are kept sealed in sessionStorage (tab-scoped), not localStorage.
  * The access token is also copied into a same-origin cookie for the API proxy.
  * When refresh token expires/fails → logout (secure staff sessions).
  */
@@ -30,37 +32,27 @@ type AuthState = {
 };
 
 function readUser(): StaffUser | null {
-  try {
-    const raw = sessionStorage.getItem(STAFF_USER_KEY);
-    return raw ? (JSON.parse(raw) as StaffUser) : null;
-  } catch {
-    return null;
-  }
+  return readSealedJson<StaffUser>(STAFF_USER_KEY);
 }
 
-const storedAccessToken = sessionStorage.getItem(STAFF_TOKEN_KEY);
+const storedAccessToken = readStaffAccessToken();
 writeAccessCookie(storedAccessToken);
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: storedAccessToken,
-  refreshToken: sessionStorage.getItem(STAFF_REFRESH_KEY),
+  refreshToken: readStaffRefreshToken(),
   user: readUser(),
   setSession: (token, user, refreshToken) => {
     const nextRefresh =
       refreshToken === undefined ? get().refreshToken : refreshToken;
 
-    sessionStorage.setItem(STAFF_TOKEN_KEY, token);
+    writeStaffTokens(token, nextRefresh ?? null);
     writeAccessCookie(token);
-    if (nextRefresh) {
-      sessionStorage.setItem(STAFF_REFRESH_KEY, nextRefresh);
-    } else {
-      sessionStorage.removeItem(STAFF_REFRESH_KEY);
-    }
-    sessionStorage.setItem(STAFF_USER_KEY, JSON.stringify(user));
+    writeSealedJson(STAFF_USER_KEY, user);
     set({ token, refreshToken: nextRefresh, user });
   },
   setUser: (user) => {
-    sessionStorage.setItem(STAFF_USER_KEY, JSON.stringify(user));
+    writeSealedJson(STAFF_USER_KEY, user);
     set({ user });
   },
   logout: () => {

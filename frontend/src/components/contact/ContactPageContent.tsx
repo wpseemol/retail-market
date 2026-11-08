@@ -9,6 +9,11 @@ import {
     type ReactNode,
 } from "react";
 import Link from "next/link";
+import {
+    readSealedJson,
+    removeSealed,
+    writeSealedJson,
+} from "@/lib/secureLocalStorage";
 
 const SAVE_DETAILS_KEY = "retail-market-contact-details";
 
@@ -255,25 +260,20 @@ export default function ContactPageContent() {
     const [submitted, setSubmitted] = useState(false);
 
     useEffect(() => {
-        try {
-            const raw = localStorage.getItem(SAVE_DETAILS_KEY);
-            if (!raw) return;
-            const saved = JSON.parse(raw) as Partial<FormState> & {
-                saveDetails?: boolean;
-            };
-            // localStorage is only readable after hydration.
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setForm((prev) => ({
-                ...prev,
-                firstName: saved.firstName ?? "",
-                lastName: saved.lastName ?? "",
-                email: saved.email ?? "",
-                phone: saved.phone ?? "",
-            }));
-            setSaveDetails(Boolean(saved.saveDetails));
-        } catch {
-            // Ignore invalid stored details
-        }
+        const saved = readSealedJson<Partial<FormState> & { saveDetails?: boolean }>(
+            SAVE_DETAILS_KEY,
+        );
+        if (!saved) return;
+        // localStorage is only readable after hydration.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setForm((prev) => ({
+            ...prev,
+            firstName: saved.firstName ?? "",
+            lastName: saved.lastName ?? "",
+            email: saved.email ?? "",
+            phone: saved.phone ?? "",
+        }));
+        setSaveDetails(Boolean(saved.saveDetails));
     }, []);
 
     const updateField = (field: keyof FormState, value: string) => {
@@ -285,18 +285,15 @@ export default function ContactPageContent() {
         event.preventDefault();
 
         if (saveDetails) {
-            localStorage.setItem(
-                SAVE_DETAILS_KEY,
-                JSON.stringify({
-                    firstName: form.firstName,
-                    lastName: form.lastName,
-                    email: form.email,
-                    phone: form.phone,
-                    saveDetails: true,
-                }),
-            );
+            writeSealedJson(SAVE_DETAILS_KEY, {
+                firstName: form.firstName,
+                lastName: form.lastName,
+                email: form.email,
+                phone: form.phone,
+                saveDetails: true,
+            });
         } else {
-            localStorage.removeItem(SAVE_DETAILS_KEY);
+            removeSealed(SAVE_DETAILS_KEY);
         }
 
         setSubmitted(true);

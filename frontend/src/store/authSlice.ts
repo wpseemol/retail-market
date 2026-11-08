@@ -1,5 +1,6 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { ApiUser } from "@/lib/api";
+import { scrubLegacyAuthLocalStorage } from "@/lib/secureLocalStorage";
 
 /**
  * Client auth state — UI only.
@@ -25,9 +26,7 @@ const initialState: AuthState = {
 /** One-time cleanup of older localStorage / plain cookie auth (no longer used). */
 function clearLegacyClientStorage() {
   if (typeof window === "undefined") return;
-  window.localStorage.removeItem("rm_customer_token");
-  window.localStorage.removeItem("rm_customer_refresh_token");
-  window.localStorage.removeItem("rm_customer_user");
+  scrubLegacyAuthLocalStorage();
   for (const name of [
     "rm_access_token",
     "rm_refresh_token",

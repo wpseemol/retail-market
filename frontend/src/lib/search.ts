@@ -1,3 +1,9 @@
+import {
+  readSealedJson,
+  removeSealed,
+  writeSealedJson,
+} from "@/lib/secureLocalStorage";
+
 export type SearchSuggestProduct = {
   id: string;
   name: string;
@@ -69,18 +75,8 @@ export type RecentSearchProduct = {
   thumbnail: string | null;
 };
 
-function readJson<T>(key: string): T | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : null;
-  } catch {
-    return null;
-  }
-}
-
 export function readRecentSearches(): string[] {
-  const rows = readJson<unknown>(RECENT_SEARCHES_KEY);
+  const rows = readSealedJson<unknown>(RECENT_SEARCHES_KEY);
   if (!Array.isArray(rows)) return [];
   return rows
     .filter((item): item is string => typeof item === "string")
@@ -96,23 +92,23 @@ export function rememberSearch(raw: string): string[] {
     0,
     RECENT_LIMIT,
   );
-  window.localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
+  writeSealedJson(RECENT_SEARCHES_KEY, next);
   return next;
 }
 
 export function removeRecentSearch(raw: string): string[] {
   if (typeof window === "undefined") return [];
   const next = readRecentSearches().filter((item) => item !== raw);
-  window.localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
+  writeSealedJson(RECENT_SEARCHES_KEY, next);
   return next;
 }
 
 export function clearRecentSearches(): void {
-  window.localStorage.removeItem(RECENT_SEARCHES_KEY);
+  removeSealed(RECENT_SEARCHES_KEY);
 }
 
 export function readRecentProducts(): RecentSearchProduct[] {
-  const rows = readJson<unknown>(RECENT_PRODUCTS_KEY);
+  const rows = readSealedJson<unknown>(RECENT_PRODUCTS_KEY);
   if (!Array.isArray(rows)) return [];
   return rows
     .filter((item): item is RecentSearchProduct => {
@@ -134,7 +130,7 @@ export function rememberProduct(product: RecentSearchProduct): RecentSearchProdu
     product,
     ...readRecentProducts().filter((item) => item.id !== product.id),
   ].slice(0, RECENT_LIMIT);
-  window.localStorage.setItem(RECENT_PRODUCTS_KEY, JSON.stringify(next));
+  writeSealedJson(RECENT_PRODUCTS_KEY, next);
   return next;
 }
 

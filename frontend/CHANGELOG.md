@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-08
 
+### Seal localStorage caches (login stays in httpOnly cookie)
+
+- Login user/tokens already use httpOnly `rm_session` — never localStorage. `authSlice` now scrubs legacy plaintext keys via `scrubLegacyAuthLocalStorage` (incl. stray `mc-auth`).
+- `lib/secureLocalStorage.ts`: sync seal (`niy1.` + XOR) so DevTools no longer shows readable JSON.
+- Migrated cart / wishlist / site-chrome / contact details / recent search to sealed reads/writes (auto-upgrades old plaintext on first read).
+- Theme (`niyenin-theme`) stays plain — not PII; cookie already drives SSR.
+
 ### Fix dark-mode flash on reload (deploy-ready)
 
 - Root cause: SSR HTML had no `dark` class while `/theme-init.js` loaded after paint → ~1s light flash.

@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-08
 
+### Seal staff sessionStorage (tokens + user)
+
+- `lib/secureStorage.ts`: seal sessionStorage values so DevTools does not show plain JWTs / user JSON.
+- `lib/authKeys.ts` + `store/auth.ts` + `lib/api.ts`: read/write access, refresh, and user via sealed helpers; short-lived `rm_access` cookie unchanged for the API proxy.
+
 ### Google OAuth origin_mismatch hint
 
 - `SocialLoginSettingsPanel.tsx`: Social login docs spell out Authorized JavaScript origins for www / apex / localhost (fixes production Error 400: origin_mismatch).
