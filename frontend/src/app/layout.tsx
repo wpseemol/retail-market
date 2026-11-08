@@ -21,7 +21,12 @@ import AuthSessionProvider from "@/components/providers/AuthSessionProvider";
 import { AnalyticsPixels } from "@/components/providers/AnalyticsPixels";
 import { VisitBeacon } from "@/components/providers/VisitBeacon";
 import { SiteChromeHydrator } from "@/components/providers/SiteChromeHydrator";
-import { absoluteUrl, siteConfig } from "@/config/site";
+import {
+    absoluteUrl,
+    HOME_SEO_DESCRIPTION,
+    HOME_SEO_TITLE,
+    siteConfig,
+} from "@/config/site";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { getCategories } from "@/lib/categories";
 import { LocaleProvider } from "@/components/providers/LocaleProvider";
@@ -29,6 +34,7 @@ import { getLocale } from "@/i18n/server";
 import { LOCALE_TAGS } from "@/i18n/config";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getSeoDefaults, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
+import { preferSeoTitle } from "@/lib/seoTitle";
 import BootProgress, { BOOT_BAR_ID } from "@/components/providers/BootProgress";
 import NavigationProgress from "@/components/providers/NavigationProgress";
 
@@ -44,14 +50,21 @@ export async function generateMetadata(): Promise<Metadata> {
     const settings = await getSiteSettings();
     const locale = await getLocale();
     const name = settings.site_name || siteConfig.name;
-    const title = settings.site_title || siteConfig.title;
+    const title = preferSeoTitle(settings.site_title, HOME_SEO_TITLE);
     const description =
-        settings.site_description || siteConfig.description;
-    const ogTitle = settings.og_title || title;
-    const ogDescription = settings.og_description || description;
-    const twitterTitle = settings.twitter_title || ogTitle;
+        settings.site_description?.trim() || HOME_SEO_DESCRIPTION;
+    const homeTitle = preferSeoTitle(
+        settings.seo.pages.home.title || settings.site_title,
+        HOME_SEO_TITLE,
+    );
+    const homeDescription =
+        settings.seo.pages.home.description?.trim() ||
+        description;
+    const ogTitle = preferSeoTitle(settings.og_title, homeTitle);
+    const ogDescription = settings.og_description?.trim() || homeDescription;
+    const twitterTitle = preferSeoTitle(settings.twitter_title, ogTitle);
     const twitterDescription =
-        settings.twitter_description || ogDescription;
+        settings.twitter_description?.trim() || ogDescription;
     const ogImage =
         settings.og_image?.path || absoluteUrl(siteConfig.logo.og);
     const keywords = settings.keywords
@@ -60,8 +73,6 @@ export async function generateMetadata(): Promise<Metadata> {
     const twitterHandle =
         settings.twitter_handle || siteConfig.social.twitter;
     const { seo } = settings;
-    const homeTitle = seo.pages.home.title || title;
-    const homeDescription = seo.pages.home.description || description;
 
     return {
         title: {

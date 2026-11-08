@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-08
 
+### Default site SEO title / description
+
+- `routes/publicSiteSettings.ts` defaults: longer home `site_title` (30–60 char SEO range) and Bangladesh-focused description/keywords for Google + AI crawlers.
+
 ### Google Sign-In origin_mismatch deploy note
 
 - Root `DEPLOY.md`: Authorized JavaScript origins checklist for production Google login (`www.niyenin.com` / `niyenin.com` / localhost). Fixes Error 400: origin_mismatch when the Console list only had local or preview hosts.

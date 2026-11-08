@@ -4,14 +4,21 @@ import type { Metadata } from "next";
  * Static site configuration — single source of truth for SEO,
  * Open Graph, branding, and shared meta defaults.
  */
+/** Homepage / default document title — keep 30–60 chars for SEO tools & AI summaries. */
+export const HOME_SEO_TITLE =
+    "Niyenin Retail Market | Electronics & Gadgets Online";
+
+/** Homepage meta description — keep ~70–160 chars; clear for Google + AI crawlers. */
+export const HOME_SEO_DESCRIPTION =
+    "Shop electronics, gadgets, laptops, smartphones, and daily deals at Niyenin Retail Market in Bangladesh. Top brands, fair prices, and fast delivery.";
+
 export const siteConfig = {
     name: "Niyenin",
     shortName: "Niyenin",
     tagline: "Retail Market",
-    title: "Niyenin | Retail Market",
-    description:
-        "Shop electronics, gadgets, laptops, smartphones, and more at Niyenin Retail Market. Discover daily deals, top brands, and fast delivery.",
-    url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://niyenin.com",
+    title: HOME_SEO_TITLE,
+    description: HOME_SEO_DESCRIPTION,
+    url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.niyenin.com",
     /** Staff / seller dashboard origin (Vite app). */
     dashboardUrl:
         process.env.NEXT_PUBLIC_DASHBOARD_URL?.replace(/\/$/, "") ??
@@ -20,14 +27,14 @@ export const siteConfig = {
     language: "en",
     keywords: [
         "Niyenin",
-        "retail market",
-        "online shop",
+        "Niyenin retail market",
+        "online shop Bangladesh",
         "electronics",
         "gadgets",
         "laptops",
         "smartphones",
         "deals",
-        "ecommerce",
+        "ecommerce Bangladesh",
     ],
     authors: [{ name: "Niyenin" }],
     creator: "Niyenin",

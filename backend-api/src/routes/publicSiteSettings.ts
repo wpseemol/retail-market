@@ -21,11 +21,11 @@ export const siteSettingsMediaInclude = {
 
 const DEFAULTS = {
   site_name: "Niyenin",
-  site_title: "Niyenin | Retail Market",
+  site_title: "Niyenin Retail Market | Electronics & Gadgets Online",
   site_description:
-    "Shop electronics, gadgets, laptops, smartphones, and more at Niyenin Retail Market. Discover daily deals, top brands, and fast delivery.",
+    "Shop electronics, gadgets, laptops, smartphones, and daily deals at Niyenin Retail Market in Bangladesh. Top brands, fair prices, and fast delivery.",
   keywords:
-    "Niyenin, retail market, online shop, electronics, gadgets, ecommerce",
+    "Niyenin, Niyenin retail market, online shop Bangladesh, electronics, gadgets, ecommerce Bangladesh",
   twitter_handle: "@niyenin",
   shop_default_view: "grid4",
   shop_products_per_page: 12,

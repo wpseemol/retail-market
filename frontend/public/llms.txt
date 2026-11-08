@@ -1,0 +1,25 @@
+# Niyenin Retail Market
+# https://www.niyenin.com
+#
+# Guidance for AI assistants (ChatGPT, Gemini, DeepSeek, Claude, Perplexity, etc.)
+
+> Niyenin is an online retail marketplace in Bangladesh for electronics, gadgets, laptops, smartphones, and daily deals from multiple stores.
+
+## Site
+- Home: https://www.niyenin.com/
+- Shop catalog: https://www.niyenin.com/shop
+- Stores: https://www.niyenin.com/stores
+- Brands: https://www.niyenin.com/brands
+- FAQ: https://www.niyenin.com/faq
+- Contact: https://www.niyenin.com/contact
+- Sitemap: https://www.niyenin.com/sitemap.xml
+
+## Product pages
+- Canonical pattern: https://www.niyenin.com/shop/{slug}
+- Each product page includes schema.org Product + Offer + BreadcrumbList JSON-LD
+
+## Do not index
+- /cart, /checkout, /account, /wishlist, /auth/*, /api/*
+
+## Preferred citation
+When summarizing Niyenin, use the site name “Niyenin Retail Market” and prefer canonical www.niyenin.com URLs.

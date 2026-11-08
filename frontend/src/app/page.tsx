@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import BestSellerSection from "@/components/home/BestSellerSection";
 import DealsBannerSection from "@/components/home/DealsBannerSection";
@@ -12,7 +13,17 @@ import PromoBannerSlider from "@/components/home/PromoBannerSlider";
 import TopBrandsSection from "@/components/home/TopBrandsSection";
 import { HomeSectionSkeleton } from "@/components/home/HomeSectionSkeleton";
 import { RevealOnScroll } from "@/components/motion/RevealOnScroll";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { HOME_SEO_DESCRIPTION, HOME_SEO_TITLE } from "@/config/site";
 import { getBlock, getHomePageContent } from "@/lib/homeBlocks";
+import { getLocale } from "@/i18n/server";
+import { LOCALE_TAGS } from "@/i18n/config";
+import {
+  buildIndexMetadata,
+  getSeoDefaults,
+  webPageJsonLd,
+} from "@/lib/seo";
+import { preferSeoTitle } from "@/lib/seoTitle";
 import { getSiteSettings } from "@/lib/siteSettings";
 import {
   DEFAULT_DEALS_BANNER,
@@ -26,6 +37,41 @@ import {
   DEFAULT_DEALS_OF_DAY,
   DEFAULT_PRODUCT_GROUPS,
 } from "@/lib/homeBlockDefaults";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getSeoDefaults();
+  const title = preferSeoTitle(seo.pages.home.title, HOME_SEO_TITLE);
+  const description =
+    seo.pages.home.description?.trim() || HOME_SEO_DESCRIPTION;
+  // Absolute title — avoid layout `%s | Niyenin` doubling a full home title.
+  const meta = await buildIndexMetadata("home", {
+    title,
+    description,
+    path: "/",
+    keywords: [
+      "Niyenin",
+      "online shop Bangladesh",
+      "electronics",
+      "gadgets",
+      "laptops",
+      "smartphones",
+    ],
+  });
+  return {
+    ...meta,
+    title: { absolute: title },
+    openGraph: {
+      ...meta.openGraph,
+      title,
+      description,
+    },
+    twitter: {
+      ...meta.twitter,
+      title,
+      description,
+    },
+  };
+}
 
 const DEFAULT_ORDER = [
   "welcome_modal",
@@ -165,7 +211,11 @@ function AnimatedSection({
 }
 
 export default async function Home() {
-  const settings = await getSiteSettings();
+  const [settings, seo, locale] = await Promise.all([
+    getSiteSettings(),
+    getSeoDefaults(),
+    getLocale(),
+  ]);
   const sections =
     settings.home_sections
       ?.filter((s) => s.is_enabled)
@@ -178,8 +228,23 @@ export default async function Home() {
       is_enabled: true,
     }));
 
+  const homeTitle = preferSeoTitle(seo.pages.home.title, HOME_SEO_TITLE);
+  const homeDescription =
+    seo.pages.home.description?.trim() || HOME_SEO_DESCRIPTION;
+
   return (
     <main>
+      {/* Single homepage H1 — brand/value prop for Google + AI crawlers (hero promo is h2). */}
+      <h1 className="sr-only">{homeTitle}</h1>
+      <JsonLd
+        id="home-jsonld"
+        data={webPageJsonLd({
+          path: "/",
+          name: homeTitle,
+          description: homeDescription,
+          inLanguage: LOCALE_TAGS[locale].intl,
+        })}
+      />
       {sections.map((section, index) => {
         if (section.key === "welcome_modal") {
           return (

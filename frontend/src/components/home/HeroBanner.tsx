@@ -120,9 +120,10 @@ export default async function HeroBanner({
               />
             </div>
 
-            <h1 className="text-text-primary text-2xl sm:text-3xl lg:text-[32px] font-extrabold leading-[1.15] tracking-tight uppercase mb-3">
+            {/* Promo slide copy is h2 — homepage H1 lives on `/` for SEO / AI crawlers. */}
+            <h2 className="text-text-primary text-2xl sm:text-3xl lg:text-[32px] font-extrabold leading-[1.15] tracking-tight uppercase mb-3">
               {hero.main.headline}
-            </h1>
+            </h2>
 
             {hero.main.subtext ? (
               <p className="text-text-secondary text-xs sm:text-sm font-normal mb-5 leading-relaxed">

@@ -29,13 +29,13 @@ import {
 import AccountVerification from "@/components/account/AccountVerification";
 import AccountPassword from "@/components/account/AccountPassword";
 import { IdCardDecor } from "@/components/account/AccountDecor";
+import { AccountBannerArt } from "@/components/account/AccountBannerArt";
 import {
   BannerArrowIcon,
   BannerCameraIcon,
   BannerCrownIcon,
   BannerGoogleMark,
   BannerMailIcon,
-  BannerUserWatermark,
 } from "@/components/account/AccountBannerIcons";
 import {
   AVATAR_PRESET_IDS,
@@ -261,53 +261,15 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
       >
         <section
           aria-labelledby="account-heading"
-          className="overflow-hidden rounded-[22px] border border-[#D7EFE0] bg-bg-surface shadow-[0_10px_32px_rgba(0,178,7,0.10)] dark:border-[#1f5a2c] dark:shadow-[0_10px_32px_rgba(0,0,0,0.35)]"
+          className="overflow-hidden rounded-[22px] border border-border-default bg-bg-surface shadow-sm"
         >
-          {/*
-            Banner color coding from design art:
-            1) pale mint #F1F8E9  2) seafoam #A5D6A7  3) emerald #4CAF50 curves
-            Log out sits bottom-right over the watermark.
-          */}
           <div className="relative min-h-[168px] overflow-hidden px-5 pb-14 pt-7 sm:min-h-[180px] sm:px-8 sm:pb-14 sm:pt-8">
-            {/* Layer 1 — pale mint base */}
-            <div
-              className="pointer-events-none absolute inset-0 bg-[#F1F8E9] dark:bg-[#14361c]"
-              aria-hidden
-            />
-            {/* Layer 2 — soft seafoam blobs */}
-            <div
-              className="pointer-events-none absolute -left-16 top-[-40%] size-[280px] rounded-full bg-[#C8E6C9]/80 blur-[2px] dark:bg-[#1f5a2c]/70"
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute left-[22%] top-[-30%] size-[260px] rounded-full bg-[#A5D6A7]/55 blur-[1px] dark:bg-[#2C742F]/35"
-              aria-hidden
-            />
-            {/* Layer 3 — emerald right / bottom curves */}
-            <div
-              className="pointer-events-none absolute -bottom-24 right-[-8%] size-[320px] rounded-full bg-[#66BB6A]/70 dark:bg-[#00B207]/25"
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute -bottom-16 right-[18%] size-[220px] rounded-full bg-[#4CAF50]/55 dark:bg-[#00B207]/18"
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute -right-10 top-[-20%] size-[240px] rounded-full bg-[#81C784]/45 dark:bg-[#7ED992]/12"
-              aria-hidden
-            />
-            {/* Soft user watermark (right) */}
-            <div
-              className="pointer-events-none absolute right-2 top-1/2 hidden size-[150px] -translate-y-[58%] text-white sm:block lg:right-6 lg:size-[170px]"
-              aria-hidden
-            >
-              <BannerUserWatermark className="size-full opacity-55 dark:opacity-30" />
-            </div>
+            <AccountBannerArt className="pointer-events-none absolute inset-0" />
 
-            <div className="relative z-10 flex min-w-0 items-center gap-4 sm:gap-5 sm:pr-36">
+            <div className="relative z-10 flex min-w-0 items-center gap-4 sm:gap-5 sm:max-w-[min(100%,32rem)]">
               <div className="relative shrink-0">
                 <div
-                  className="flex size-[76px] sm:size-[88px] items-center justify-center overflow-hidden rounded-full bg-brand-primary text-xl font-bold text-white shadow-[0_0_0_3px_#ffffff,0_0_0_6px_rgba(76,175,80,0.28),0_12px_28px_rgba(76,175,80,0.22)] dark:shadow-[0_0_0_3px_#232329,0_0_0_6px_rgba(0,178,7,0.35),0_12px_28px_rgba(0,178,7,0.28)]"
+                  className="flex size-[76px] sm:size-[88px] items-center justify-center overflow-hidden rounded-full bg-brand-primary text-xl font-bold text-white ring-4 ring-white/90 shadow-sm dark:ring-white/15"
                   aria-hidden
                 >
                   <ProfileAvatarFace user={user} />
@@ -334,15 +296,15 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
                   onClick={() => avatarInputRef.current?.click()}
                   title={`JPEG, PNG, WebP, or GIF · max ${Math.floor(AVATAR_MAX_BYTES / (1024 * 1024))} MB · always resized on the server`}
                   aria-label="Upload profile image"
-                  className="absolute -bottom-0.5 -right-0.5 inline-flex size-9 items-center justify-center rounded-full bg-white text-[#4CAF50] shadow-[0_6px_16px_rgba(0,0,0,0.12)] ring-1 ring-black/5 transition-colors hover:text-brand-hover disabled:opacity-60 cursor-pointer dark:bg-bg-surface dark:text-brand-primary dark:ring-white/10"
+                  className="absolute -bottom-0.5 -right-0.5 inline-flex size-9 items-center justify-center rounded-full bg-bg-surface text-brand-primary shadow-sm ring-1 ring-border-default transition-colors hover:text-brand-hover disabled:opacity-60 cursor-pointer"
                 >
                   <BannerCameraIcon className="size-4.5" />
                 </button>
               </div>
 
               <div className="min-w-0">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E8F5E9] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-[#2E7D32] shadow-[0_2px_8px_rgba(76,175,80,0.12)] dark:bg-[#1f5a2c] dark:text-[#B8F0C4]">
-                  <BannerCrownIcon className="size-4 text-[#4CAF50] dark:text-[#7ED992]" />
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-tint px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-brand-hover dark:text-brand-deep">
+                  <BannerCrownIcon className="size-4 text-brand-primary" />
                   Customer Profile
                 </span>
                 <h1
@@ -356,15 +318,15 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
                   <span className="truncate">{user.email}</span>
                 </p>
                 <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1.5 text-[12px] font-medium text-text-secondary shadow-[0_4px_14px_rgba(0,0,0,0.07)] dark:bg-bg-surface dark:shadow-[0_4px_14px_rgba(0,0,0,0.35)] dark:ring-1 dark:ring-white/8">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-bg-surface px-2.5 py-1.5 text-[12px] font-medium text-text-secondary shadow-sm ring-1 ring-border-default/70">
                     {isGoogle ? (
                       <BannerGoogleMark className="size-4" />
                     ) : null}
                     {providerLabel(user.provider_name)}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E8F5E9] px-2.5 py-1.5 text-[12px] font-semibold text-[#2E7D32] dark:bg-[#1f5a2c] dark:text-[#B8F0C4]">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-tint px-2.5 py-1.5 text-[12px] font-semibold text-brand-hover dark:text-brand-deep">
                     <span
-                      className="size-2 rounded-full bg-[#4CAF50]"
+                      className="size-2 rounded-full bg-brand-primary"
                       aria-hidden
                     />
                     {user.status === "active" ? "Active" : user.status}
@@ -373,7 +335,6 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
               </div>
             </div>
 
-            {/* Design: Log out pinned bottom-right */}
             <button
               type="button"
               onClick={() => {
@@ -381,7 +342,7 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
                   router.push("/login");
                 });
               }}
-              className="absolute bottom-4 right-4 z-20 inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-semibold text-[#2E7D32] shadow-[0_6px_18px_rgba(0,0,0,0.10)] transition-colors hover:text-[#1B5E20] cursor-pointer sm:bottom-5 sm:right-6 dark:bg-bg-surface dark:text-[#B8F0C4] dark:shadow-[0_8px_24px_rgba(0,0,0,0.4)] dark:ring-1 dark:ring-white/10 dark:hover:text-white"
+              className="absolute bottom-4 right-4 z-20 inline-flex h-9 items-center gap-1.5 rounded-full bg-bg-surface px-4 text-sm font-semibold text-text-primary shadow-sm ring-1 ring-border-default/80 transition-colors hover:text-brand-primary cursor-pointer sm:bottom-5 sm:right-6"
             >
               Log out
               <BannerArrowIcon className="size-4" />

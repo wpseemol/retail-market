@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cache } from "react";
 import { absoluteUrl, createPageMetadata, siteConfig } from "@/config/site";
+import { preferSeoTitle } from "@/lib/seoTitle";
 import { getSiteSettings, type SeoPageKey } from "@/lib/siteSettings";
 
 export type SeoDefaults = {
@@ -71,8 +72,9 @@ export async function buildIndexMetadata(
     const d = await getSeoDefaults();
     const page = d.pages[key];
     return buildMetadata({
-        title: page.title || fallback.title,
-        description: page.description || fallback.description,
+        // Skip short dashboard leftovers (e.g. "Niyenin | Retail Market" = 23 chars).
+        title: preferSeoTitle(page.title, fallback.title),
+        description: page.description?.trim() || fallback.description,
         path: fallback.path,
         keywords: fallback.keywords,
     });
@@ -116,6 +118,7 @@ export function websiteJsonLd(d: SeoDefaults, inLanguage: string): JsonLdObject 
         "@id": SITE_ID,
         name: d.siteName,
         url: absoluteUrl("/"),
+        description: d.description,
         inLanguage,
         publisher: { "@id": ORG_ID },
         potentialAction: {

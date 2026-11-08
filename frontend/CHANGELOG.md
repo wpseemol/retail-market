@@ -5,11 +5,20 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-08
 
+### Homepage + product SEO square (search + AI crawlers)
+
+- `config/site.ts` + API `publicSiteSettings` defaults: home title ≥30 chars (`Niyenin Retail Market | Electronics & Gadgets Online`); clearer Bangladesh-focused description/keywords; default URL `www.niyenin.com`.
+- `app/layout.tsx` + `lib/seoTitle.ts`: prefer long-enough titles so short dashboard leftovers are replaced.
+- `app/page.tsx`: absolute home metadata, `WebPage` JSON-LD, single `sr-only` H1; hero promo demoted to `h2` in `HeroBanner.tsx`.
+- `app/shop/[slug]/page.tsx`: richer product titles, `WebPage` + Product `mainEntityOfPage` JSON-LD via `JsonLd`.
+- `app/robots.ts`: explicit allow for GPTBot, Google-Extended, ClaudeBot, PerplexityBot, Bytespider, etc.
+- `public/llms.txt`: short site guide for AI assistants.
+
 ### Account soft mint hero + SVG decor
 
 - `AccountProfile.tsx` + `AccountBannerIcons.tsx`: banner uses 3 color layers (pale mint base, seafoam wash, user watermark SVG), design color coding, and custom SVG crown/mail/camera/arrow/Google icons.
 - Banner dark mode: deep green layers (`#14361c` / `#184626`) instead of staying mint-white; badges/buttons use surface tokens.
-- Banner color coding matches design art (pale `#F1F8E9` → seafoam `#A5D6A7` → emerald `#4CAF50` curve blobs); Log out pinned bottom-right.
+- `AccountBannerArt.tsx`: clean soft mint wash (light) / deep green (dark) — no busy circle layers; quiet watermark; Log out bottom-right.
 - Built-in avatar presets enlarged (`size-12` / `sm:size-14`); banner icons bumped up.
 - `AccountDecor.tsx`: soft SVG ID card / phone-shield / padlock (gradients + drop-shadow filters).
 - `lib/validators/customerAuth.ts`: client `findUnsafeInputReason` now mirrors API JS/PHP code payload checks.

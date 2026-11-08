@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import ProductPageContent from "@/components/shop/ProductPageContent";
+import { JsonLd } from "@/components/seo/JsonLd";
 import {
   absoluteUrl,
   createPageMetadata,
@@ -15,12 +16,15 @@ import {
   type ApiProduct,
 } from "@/lib/products";
 import { getLocale } from "@/i18n/server";
+import { LOCALE_TAGS } from "@/i18n/config";
 import {
   fetchProductReviews,
   reviewsJsonLd,
   type ReviewsPayload,
 } from "@/lib/reviews";
 import { hasRichText, stripHtml } from "@/lib/safeHtml";
+import { productSeoTitle } from "@/lib/seoTitle";
+import { webPageJsonLd } from "@/lib/seo";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -65,10 +69,12 @@ export async function generateMetadata({
   const images = productImages(product);
   const brand = product.brand_name || product.brand?.name;
   const price = Number(product.price) || 0;
+  const title = productSeoTitle({ name: product.name, brand });
+  const description = productDescription(product);
 
   return createPageMetadata({
-    title: product.name,
-    description: productDescription(product),
+    title,
+    description,
     path: `/shop/${product.slug}`,
     image: images[0] ?? siteConfig.logo.og,
     images: images.slice(1, 4),
@@ -78,6 +84,8 @@ export async function generateMetadata({
       brand,
       product.category?.name,
       product.vendor?.shop_name,
+      "buy online Bangladesh",
+      siteConfig.name,
     ].filter((k): k is string => Boolean(k)),
     other: {
       "product:price:amount": price.toFixed(2),
@@ -119,6 +127,7 @@ function productJsonLd(product: ApiProduct, reviews: ReviewsPayload) {
       description: productDescription(product),
       url,
       image: images.length > 0 ? images : [absoluteUrl(siteConfig.logo.og)],
+      mainEntityOfPage: { "@type": "WebPage", "@id": `${url}#webpage` },
       ...(product.sku ? { sku: product.sku, mpn: product.sku } : {}),
       ...(brand ? { brand: { "@type": "Brand", name: brand } } : {}),
       ...(product.category ? { category: product.category.name } : {}),
@@ -184,24 +193,32 @@ export default async function ProductPage({ params }: ProductPageProps) {
         }
       : null;
 
+  const pageUrl = absoluteUrl(`/shop/${product.slug}`);
+  const pageDescription = productDescription(data.product);
+
   return (
     <main>
-      <script
-        type="application/ld+json"
-        // `<` is escaped so product text can never close the script tag.
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(productJsonLd(data.product, reviews)).replace(
-            /</g,
-            "\\u003c",
-          ),
-        }}
+      <JsonLd
+        id="product-jsonld"
+        data={[
+          ...productJsonLd(data.product, reviews),
+          webPageJsonLd({
+            path: `/shop/${product.slug}`,
+            name: productSeoTitle({
+              name: data.product.name,
+              brand: data.product.brand_name || data.product.brand?.name,
+            }),
+            description: pageDescription,
+            inLanguage: LOCALE_TAGS[locale].intl,
+          }),
+        ]}
       />
       <ProductPageContent
         key={product.id}
         product={product}
         relatedProducts={related}
         store={store}
-        shareUrl={absoluteUrl(`/shop/${product.slug}`)}
+        shareUrl={pageUrl}
         inStock={data.product.stock_qty > 0}
         reviews={reviews}
       />
