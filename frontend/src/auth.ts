@@ -7,6 +7,18 @@ const BACKEND_URL = SERVER_API_URL;
 
 /** Access JWT lifetime buffer before refresh (backend default access ≈ 1h). */
 const ACCESS_TOKEN_TTL_MS = 55 * 60 * 1000;
+/** Cap hung refresh/login calls so RSC routes never spin forever. */
+const BACKEND_AUTH_TIMEOUT_MS = 12_000;
+
+async function backendAuthFetch(url: string, init: RequestInit) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), BACKEND_AUTH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 export type BackendAuthUser = {
   id: string;
@@ -39,16 +51,21 @@ async function callBackendAuth(
   path: string,
   body: unknown,
 ): Promise<AuthTokenResponse> {
-  const res = await fetch(`${BACKEND_URL}${path}`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      ...(await trustedClientHeaders()),
-      ...appKeyRecord(),
-    },
-    body: JSON.stringify(body),
-  });
+  let res: Response;
+  try {
+    res = await backendAuthFetch(`${BACKEND_URL}${path}`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(await trustedClientHeaders()),
+        ...appKeyRecord(),
+      },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new BackendAuthError("Sign-in timed out. Try again.", "credentials");
+  }
 
   const data = (await res.json().catch(() => ({}))) as AuthTokenResponse & {
     message?: string;
@@ -84,16 +101,21 @@ function toAuthUser(data: AuthTokenResponse): BackendAuthUser {
 }
 
 async function refreshBackendTokens(refreshToken: string) {
-  const res = await fetch(`${BACKEND_URL}/api/auth/refresh`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      ...(await trustedClientHeaders()),
-      ...appKeyRecord(),
-    },
-    body: JSON.stringify({ refreshToken }),
-  });
+  let res: Response;
+  try {
+    res = await backendAuthFetch(`${BACKEND_URL}/api/auth/refresh`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(await trustedClientHeaders()),
+        ...appKeyRecord(),
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+  } catch {
+    throw new Error("Session refresh timed out");
+  }
 
   const data = (await res.json().catch(() => ({}))) as AuthTokenResponse & {
     message?: string;
@@ -103,7 +125,12 @@ async function refreshBackendTokens(refreshToken: string) {
     throw new Error(data.message ?? "Session expired");
   }
 
-  return data;
+  const accessToken = data.accessToken ?? data.token;
+  if (!accessToken || !data.refreshToken) {
+    throw new Error("Session refresh returned an incomplete token");
+  }
+
+  return { ...data, accessToken, token: accessToken };
 }
 
 /**

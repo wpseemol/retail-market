@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-09
 
+### Fix account profile stuck on “reloading” after overnight login
+
+- Root cause: `/account` was a server page that called `auth()` again; after the access JWT expired (~1h), that refresh could hang with no timeout while the client sidebar (Redux) still rendered — profile name/image looked stuck loading; logout cleared the bad session.
+- `app/account/page.tsx`: client page paints from SSR-seeded Redux + `useSession` (same pattern as orders/addresses); `proxy.ts` still guards the route.
+- `auth.ts`: 12s timeout on login/refresh fetches; reject incomplete refresh payloads so we don’t wipe the refresh token.
+
 ### Fix CMS nav 404s (`/automotive`, `/appliances`, `/super_deals`)
 
 - Root cause: Dashboard header/footer links stored bare paths with no App Router page; Next RSC prefetch logged `GET …?_rsc=… 404`.
