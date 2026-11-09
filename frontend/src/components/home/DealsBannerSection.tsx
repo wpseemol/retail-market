@@ -47,7 +47,7 @@ export default function DealsBannerSection({
                 </div>
 
                 <div className="flex flex-col items-start pl-2">
-                  <h3 className="text-text-primary text-[13px] sm:text-[14px] font-bold tracking-tight uppercase leading-[1.2]">
+                  <h3 className="text-text-primary text-[13px] sm:text-sm font-bold tracking-tight uppercase leading-[1.2]">
                     <span>{item.title_top}</span>
                     <br />
                     <span>{item.title_bottom}</span>
@@ -58,7 +58,7 @@ export default function DealsBannerSection({
                       <span>Up</span>
                       <span>To</span>
                     </span>
-                    <span className="text-[28px] sm:text-[32px] font-black leading-none text-brand-primary">
+                    <span className="text-7 sm:text-8 font-black leading-none text-brand-primary">
                       {item.discount_percent}
                     </span>
                     <span className="text-[13px] font-bold text-brand-primary ml-0.5">
@@ -68,7 +68,7 @@ export default function DealsBannerSection({
 
                   <Link
                     href={item.href || "/shop"}
-                    className="inline-flex items-center gap-1.5 text-text-primary text-[12px] sm:text-[13px] font-medium transition-colors group-hover:text-brand-primary"
+                    className="inline-flex items-center gap-1.5 text-text-primary text-xs sm:text-[13px] font-medium transition-colors group-hover:text-brand-primary"
                   >
                     <span>{item.cta_label || "Shop Now"}</span>
                     <span className="w-4 h-4 rounded-full bg-brand-primary text-white flex items-center justify-center text-[9px] leading-none shrink-0 transition-transform duration-200 group-hover:translate-x-0.5">

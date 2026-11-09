@@ -191,13 +191,13 @@ export default function AuthShell({
                                 <p className="m-0 text-[13px] font-semibold uppercase tracking-[0.18em] text-white/70">
                                     {aside.eyebrow}
                                 </p>
-                                <p className="mt-3 mb-0 text-[28px] font-semibold leading-tight">
+                                <p className="mt-3 mb-0 text-7 font-semibold leading-tight">
                                     {aside.title}
                                 </p>
                             </div>
                             <ul className="m-0 flex list-none flex-col gap-4 p-0">
                                 {aside.perks.map((perk) => (
-                                    <li key={perk} className="flex items-start gap-3 text-[14px] leading-snug text-white/90">
+                                    <li key={perk} className="flex items-start gap-3 text-sm leading-snug text-white/90">
                                         <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-white/15">
                                             <CheckIcon />
                                         </span>

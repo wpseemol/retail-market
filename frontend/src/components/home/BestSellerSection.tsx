@@ -366,7 +366,7 @@ export default function BestSellerSection(_props: {
                             </h2>
 
                             <div className="flex items-baseline text-brand-primary mb-5">
-                                <span className="flex flex-col text-[10px] font-bold uppercase leading-none mr-1.5 self-center">
+                                <span className="flex flex-col text-2.5 font-bold uppercase leading-none mr-1.5 self-center">
                                     <span>Up</span>
                                     <span>To</span>
                                 </span>
@@ -429,7 +429,7 @@ export default function BestSellerSection(_props: {
                                             key={tab}
                                             type="button"
                                             onClick={() => handleTabChange(tab)}
-                                            className={`text-xs sm:text-[14px] font-medium transition-colors relative pb-2 whitespace-nowrap cursor-pointer ${
+                                            className={`text-xs sm:text-sm font-medium transition-colors relative pb-2 whitespace-nowrap cursor-pointer ${
                                                 isActive
                                                     ? "text-brand-primary font-semibold"
                                                     : "text-text-secondary hover:text-text-primary"
@@ -491,7 +491,7 @@ export default function BestSellerSection(_props: {
                                             {/* NEW Badge */}
                                             <div className="w-full flex justify-start">
                                                 {product.isNew && (
-                                                    <div className="-skew-x-12 bg-brand-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-xs tracking-wider mb-2">
+                                                    <div className="-skew-x-12 bg-brand-primary text-white text-2.5 font-bold px-2 py-0.5 rounded-xs tracking-wider mb-2">
                                                         <span className="skew-x-12 inline-block">
                                                             NEW
                                                         </span>
@@ -516,7 +516,7 @@ export default function BestSellerSection(_props: {
                                                     rating={product.rating}
                                                 />
 
-                                                <h3 className="text-text-primary text-[13px] sm:text-[14px] font-medium leading-snug line-clamp-2 h-9.5 my-1 hover:text-brand-primary transition-colors">
+                                                <h3 className="text-text-primary text-[13px] sm:text-sm font-medium leading-snug line-clamp-2 h-9.5 my-1 hover:text-brand-primary transition-colors">
                                                     <Link
                                                         href="/shop"
                                                     >

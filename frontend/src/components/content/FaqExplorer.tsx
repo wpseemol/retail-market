@@ -148,7 +148,7 @@ export function FaqExplorer({ content, t }: { content: FaqContent; t: T }) {
                                     </h2>
                                     {cat.description ? <p className="mt-1 text-sm text-text-secondary">{cat.description}</p> : null}
                                 </div>
-                                <span className="text-[12px] text-text-secondary">{countLabel(t, cat.items.length)}</span>
+                                <span className="text-xs text-text-secondary">{countLabel(t, cat.items.length)}</span>
                             </div>
 
                             {content.layout === "grid" ? (
@@ -191,7 +191,7 @@ export function FaqExplorer({ content, t }: { content: FaqContent; t: T }) {
                                             </summary>
                                             <PlainRichText
                                                 text={item.answer}
-                                                className="border-t border-border-default/70 px-5 pb-5 pt-4 text-[14px] leading-relaxed text-text-secondary"
+                                                className="border-t border-border-default/70 px-5 pb-5 pt-4 text-sm leading-relaxed text-text-secondary"
                                             />
                                         </details>
                                     ))}

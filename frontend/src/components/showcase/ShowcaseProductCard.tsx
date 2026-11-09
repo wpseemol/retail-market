@@ -37,18 +37,18 @@ export function ShowcaseProductCard({
                         <div className="flex size-full items-center justify-center text-sm text-text-secondary">{t.noImage}</div>
                     )}
                     {product.is_featured && !banned ? (
-                        <span className="absolute left-3 top-3 rounded-full bg-sc-accent px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sc-on-accent">
+                        <span className="absolute left-3 top-3 rounded-full bg-sc-accent px-2.5 py-0.5 text-2.5 font-bold uppercase tracking-wide text-sc-on-accent">
                             {t.featured}
                         </span>
                     ) : null}
                     {banned ? (
-                        <span className="absolute left-3 top-3 rounded bg-[#1A1A1A]/85 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                        <span className="absolute left-3 top-3 rounded bg-[#1A1A1A]/85 px-2 py-0.5 text-2.5 font-semibold uppercase tracking-wide text-white">
                             {t.bannedBrand}
                         </span>
                     ) : null}
                 </div>
                 <div className="space-y-1.5 p-4">
-                    {meta ? <p className="truncate text-[12px] text-text-secondary">{meta}</p> : null}
+                    {meta ? <p className="truncate text-xs text-text-secondary">{meta}</p> : null}
                     <h3
                         className={`line-clamp-2 text-[15px] font-semibold ${
                             banned ? "text-text-secondary" : "text-text-primary group-hover:text-sc-accent-text"
@@ -57,7 +57,7 @@ export function ShowcaseProductCard({
                         {product.name}
                     </h3>
                     <div className="flex flex-wrap items-baseline gap-2 pt-1">
-                        <span className={`text-[16px] font-semibold ${banned ? "text-text-secondary" : "text-sc-accent-text"}`}>
+                        <span className={`text-base font-semibold ${banned ? "text-text-secondary" : "text-sc-accent-text"}`}>
                             {formatPrice(product.price)}
                         </span>
                         {hasCompare ? (

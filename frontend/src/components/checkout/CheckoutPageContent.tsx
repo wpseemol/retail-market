@@ -148,7 +148,7 @@ function FieldLabel({
 }
 
 const inputClassName =
-    "w-full h-11 px-3.5 rounded-md border border-border-default bg-bg-base text-[14px] text-text-primary placeholder:text-text-secondary/70 outline-none transition-colors focus:border-brand-primary";
+    "w-full h-11 px-3.5 rounded-md border border-border-default bg-bg-base text-sm text-text-primary placeholder:text-text-secondary/70 outline-none transition-colors focus:border-brand-primary";
 
 const selectClassName = `${inputClassName} appearance-none pr-9 cursor-pointer`;
 
@@ -277,7 +277,7 @@ function AddressFields({
                 </select>
                 <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute right-3.5 top-[38px] text-text-secondary"
+                    className="pointer-events-none absolute right-3.5 top-9.5 text-text-secondary"
                 >
                     <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
                         <path
@@ -350,7 +350,7 @@ function NoticeBar({
 }) {
     return (
         <div className="rounded-md border border-border-default bg-bg-subtle overflow-hidden">
-            <p className="m-0 px-4 sm:px-5 py-3.5 text-[14px] text-text-primary">
+            <p className="m-0 px-4 sm:px-5 py-3.5 text-sm text-text-primary">
                 {prompt}{" "}
                 <button
                     type="button"
@@ -578,10 +578,10 @@ export default function CheckoutPageContent() {
                         className="size-10 rounded-full border-[3px] border-brand-primary/25 border-t-brand-primary animate-spin"
                         aria-hidden
                     />
-                    <p className="text-[18px] font-semibold text-text-primary m-0">
+                    <p className="text-lg font-semibold text-text-primary m-0">
                         Redirecting to secure payment…
                     </p>
-                    <p className="text-[14px] text-text-secondary m-0 max-w-md">
+                    <p className="text-sm text-text-secondary m-0 max-w-md">
                         Please don’t close this tab. You’ll be taken to SSLCOMMERZ
                         to complete your payment.
                     </p>
@@ -614,17 +614,17 @@ export default function CheckoutPageContent() {
             <div className="w-full bg-bg-base">
                 <CheckoutBreadcrumb />
                 <div className="container mx-auto px-4 sm:px-6 py-20 flex flex-col items-center justify-center gap-4 text-center">
-                    <p className="text-[18px] font-semibold text-text-primary m-0">
+                    <p className="text-lg font-semibold text-text-primary m-0">
                         {hasUnselected ? "No products selected" : "Your cart is empty"}
                     </p>
-                    <p className="text-[14px] text-text-secondary m-0 max-w-md">
+                    <p className="text-sm text-text-secondary m-0 max-w-md">
                         {hasUnselected
                             ? "Tick the products you want to buy in your cart, then come back to checkout."
                             : "Add items to your cart before checking out."}
                     </p>
                     <Link
                         href={hasUnselected ? "/cart" : "/shop"}
-                        className="mt-2 h-11 px-6 inline-flex items-center justify-center rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[14px] font-semibold transition-colors"
+                        className="mt-2 h-11 px-6 inline-flex items-center justify-center rounded-md bg-brand-primary hover:bg-brand-hover text-white text-sm font-semibold transition-colors"
                     >
                         {hasUnselected ? "Go to Cart" : "Return to Shop"}
                     </Link>
@@ -638,10 +638,10 @@ export default function CheckoutPageContent() {
             <div className="w-full bg-bg-base">
                 <CheckoutBreadcrumb />
                 <div className="container mx-auto px-4 sm:px-6 py-20 flex flex-col items-center justify-center gap-4 text-center">
-                    <p className="text-[22px] font-semibold text-text-primary m-0">
+                    <p className="text-5.5 font-semibold text-text-primary m-0">
                         Thank you! Your order has been placed.
                     </p>
-                    <p className="text-[14px] text-text-secondary m-0 max-w-md">
+                    <p className="text-sm text-text-secondary m-0 max-w-md">
                         We’ve received your order
                         {orderNumber ? (
                             <>
@@ -690,14 +690,14 @@ export default function CheckoutPageContent() {
                     <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
                         <Link
                             href="/shop"
-                            className="h-11 px-6 inline-flex items-center justify-center rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[14px] font-semibold transition-colors"
+                            className="h-11 px-6 inline-flex items-center justify-center rounded-md bg-brand-primary hover:bg-brand-hover text-white text-sm font-semibold transition-colors"
                         >
                             Continue Shopping
                         </Link>
                         <button
                             type="button"
                             onClick={() => router.push("/")}
-                            className="h-11 px-6 inline-flex items-center justify-center rounded-md border border-border-default bg-bg-surface text-text-primary text-[14px] font-semibold hover:bg-bg-subtle transition-colors cursor-pointer"
+                            className="h-11 px-6 inline-flex items-center justify-center rounded-md border border-border-default bg-bg-surface text-text-primary text-sm font-semibold hover:bg-bg-subtle transition-colors cursor-pointer"
                         >
                             Back to Home
                         </button>
@@ -740,7 +740,7 @@ export default function CheckoutPageContent() {
                             <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
                                 <button
                                     type="button"
-                                    className="h-11 px-6 rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[14px] font-semibold transition-colors cursor-pointer"
+                                    className="h-11 px-6 rounded-md bg-brand-primary hover:bg-brand-hover text-white text-sm font-semibold transition-colors cursor-pointer"
                                 >
                                     Login
                                 </button>
@@ -777,20 +777,20 @@ export default function CheckoutPageContent() {
                                 }}
                                 placeholder="Coupon Code"
                                 aria-label="Coupon code"
-                                className={`${inputClassName} sm:max-w-[240px]`}
+                                className={`${inputClassName} sm:max-w-60`}
                             />
                             <button
                                 type="button"
                                 onClick={() => void handleApplyCoupon()}
                                 disabled={checkingCoupon}
-                                className="h-11 px-5 shrink-0 rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[14px] font-semibold transition-colors cursor-pointer whitespace-nowrap disabled:cursor-wait disabled:opacity-60"
+                                className="h-11 px-5 shrink-0 rounded-md bg-brand-primary hover:bg-brand-hover text-white text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap disabled:cursor-wait disabled:opacity-60"
                             >
                                 {checkingCoupon ? "Checking…" : "Apply Coupon"}
                             </button>
                         </div>
                         {couponMessage ? (
                             <p
-                                className={`mt-2 text-[12px] m-0 ${
+                                className={`mt-2 text-xs m-0 ${
                                     appliedCoupon
                                         ? "text-brand-primary"
                                         : "text-error"
@@ -809,7 +809,7 @@ export default function CheckoutPageContent() {
                 >
                     {/* Billing */}
                     <div className="min-w-0">
-                        <h1 className="text-[22px] sm:text-[24px] font-semibold text-text-primary m-0 mb-5">
+                        <h1 className="text-5.5 sm:text-2xl font-semibold text-text-primary m-0 mb-5">
                             Billing Details
                         </h1>
 
@@ -828,7 +828,7 @@ export default function CheckoutPageContent() {
                                 }
                                 className="size-4 mt-0.5 shrink-0 rounded border-border-default accent-brand-primary cursor-pointer"
                             />
-                            <span className="text-[14px] font-medium text-text-primary">
+                            <span className="text-sm font-medium text-text-primary">
                                 Create an account?
                             </span>
                         </label>
@@ -857,7 +857,7 @@ export default function CheckoutPageContent() {
 
                         <div className="mt-8 pt-6 border-t border-border-default">
                             <label className="flex items-center justify-between gap-3 cursor-pointer select-none">
-                                <span className="text-[18px] sm:text-[20px] font-semibold text-text-primary">
+                                <span className="text-lg sm:text-xl font-semibold text-text-primary">
                                     Ship to a different address?
                                 </span>
                                 <input
@@ -894,7 +894,7 @@ export default function CheckoutPageContent() {
                                 value={orderNotes}
                                 onChange={(e) => setOrderNotes(e.target.value)}
                                 placeholder="Notes about your order, e.g. special notes for delivery."
-                                className="w-full min-h-[120px] px-3.5 py-3 rounded-md border border-border-default bg-bg-base text-[14px] text-text-primary placeholder:text-text-secondary/70 outline-none transition-colors focus:border-brand-primary resize-y"
+                                className="w-full min-h-30 px-3.5 py-3 rounded-md border border-border-default bg-bg-base text-sm text-text-primary placeholder:text-text-secondary/70 outline-none transition-colors focus:border-brand-primary resize-y"
                             />
                         </div>
                     </div>
@@ -902,7 +902,7 @@ export default function CheckoutPageContent() {
                     {/* Your Order */}
                     <aside className="w-full lg:sticky lg:top-6 border border-border-default rounded-lg bg-bg-surface overflow-hidden">
                         <div className="px-5 py-4 border-b border-border-default flex items-center justify-between gap-3">
-                            <h2 className="text-[18px] font-semibold text-text-primary m-0">
+                            <h2 className="text-lg font-semibold text-text-primary m-0">
                                 Your Order
                             </h2>
                             <Link
@@ -960,12 +960,12 @@ export default function CheckoutPageContent() {
                                                                 )
                                                             }
                                                             aria-label={`Remove ${item.name}`}
-                                                            className="shrink-0 text-[12px] font-medium text-text-secondary hover:text-error cursor-pointer transition-colors"
+                                                            className="shrink-0 text-xs font-medium text-text-secondary hover:text-error cursor-pointer transition-colors"
                                                         >
                                                             Remove
                                                         </button>
                                                     </div>
-                                                    <p className="m-0 mt-0.5 text-[12px] text-text-secondary tabular-nums">
+                                                    <p className="m-0 mt-0.5 text-xs text-text-secondary tabular-nums">
                                                         {formatPrice(item.unit_price)} each
                                                     </p>
                                                     <div className="mt-2 flex items-center justify-between gap-3">
@@ -982,7 +982,7 @@ export default function CheckoutPageContent() {
                                                                         }),
                                                                     )
                                                                 }
-                                                                className="h-7 w-7 text-text-primary hover:bg-bg-subtle cursor-pointer text-[14px] leading-none disabled:cursor-not-allowed disabled:opacity-40"
+                                                                className="h-7 w-7 text-text-primary hover:bg-bg-subtle cursor-pointer text-sm leading-none disabled:cursor-not-allowed disabled:opacity-40"
                                                             >
                                                                 −
                                                             </button>
@@ -1001,7 +1001,7 @@ export default function CheckoutPageContent() {
                                                                         }),
                                                                     )
                                                                 }
-                                                                className="h-7 w-7 text-text-primary hover:bg-bg-subtle cursor-pointer text-[14px] leading-none disabled:cursor-not-allowed disabled:opacity-40"
+                                                                className="h-7 w-7 text-text-primary hover:bg-bg-subtle cursor-pointer text-sm leading-none disabled:cursor-not-allowed disabled:opacity-40"
                                                             >
                                                                 +
                                                             </button>
@@ -1011,7 +1011,7 @@ export default function CheckoutPageContent() {
                                                         </span>
                                                     </div>
                                                     {lineError ? (
-                                                        <p className="m-0 mt-1.5 text-[12px] text-error" role="alert">
+                                                        <p className="m-0 mt-1.5 text-xs text-error" role="alert">
                                                             {lineError}
                                                         </p>
                                                     ) : null}
@@ -1023,30 +1023,30 @@ export default function CheckoutPageContent() {
                             </ul>
 
                             <div className="flex items-center justify-between py-3.5 border-b border-border-default">
-                                <span className="text-[14px] text-text-primary">
+                                <span className="text-sm text-text-primary">
                                     Subtotal
                                 </span>
-                                <span className="text-[14px] font-medium text-text-primary tabular-nums">
+                                <span className="text-sm font-medium text-text-primary tabular-nums">
                                     {formatPrice(subtotal)}
                                 </span>
                             </div>
 
                             {discount > 0 ? (
                                 <div className="flex items-center justify-between py-3.5 border-b border-border-default">
-                                    <span className="text-[14px] text-text-primary">
+                                    <span className="text-sm text-text-primary">
                                         Discount
                                         {appliedCoupon
                                             ? ` (${appliedCoupon})`
                                             : ""}
                                     </span>
-                                    <span className="text-[14px] font-medium text-brand-primary tabular-nums">
+                                    <span className="text-sm font-medium text-brand-primary tabular-nums">
                                         −{formatPrice(discount)}
                                     </span>
                                 </div>
                             ) : null}
 
                             <div className="flex items-start justify-between gap-4 py-3.5 border-b border-border-default">
-                                <span className="text-[14px] text-text-primary pt-0.5">
+                                <span className="text-sm text-text-primary pt-0.5">
                                     Shipping
                                 </span>
                                 <div className="text-right">
@@ -1063,7 +1063,7 @@ export default function CheckoutPageContent() {
                                 <span className="text-[15px] font-semibold text-text-primary">
                                     Total
                                 </span>
-                                <span className="text-[16px] font-bold text-brand-primary tabular-nums">
+                                <span className="text-base font-bold text-brand-primary tabular-nums">
                                     {formatPrice(total)}
                                 </span>
                             </div>
@@ -1087,14 +1087,14 @@ export default function CheckoutPageContent() {
                                                     }
                                                     className="size-4 accent-brand-primary cursor-pointer"
                                                 />
-                                                <span className="text-[14px] text-text-primary font-medium inline-flex items-center flex-wrap">
+                                                <span className="text-sm text-text-primary font-medium inline-flex items-center flex-wrap">
                                                     {option.label}
                                                     {option.id === "sslcommerz" ? (
                                                         <span className="mt-1.5 flex w-full flex-wrap items-center gap-1" aria-hidden="true">
                                                             {MOBILE_WALLETS.map((w) => (
                                                                 <span
                                                                     key={w.name}
-                                                                    className={`rounded-[3px] px-1.5 py-0.5 text-[10px] font-bold tracking-tight ${w.className}`}
+                                                                    className={`rounded-[3px] px-1.5 py-0.5 text-2.5 font-bold tracking-tight ${w.className}`}
                                                                 >
                                                                     {w.name}
                                                                 </span>
@@ -1104,7 +1104,7 @@ export default function CheckoutPageContent() {
                                                 </span>
                                             </label>
                                             {selected && option.description ? (
-                                                <p className="mt-2.5 ml-6 mb-0 rounded-md bg-bg-subtle border border-border-default px-3.5 py-3 text-[12px] leading-relaxed text-text-secondary">
+                                                <p className="mt-2.5 ml-6 mb-0 rounded-md bg-bg-subtle border border-border-default px-3.5 py-3 text-xs leading-relaxed text-text-secondary">
                                                     {option.description}
                                                 </p>
                                             ) : null}
@@ -1124,7 +1124,7 @@ export default function CheckoutPageContent() {
                                 </p>
                             ) : null}
                             {!isLoggedIn ? (
-                                <p className="mb-3 text-[12px] leading-relaxed text-text-secondary m-0">
+                                <p className="mb-3 text-xs leading-relaxed text-text-secondary m-0">
                                     Checking out as a guest.{" "}
                                     <Link
                                         href="/login?next=/checkout"

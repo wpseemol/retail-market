@@ -33,7 +33,7 @@ export default function FeaturedSection({
                   />
                 </div>
                 <div className="flex flex-col">
-                  <h3 className="text-brand-primary text-[16px] font-bold leading-snug tracking-tight">
+                  <h3 className="text-brand-primary text-base font-bold leading-snug tracking-tight">
                     {feature.title}
                   </h3>
                   <p className="text-text-secondary text-[13px] font-normal leading-relaxed">

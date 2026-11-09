@@ -270,7 +270,7 @@ function VerifyRow({
                   className="min-w-0 flex-1 bg-transparent px-3.5 text-sm text-text-primary outline-none"
                 />
               </div>
-              <span id="mobile-hint" className="text-[12px] text-text-secondary">
+              <span id="mobile-hint" className="text-xs text-text-secondary">
                 Bangladesh number, 11 digits starting with 01
               </span>
             </label>
@@ -307,7 +307,7 @@ function VerifyRow({
                   SMS
                 </button>
               </div>
-              <p className="m-0 mt-1.5 text-[12px] text-text-secondary">
+              <p className="m-0 mt-1.5 text-xs text-text-secondary">
                 WhatsApp works if this number uses WhatsApp. Otherwise choose SMS.
               </p>
             </fieldset>
@@ -438,7 +438,7 @@ export default function AccountVerification({
       aria-labelledby="verification-heading"
       className="relative overflow-hidden rounded-2xl border border-border-default bg-bg-surface p-5 sm:p-7 shadow-sm"
     >
-      <PhoneShieldDecor className="pointer-events-none absolute -right-2 bottom-2 hidden w-[120px] sm:block lg:w-[150px]" />
+      <PhoneShieldDecor className="pointer-events-none absolute -right-2 bottom-2 hidden w-30 sm:block lg:w-37.5" />
 
       <h2
         id="verification-heading"

@@ -43,7 +43,7 @@ export default function WishlistToggleButton({ productId }: { productId: number 
             {error ? (
                 <p
                     role="alert"
-                    className="absolute right-0 top-full mt-1.5 w-56 m-0 rounded-md border border-error/30 bg-bg-surface px-2.5 py-1.5 text-[12px] text-error shadow-sm z-10"
+                    className="absolute right-0 top-full mt-1.5 w-56 m-0 rounded-md border border-error/30 bg-bg-surface px-2.5 py-1.5 text-xs text-error shadow-sm z-10"
                 >
                     {error}
                 </p>

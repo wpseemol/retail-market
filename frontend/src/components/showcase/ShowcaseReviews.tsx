@@ -39,7 +39,7 @@ export function ShowcaseReviews({
                                 <span className="text-3xl font-semibold text-text-primary">{summary.average.toFixed(1)}</span>
                                 <div>
                                     <ReviewStars rating={summary.average} label={format(r.starsLabel, { rating: summary.average.toFixed(1) })} />
-                                    <p className="text-[12px] text-text-secondary">
+                                    <p className="text-xs text-text-secondary">
                                         {summary.count === 1 ? r.basedOnOne : format(r.basedOn, { count: summary.count })}
                                     </p>
                                 </div>
@@ -59,7 +59,7 @@ export function ShowcaseReviews({
                         <li key={review.id} className="flex flex-col rounded-2xl border border-border-default bg-bg-surface p-5">
                             <div className="flex items-center justify-between gap-2">
                                 <ReviewStars rating={review.rating} size={14} label={format(r.starsLabel, { rating: review.rating })} />
-                                <time dateTime={review.created_at} className="text-[12px] text-text-secondary">
+                                <time dateTime={review.created_at} className="text-xs text-text-secondary">
                                     {dateFormat.format(new Date(review.created_at))}
                                 </time>
                             </div>
@@ -67,7 +67,7 @@ export function ShowcaseReviews({
                                 <p className="mt-3 line-clamp-1 text-[15px] font-semibold text-text-primary">{review.title}</p>
                             ) : null}
                             <p className="mt-2 line-clamp-4 flex-1 text-sm leading-relaxed text-text-secondary">{review.comment}</p>
-                            <div className="mt-4 border-t border-border-default pt-3 text-[12px] text-text-secondary">
+                            <div className="mt-4 border-t border-border-default pt-3 text-xs text-text-secondary">
                                 <span className="font-medium text-text-primary" title={review.author_name}>
                                     {firstName(review.author_name)}
                                 </span>

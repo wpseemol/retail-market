@@ -204,7 +204,7 @@ export default function ProductShare({
                         onClick={handleCopy}
                         aria-label="Copy product link"
                         title="Copy product link"
-                        className={`h-8 px-3 rounded-full border flex items-center gap-1.5 text-[12px] font-medium cursor-pointer transition-colors ${
+                        className={`h-8 px-3 rounded-full border flex items-center gap-1.5 text-xs font-medium cursor-pointer transition-colors ${
                             status === "copied"
                                 ? "border-brand-primary bg-brand-primary text-white"
                                 : "border-border-default bg-bg-subtle text-text-secondary hover:text-brand-primary hover:border-brand-primary"
@@ -227,7 +227,7 @@ export default function ProductShare({
             <p
                 role="status"
                 aria-live="polite"
-                className={`basis-full text-[12px] m-0 ${statusText ? "" : "sr-only"} ${
+                className={`basis-full text-xs m-0 ${statusText ? "" : "sr-only"} ${
                     status === "error" ? "text-error" : "text-brand-primary"
                 }`}
             >
@@ -252,7 +252,7 @@ export default function ProductShare({
                             setManualUrl(null);
                             setStatus("idle");
                         }}
-                        className="h-9 px-3 rounded-md border border-border-default text-[12px] text-text-secondary hover:text-brand-primary hover:border-brand-primary cursor-pointer"
+                        className="h-9 px-3 rounded-md border border-border-default text-xs text-text-secondary hover:text-brand-primary hover:border-brand-primary cursor-pointer"
                     >
                         Done
                     </button>

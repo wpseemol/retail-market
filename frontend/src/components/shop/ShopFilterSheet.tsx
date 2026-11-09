@@ -73,7 +73,7 @@ export default function ShopFilterSheet({
                     <h2 className="m-0 flex items-center gap-2 text-[17px] font-semibold text-text-primary">
                         {copy.filters}
                         {count > 0 ? (
-                            <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-brand-primary px-2 py-0.5 text-[12px] font-semibold text-white">
+                            <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-brand-primary px-2 py-0.5 text-xs font-semibold text-white">
                                 {count}
                             </span>
                         ) : null}

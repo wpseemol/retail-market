@@ -66,7 +66,7 @@ export default function LaptopRepairBanner({
             <span className="text-[13px] sm:text-[15px] font-black leading-none tracking-tight">
               {c.offer_percent}%
             </span>
-            <span className="text-[10px] sm:text-[11px] font-semibold leading-tight">
+            <span className="text-2.5 sm:text-[11px] font-semibold leading-tight">
               {c.offer_label}
             </span>
           </div>
@@ -76,7 +76,7 @@ export default function LaptopRepairBanner({
               {c.badge_label}
             </span>
 
-            <h2 className="text-white text-xl sm:text-3xl lg:text-[34px] font-bold uppercase leading-[1.2] tracking-tight mb-3">
+            <h2 className="text-white text-xl sm:text-3xl lg:text-8.5 font-bold uppercase leading-[1.2] tracking-tight mb-3">
               <span>{c.headline_line1}</span>
               <br />
               <span>{c.headline_line2}</span>

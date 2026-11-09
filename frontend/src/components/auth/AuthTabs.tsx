@@ -35,7 +35,7 @@ export default function AuthTabs({ mode }: { mode: AuthMode }) {
                                 href={authSwitchHref(tab.href, next)}
                                 scroll={false}
                                 aria-current={active ? "page" : undefined}
-                                className={`flex h-11 items-center justify-center rounded-lg text-[14px] font-semibold ${
+                                className={`flex h-11 items-center justify-center rounded-lg text-sm font-semibold ${
                                     active
                                         ? "text-white"
                                         : "text-text-secondary hover:text-brand-primary"

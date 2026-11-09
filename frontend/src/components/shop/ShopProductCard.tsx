@@ -77,7 +77,7 @@ function StarRating({
                 ))}
             </div>
             <span
-                className={`truncate text-[12px] text-text-secondary ${
+                className={`truncate text-xs text-text-secondary ${
                     compact ? "max-sm:text-[11px]" : ""
                 }`}
             >
@@ -397,7 +397,7 @@ export default function ShopProductCard({
             <article className="group relative flex flex-row gap-3 p-3 sm:gap-6 sm:p-5 bg-bg-surface border border-border-default rounded-lg transition-all duration-200 hover:border-brand-primary hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
                 <div className="relative w-28 shrink-0 aspect-square sm:aspect-auto sm:h-52 sm:w-52 md:w-60 rounded-md overflow-hidden bg-white dark:bg-bg-subtle">
                     {product.isNew && (
-                        <span className="absolute top-2 left-0 z-10 -skew-x-12 bg-brand-primary text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 sm:top-3 sm:px-2.5 sm:py-1 tracking-wider">
+                        <span className="absolute top-2 left-0 z-10 -skew-x-12 bg-brand-primary text-white text-[9px] sm:text-2.5 font-bold px-2 py-0.5 sm:top-3 sm:px-2.5 sm:py-1 tracking-wider">
                             <span className="skew-x-12 inline-block">NEW</span>
                         </span>
                     )}
@@ -422,7 +422,7 @@ export default function ShopProductCard({
                         compact
                     />
 
-                    <h3 className="m-0 text-[14px] font-semibold leading-snug text-text-primary sm:text-[18px]">
+                    <h3 className="m-0 text-sm font-semibold leading-snug text-text-primary sm:text-lg">
                         <Link
                             href={`/shop/${product.slug}`}
                             className="hover:text-brand-primary transition-colors line-clamp-2"
@@ -431,7 +431,7 @@ export default function ShopProductCard({
                         </Link>
                     </h3>
 
-                    <p className="m-0 text-[14px] font-bold text-brand-primary sm:text-[16px]">
+                    <p className="m-0 text-sm font-bold text-brand-primary sm:text-base">
                         {formatPriceRange(product.priceMin, product.priceMax)}
                     </p>
 
@@ -439,7 +439,7 @@ export default function ShopProductCard({
                         {productDescription(product)}
                     </p>
 
-                    <p className="m-0 text-[12px] text-brand-primary sm:text-[13px]">
+                    <p className="m-0 text-xs text-brand-primary sm:text-[13px]">
                         Available: {product.available}
                     </p>
 
@@ -511,7 +511,7 @@ export default function ShopProductCard({
                     }`}
                 >
                     {product.isNew && (
-                        <span className="absolute top-3 left-0 z-10 -skew-x-12 bg-brand-primary text-white text-[10px] font-bold px-2.5 py-1 tracking-wider">
+                        <span className="absolute top-3 left-0 z-10 -skew-x-12 bg-brand-primary text-white text-2.5 font-bold px-2.5 py-1 tracking-wider">
                             <span className="skew-x-12 inline-block">NEW</span>
                         </span>
                     )}
@@ -609,7 +609,7 @@ export default function ShopProductCard({
                         isWide
                             ? "text-[15px] sm:text-[17px]"
                             : isCompact
-                              ? "text-[12px] sm:text-[13px]"
+                              ? "text-xs sm:text-[13px]"
                               : "text-[13px] sm:text-[15px]"
                     }`}
                 >
@@ -629,7 +629,7 @@ export default function ShopProductCard({
 
                 <p
                     className={`text-brand-primary m-0 ${isWide ? "" : "max-sm:hidden"} ${
-                        isCompact ? "text-[12px]" : "text-[13px]"
+                        isCompact ? "text-xs" : "text-[13px]"
                     }`}
                 >
                     Available: {product.available}
@@ -638,9 +638,9 @@ export default function ShopProductCard({
                 <p
                     className={`mt-auto font-semibold text-brand-primary m-0 tabular-nums ${
                         isWide
-                            ? "text-[16px] mt-1 sm:text-[17px]"
+                            ? "text-base mt-1 sm:text-[17px]"
                             : isCompact
-                              ? "text-[12px] mt-1 sm:text-[13px]"
+                              ? "text-xs mt-1 sm:text-[13px]"
                               : "text-[13px] mt-1 sm:text-[15px]"
                     }`}
                 >

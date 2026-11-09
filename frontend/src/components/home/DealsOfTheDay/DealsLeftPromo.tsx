@@ -19,7 +19,7 @@ export default function DealsLeftPromo() {
 
             {/* Text & Button Area */}
             <div className="relative z-10 flex flex-col items-center text-center">
-                <span className="text-brand-primary text-[13px] sm:text-[14px] font-bold tracking-wider uppercase mb-1.5">
+                <span className="text-brand-primary text-[13px] sm:text-sm font-bold tracking-wider uppercase mb-1.5">
                     GET SAVE 30% OFF
                 </span>
 

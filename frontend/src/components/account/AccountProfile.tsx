@@ -261,15 +261,15 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
       >
         <section
           aria-labelledby="account-heading"
-          className="overflow-hidden rounded-[22px] border border-border-default bg-bg-surface shadow-sm"
+          className="overflow-hidden rounded-5.5 border border-border-default bg-bg-surface shadow-sm"
         >
-          <div className="relative min-h-[168px] overflow-hidden px-5 pb-14 pt-7 sm:min-h-[180px] sm:px-8 sm:pb-14 sm:pt-8">
+          <div className="relative min-h-42 overflow-hidden px-5 pb-14 pt-7 sm:min-h-45 sm:px-8 sm:pb-14 sm:pt-8">
             <AccountBannerArt className="pointer-events-none absolute inset-0" />
 
             <div className="relative z-10 flex min-w-0 items-center gap-4 sm:gap-5 sm:max-w-[min(100%,32rem)]">
               <div className="relative shrink-0">
                 <div
-                  className="flex size-[76px] sm:size-[88px] items-center justify-center overflow-hidden rounded-full bg-brand-primary text-xl font-bold text-white ring-4 ring-white/90 shadow-sm dark:ring-white/15"
+                  className="flex size-19 sm:size-22 items-center justify-center overflow-hidden rounded-full bg-brand-primary text-xl font-bold text-white ring-4 ring-white/90 shadow-sm dark:ring-white/15"
                   aria-hidden
                 >
                   <ProfileAvatarFace user={user} />
@@ -303,13 +303,13 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
               </div>
 
               <div className="min-w-0">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-tint px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-brand-hover dark:text-brand-deep">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-tint px-2.5 py-1 text-2.5 font-bold uppercase tracking-[0.04em] text-brand-hover dark:text-brand-deep">
                   <BannerCrownIcon className="size-4 text-brand-primary" />
                   Customer Profile
                 </span>
                 <h1
                   id="account-heading"
-                  className="mt-2 truncate text-2xl sm:text-[28px] font-semibold leading-tight text-text-primary"
+                  className="mt-2 truncate text-2xl sm:text-7 font-semibold leading-tight text-text-primary"
                 >
                   {fullName || "My account"}
                 </h1>
@@ -318,13 +318,13 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
                   <span className="truncate">{user.email}</span>
                 </p>
                 <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-bg-surface px-2.5 py-1.5 text-[12px] font-medium text-text-secondary shadow-sm ring-1 ring-border-default/70">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-bg-surface px-2.5 py-1.5 text-xs font-medium text-text-secondary shadow-sm ring-1 ring-border-default/70">
                     {isGoogle ? (
                       <BannerGoogleMark className="size-4" />
                     ) : null}
                     {providerLabel(user.provider_name)}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-tint px-2.5 py-1.5 text-[12px] font-semibold text-brand-hover dark:text-brand-deep">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-tint px-2.5 py-1.5 text-xs font-semibold text-brand-hover dark:text-brand-deep">
                     <span
                       className="size-2 rounded-full bg-brand-primary"
                       aria-hidden
@@ -393,7 +393,7 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
           aria-labelledby="details-heading"
           className="relative overflow-hidden rounded-2xl border border-border-default bg-bg-surface p-5 sm:p-8 shadow-[0_6px_24px_rgba(0,0,0,0.04)]"
         >
-          <IdCardDecor className="pointer-events-none absolute -right-3 bottom-0 hidden w-[150px] sm:block lg:w-[180px]" />
+          <IdCardDecor className="pointer-events-none absolute -right-3 bottom-0 hidden w-37.5 sm:block lg:w-45" />
 
           <div className="relative mb-6 max-w-2xl">
             <h2

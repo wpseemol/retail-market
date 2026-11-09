@@ -278,7 +278,7 @@ export default function Header({
                             {wishlistCount > 0 ? (
                                 <span
                                     aria-hidden="true"
-                                    className="absolute -top-1 -right-1 bg-brand-hover text-white text-[10px] font-semibold h-4 min-w-4 px-1 rounded-full border border-white flex items-center justify-center"
+                                    className="absolute -top-1 -right-1 bg-brand-hover text-white text-2.5 font-semibold h-4 min-w-4 px-1 rounded-full border border-white flex items-center justify-center"
                                 >
                                     {wishlistCount > 99 ? "99+" : wishlistCount}
                                 </span>
@@ -314,7 +314,7 @@ export default function Header({
                                         aria-label={format(t.header.cartItems, {
                                             count: cartCount,
                                         })}
-                                        className="absolute -top-1 -right-1 bg-brand-hover text-white text-[10px] font-semibold h-4 min-w-4 px-1 rounded-full border border-white flex items-center justify-center"
+                                        className="absolute -top-1 -right-1 bg-brand-hover text-white text-2.5 font-semibold h-4 min-w-4 px-1 rounded-full border border-white flex items-center justify-center"
                                     >
                                         {cartCount}
                                     </span>
@@ -389,7 +389,7 @@ export default function Header({
                     <CategoryBrowseMenu categories={categories} />
 
                     {/* Desktop Nav Links */}
-                    <ul className="flex items-center gap-6 xl:gap-8 text-[14px] font-medium list-none m-0 p-0">
+                    <ul className="flex items-center gap-6 xl:gap-8 text-sm font-medium list-none m-0 p-0">
                         {!navReady ? (
                             <>
                                 {[96, 72, 80, 64, 88].map((w) => (
@@ -694,7 +694,7 @@ export default function Header({
                             >
                                 <span>{t.header.wishlist}</span>
                                 {wishlistCount > 0 ? (
-                                    <span className="bg-brand-primary text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                                    <span className="bg-brand-primary text-white text-2.5 px-1.5 py-0.5 rounded-full">
                                         {wishlistCount > 99
                                             ? "99+"
                                             : wishlistCount}

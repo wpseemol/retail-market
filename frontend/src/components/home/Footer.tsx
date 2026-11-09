@@ -96,7 +96,7 @@ function FooterNavLink({
     loggedIn: boolean;
 }) {
     const className =
-        "text-text-secondary hover:text-brand-primary text-[14px] transition-colors";
+        "text-text-secondary hover:text-brand-primary text-sm transition-colors";
     const resolved = resolveStorefrontHref(guestAwareHref(link.href, loggedIn));
     const external = link.external || resolved.external;
 
@@ -256,7 +256,7 @@ export default function Footer() {
                                     <path d="M3 20.5v-17c0-.83.67-1.5 1.5-1.5.38 0 .74.15 1.01.42l10.87 10.87c.37.37.37.97 0 1.34L5.51 21.58A1.49 1.49 0 0 1 3 20.5zm15.15-8.08l-2.43-2.43 2.5-1.44c1.1-.64 2.51.15 2.51 1.43 0 .54-.29 1.04-.77 1.31l-1.81 1.13z" />
                                 </svg>
                                 <div className="flex flex-col items-start leading-none">
-                                    <span className="text-[8px] uppercase tracking-wider">
+                                    <span className="text-2 uppercase tracking-wider">
                                         {footer.getItOn}
                                     </span>
                                     <span className="text-[13px] font-semibold">
@@ -278,7 +278,7 @@ export default function Footer() {
                                     <path d="M16.36 14c.08-.02.14-.02.22-.02 1.3 0 2.52.54 3.4 1.42.13-1.42-.32-2.82-1.25-3.95-1.12-1.37-2.73-2.22-4.47-2.31-1.33-.07-2.65.4-3.71 1.07-1.02.64-1.63 1.05-2.64 1.05-.98 0-1.68-.45-2.73-1.09-1.21-.73-2.68-1.18-4.14-1.02-2.12.22-4.04 1.45-5.2 3.22C-2.58 18.52 1.63 24 5.91 24c1.24 0 2.45-.63 3.51-1.19 1.02-.54 1.83-.98 2.82-.98 1 0 1.81.44 2.83.98 1.07.56 2.27 1.19 3.52 1.19 1.08 0 2.06-.31 2.92-.85.34.82.91 1.54 1.63 2.06-1.57 2.1-3.69 3.59-6.08 3.59-1.74 0-3.41-.67-4.66-1.89-1.18 1.16-2.8 1.85-4.49 1.85-2.34 0-4.52-1.35-5.69-3.48-1.58-2.9-1.29-6.52.57-9.33 1.41-2.12 3.73-3.52 6.22-3.79 1.69-.18 3.42.41 4.79 1.25 1.05.65 1.69 1.04 2.68 1.04 1.03 0 1.67-.4 2.76-1.06 1.28-.78 2.8-1.29 4.31-1.14 2.02.2 3.91 1.34 5.09 3.08-1.59 1.02-2.62 2.78-2.62 4.73 0 1.68.79 3.21 2.04 4.19-.38 1.13-.98 2.16-1.76 3.06-.9.99-1.92 1.82-3.03 2.42-1.03-1.63-2.82-2.7-4.85-2.7zM14.93 7.64c.94-1.15 1.48-2.67 1.48-4.22 0-.25-.02-.5-.06-.75-1.56.06-3.14.73-4.27 1.88-.93 1.12-1.47 2.61-1.47 4.14 0 .27.03.54.07.8 1.61-.13 3.16-.8 4.25-1.85z" />
                                 </svg>
                                 <div className="flex flex-col items-start leading-none">
-                                    <span className="text-[8px] uppercase tracking-wider">
+                                    <span className="text-2 uppercase tracking-wider">
                                         {footer.downloadOn}
                                     </span>
                                     <span className="text-[13px] font-semibold">
@@ -369,7 +369,7 @@ export default function Footer() {
                 {/* ================= Bottom Copyright & Icons Bar ================= */}
                 <div className="flex w-full min-w-0 flex-col items-stretch gap-4 border-t border-border-default/60 py-5 sm:gap-5 sm:py-6 lg:flex-row lg:items-center lg:justify-between">
                     {/* Copyright */}
-                    <div className="flex min-w-0 flex-col items-center gap-1 text-center text-[12px] leading-relaxed text-text-secondary sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-2 sm:text-[13px] lg:items-start lg:justify-start lg:text-left">
+                    <div className="flex min-w-0 flex-col items-center gap-1 text-center text-xs leading-relaxed text-text-secondary sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-2 sm:text-[13px] lg:items-start lg:justify-start lg:text-left">
                         <span>
                             {format(footer.copyright, { year: currentYear })}{" "}
                             <strong className="font-semibold text-[#00B207]">
@@ -419,7 +419,7 @@ export default function Footer() {
                                                 alt=""
                                                 width={18}
                                                 height={18}
-                                                className="size-4 brightness-0 sm:size-[18px] dark:invert"
+                                                className="size-4 brightness-0 sm:size-4.5 dark:invert"
                                             />
                                         </a>
                                     </li>
@@ -442,19 +442,19 @@ export default function Footer() {
                         </a>
 
                         <div className="flex flex-nowrap items-center justify-center gap-1.5 sm:gap-2">
-                            <span className="flex h-5 w-9 shrink-0 items-center justify-center rounded-[3px] bg-[#FF5F00] text-[7px] font-bold italic text-white sm:h-6 sm:w-10 sm:text-[8px]">
+                            <span className="flex h-5 w-9 shrink-0 items-center justify-center rounded-[3px] bg-[#FF5F00] text-[7px] font-bold italic text-white sm:h-6 sm:w-10 sm:text-2">
                                 Master
                             </span>
-                            <span className="flex h-5 w-9 shrink-0 items-center justify-center rounded-[3px] bg-[#00AEEF] text-[7px] font-bold text-white sm:h-6 sm:w-10 sm:text-[8px]">
+                            <span className="flex h-5 w-9 shrink-0 items-center justify-center rounded-[3px] bg-[#00AEEF] text-[7px] font-bold text-white sm:h-6 sm:w-10 sm:text-2">
                                 AMEX
                             </span>
-                            <span className="flex h-5 w-9 shrink-0 items-center justify-center rounded-[3px] bg-[#1A1F71] text-[9px] font-bold italic text-white sm:h-6 sm:w-10 sm:text-[10px]">
+                            <span className="flex h-5 w-9 shrink-0 items-center justify-center rounded-[3px] bg-[#1A1F71] text-[9px] font-bold italic text-white sm:h-6 sm:w-10 sm:text-2.5">
                                 VISA
                             </span>
-                            <span className="flex h-5 w-9 shrink-0 items-center justify-center rounded-[3px] bg-[#E55C20] text-[6px] font-bold uppercase tracking-tighter text-white sm:h-6 sm:w-10 sm:text-[7px]">
+                            <span className="flex h-5 w-9 shrink-0 items-center justify-center rounded-[3px] bg-[#E55C20] text-1.5 font-bold uppercase tracking-tighter text-white sm:h-6 sm:w-10 sm:text-[7px]">
                                 Discover
                             </span>
-                            <span className="flex h-5 w-9 shrink-0 items-center justify-center rounded-[3px] bg-[#003087] text-[8px] font-bold italic text-white sm:h-6 sm:w-10 sm:text-[9px]">
+                            <span className="flex h-5 w-9 shrink-0 items-center justify-center rounded-[3px] bg-[#003087] text-2 font-bold italic text-white sm:h-6 sm:w-10 sm:text-[9px]">
                                 PayPal
                             </span>
                         </div>

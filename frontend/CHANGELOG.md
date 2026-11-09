@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-09
 
+### Tailwind canonical spacing classes (px → scale)
+
+- Replaced suggestable arbitrary sizes like `w-[150px]` → `w-37.5`, `size-[88px]` → `size-22`, `text-[14px]` → `text-sm` across account + 50+ storefront components (332 replacements). Values that are not on the 4px scale (e.g. `text-[13px]`) stay as arbitrary.
+
 ### Account “Back to shop” text invisible until hover
 
 - `AccountProfile.tsx`: secondary button used hardcoded `bg-white` while `text-text-primary` is light in dark mode (white on white). Switched to `bg-bg-surface` so the label stays readable unhovered.

@@ -113,7 +113,7 @@ export default function CategoryBrowseMenu({
           className={
             isMobile
               ? "flex w-full items-center justify-center gap-2 rounded bg-brand-primary py-2.5 text-sm font-semibold text-white"
-              : "flex cursor-pointer items-center gap-2.5 rounded bg-brand-primary px-4 py-2 text-[14px] font-semibold text-white transition-colors hover:bg-brand-hover"
+              : "flex cursor-pointer items-center gap-2.5 rounded bg-brand-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-hover"
           }
         >
           <svg
@@ -230,7 +230,7 @@ export default function CategoryBrowseMenu({
                                   <span className="line-clamp-2 text-[13px] font-semibold leading-snug text-text-primary group-hover:text-brand-primary">
                                     {categoryName(category, locale)}
                                   </span>
-                                  <span className="shrink-0 pt-0.5 text-[10px] tabular-nums text-text-secondary">
+                                  <span className="shrink-0 pt-0.5 text-2.5 tabular-nums text-text-secondary">
                                     {category.products_count ?? 0}
                                   </span>
                                 </span>
@@ -261,7 +261,7 @@ export default function CategoryBrowseMenu({
                                         setOpen(false);
                                         onNavigate?.();
                                       }}
-                                      className="inline-flex rounded-full border border-border-default/70 bg-bg-subtle px-1.5 py-0.5 text-[10px] text-text-secondary transition-colors hover:border-brand-primary/40 hover:text-brand-primary"
+                                      className="inline-flex rounded-full border border-border-default/70 bg-bg-subtle px-1.5 py-0.5 text-2.5 text-text-secondary transition-colors hover:border-brand-primary/40 hover:text-brand-primary"
                                     >
                                       {categoryName(child, locale)}
                                     </Link>

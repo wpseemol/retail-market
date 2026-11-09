@@ -43,7 +43,7 @@ const STICKY_BOTTOM_GAP = 24;
 
 function FilterTitle({ children }: { children: ReactNode }) {
     return (
-        <h3 className="text-[16px] font-semibold text-text-primary mb-3.5 tracking-tight">
+        <h3 className="text-base font-semibold text-text-primary mb-3.5 tracking-tight">
             {children}
         </h3>
     );
@@ -81,7 +81,7 @@ function PriceInput({
 
     return (
         <label className="flex min-w-0 flex-1 flex-col rounded-lg border border-border-default bg-bg-subtle px-3 py-1.5 transition-colors focus-within:border-brand-primary focus-within:bg-bg-surface focus-within:ring-2 focus-within:ring-brand-primary/15">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
+            <span className="text-2.5 font-semibold uppercase tracking-wider text-text-secondary">
                 {label}
             </span>
             <span className="flex items-center gap-1">
@@ -101,7 +101,7 @@ function PriceInput({
                         }
                     }}
                     aria-label={ariaLabel}
-                    className="w-full min-w-0 bg-transparent text-[14px] font-medium text-text-primary tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    className="w-full min-w-0 bg-transparent text-sm font-medium text-text-primary tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
             </span>
         </label>
@@ -245,7 +245,7 @@ export default function ShopSidebar({
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
                         placeholder={copy.searchPlaceholder}
-                        className={`w-full bg-transparent outline-none text-text-primary placeholder:text-text-secondary ${touch ? "min-h-11 text-[16px]" : "text-[14px]"}`}
+                        className={`w-full bg-transparent outline-none text-text-primary placeholder:text-text-secondary ${touch ? "min-h-11 text-base" : "text-sm"}`}
                         aria-label={copy.searchLabel}
                         autoComplete="off"
                     />
@@ -262,7 +262,7 @@ export default function ShopSidebar({
 
             <section>
                 <div className="mb-3.5 flex items-center justify-between gap-2">
-                    <h3 className="text-[16px] font-semibold text-text-primary tracking-tight">
+                    <h3 className="text-base font-semibold text-text-primary tracking-tight">
                         {copy.price}
                     </h3>
                     {isPriceFiltered ? (
@@ -271,7 +271,7 @@ export default function ShopSidebar({
                             onClick={() =>
                                 onPriceChange(priceRange.min, priceRange.max)
                             }
-                            className={`font-medium text-brand-primary hover:text-brand-hover cursor-pointer ${touch ? "min-h-11 px-2 text-[14px]" : "text-[12px]"}`}
+                            className={`font-medium text-brand-primary hover:text-brand-hover cursor-pointer ${touch ? "min-h-11 px-2 text-sm" : "text-xs"}`}
                         >
                             {copy.resetPrice}
                         </button>
@@ -420,7 +420,7 @@ export default function ShopSidebar({
                                                         : category.id,
                                                 )
                                             }
-                                            className={`w-full flex items-center justify-between text-[14px] transition-colors cursor-pointer text-left ${touch ? "min-h-11 py-1" : ""} ${
+                                            className={`w-full flex items-center justify-between text-sm transition-colors cursor-pointer text-left ${touch ? "min-h-11 py-1" : ""} ${
                                                 isActive
                                                     ? "text-brand-primary font-medium"
                                                     : "text-text-secondary hover:text-brand-primary"
@@ -469,7 +469,7 @@ export default function ShopSidebar({
                                 );
                                 return (
                                     <li key={brand.id}>
-                                        <label className={`flex items-center gap-2.5 text-[14px] text-text-secondary hover:text-text-primary cursor-pointer ${touch ? "min-h-11" : ""}`}>
+                                        <label className={`flex items-center gap-2.5 text-sm text-text-secondary hover:text-text-primary cursor-pointer ${touch ? "min-h-11" : ""}`}>
                                             <input
                                                 type="checkbox"
                                                 checked={checked}
@@ -513,7 +513,7 @@ export default function ShopSidebar({
                                     onClick={() =>
                                         onTagChange(isActive ? null : tag)
                                     }
-                                    className={`${touch ? "min-h-11 px-4 text-[14px]" : "px-3 py-1.5 text-[12px]"} rounded border transition-colors cursor-pointer ${
+                                    className={`${touch ? "min-h-11 px-4 text-sm" : "px-3 py-1.5 text-xs"} rounded border transition-colors cursor-pointer ${
                                         isActive
                                             ? "bg-brand-primary border-brand-primary text-white"
                                             : "bg-bg-subtle border-border-default text-text-secondary hover:border-brand-primary hover:text-brand-primary"

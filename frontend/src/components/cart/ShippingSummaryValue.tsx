@@ -14,7 +14,7 @@ export function ShippingSummaryValue({
 }) {
     if (loading) {
         return (
-            <p className="text-[14px] text-text-secondary m-0">Calculating…</p>
+            <p className="text-sm text-text-secondary m-0">Calculating…</p>
         );
     }
     if (error || !quote) {
@@ -30,13 +30,13 @@ export function ShippingSummaryValue({
             : 0;
     return (
         <>
-            <p className="text-[14px] font-medium text-text-primary m-0 tabular-nums">
+            <p className="text-sm font-medium text-text-primary m-0 tabular-nums">
                 {quote.shipping_fee > 0
                     ? formatPrice(quote.shipping_fee)
                     : "Free Shipping"}
             </p>
             {remaining > 0 && (
-                <p className="mt-1 text-[12px] text-text-secondary m-0">
+                <p className="mt-1 text-xs text-text-secondary m-0">
                     Add {formatPrice(remaining)} more for free shipping
                 </p>
             )}

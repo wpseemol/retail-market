@@ -90,11 +90,11 @@ export default function AccountSidebar() {
     : "";
 
   return (
-    <aside className="flex w-full flex-col gap-4 lg:sticky lg:top-24 lg:w-[280px] lg:shrink-0">
+    <aside className="flex w-full flex-col gap-4 lg:sticky lg:top-24 lg:w-70 lg:shrink-0">
       <div className="overflow-hidden rounded-2xl border border-border-default bg-bg-surface shadow-sm">
         <div className="flex flex-col items-center px-5 pb-5 pt-7 text-center">
           <div
-            className="mb-3 flex size-[88px] items-center justify-center overflow-hidden rounded-full bg-brand-primary text-white shadow-sm ring-4 ring-brand-tint"
+            className="mb-3 flex size-22 items-center justify-center overflow-hidden rounded-full bg-brand-primary text-white shadow-sm ring-4 ring-brand-tint"
             aria-hidden
           >
             {user ? (

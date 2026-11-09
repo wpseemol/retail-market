@@ -192,7 +192,7 @@ export default function HomeWelcomeModal({
                                 <span className="text-sm font-bold text-brand-primary leading-none tabular-nums">
                                     {secondsLeft}
                                 </span>
-                                <span className="text-[8px] font-semibold uppercase tracking-wide text-text-secondary mt-0.5">
+                                <span className="text-2 font-semibold uppercase tracking-wide text-text-secondary mt-0.5">
                                     sec
                                 </span>
                             </div>

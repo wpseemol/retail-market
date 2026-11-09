@@ -160,7 +160,7 @@ export default function ShopToolbar({
 
     return (
         <div className="mb-4 flex flex-col gap-3 border-b border-border-default pb-4 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
-            <p className="m-0 text-[13px] text-text-secondary sm:text-[14px]">
+            <p className="m-0 text-[13px] text-text-secondary sm:text-sm">
                 {showPerPage
                     ? format(copy.showingResults, {
                           from: total === 0 ? 0 : from,

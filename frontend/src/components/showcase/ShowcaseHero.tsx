@@ -46,13 +46,13 @@ function BannerHero(props: HeroProps) {
     const { kicker, name, tagline, description, logo, banner, rating, meta, actions } = props;
     return (
         <section className="relative overflow-hidden border-b border-border-default">
-            <div className="relative min-h-[260px] w-full bg-gradient-to-br from-sc-accent-deep via-sc-accent-deep to-sc-accent sm:min-h-[320px]">
+            <div className="relative min-h-65 w-full bg-gradient-to-br from-sc-accent-deep via-sc-accent-deep to-sc-accent sm:min-h-80">
                 {banner?.path ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={banner.path} alt="" fetchPriority="high" className="absolute inset-0 size-full object-cover" />
                 ) : null}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/5" />
-                <div className="container relative mx-auto flex min-h-[260px] items-end px-4 pb-7 pt-16 sm:min-h-[320px] sm:px-6 sm:pb-9">
+                <div className="container relative mx-auto flex min-h-65 items-end px-4 pb-7 pt-16 sm:min-h-80 sm:px-6 sm:pb-9">
                     <div className="flex w-full flex-col gap-5 sm:flex-row sm:items-end">
                         <Logo
                             logo={logo}
@@ -93,7 +93,7 @@ function SplitHero(props: HeroProps) {
                         />
                         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sc-accent-text">{kicker}</p>
                     </div>
-                    <h1 className="mt-5 text-3xl font-semibold tracking-tight text-text-primary sm:text-[40px] sm:leading-tight">
+                    <h1 className="mt-5 text-3xl font-semibold tracking-tight text-text-primary sm:text-10 sm:leading-tight">
                         {name}
                     </h1>
                     {tagline ? <p className="mt-3 text-lg text-text-primary/85">{tagline}</p> : null}

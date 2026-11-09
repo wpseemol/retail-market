@@ -147,11 +147,11 @@ export default function CheckoutResultContent() {
                     <div className="flex justify-center">
                         <StatusIcon tone={copy.tone} />
                     </div>
-                    <h1 className="mt-6 mb-0 text-[24px] font-bold text-text-primary">
+                    <h1 className="mt-6 mb-0 text-2xl font-bold text-text-primary">
                         {copy.title}
                     </h1>
                     {orderNumber ? (
-                        <p className="mt-2 mb-0 text-[14px] text-text-secondary">
+                        <p className="mt-2 mb-0 text-sm text-text-secondary">
                             Order{" "}
                             <span className="font-semibold text-text-primary">
                                 #{orderNumber}
@@ -180,10 +180,10 @@ export default function CheckoutResultContent() {
                                         onChange={(e) => setEmail(e.target.value)}
                                         aria-invalid={Boolean(emailError)}
                                         aria-describedby={emailError ? "retry-email-error" : undefined}
-                                        className="h-11 w-full rounded-lg border border-border-default bg-bg-base px-3.5 text-[14px] text-text-primary outline-none transition-colors focus:border-brand-primary aria-invalid:border-error"
+                                        className="h-11 w-full rounded-lg border border-border-default bg-bg-base px-3.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-primary aria-invalid:border-error"
                                     />
                                     {emailError ? (
-                                        <p id="retry-email-error" className="mt-1.5 mb-0 text-[12px] text-error">
+                                        <p id="retry-email-error" className="mt-1.5 mb-0 text-xs text-error">
                                             {emailError}
                                         </p>
                                     ) : null}
@@ -204,7 +204,7 @@ export default function CheckoutResultContent() {
                         </form>
                     ) : null}
 
-                    <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-[14px]">
+                    <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-sm">
                         {isLoggedIn ? (
                             <Link href="/account/orders" className="font-semibold text-brand-primary hover:underline">
                                 View my orders

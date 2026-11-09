@@ -31,7 +31,7 @@ function LanguageSwitcher() {
                         title={label.native}
                         disabled={pending}
                         onClick={() => setLocale(code)}
-                        className={`min-w-9 rounded-full px-2 py-0.5 text-[12px] leading-[130%] font-medium transition-colors cursor-pointer disabled:cursor-wait ${
+                        className={`min-w-9 rounded-full px-2 py-0.5 text-xs leading-[130%] font-medium transition-colors cursor-pointer disabled:cursor-wait ${
                             active
                                 ? "bg-brand-primary text-white"
                                 : "text-text-secondary hover:text-brand-primary"
@@ -66,7 +66,7 @@ export default function TopBar() {
                         />
                         <a
                             href={`mailto:${email}`}
-                            className="truncate text-[12px] leading-[120%] text-text-secondary hover:text-brand-primary transition-colors"
+                            className="truncate text-xs leading-[120%] text-text-secondary hover:text-brand-primary transition-colors"
                         >
                             {email}
                         </a>
@@ -84,7 +84,7 @@ export default function TopBar() {
                         />
                         <a
                             href={`tel:${phone.replace(/[^\d+]/g, "")}`}
-                            className="truncate text-[12px] leading-[120%] text-text-secondary hover:text-brand-primary transition-colors"
+                            className="truncate text-xs leading-[120%] text-text-secondary hover:text-brand-primary transition-colors"
                         >
                             {phone}
                         </a>

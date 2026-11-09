@@ -45,7 +45,7 @@ const FALLBACK_IMAGE = "/images/camera.png";
 const LOW_STOCK_AT = 5;
 
 const checkboxClass =
-    "size-[18px] shrink-0 rounded border-border-default accent-brand-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-40";
+    "size-4.5 shrink-0 rounded border-border-default accent-brand-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-40";
 
 function CartBreadcrumb() {
     return (
@@ -96,7 +96,7 @@ function QuantityStepper({ item }: { item: CartLine }) {
             </button>
             <span
                 aria-live="polite"
-                className="min-w-8 text-center text-[14px] font-semibold text-text-primary tabular-nums"
+                className="min-w-8 text-center text-sm font-semibold text-text-primary tabular-nums"
             >
                 {item.quantity}
             </span>
@@ -156,7 +156,7 @@ function CartItemCard({ item }: { item: CartLine }) {
                     className={`object-contain p-2 ${item.available ? "" : "grayscale"}`}
                 />
                 {onSale && item.available && (
-                    <span className="absolute left-1 top-1 rounded bg-error px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+                    <span className="absolute left-1 top-1 rounded bg-error px-1.5 py-0.5 text-2.5 font-bold leading-none text-white">
                         -{Math.round((1 - item.unit_price / item.compare_at_price!) * 100)}%
                     </span>
                 )}
@@ -166,16 +166,16 @@ function CartItemCard({ item }: { item: CartLine }) {
                 <div className="min-w-0 flex-1 pr-7 sm:pr-0">
                     <Link
                         href={productHref}
-                        className="line-clamp-2 text-[14px] sm:text-[15px] font-medium leading-snug text-text-primary hover:text-brand-primary transition-colors"
+                        className="line-clamp-2 text-sm sm:text-[15px] font-medium leading-snug text-text-primary hover:text-brand-primary transition-colors"
                     >
                         {item.name}
                     </Link>
                     <div className="mt-1 flex flex-wrap items-baseline gap-x-2">
-                        <span className="text-[14px] font-semibold text-text-primary tabular-nums">
+                        <span className="text-sm font-semibold text-text-primary tabular-nums">
                             {formatPrice(item.unit_price)}
                         </span>
                         {onSale && (
-                            <span className="text-[12px] text-text-secondary line-through tabular-nums">
+                            <span className="text-xs text-text-secondary line-through tabular-nums">
                                 {formatPrice(item.compare_at_price!)}
                             </span>
                         )}
@@ -296,7 +296,7 @@ function CouponField() {
                 </button>
             </div>
             {message && (
-                <p className="m-0 mt-1.5 text-[12px] text-error" aria-live="polite">
+                <p className="m-0 mt-1.5 text-xs text-error" aria-live="polite">
                     {message}
                 </p>
             )}
@@ -315,9 +315,9 @@ function SummaryRow({
 }) {
     return (
         <div className="flex items-start justify-between gap-4 py-2">
-            <span className="text-[14px] text-text-secondary">{label}</span>
+            <span className="text-sm text-text-secondary">{label}</span>
             <div
-                className={`text-right text-[14px] font-medium tabular-nums ${
+                className={`text-right text-sm font-medium tabular-nums ${
                     tone === "brand" ? "text-brand-primary" : "text-text-primary"
                 }`}
             >
@@ -358,7 +358,7 @@ function OrderSummary({ totalLines }: { totalLines: number }) {
                     <h2 className="m-0 text-[17px] font-semibold text-text-primary">
                         Order Summary
                     </h2>
-                    <p className="m-0 mt-0.5 text-[12px] text-text-secondary">
+                    <p className="m-0 mt-0.5 text-xs text-text-secondary">
                         {ready
                             ? `${checkoutItems.length} of ${totalLines} product${totalLines === 1 ? "" : "s"} selected`
                             : "Select products to check out"}
@@ -393,12 +393,12 @@ function OrderSummary({ totalLines }: { totalLines: number }) {
                 <div className="border-t border-border-default bg-bg-subtle/50 px-5 py-4">
                     <div className="flex items-baseline justify-between">
                         <span className="text-[15px] font-semibold text-text-primary">Total</span>
-                        <span className="text-[20px] font-bold text-text-primary tabular-nums">
+                        <span className="text-xl font-bold text-text-primary tabular-nums">
                             {formatPrice(total)}
                         </span>
                     </div>
                     {savings > 0 && (
-                        <p className="m-0 mt-1 text-right text-[12px] font-medium text-brand-primary">
+                        <p className="m-0 mt-1 text-right text-xs font-medium text-brand-primary">
                             You save {formatPrice(savings + discount)}
                         </p>
                     )}
@@ -469,14 +469,14 @@ function EmptyCart() {
             <span className="flex size-20 items-center justify-center rounded-full bg-brand-tint/60 text-brand-primary">
                 <ShoppingBag className="size-9" aria-hidden="true" />
             </span>
-            <h2 className="m-0 text-[20px] font-semibold text-text-primary">Your cart is empty</h2>
-            <p className="m-0 text-[14px] text-text-secondary">
+            <h2 className="m-0 text-xl font-semibold text-text-primary">Your cart is empty</h2>
+            <p className="m-0 text-sm text-text-secondary">
                 Looks like you haven&apos;t added anything yet. Browse the shop and find
                 something you like.
             </p>
             <Link
                 href="/shop"
-                className="mt-2 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-primary px-6 text-[14px] font-semibold text-white hover:bg-brand-hover transition-colors"
+                className="mt-2 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-primary px-6 text-sm font-semibold text-white hover:bg-brand-hover transition-colors"
             >
                 Start shopping
                 <ArrowRight className="size-4" aria-hidden="true" />
@@ -510,11 +510,11 @@ export default function CartPageContent() {
             <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-10 lg:py-12">
                 <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
                     <div>
-                        <h1 className="m-0 text-[24px] sm:text-[28px] font-bold text-text-primary">
+                        <h1 className="m-0 text-2xl sm:text-7 font-bold text-text-primary">
                             Shopping Cart
                         </h1>
                         {loaded && items.length > 0 && (
-                            <p className="m-0 mt-1 text-[14px] text-text-secondary">
+                            <p className="m-0 mt-1 text-sm text-text-secondary">
                                 {items.length} product{items.length === 1 ? "" : "s"} ·{" "}
                                 {totalUnits} item{totalUnits === 1 ? "" : "s"}
                             </p>
@@ -523,7 +523,7 @@ export default function CartPageContent() {
                     {loaded && items.length > 0 && (
                         <Link
                             href="/shop"
-                            className="inline-flex items-center gap-1.5 text-[14px] font-medium text-brand-primary hover:text-brand-hover transition-colors"
+                            className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-primary hover:text-brand-hover transition-colors"
                         >
                             <ArrowLeft className="size-4" aria-hidden="true" />
                             Continue shopping
@@ -556,7 +556,7 @@ export default function CartPageContent() {
                     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-8">
                         <section aria-label="Cart items" className="flex flex-col gap-3">
                             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-default bg-bg-surface px-4 py-3">
-                                <label className="inline-flex items-center gap-3 text-[14px] font-medium text-text-primary cursor-pointer">
+                                <label className="inline-flex items-center gap-3 text-sm font-medium text-text-primary cursor-pointer">
                                     <input
                                         ref={selectAllRef}
                                         type="checkbox"

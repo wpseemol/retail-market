@@ -14,7 +14,7 @@ function BrandMark({ name }: { name: string }) {
           <span className="bg-[#00A4EF] w-2 h-2" />
           <span className="bg-[#FFB900] w-2 h-2" />
         </div>
-        <span className="text-[20px] font-semibold text-neutral-700 dark:text-neutral-200 tracking-tight font-sans">
+        <span className="text-xl font-semibold text-neutral-700 dark:text-neutral-200 tracking-tight font-sans">
           Microsoft
         </span>
       </div>
@@ -52,7 +52,7 @@ function BrandMark({ name }: { name: string }) {
   }
   if (n === "asus") {
     return (
-      <span className="text-[24px] font-black tracking-widest text-[#00539B] dark:text-[#388bfd] font-sans">
+      <span className="text-2xl font-black tracking-widest text-[#00539B] dark:text-[#388bfd] font-sans">
         ASUS
       </span>
     );
@@ -60,7 +60,7 @@ function BrandMark({ name }: { name: string }) {
   if (n === "dell") {
     return (
       <div className="w-10 h-10 rounded-full border-[3px] border-[#007DB8] flex items-center justify-center">
-        <span className="text-[12px] font-extrabold text-[#007DB8] tracking-widest font-sans">
+        <span className="text-xs font-extrabold text-[#007DB8] tracking-widest font-sans">
           DELL
         </span>
       </div>
@@ -68,14 +68,14 @@ function BrandMark({ name }: { name: string }) {
   }
   if (n === "lenovo") {
     return (
-      <span className="text-[24px] font-bold text-[#E2231A] tracking-tighter font-sans">
+      <span className="text-2xl font-bold text-[#E2231A] tracking-tighter font-sans">
         Lenovo
       </span>
     );
   }
   if (n === "acer") {
     return (
-      <span className="text-[24px] font-bold text-[#83B81A] tracking-tight font-sans lowercase">
+      <span className="text-2xl font-bold text-[#83B81A] tracking-tight font-sans lowercase">
         acer
       </span>
     );

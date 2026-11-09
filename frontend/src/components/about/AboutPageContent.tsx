@@ -113,7 +113,7 @@ function FeatureList() {
             {FEATURES.map((item) => (
                 <li
                     key={item}
-                    className="flex items-start gap-3 text-[14px] leading-snug text-text-secondary"
+                    className="flex items-start gap-3 text-sm leading-snug text-text-secondary"
                 >
                     <CheckIcon />
                     <span>{item}</span>
@@ -135,7 +135,7 @@ function SectionHeading({
     return (
         <h2
             id={id}
-            className="m-0 text-[26px] font-semibold leading-tight text-text-primary sm:text-[30px] lg:text-[32px]"
+            className="m-0 text-6.5 font-semibold leading-tight text-text-primary sm:text-3xl lg:text-8"
         >
             {children}
             {accent ? (
@@ -282,7 +282,7 @@ export default function AboutPageContent() {
                         >
                             More Than 25+ Years We Provide
                         </SectionHeading>
-                        <p className="mt-4 m-0 text-[14px] leading-relaxed text-text-secondary sm:text-[15px]">
+                        <p className="mt-4 m-0 text-sm leading-relaxed text-text-secondary sm:text-[15px]">
                             {INTRO_COPY}
                         </p>
                         <FeatureList />
@@ -299,11 +299,11 @@ export default function AboutPageContent() {
                     <div className="mx-auto max-w-2xl text-center">
                         <h2
                             id="about-achievements-heading"
-                            className="m-0 text-[24px] font-semibold text-text-primary sm:text-[28px]"
+                            className="m-0 text-2xl font-semibold text-text-primary sm:text-7"
                         >
                             Some of our achievements
                         </h2>
-                        <p className="mt-3 m-0 text-[14px] leading-relaxed text-text-secondary">
+                        <p className="mt-3 m-0 text-sm leading-relaxed text-text-secondary">
                             Pellentesque ultrices, dui vel hendrerit iaculis,
                             ipsum velit vestibulum libero, sit amet mattis diam
                             justo.
@@ -319,10 +319,10 @@ export default function AboutPageContent() {
                                     className="flex flex-col items-center text-center"
                                 >
                                     <Icon />
-                                    <p className="mt-3 m-0 text-[28px] font-bold leading-none text-text-primary sm:text-[32px]">
+                                    <p className="mt-3 m-0 text-7 font-bold leading-none text-text-primary sm:text-8">
                                         {item.value}
                                     </p>
-                                    <p className="mt-2 m-0 text-[13px] text-text-secondary sm:text-[14px]">
+                                    <p className="mt-2 m-0 text-[13px] text-text-secondary sm:text-sm">
                                         {item.label}
                                     </p>
                                 </li>
@@ -341,11 +341,11 @@ export default function AboutPageContent() {
                     <div className="order-2 lg:order-1">
                         <h2
                             id="about-ceo-heading"
-                            className="m-0 text-[24px] font-semibold text-text-primary sm:text-[28px] lg:text-[30px]"
+                            className="m-0 text-2xl font-semibold text-text-primary sm:text-7 lg:text-3xl"
                         >
                             Message from the CEO
                         </h2>
-                        <p className="mt-4 m-0 text-[14px] leading-relaxed text-text-secondary sm:text-[15px]">
+                        <p className="mt-4 m-0 text-sm leading-relaxed text-text-secondary sm:text-[15px]">
                             {INTRO_COPY}
                         </p>
                         <FeatureList />
@@ -389,11 +389,11 @@ export default function AboutPageContent() {
                     <div>
                         <h2
                             id="about-team-heading"
-                            className="m-0 text-[24px] font-semibold text-text-primary sm:text-[28px] lg:text-[30px]"
+                            className="m-0 text-2xl font-semibold text-text-primary sm:text-7 lg:text-3xl"
                         >
                             About team members
                         </h2>
-                        <p className="mt-4 m-0 text-[14px] leading-relaxed text-text-secondary sm:text-[15px]">
+                        <p className="mt-4 m-0 text-sm leading-relaxed text-text-secondary sm:text-[15px]">
                             {INTRO_COPY}
                         </p>
                         <FeatureList />

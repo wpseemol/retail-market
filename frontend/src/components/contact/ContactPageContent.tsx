@@ -84,7 +84,7 @@ function FieldLabel({
 }
 
 const inputClassName =
-    "w-full h-11 px-3.5 rounded-md border border-border-default bg-bg-base text-[14px] text-text-primary placeholder:text-text-secondary/70 outline-none transition-colors focus:border-brand-primary";
+    "w-full h-11 px-3.5 rounded-md border border-border-default bg-bg-base text-sm text-text-primary placeholder:text-text-secondary/70 outline-none transition-colors focus:border-brand-primary";
 
 function TextField({
     id,
@@ -229,7 +229,7 @@ function ContactInfoItem({
                 <h3 className="m-0 text-[15px] font-semibold text-text-primary">
                     {title}
                 </h3>
-                <div className="mt-1.5 text-[14px] leading-relaxed text-text-secondary">
+                <div className="mt-1.5 text-sm leading-relaxed text-text-secondary">
                     {children}
                 </div>
             </div>
@@ -324,7 +324,7 @@ export default function ContactPageContent() {
                     >
                         <h1
                             id={`${formId}-heading`}
-                            className="m-0 text-[22px] sm:text-[24px] font-semibold text-text-primary"
+                            className="m-0 text-5.5 sm:text-2xl font-semibold text-text-primary"
                         >
                             Send Message
                         </h1>
@@ -402,7 +402,7 @@ export default function ContactPageContent() {
                                         updateField("comments", e.target.value)
                                     }
                                     placeholder="Enter your message"
-                                    className="w-full min-h-[140px] px-3.5 py-3 rounded-md border border-border-default bg-bg-base text-[14px] text-text-primary placeholder:text-text-secondary/70 outline-none transition-colors focus:border-brand-primary resize-y"
+                                    className="w-full min-h-35 px-3.5 py-3 rounded-md border border-border-default bg-bg-base text-sm text-text-primary placeholder:text-text-secondary/70 outline-none transition-colors focus:border-brand-primary resize-y"
                                 />
                             </div>
 
@@ -424,7 +424,7 @@ export default function ContactPageContent() {
                             {submitted ? (
                                 <p
                                     role="status"
-                                    className="m-0 text-[14px] text-brand-primary"
+                                    className="m-0 text-sm text-brand-primary"
                                 >
                                     Thanks! Your message has been sent.
                                 </p>
@@ -432,7 +432,7 @@ export default function ContactPageContent() {
 
                             <button
                                 type="submit"
-                                className="mt-1 inline-flex items-center justify-center self-start h-11 sm:h-12 px-8 rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[13px] sm:text-[14px] font-bold uppercase tracking-wide transition-colors"
+                                className="mt-1 inline-flex items-center justify-center self-start h-11 sm:h-12 px-8 rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[13px] sm:text-sm font-bold uppercase tracking-wide transition-colors"
                             >
                                 Send Message
                             </button>
@@ -446,7 +446,7 @@ export default function ContactPageContent() {
                     >
                         <h2
                             id={`${formId}-info-heading`}
-                            className="m-0 text-[22px] sm:text-[24px] font-semibold text-text-primary"
+                            className="m-0 text-5.5 sm:text-2xl font-semibold text-text-primary"
                         >
                             Contact Info
                         </h2>
@@ -504,7 +504,7 @@ export default function ContactPageContent() {
                 aria-label="Office location map"
                 className="w-full border-t border-border-default"
             >
-                <div className="w-full h-[280px] sm:h-[360px] lg:h-[420px] bg-bg-subtle">
+                <div className="w-full h-70 sm:h-90 lg:h-105 bg-bg-subtle">
                     <iframe
                         title="Office location map"
                         src={MAP_EMBED_SRC}

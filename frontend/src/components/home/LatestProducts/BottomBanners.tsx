@@ -78,7 +78,7 @@ export default function BottomBanners() {
                     <span className="text-[11px] sm:text-xs font-black leading-none">
                         25%
                     </span>
-                    <span className="text-[9px] sm:text-[10px] font-semibold leading-none">
+                    <span className="text-[9px] sm:text-2.5 font-semibold leading-none">
                         offer
                     </span>
                 </div>

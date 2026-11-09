@@ -287,12 +287,12 @@ const { t } = useI18n();
                 <button
                   type="button"
                   onClick={() => setFiltersOpen(true)}
-                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-border-default bg-bg-surface px-4 text-[14px] font-semibold text-text-primary shadow-sm"
+                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-border-default bg-bg-surface px-4 text-sm font-semibold text-text-primary shadow-sm"
                 >
                   <SlidersHorizontal className="size-4 shrink-0" aria-hidden="true" />
                   {copy.filters}
                   {activeFilterCount > 0 ? (
-                    <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-brand-primary px-2 py-0.5 text-[12px] font-semibold text-white">
+                    <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-brand-primary px-2 py-0.5 text-xs font-semibold text-white">
                       {activeFilterCount}
                     </span>
                   ) : null}
@@ -354,7 +354,7 @@ const { t } = useI18n();
                     <button
                       type="button"
                       onClick={clearFilters}
-                      className="mt-4 cursor-pointer text-[14px] font-semibold text-brand-primary hover:text-brand-hover"
+                      className="mt-4 cursor-pointer text-sm font-semibold text-brand-primary hover:text-brand-hover"
                     >
                       {copy.clearFilters}
                     </button>

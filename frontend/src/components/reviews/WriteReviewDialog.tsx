@@ -41,13 +41,13 @@ import { useAppSelector } from "@/store/hooks";
 import { ReviewStars, StarIcon } from "./ReviewStars";
 
 const INPUT_CLASS =
-  "h-11 w-full rounded-lg border border-border-default bg-bg-base px-3.5 text-[14px] text-text-primary outline-none transition-colors placeholder:text-text-secondary/70 focus:border-brand-primary aria-invalid:border-error";
+  "h-11 w-full rounded-lg border border-border-default bg-bg-base px-3.5 text-sm text-text-primary outline-none transition-colors placeholder:text-text-secondary/70 focus:border-brand-primary aria-invalid:border-error";
 const PRIMARY_BUTTON =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-primary px-5 text-[14px] font-semibold text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-primary px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60";
 const SECONDARY_BUTTON =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border-default px-5 text-[14px] font-medium text-text-primary transition-colors hover:border-brand-primary hover:text-brand-primary disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border-default px-5 text-sm font-medium text-text-primary transition-colors hover:border-brand-primary hover:text-brand-primary disabled:cursor-not-allowed disabled:opacity-60";
 const DANGER_BUTTON =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-error px-5 text-[14px] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-error px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60";
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 type Step = "checking" | "contact" | "manage" | "review" | "done";
@@ -375,7 +375,7 @@ export default function WriteReviewDialog({
         </DialogHeader>
 
         {step === "checking" && (
-          <p role="status" className="m-0 flex items-center gap-2 py-6 text-[14px] text-text-secondary">
+          <p role="status" className="m-0 flex items-center gap-2 py-6 text-sm text-text-secondary">
             <Loader2 className="size-4 animate-spin" aria-hidden="true" />
             {copy.checking}
           </p>
@@ -424,7 +424,7 @@ export default function WriteReviewDialog({
             <p className="m-0 text-[13px] leading-relaxed text-text-secondary">{copy.manageIntro}</p>
             <article className="flex flex-col gap-2 rounded-xl border border-border-default bg-bg-subtle p-4">
               <header className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                <span className="text-[14px] font-semibold text-text-primary">{ownReview.author_name}</span>
+                <span className="text-sm font-semibold text-text-primary">{ownReview.author_name}</span>
                 <ReviewStars
                   rating={ownReview.rating}
                   size={14}
@@ -514,7 +514,7 @@ export default function WriteReviewDialog({
                   <FormItem>
                     <div className="flex items-center justify-between gap-2">
                       <FormLabel>{copy.comment}</FormLabel>
-                      <span className="text-[12px] text-text-secondary tabular-nums">
+                      <span className="text-xs text-text-secondary tabular-nums">
                         {format(copy.commentCount, { count: commentLength })}
                       </span>
                     </div>
@@ -570,11 +570,11 @@ export default function WriteReviewDialog({
                   className="sr-only"
                   onChange={(event) => addPhotos(event.target.files)}
                 />
-                <p className="m-0 text-[12px] text-text-secondary">
+                <p className="m-0 text-xs text-text-secondary">
                   {format(copy.photosHint, { max: REVIEW_MAX_PHOTOS })}
                 </p>
                 {photoError && (
-                  <p role="alert" className="m-0 text-[12px] font-medium text-error">
+                  <p role="alert" className="m-0 text-xs font-medium text-error">
                     {photoError}
                   </p>
                 )}

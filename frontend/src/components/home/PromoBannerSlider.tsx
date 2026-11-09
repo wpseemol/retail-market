@@ -98,19 +98,19 @@ export default function PromoBannerSlider({
               <div className="flex flex-col items-start max-w-lg md:pl-6 w-full">
                 <div className="flex items-center gap-6 sm:gap-10 mb-4">
                   <div>
-                    <span className="text-[20px] sm:text-[24px] font-bold text-brand-primary leading-none block">
+                    <span className="text-xl sm:text-2xl font-bold text-brand-primary leading-none block">
                       {slide.price}
                     </span>
-                    <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider text-text-secondary uppercase">
+                    <span className="text-2.5 sm:text-[11px] font-semibold tracking-wider text-text-secondary uppercase">
                       {slide.tagline}
                     </span>
                   </div>
                   <div className="flex items-baseline">
-                    <span className="text-[34px] sm:text-[44px] font-black text-brand-primary leading-none mr-2">
+                    <span className="text-8.5 sm:text-11 font-black text-brand-primary leading-none mr-2">
                       {slide.highlight_text}
                     </span>
                     <div className="flex flex-col">
-                      <span className="text-[9px] sm:text-[10px] font-bold tracking-tight text-text-primary uppercase leading-tight">
+                      <span className="text-[9px] sm:text-2.5 font-bold tracking-tight text-text-primary uppercase leading-tight">
                         {slide.sub_highlight}
                       </span>
                       <span className="text-[13px] sm:text-[15px] font-bold text-text-primary leading-tight">
@@ -120,7 +120,7 @@ export default function PromoBannerSlider({
                   </div>
                 </div>
 
-                <h2 className="text-text-primary text-2xl sm:text-3xl lg:text-[34px] font-bold leading-[1.2] tracking-tight mb-5">
+                <h2 className="text-text-primary text-2xl sm:text-3xl lg:text-8.5 font-bold leading-[1.2] tracking-tight mb-5">
                   <span>{slide.title_line1}</span>
                   <br />
                   <span>{slide.title_line2}</span>

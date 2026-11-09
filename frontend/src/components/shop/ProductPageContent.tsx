@@ -388,7 +388,7 @@ export default function ProductPageContent({
                                         onClick={() => setActiveImage(src)}
                                         aria-label={`View image ${index + 1}`}
                                         aria-pressed={isActive}
-                                        className={`relative h-[68px] w-[68px] sm:h-[76px] sm:w-[76px] rounded-md border overflow-hidden bg-white dark:bg-bg-subtle shrink-0 cursor-pointer transition-colors ${
+                                        className={`relative h-17 w-17 sm:h-19 sm:w-19 rounded-md border overflow-hidden bg-white dark:bg-bg-subtle shrink-0 cursor-pointer transition-colors ${
                                             isActive
                                                 ? "border-brand-primary ring-1 ring-brand-primary/40"
                                                 : "border-border-default hover:border-brand-primary"
@@ -417,7 +417,7 @@ export default function ProductPageContent({
                         <header className="flex flex-col gap-3.5">
                             <h1
                                 id="product-title"
-                                className="text-[22px] sm:text-[26px] lg:text-[28px] font-bold text-text-primary leading-snug m-0"
+                                className="text-5.5 sm:text-6.5 lg:text-7 font-bold text-text-primary leading-snug m-0"
                             >
                                 {product.name}
                             </h1>
@@ -430,7 +430,7 @@ export default function ProductPageContent({
                             <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 m-0">
                                 <data
                                     value={product.priceMin}
-                                    className="text-[22px] sm:text-[24px] font-bold text-brand-primary"
+                                    className="text-5.5 sm:text-2xl font-bold text-brand-primary"
                                 >
                                     {formatPriceRange(product.priceMin, product.priceMax)}
                                 </data>
@@ -444,7 +444,7 @@ export default function ProductPageContent({
                             </p>
                         </header>
 
-                        <p className="text-[14px] text-text-secondary leading-relaxed m-0 max-w-2xl">
+                        <p className="text-sm text-text-secondary leading-relaxed m-0 max-w-2xl">
                             {shortDescription}
                         </p>
 
@@ -465,7 +465,7 @@ export default function ProductPageContent({
                                 {tags.map((tag) => (
                                     <li
                                         key={tag}
-                                        className="text-[12px] px-3 py-1.5 rounded bg-bg-subtle border border-border-default text-text-secondary"
+                                        className="text-xs px-3 py-1.5 rounded bg-bg-subtle border border-border-default text-text-secondary"
                                     >
                                         {tag}
                                     </li>
@@ -503,7 +503,7 @@ export default function ProductPageContent({
                             <button
                                 type="button"
                                 onClick={handleAddToCart}
-                                className="h-11 px-6 rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[14px] font-semibold transition-colors cursor-pointer inline-flex items-center gap-2"
+                                className="h-11 px-6 rounded-md bg-brand-primary hover:bg-brand-hover text-white text-sm font-semibold transition-colors cursor-pointer inline-flex items-center gap-2"
                             >
                                 <CartIcon />
                                 Add to Cart
@@ -513,7 +513,7 @@ export default function ProductPageContent({
                                 type="button"
                                 onClick={handleBuyNow}
                                 disabled={buying}
-                                className="h-11 px-6 rounded-md bg-warning hover:brightness-95 disabled:opacity-70 text-white text-[14px] font-semibold transition cursor-pointer inline-flex items-center gap-2"
+                                className="h-11 px-6 rounded-md bg-warning hover:brightness-95 disabled:opacity-70 text-white text-sm font-semibold transition cursor-pointer inline-flex items-center gap-2"
                             >
                                 <BoltIcon />
                                 {buying ? "Going to checkout…" : "Buy Now"}
@@ -521,7 +521,7 @@ export default function ProductPageContent({
 
                             <button
                                 type="button"
-                                className="h-11 px-5 rounded-md border border-border-default bg-bg-subtle text-text-primary text-[14px] font-medium hover:border-brand-primary hover:text-brand-primary transition-colors cursor-pointer"
+                                className="h-11 px-5 rounded-md border border-border-default bg-bg-subtle text-text-primary text-sm font-medium hover:border-brand-primary hover:text-brand-primary transition-colors cursor-pointer"
                             >
                                 Compare
                             </button>
@@ -606,7 +606,7 @@ export default function ProductPageContent({
                                                 e.preventDefault();
                                                 scrollToSection(id);
                                             }}
-                                            className={`h-10 shrink-0 px-4 sm:px-5 inline-flex items-center rounded-md text-[13px] sm:text-[14px] font-medium transition-colors border ${
+                                            className={`h-10 shrink-0 px-4 sm:px-5 inline-flex items-center rounded-md text-[13px] sm:text-sm font-medium transition-colors border ${
                                                 isActive
                                                     ? "bg-brand-primary border-brand-primary text-white"
                                                     : "bg-bg-subtle border-border-default text-text-secondary hover:border-brand-primary hover:text-brand-primary"
@@ -631,12 +631,12 @@ export default function ProductPageContent({
                                 <div>
                                     <h2
                                         id="product-specification-title"
-                                        className="text-[18px] font-bold text-text-primary m-0 mb-4"
+                                        className="text-lg font-bold text-text-primary m-0 mb-4"
                                     >
                                         {tabLabel.specification}
                                     </h2>
                                     <div className="overflow-x-auto">
-                                        <table className="w-full border-collapse text-[13px] sm:text-[14px]">
+                                        <table className="w-full border-collapse text-[13px] sm:text-sm">
                                             <caption className="sr-only">
                                                 {product.name} specifications
                                             </caption>
@@ -669,14 +669,14 @@ export default function ProductPageContent({
                                 <div className="flex flex-col gap-3">
                                     <h2
                                         id="product-description-title"
-                                        className="text-[18px] font-bold text-text-primary m-0"
+                                        className="text-lg font-bold text-text-primary m-0"
                                     >
                                         {tabLabel.description}
                                     </h2>
                                     {richDescription ? (
                                         <SafeHtml html={richDescription} />
                                     ) : (
-                                        <p className="text-[14px] text-text-secondary leading-relaxed m-0">
+                                        <p className="text-sm text-text-secondary leading-relaxed m-0">
                                             {shortDescription}
                                         </p>
                                     )}
@@ -694,7 +694,7 @@ export default function ProductPageContent({
                                 <div className="flex flex-col gap-5">
                                     <h2
                                         id="product-qa-title"
-                                        className="text-[18px] font-bold text-text-primary m-0"
+                                        className="text-lg font-bold text-text-primary m-0"
                                     >
                                         {tabLabel.qa}
                                     </h2>
@@ -703,13 +703,13 @@ export default function ProductPageContent({
                                             key={item.id}
                                             className="border-b border-border-default pb-4 last:border-0 last:pb-0"
                                         >
-                                            <h3 className="text-[14px] font-semibold text-text-primary m-0 mb-1.5">
+                                            <h3 className="text-sm font-semibold text-text-primary m-0 mb-1.5">
                                                 Q: {item.question}
                                             </h3>
                                             <p className="text-[13px] text-text-secondary leading-relaxed m-0 mb-2">
                                                 A: {item.answer}
                                             </p>
-                                            <footer className="text-[12px] text-text-secondary">
+                                            <footer className="text-xs text-text-secondary">
                                                 {item.author} · {item.date}
                                             </footer>
                                         </article>
@@ -748,7 +748,7 @@ export default function ProductPageContent({
                             <div className="flex items-center justify-between gap-2 mb-4">
                                 <h2
                                     id="related-products-title"
-                                    className="text-[16px] font-bold text-text-primary m-0"
+                                    className="text-base font-bold text-text-primary m-0"
                                 >
                                     Related Products
                                 </h2>
@@ -796,7 +796,7 @@ export default function ProductPageContent({
                                             href={`/shop/${item.slug}`}
                                             className="flex gap-3 group"
                                         >
-                                            <div className="relative h-[72px] w-[72px] rounded-md border border-border-default bg-white dark:bg-bg-subtle overflow-hidden shrink-0">
+                                            <div className="relative h-18 w-18 rounded-md border border-border-default bg-white dark:bg-bg-subtle overflow-hidden shrink-0">
                                                 <ProductImage
                                                     src={item.image}
                                                     alt={item.alt}
@@ -810,12 +810,12 @@ export default function ProductPageContent({
                                                     {item.name}
                                                 </span>
                                                 <span className="flex items-baseline gap-2">
-                                                    <span className="text-[14px] font-semibold text-brand-primary">
+                                                    <span className="text-sm font-semibold text-brand-primary">
                                                         {formatPrice(
                                                             item.priceMin,
                                                         )}
                                                     </span>
-                                                    <span className="text-[12px] text-text-secondary line-through">
+                                                    <span className="text-xs text-text-secondary line-through">
                                                         {formatPrice(
                                                             item.priceMax,
                                                         )}

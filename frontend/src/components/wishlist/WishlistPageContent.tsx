@@ -130,11 +130,11 @@ export default function WishlistPageContent() {
             <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-10 lg:py-12">
                 <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
                     <div>
-                        <h1 className="m-0 text-[24px] sm:text-[28px] font-bold text-text-primary">
+                        <h1 className="m-0 text-2xl sm:text-7 font-bold text-text-primary">
                             My Wishlist
                         </h1>
                         {visibleRows ? (
-                            <p className="mt-1 mb-0 text-[14px] text-text-secondary">
+                            <p className="mt-1 mb-0 text-sm text-text-secondary">
                                 {visibleRows.length} {visibleRows.length === 1 ? "product" : "products"} saved
                             </p>
                         ) : null}
@@ -143,7 +143,7 @@ export default function WishlistPageContent() {
                         <button
                             type="button"
                             onClick={handleAddAll}
-                            className="h-10 px-5 rounded-md border border-brand-primary text-brand-primary text-[14px] font-semibold hover:bg-brand-primary hover:text-white transition-colors cursor-pointer"
+                            className="h-10 px-5 rounded-md border border-brand-primary text-brand-primary text-sm font-semibold hover:bg-brand-primary hover:text-white transition-colors cursor-pointer"
                         >
                             Add all in stock to cart
                         </button>
@@ -151,7 +151,7 @@ export default function WishlistPageContent() {
                 </div>
 
                 {loadError ? (
-                    <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-error/30 bg-error/10 px-4 py-3 text-[14px] text-error">
+                    <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-error/30 bg-error/10 px-4 py-3 text-sm text-error">
                         <span>{loadError}</span>
                         <button type="button" onClick={() => void load()} className="font-semibold underline cursor-pointer">
                             Try again
@@ -177,13 +177,13 @@ export default function WishlistPageContent() {
                                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                             </svg>
                         </span>
-                        <p className="text-[18px] font-semibold text-text-primary m-0">Your wishlist is empty</p>
-                        <p className="text-[14px] text-text-secondary m-0 max-w-md">
+                        <p className="text-lg font-semibold text-text-primary m-0">Your wishlist is empty</p>
+                        <p className="text-sm text-text-secondary m-0 max-w-md">
                             Tap the heart on any product to save it here for later.
                         </p>
                         <Link
                             href="/shop"
-                            className="mt-2 h-11 px-6 inline-flex items-center justify-center rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[14px] font-semibold transition-colors"
+                            className="mt-2 h-11 px-6 inline-flex items-center justify-center rounded-md bg-brand-primary hover:bg-brand-hover text-white text-sm font-semibold transition-colors"
                         >
                             Browse the Shop
                         </Link>
@@ -228,13 +228,13 @@ export default function WishlistPageContent() {
                                     </Link>
 
                                     <div className="flex flex-1 flex-col gap-1.5 px-4 pt-3 pb-4">
-                                        <h2 className="m-0 text-[14px] sm:text-[15px] font-medium leading-snug text-text-primary line-clamp-2">
+                                        <h2 className="m-0 text-sm sm:text-[15px] font-medium leading-snug text-text-primary line-clamp-2">
                                             <Link href={`/shop/${product.slug}`} className="hover:text-brand-primary transition-colors">
                                                 {product.name}
                                             </Link>
                                         </h2>
                                         <p className="m-0 flex items-baseline gap-2">
-                                            <span className="text-[16px] font-semibold text-brand-primary">
+                                            <span className="text-base font-semibold text-brand-primary">
                                                 {formatPrice(product.priceMin)}
                                             </span>
                                             {comparePrice ? (
@@ -243,11 +243,11 @@ export default function WishlistPageContent() {
                                                 </span>
                                             ) : null}
                                         </p>
-                                        <p className={`m-0 text-[12px] font-medium ${inStock ? "text-brand-primary" : "text-error"}`}>
+                                        <p className={`m-0 text-xs font-medium ${inStock ? "text-brand-primary" : "text-error"}`}>
                                             {inStock ? `In stock (${product.available})` : "Out of stock"}
                                         </p>
                                         {addedAt ? (
-                                            <p className="m-0 text-[12px] text-text-secondary">Saved {formatAdded(addedAt)}</p>
+                                            <p className="m-0 text-xs text-text-secondary">Saved {formatAdded(addedAt)}</p>
                                         ) : null}
 
                                         <div className="mt-auto pt-3">

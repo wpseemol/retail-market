@@ -15,10 +15,10 @@ const STARS = ["5", "4", "3", "2", "1"] as const;
 function ReviewerName({ fullName }: { fullName: string }) {
   const firstName = fullName.trim().split(/\s+/)[0] || fullName;
   if (firstName === fullName.trim()) {
-    return <h3 className="m-0 text-[14px] font-semibold text-text-primary">{fullName}</h3>;
+    return <h3 className="m-0 text-sm font-semibold text-text-primary">{fullName}</h3>;
   }
   return (
-    <h3 className="m-0 text-[14px] font-semibold text-text-primary">
+    <h3 className="m-0 text-sm font-semibold text-text-primary">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -107,7 +107,7 @@ export default function ProductReviews({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id={titleId} className="m-0 text-[18px] font-bold text-text-primary">
+        <h2 id={titleId} className="m-0 text-lg font-bold text-text-primary">
           {copy.title}
         </h2>
         <WriteReviewDialog
@@ -129,12 +129,12 @@ export default function ProductReviews({
       {summary.count > 0 ? (
         <div className="grid gap-5 rounded-xl border border-border-default bg-bg-subtle p-4 sm:grid-cols-[auto_1fr] sm:gap-8 sm:p-5">
           <div className="flex flex-col items-center justify-center gap-1.5 text-center sm:min-w-36">
-            <p className="m-0 text-[40px] leading-none font-bold text-text-primary">
+            <p className="m-0 text-10 leading-none font-bold text-text-primary">
               {average}
-              <span className="ml-1 text-[14px] font-medium text-text-secondary">{copy.outOf}</span>
+              <span className="ml-1 text-sm font-medium text-text-secondary">{copy.outOf}</span>
             </p>
             <ReviewStars rating={summary.average} size={18} label={format(copy.starsLabel, { rating: average })} />
-            <p className="m-0 text-[12px] text-text-secondary">
+            <p className="m-0 text-xs text-text-secondary">
               {summary.count === 1
                 ? copy.basedOnOne
                 : format(copy.basedOn, { count: numberFormatter.format(summary.count) })}
@@ -147,7 +147,7 @@ export default function ProductReviews({
               return (
                 <li
                   key={star}
-                  className="flex items-center gap-3 text-[12px] text-text-secondary"
+                  className="flex items-center gap-3 text-xs text-text-secondary"
                   aria-label={format(copy.starRowCount, { star, count })}
                 >
                   <span className="w-12 shrink-0" aria-hidden="true">
@@ -188,11 +188,11 @@ export default function ProductReviews({
                       {copy.verified}
                     </span>
                   )}
-                  <time dateTime={review.created_at} className="text-[12px] text-text-secondary sm:ml-auto">
+                  <time dateTime={review.created_at} className="text-xs text-text-secondary sm:ml-auto">
                     {dateFormatter.format(new Date(review.created_at))}
                   </time>
                 </header>
-                {review.title && <p className="m-0 text-[14px] font-semibold text-text-primary">{review.title}</p>}
+                {review.title && <p className="m-0 text-sm font-semibold text-text-primary">{review.title}</p>}
                 <p className="m-0 text-[13px] leading-relaxed whitespace-pre-line text-text-secondary">
                   {review.comment}
                 </p>
@@ -219,7 +219,7 @@ export default function ProductReviews({
                 )}
                 {review.vendor_reply && (
                   <div className="mt-1 rounded-lg border-l-4 border-brand-primary bg-bg-subtle px-3.5 py-2.5">
-                    <p className="m-0 mb-1 inline-flex items-center gap-1.5 text-[12px] font-semibold text-text-primary">
+                    <p className="m-0 mb-1 inline-flex items-center gap-1.5 text-xs font-semibold text-text-primary">
                       <MessageSquareReply className="size-3.5" aria-hidden="true" />
                       {storeName ? format(copy.merchantReply, { store: storeName }) : copy.merchantReplyGeneric}
                     </p>
@@ -246,7 +246,7 @@ export default function ProductReviews({
             {loading ? copy.loading : copy.loadMore}
           </button>
           {loadError && (
-            <p role="alert" className="m-0 text-[12px] text-error">
+            <p role="alert" className="m-0 text-xs text-error">
               {copy.loadFailed}
             </p>
           )}

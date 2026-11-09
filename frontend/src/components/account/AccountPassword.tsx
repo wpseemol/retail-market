@@ -103,7 +103,7 @@ export default function AccountPassword({ user, onUserChange }: Props) {
       aria-labelledby="password-heading"
       className="relative overflow-hidden rounded-2xl border border-border-default bg-bg-surface p-5 sm:p-8 shadow-sm"
     >
-      <PadlockDecor className="pointer-events-none absolute -right-2 bottom-1 hidden w-[120px] sm:block lg:w-[150px]" />
+      <PadlockDecor className="pointer-events-none absolute -right-2 bottom-1 hidden w-30 sm:block lg:w-37.5" />
 
       <div className="relative mb-6 max-w-2xl">
         <h2

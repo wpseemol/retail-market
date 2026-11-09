@@ -142,7 +142,7 @@ export default function LoginForm() {
     <section className="w-full" aria-labelledby="login-heading">
       <h1
         id="login-heading"
-        className="text-[28px] sm:text-[32px] font-semibold text-text-primary leading-tight mb-2"
+        className="text-7 sm:text-8 font-semibold text-text-primary leading-tight mb-2"
       >
         Welcome
       </h1>

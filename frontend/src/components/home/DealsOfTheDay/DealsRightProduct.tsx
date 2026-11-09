@@ -223,7 +223,7 @@ export default function DealsRightProduct() {
                         ))}
                     </div>
 
-                    <h3 className="text-text-primary text-[15px] sm:text-[16px] font-bold leading-snug line-clamp-2 mb-2">
+                    <h3 className="text-text-primary text-[15px] sm:text-base font-bold leading-snug line-clamp-2 mb-2">
                         <Link
                             href={activeProduct.link}
                             className="hover:text-brand-primary transition-colors"
@@ -240,7 +240,7 @@ export default function DealsRightProduct() {
                         <span className="text-text-secondary line-through text-xs sm:text-sm">
                             {formatPrice(activeProduct.originalPrice)}
                         </span>
-                        <span className="bg-brand-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm">
+                        <span className="bg-brand-primary text-white text-2.5 font-bold px-1.5 py-0.5 rounded-sm">
                             -{activeProduct.discountPercent}%
                         </span>
                     </div>

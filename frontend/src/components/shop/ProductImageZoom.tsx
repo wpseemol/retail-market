@@ -106,7 +106,7 @@ export function ProductImageZoom({
                 }}
                 onMouseMove={canHover ? (e) => setHover(percentFromEvent(e)) : undefined}
                 onMouseLeave={() => setHover(null)}
-                className={`group relative flex-1 min-h-[280px] sm:min-h-[360px] lg:min-h-[420px] rounded-lg border border-border-default bg-white dark:bg-bg-subtle overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${
+                className={`group relative flex-1 min-h-70 sm:min-h-90 lg:min-h-105 rounded-lg border border-border-default bg-white dark:bg-bg-subtle overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${
                     canHover ? "cursor-zoom-in" : "cursor-pointer"
                 }`}
             >
@@ -124,7 +124,7 @@ export function ProductImageZoom({
                     />
                 ) : null}
 
-                <span className="pointer-events-none absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-bg-base/90 px-2.5 py-1.5 text-[12px] font-medium text-text-secondary shadow-sm border border-border-default opacity-90 group-hover:opacity-100">
+                <span className="pointer-events-none absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-bg-base/90 px-2.5 py-1.5 text-xs font-medium text-text-secondary shadow-sm border border-border-default opacity-90 group-hover:opacity-100">
                     <Icon d={canHover ? ICONS.zoomIn : ICONS.expand} size={14} />
                     {canHover ? "Hover to zoom · click to expand" : "Tap to expand"}
                 </span>
@@ -308,7 +308,7 @@ function ProductLightbox({
                 </div>
             ) : null}
 
-            <p className="pb-3 text-center text-[12px] text-white/60">
+            <p className="pb-3 text-center text-xs text-white/60">
                 Click the image to zoom · ← → to browse · Esc to close
             </p>
         </div>,

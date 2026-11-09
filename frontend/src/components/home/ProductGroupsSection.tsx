@@ -205,7 +205,7 @@ export default function ProductGroupsSection(_props: {
                                                 className="object-contain p-1 transition-transform duration-300 group-hover:scale-105"
                                             />
                                         </div>
-                                        <span className="text-text-primary text-[12px] font-medium mt-1.5 leading-tight group-hover:text-brand-primary transition-colors">
+                                        <span className="text-text-primary text-xs font-medium mt-1.5 leading-tight group-hover:text-brand-primary transition-colors">
                                             {item.name}
                                         </span>
                                     </Link>
@@ -244,7 +244,7 @@ export default function ProductGroupsSection(_props: {
                                                 className="object-cover transition-transform duration-300 group-hover:scale-105"
                                             />
                                         </div>
-                                        <span className="text-text-primary text-[12px] font-medium mt-1.5 leading-tight group-hover:text-brand-primary transition-colors">
+                                        <span className="text-text-primary text-xs font-medium mt-1.5 leading-tight group-hover:text-brand-primary transition-colors">
                                             {item.dealLabel}
                                         </span>
                                     </Link>
@@ -286,7 +286,7 @@ export default function ProductGroupsSection(_props: {
                                                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                                                 />
                                             </div>
-                                            <span className="text-text-primary text-[12px] font-medium mt-1.5 leading-tight group-hover:text-brand-primary transition-colors">
+                                            <span className="text-text-primary text-xs font-medium mt-1.5 leading-tight group-hover:text-brand-primary transition-colors">
                                                 {largeItem.name}
                                             </span>
                                         </Link>
@@ -311,7 +311,7 @@ export default function ProductGroupsSection(_props: {
                                                         className="object-cover transition-transform duration-300 group-hover:scale-105"
                                                     />
                                                 </div>
-                                                <span className="text-text-primary text-[12px] font-medium mt-1 leading-tight group-hover:text-brand-primary transition-colors">
+                                                <span className="text-text-primary text-xs font-medium mt-1 leading-tight group-hover:text-brand-primary transition-colors">
                                                     {smallItem.name}
                                                 </span>
                                             </Link>
@@ -334,7 +334,7 @@ export default function ProductGroupsSection(_props: {
                             <h2 className="text-text-primary text-[17px] font-bold tracking-tight">
                                 Best Selling Products
                             </h2>
-                            <p className="text-text-secondary text-[12px] font-normal mb-3">
+                            <p className="text-text-secondary text-xs font-normal mb-3">
                                 Get discounts on popular items
                             </p>
 

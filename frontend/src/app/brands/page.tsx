@@ -144,10 +144,10 @@ export default async function BrandsPage({ searchParams }: PageProps) {
                           </span>
                         )}
                       </span>
-                      <span className="mt-3 line-clamp-1 text-[14px] font-semibold text-text-primary group-hover:text-brand-primary">
+                      <span className="mt-3 line-clamp-1 text-sm font-semibold text-text-primary group-hover:text-brand-primary">
                         {displayName}
                       </span>
-                      <span className="mt-0.5 text-[12px] text-text-secondary">
+                      <span className="mt-0.5 text-xs text-text-secondary">
                         {brand.products_count === 1
                           ? t.productsCountOne
                           : format(t.productsCount, { count: brand.products_count })}

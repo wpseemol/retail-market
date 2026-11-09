@@ -121,7 +121,7 @@ export default async function HeroBanner({
             </div>
 
             {/* Promo slide copy is h2 — homepage H1 lives on `/` for SEO / AI crawlers. */}
-            <h2 className="text-text-primary text-2xl sm:text-3xl lg:text-[32px] font-extrabold leading-[1.15] tracking-tight uppercase mb-3">
+            <h2 className="text-text-primary text-2xl sm:text-3xl lg:text-8 font-extrabold leading-[1.15] tracking-tight uppercase mb-3">
               {hero.main.headline}
             </h2>
 
@@ -194,7 +194,7 @@ export default async function HeroBanner({
                 {hero.side.offer_percent}%
               </span>
               {hero.side.offer_label ? (
-                <span className="text-[10px] sm:text-sm font-semibold leading-tight">
+                <span className="text-2.5 sm:text-sm font-semibold leading-tight">
                   {hero.side.offer_label}
                 </span>
               ) : null}
@@ -214,7 +214,7 @@ export default async function HeroBanner({
 
             {hero.side.discount_percent != null ? (
               <div className="flex items-baseline text-brand-primary mb-5">
-                <span className="flex flex-col text-[10px] font-bold uppercase leading-none mr-1.5 self-center">
+                <span className="flex flex-col text-2.5 font-bold uppercase leading-none mr-1.5 self-center">
                   <span>Up</span>
                   <span>To</span>
                 </span>

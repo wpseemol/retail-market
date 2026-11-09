@@ -30,7 +30,7 @@ export function ContentHero({
                     {hero.subtitle ? (
                         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/80 sm:text-[15px]">{hero.subtitle}</p>
                     ) : null}
-                    {meta ? <div className="mt-5 flex flex-wrap items-center gap-2 text-[12px]">{meta}</div> : null}
+                    {meta ? <div className="mt-5 flex flex-wrap items-center gap-2 text-xs">{meta}</div> : null}
                     {children}
                 </div>
             </section>

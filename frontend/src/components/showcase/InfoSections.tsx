@@ -73,7 +73,7 @@ export function ContactSocial({ content, name, t }: { content: ShowcaseContent; 
                     <dl className="grid gap-4 sm:grid-cols-2">
                         {rows.map((row) => (
                             <div key={row.label}>
-                                <dt className="text-[12px] font-semibold uppercase tracking-wide text-text-secondary">{row.label}</dt>
+                                <dt className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{row.label}</dt>
                                 <dd className="mt-1 whitespace-pre-line text-[15px] text-text-primary">
                                     {row.href ? (
                                         <a href={row.href} className="hover:text-sc-accent-text">
@@ -91,7 +91,7 @@ export function ContactSocial({ content, name, t }: { content: ShowcaseContent; 
                 )}
                 {socials.length > 0 ? (
                     <div>
-                        <p className="text-[12px] font-semibold uppercase tracking-wide text-text-secondary">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
                             {format(t.followUs, { name })}
                         </p>
                         <ul className="mt-3 flex flex-wrap gap-2">
@@ -137,7 +137,7 @@ export function PoliciesSection({ policies, t }: { policies: ShowcaseContent["po
                         open
                         className="group rounded-2xl border border-border-default bg-bg-surface p-5 sm:p-6"
                     >
-                        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[16px] font-semibold text-text-primary">
+                        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-base font-semibold text-text-primary">
                             {item.title}
                             <span aria-hidden="true" className="text-text-secondary group-open:rotate-180">
                                 ▾

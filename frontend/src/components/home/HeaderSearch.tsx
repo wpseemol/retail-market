@@ -110,7 +110,7 @@ function Thumb({
     label: string;
     large?: boolean;
 }) {
-    const box = large ? "size-[72px]" : "size-10";
+    const box = large ? "size-18" : "size-10";
     if (!src) {
         return (
             <span
@@ -1033,7 +1033,7 @@ export default function HeaderSearch({
                             type="button"
                             onClick={clearImage}
                             aria-label={t.search.imageRemove}
-                            className="absolute -top-1 -right-1 flex size-3.5 cursor-pointer items-center justify-center rounded-full bg-text-primary text-[10px] leading-none text-bg-base"
+                            className="absolute -top-1 -right-1 flex size-3.5 cursor-pointer items-center justify-center rounded-full bg-text-primary text-2.5 leading-none text-bg-base"
                         >
                             ×
                         </button>
@@ -1072,7 +1072,7 @@ export default function HeaderSearch({
                     }}
                     onKeyDown={onKeyDown}
                     className={`w-full bg-transparent text-text-primary outline-none placeholder:text-text-secondary ${
-                        isDesktop ? "text-[13px]" : "text-[14px]"
+                        isDesktop ? "text-[13px]" : "text-sm"
                     }`}
                 />
                 {loading ? (

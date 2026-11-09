@@ -71,7 +71,7 @@ export default function ShopPagination({
                         aria-label={`Page ${page}`}
                         aria-current={isActive ? "page" : undefined}
                         onClick={() => onPageChange(page)}
-                        className={`h-9 min-w-9 px-2 rounded-md text-[14px] font-medium transition-colors cursor-pointer ${
+                        className={`h-9 min-w-9 px-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                             isActive
                                 ? "bg-brand-primary text-white border border-brand-primary"
                                 : "bg-bg-surface text-text-secondary border border-border-default hover:border-brand-primary hover:text-brand-primary"

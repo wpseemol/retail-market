@@ -339,7 +339,7 @@ export default function LatestProductsSection(_props: {
                                             >
                                                 {/* Parallelogram 'NEW' Ribbon Badge */}
                                                 {product.isNew && (
-                                                    <div className="self-start -skew-x-12 bg-brand-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-xs tracking-wider mb-2">
+                                                    <div className="self-start -skew-x-12 bg-brand-primary text-white text-2.5 font-bold px-2 py-0.5 rounded-xs tracking-wider mb-2">
                                                         <span className="skew-x-12 inline-block">
                                                             NEW
                                                         </span>
@@ -363,7 +363,7 @@ export default function LatestProductsSection(_props: {
                                                         rating={product.rating}
                                                     />
 
-                                                    <h3 className="text-text-primary text-[13px] sm:text-[14px] font-medium leading-snug line-clamp-2 h-9.5 my-1 group-hover:text-brand-primary transition-colors">
+                                                    <h3 className="text-text-primary text-[13px] sm:text-sm font-medium leading-snug line-clamp-2 h-9.5 my-1 group-hover:text-brand-primary transition-colors">
                                                         <Link
                                                             href="/shop"
                                                         >

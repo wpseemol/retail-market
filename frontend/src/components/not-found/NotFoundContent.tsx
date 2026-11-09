@@ -36,23 +36,23 @@ export default function NotFoundContent() {
                 <div className="flex flex-col items-center justify-center text-center py-16 sm:py-20 lg:py-24">
                     <p
                         aria-hidden="true"
-                        className="m-0 font-bold leading-none tracking-tight text-[100px] sm:text-[140px] lg:text-[180px] text-[#E8E8E8] dark:text-[#2F2F35] select-none"
+                        className="m-0 font-bold leading-none tracking-tight text-25 sm:text-35 lg:text-45 text-[#E8E8E8] dark:text-[#2F2F35] select-none"
                     >
                         404
                     </p>
 
-                    <h1 className="m-0 mt-2 sm:mt-0 text-[22px] sm:text-[28px] lg:text-[32px] font-semibold text-text-primary leading-snug">
+                    <h1 className="m-0 mt-2 sm:mt-0 text-5.5 sm:text-7 lg:text-8 font-semibold text-text-primary leading-snug">
                         Oops... It looks like you&apos;re lost !
                     </h1>
 
-                    <p className="m-0 mt-3 sm:mt-4 max-w-md text-[14px] sm:text-[15px] text-text-secondary leading-relaxed">
+                    <p className="m-0 mt-3 sm:mt-4 max-w-md text-sm sm:text-[15px] text-text-secondary leading-relaxed">
                         Oops! The page you are looking for does not exist. It
                         might have been moved or deleted.
                     </p>
 
                     <Link
                         href="/"
-                        className="mt-8 sm:mt-10 inline-flex items-center gap-2.5 h-11 sm:h-12 px-7 sm:px-8 rounded-md border-2 border-brand-primary bg-transparent text-brand-primary dark:text-white hover:bg-brand-primary hover:text-white text-[13px] sm:text-[14px] font-bold uppercase tracking-wide transition-colors"
+                        className="mt-8 sm:mt-10 inline-flex items-center gap-2.5 h-11 sm:h-12 px-7 sm:px-8 rounded-md border-2 border-brand-primary bg-transparent text-brand-primary dark:text-white hover:bg-brand-primary hover:text-white text-[13px] sm:text-sm font-bold uppercase tracking-wide transition-colors"
                     >
                         Go Back Home
                         <svg

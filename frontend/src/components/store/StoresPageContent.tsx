@@ -43,13 +43,13 @@ function StoreCard({ store, t, locale }: { store: StorefrontStore; t: T; locale:
               display.name.charAt(0).toUpperCase()
             )}
           </div>
-          <h2 className="mt-3 truncate text-[16px] font-semibold text-text-primary group-hover:text-sc-accent-text">
+          <h2 className="mt-3 truncate text-base font-semibold text-text-primary group-hover:text-sc-accent-text">
             {display.name}
           </h2>
           <p className="mt-1 line-clamp-2 min-h-[2.5rem] text-[13px] leading-relaxed text-text-secondary">
             {store.tagline || display.description?.trim() || "\u00a0"}
           </p>
-          <div className="mt-3 flex items-center justify-between border-t border-border-default pt-3 text-[12px]">
+          <div className="mt-3 flex items-center justify-between border-t border-border-default pt-3 text-xs">
             <span className="text-text-secondary">
               {count === 1 ? t.productsCountOne : format(t.productsCount, { count })}
             </span>

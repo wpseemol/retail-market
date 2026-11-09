@@ -177,7 +177,7 @@ export default function QuickViewModal({
                 aria-modal="true"
                 aria-labelledby={titleId}
                 data-lenis-prevent
-                className="relative z-10 w-full max-w-[1156px] max-h-[min(90vh,720px)] overflow-y-auto rounded-[2px] bg-bg-surface border border-border-default shadow-[0_24px_64px_rgba(0,0,0,0.28)]"
+                className="relative z-10 w-full max-w-289 max-h-[min(90vh,720px)] overflow-y-auto rounded-0.5 bg-bg-surface border border-border-default shadow-[0_24px_64px_rgba(0,0,0,0.28)]"
             >
                 <button
                     type="button"
@@ -222,7 +222,7 @@ export default function QuickViewModal({
                                         onClick={() => setActiveImage(src)}
                                         aria-label={`View image ${index + 1}`}
                                         aria-pressed={isActive}
-                                        className={`relative h-16 w-16 sm:h-[72px] sm:w-[72px] rounded-md border overflow-hidden bg-white dark:bg-bg-subtle shrink-0 cursor-pointer transition-colors ${
+                                        className={`relative h-16 w-16 sm:h-18 sm:w-18 rounded-md border overflow-hidden bg-white dark:bg-bg-subtle shrink-0 cursor-pointer transition-colors ${
                                             isActive
                                                 ? "border-brand-primary ring-1 ring-brand-primary/40"
                                                 : "border-border-default hover:border-brand-primary"
@@ -246,7 +246,7 @@ export default function QuickViewModal({
                     <div className="lg:col-span-7 flex flex-col gap-3.5 pr-2">
                         <h2
                             id={titleId}
-                            className="text-[22px] sm:text-[26px] font-bold text-text-primary leading-snug m-0 pr-8"
+                            className="text-5.5 sm:text-6.5 font-bold text-text-primary leading-snug m-0 pr-8"
                         >
                             {product.name}
                         </h2>
@@ -257,7 +257,7 @@ export default function QuickViewModal({
                         />
 
                         <div className="flex items-baseline gap-2.5">
-                            <span className="text-[22px] font-bold text-brand-primary">
+                            <span className="text-5.5 font-bold text-brand-primary">
                                 {formatPrice(product.priceMin)}
                             </span>
                             <span className="text-[15px] text-text-secondary line-through">
@@ -270,7 +270,7 @@ export default function QuickViewModal({
                             <span className="text-text-primary">{sku}</span>
                         </p>
 
-                        <p className="text-[14px] text-text-secondary leading-relaxed m-0">
+                        <p className="text-sm text-text-secondary leading-relaxed m-0">
                             {description}
                         </p>
 
@@ -293,7 +293,7 @@ export default function QuickViewModal({
                             {tags.map((tag) => (
                                 <span
                                     key={tag}
-                                    className="text-[12px] px-3 py-1.5 rounded bg-bg-subtle border border-border-default text-text-secondary"
+                                    className="text-xs px-3 py-1.5 rounded bg-bg-subtle border border-border-default text-text-secondary"
                                 >
                                     {tag}
                                 </span>
@@ -331,14 +331,14 @@ export default function QuickViewModal({
                             <button
                                 type="button"
                                 onClick={handleAddToCart}
-                                className="h-11 px-6 rounded-md bg-brand-primary hover:bg-brand-hover text-white text-[14px] font-semibold transition-colors cursor-pointer"
+                                className="h-11 px-6 rounded-md bg-brand-primary hover:bg-brand-hover text-white text-sm font-semibold transition-colors cursor-pointer"
                             >
                                 Add to Cart
                             </button>
 
                             <button
                                 type="button"
-                                className="h-11 px-5 rounded-md border border-border-default bg-bg-subtle text-text-primary text-[14px] font-medium hover:border-brand-primary hover:text-brand-primary transition-colors cursor-pointer"
+                                className="h-11 px-5 rounded-md border border-border-default bg-bg-subtle text-text-primary text-sm font-medium hover:border-brand-primary hover:text-brand-primary transition-colors cursor-pointer"
                             >
                                 Compare
                             </button>
