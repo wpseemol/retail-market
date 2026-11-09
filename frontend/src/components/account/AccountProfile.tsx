@@ -601,7 +601,7 @@ export default function AccountProfile({ initialUser }: AccountProfileProps) {
               </button>
               <Link
                 href="/"
-                className="h-11 inline-flex items-center rounded-md border border-border-default bg-white px-4 text-sm font-semibold text-text-primary shadow-[0_4px_12px_rgba(0,0,0,0.04)] transition-colors hover:border-brand-primary hover:text-brand-primary"
+                className="inline-flex h-11 items-center rounded-md border border-border-default bg-bg-surface px-4 text-sm font-semibold text-text-primary shadow-[0_4px_12px_rgba(0,0,0,0.04)] transition-colors hover:border-brand-primary hover:text-brand-primary"
               >
                 Back to shop
               </Link>

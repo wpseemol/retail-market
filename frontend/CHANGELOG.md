@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-09
 
+### Account “Back to shop” text invisible until hover
+
+- `AccountProfile.tsx`: secondary button used hardcoded `bg-white` while `text-text-primary` is light in dark mode (white on white). Switched to `bg-bg-surface` so the label stays readable unhovered.
+
 ### Fix account profile stuck on “reloading” after overnight login
 
 - Root cause: `/account` was a server page that called `auth()` again; after the access JWT expired (~1h), that refresh could hang with no timeout while the client sidebar (Redux) still rendered — profile name/image looked stuck loading; logout cleared the bad session.
