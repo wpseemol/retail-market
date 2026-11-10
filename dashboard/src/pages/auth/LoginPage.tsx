@@ -56,6 +56,9 @@ export function LoginPage() {
 
     const sessionNotice = useMemo(() => {
         const reason = searchParams.get("reason");
+        if (reason === "idle_timeout") {
+            return "You were signed out after 1 hour of inactivity (secure staff session). Sign in again to continue.";
+        }
         if (reason === "session_expired") {
             return "You were signed out because your session expired. Sign in again to pick up where you left off.";
         }

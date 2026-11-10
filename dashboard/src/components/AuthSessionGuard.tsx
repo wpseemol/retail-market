@@ -1,18 +1,33 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { ApiError, apiFetch } from "@/lib/api";
+import { ApiError, apiFetch, forceLogout } from "@/lib/api";
+import type { StaffRole } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 
 type AuthSessionGuardProps = {
   children: ReactNode;
 };
 
+/** Matches backend JWT_STAFF_REFRESH_EXPIRES_IN (~1h idle → re-login). */
+const ELEVATED_IDLE_MS = 60 * 60 * 1000;
+
+const ELEVATED_ROLES: readonly StaffRole[] = [
+  "super_admin",
+  "admin",
+  "moderator",
+];
+
+function isElevatedRole(role: StaffRole | undefined): boolean {
+  return role != null && ELEVATED_ROLES.includes(role);
+}
+
 /**
  * Soft session check for dashboard staff.
  * - Requires access + refresh tokens
  * - Quietly re-validates `/me` on mount (and debounced tab focus)
+ * - Elevated roles (super_admin / admin / moderator): logout after 1h idle
  * - Does NOT logout on network blips or tab switches
- * - True expiry is handled by apiFetch → forceLogout("session_expired")
+ * - Token expiry is handled by apiFetch → forceLogout("session_expired")
  */
 export function AuthSessionGuard({ children }: AuthSessionGuardProps) {
   const location = useLocation();
@@ -78,6 +93,46 @@ export function AuthSessionGuard({ children }: AuthSessionGuardProps) {
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [user?.id, setUser]);
+
+  // Elevated staff: 1h without pointer/keyboard/focus activity → secure logout.
+  useEffect(() => {
+    if (!isElevatedRole(user?.role)) return;
+
+    let lastActivity = Date.now();
+
+    function bumpActivity() {
+      lastActivity = Date.now();
+    }
+
+    const tick = window.setInterval(() => {
+      if (Date.now() - lastActivity >= ELEVATED_IDLE_MS) {
+        forceLogout("idle_timeout");
+      }
+    }, 30_000);
+
+    const opts: AddEventListenerOptions = { passive: true };
+    const events = [
+      "pointerdown",
+      "keydown",
+      "mousemove",
+      "scroll",
+      "touchstart",
+      "focus",
+    ] as const;
+
+    for (const event of events) {
+      window.addEventListener(event, bumpActivity, opts);
+    }
+    document.addEventListener("visibilitychange", bumpActivity);
+
+    return () => {
+      window.clearInterval(tick);
+      for (const event of events) {
+        window.removeEventListener(event, bumpActivity);
+      }
+      document.removeEventListener("visibilitychange", bumpActivity);
+    };
+  }, [user?.role]);
 
   if (!token || !refreshToken || !user) {
     return (

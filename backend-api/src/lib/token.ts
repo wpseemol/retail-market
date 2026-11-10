@@ -19,7 +19,13 @@ export type TokenTtls = {
   refreshExpiresIn: string;
 };
 
-/** Role-based JWT lifetimes — elevated staff get short refresh windows. */
+/**
+ * Role-based JWT lifetimes.
+ * - Elevated staff (super_admin / admin / moderator): short access + ~1h refresh
+ *   (idle past the refresh window → logout; secure dashboard).
+ * - Vendor: longer dashboard session.
+ * - Customer: long refresh (~1 year) for storefront “stay logged in”.
+ */
 export function tokenTtlsForRole(role: UserRole): TokenTtls {
   if (
     role === "super_admin" ||

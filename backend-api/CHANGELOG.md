@@ -3,6 +3,13 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-10
+
+### Elevated staff sessions: 1h refresh (secure dashboard)
+
+- `lib/env.ts`: default `JWT_STAFF_REFRESH_EXPIRES_IN` `2h` → `1h` for `super_admin` / `admin` / `moderator` (idle past ~1h without refresh → logout). Access stays `15m`.
+- Customers keep ~1 year refresh; vendors keep 7d. Documented in `.env.example`, `lib/token.ts`, and `API.md` role session table.
+
 ## 2026-11-09
 
 ### Fix default storefront nav hrefs (no more `/category/…` 404s)

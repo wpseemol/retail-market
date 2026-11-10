@@ -34,6 +34,14 @@ Content-Type: application/json
 **Elevated staff** (mutate catalog): `super_admin` \| `admin` \| `moderator`  
 **STAFF** (dashboard login): elevated + `vendor`
 
+### Session lifetimes (role-based JWTs)
+
+| Role | Access JWT | Refresh JWT | Notes |
+|------|------------|-------------|--------|
+| `customer` | `JWT_ACCESS_EXPIRES_IN` (default `1h`) | `JWT_REFRESH_EXPIRES_IN` (default `365d`) | Storefront stay logged in ~1 year |
+| `super_admin`, `admin`, `moderator` | `JWT_STAFF_ACCESS_EXPIRES_IN` (default `15m`) | `JWT_STAFF_REFRESH_EXPIRES_IN` (default `1h`) | Secure dashboard — idle past ~1h without refresh → logout |
+| `vendor` | `JWT_VENDOR_ACCESS_EXPIRES_IN` (default `1h`) | `JWT_VENDOR_REFRESH_EXPIRES_IN` (default `7d`) | Store owner dashboard |
+
 ### Common error shape
 
 ```json

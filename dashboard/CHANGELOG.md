@@ -3,6 +3,13 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-10
+
+### Elevated staff idle logout (1 hour)
+
+- `AuthSessionGuard.tsx`: `super_admin` / `admin` / `moderator` are signed out after 1h with no pointer/keyboard activity (`forceLogout("idle_timeout")`), matching the API’s 1h staff refresh window. Vendors are unchanged.
+- `LoginPage.tsx`: message for `?reason=idle_timeout`.
+
 ## 2026-11-09
 
 ### Nav editor hint for category URLs
