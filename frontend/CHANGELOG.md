@@ -3,6 +3,13 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-10
+
+### Extend customer login 1 year + stop account 503 on slow refresh
+
+- `auth.ts`: shared `SESSION_MAX_AGE_SEC` (1 year) on Auth.js `session`, `jwt`, and `cookies.sessionToken` so the browser cookie cannot expire earlier than the JWT.
+- `auth.ts`: login/refresh fetch timeout lowered from 12s → 5s so hung overnight refresh fails inside Vercel’s ~10s budget instead of returning **503** on `/account` (layout still calls `auth()`).
+
 ## 2026-11-09
 
 ### Tailwind canonical spacing classes (px → scale)

@@ -2,13 +2,17 @@ import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { appKeyRecord, SERVER_API_URL, type ApiUser, type AuthTokenResponse } from "@/lib/api";
 import { trustedClientHeaders } from "@/lib/clientIp";
+import { SESSION_MAX_AGE_SEC } from "@/lib/sessionCrypto";
 
 const BACKEND_URL = SERVER_API_URL;
 
 /** Access JWT lifetime buffer before refresh (backend default access ≈ 1h). */
 const ACCESS_TOKEN_TTL_MS = 55 * 60 * 1000;
-/** Cap hung refresh/login calls so RSC routes never spin forever. */
-const BACKEND_AUTH_TIMEOUT_MS = 12_000;
+/**
+ * Cap hung refresh/login calls under Vercel’s ~10s function budget.
+ * Layout calls auth() on every page; a 12s wait could 503 /account first.
+ */
+const BACKEND_AUTH_TIMEOUT_MS = 5_000;
 
 async function backendAuthFetch(url: string, init: RequestInit) {
   const controller = new AbortController();
@@ -143,7 +147,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
   session: {
     strategy: "jwt",
-    maxAge: 60 * 60 * 24 * 365,
+    /** Stay signed in ~1 year (matches backend JWT_REFRESH_EXPIRES_IN). */
+    maxAge: SESSION_MAX_AGE_SEC,
+  },
+  jwt: {
+    maxAge: SESSION_MAX_AGE_SEC,
+  },
+  cookies: {
+    sessionToken: {
+      // Name stays Auth.js default (`authjs.session-token` / `__Secure-…`).
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: SESSION_MAX_AGE_SEC,
+      },
+    },
   },
   pages: {
     signIn: "/login",
