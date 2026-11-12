@@ -3,6 +3,13 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-13
+
+### Local `.env.dev` for `pnpm dev`
+
+- Restored `.env.example` (was missing) with localhost URLs, `AUTH_SECRET`, optional app keys, `PROXY_IP_SECRET`, and `REVALIDATE_SECRET`.
+- Added gitignored `.env.dev` for local storefront against `backend-api` on `:8001` (shared revalidate / proxy secrets with the API).
+
 ## 2026-11-10
 
 ### Extend customer login 1 year + stop account 503 on slow refresh

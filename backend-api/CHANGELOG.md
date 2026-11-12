@@ -3,6 +3,12 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-13
+
+### Local `.env.dev` / `.env` for Docker MySQL + `pnpm dev`
+
+- Added gitignored `.env.dev` and matching `.env` (Prisma) pointed at `127.0.0.1:3306` / `retail_market` (root `docker-compose.db.yml`), `STORAGE_DRIVER=local`, empty API keys, shared `PROXY_IP_SECRET` / `REVALIDATE_SECRET` for the storefront.
+
 ## 2026-11-10
 
 ### Elevated staff sessions: 1h refresh (secure dashboard)
