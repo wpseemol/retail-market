@@ -33,6 +33,7 @@ import { ProductImportDialog } from "@/components/products/ProductImportDialog";
 import { saveBlob } from "@/components/products/productCsvDownload";
 import {
   CatalogViewToggle,
+  catalogItemClassName,
   catalogItemsClassName,
 } from "@/components/catalog/CatalogViewToggle";
 import { PageHeader } from "@/components/dashboard/page-shell";
@@ -54,7 +55,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { useCatalogViewMode } from "@/lib/catalogView";
+import { isCatalogListView, useCatalogViewMode } from "@/lib/catalogView";
 import { cn } from "@/lib/utils";
 
 function SelectBox({
@@ -485,28 +486,35 @@ export function ProductsPage() {
             <div className={catalogItemsClassName(viewMode)}>
               {products.map((product) => {
                 const isSelected = selected.has(product.id);
-                const isList = viewMode === "list";
+                const isList = isCatalogListView(viewMode);
+                const isWide = viewMode === "grid2";
+                const isCompact = viewMode === "grid4";
+                const placement =
+                  [
+                    product.vendor?.shop_name,
+                    product.category?.name,
+                    product.brand_name ?? product.brand?.name,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || "No placement yet";
                 return (
                   <div
                     key={product.id}
-                    className={cn(
-                      "group rounded-xl border bg-linear-to-br from-background to-muted/30 transition-shadow hover:shadow-md",
-                      isList
-                        ? "flex flex-wrap items-center gap-3 px-3 py-2.5 sm:flex-nowrap"
-                        : "flex flex-col gap-3 p-4",
+                    className={catalogItemClassName(
+                      viewMode,
                       isSelected
                         ? "border-brand-primary/50 ring-1 ring-brand-primary/30"
-                        : "border-border",
+                        : undefined,
                     )}
                   >
                     <div
                       className={cn(
-                        "flex min-w-0 flex-1 items-start gap-3",
-                        isList && "items-center",
+                        "flex min-w-0 flex-1 gap-3",
+                        isList || isWide ? "items-center" : "items-start",
                       )}
                     >
                       {canSelect ? (
-                        <div className={cn(!isList && "pt-0.5")}>
+                        <div className={cn(!isList && !isWide && "pt-0.5")}>
                           <SelectBox
                             checked={isSelected}
                             onChange={(checked) => toggle(product.id, checked)}
@@ -517,7 +525,13 @@ export function ProductsPage() {
                       <div
                         className={cn(
                           "flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-brand-primary/15 bg-linear-to-br from-brand-tint to-background text-brand-deep",
-                          isList ? "size-11" : "size-14",
+                          isList
+                            ? "size-12"
+                            : isWide
+                              ? "size-20"
+                              : isCompact
+                                ? "size-12"
+                                : "size-14",
                         )}
                       >
                         {product.thumbnail?.path ? (
@@ -533,7 +547,12 @@ export function ProductsPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="truncate font-semibold tracking-tight">
+                            <p
+                              className={cn(
+                                "truncate font-semibold tracking-tight",
+                                isWide && "text-base",
+                              )}
+                            >
                               {product.name}
                             </p>
                             <p className="truncate text-xs text-muted-foreground">
@@ -549,27 +568,18 @@ export function ProductsPage() {
                             </Badge>
                           ) : null}
                         </div>
-                        {!isList ? (
-                          <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">
-                            {[
-                              product.vendor?.shop_name,
-                              product.category?.name,
-                              product.brand_name ?? product.brand?.name,
-                            ]
-                              .filter(Boolean)
-                              .join(" · ") || "No placement yet"}
-                          </p>
-                        ) : (
-                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                            {[
-                              product.vendor?.shop_name,
-                              product.category?.name,
-                              product.brand_name ?? product.brand?.name,
-                            ]
-                              .filter(Boolean)
-                              .join(" · ") || "No placement yet"}
-                          </p>
-                        )}
+                        <p
+                          className={cn(
+                            "text-xs text-muted-foreground",
+                            isList
+                              ? "mt-0.5 truncate"
+                              : isWide
+                                ? "mt-1.5 line-clamp-3"
+                                : "mt-1.5 line-clamp-2",
+                          )}
+                        >
+                          {placement}
+                        </p>
                       </div>
                     </div>
 
@@ -577,7 +587,7 @@ export function ProductsPage() {
                       className={cn(
                         "flex items-center gap-2",
                         isList
-                          ? "w-full shrink-0 justify-between sm:w-auto sm:justify-end sm:gap-3"
+                          ? "flex-wrap justify-between sm:justify-end sm:gap-3"
                           : "justify-between border-t border-border/70 pt-3",
                       )}
                     >
@@ -591,8 +601,8 @@ export function ProductsPage() {
                           </Badge>
                         ) : null}
                         <span className="capitalize">{product.type}</span>
-                        <span className="tabular-nums">
-                          {product.price.toLocaleString()}
+                        <span className="tabular-nums font-medium text-foreground">
+                          ৳{product.price.toLocaleString()}
                         </span>
                         <span className="tabular-nums">
                           stock {product.stock_qty}

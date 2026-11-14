@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  CATALOG_VIEW_DEFAULT,
   parseCatalogViewMode,
   type CatalogViewMode,
 } from "@/lib/validators/catalogView";
@@ -12,7 +13,7 @@ function storageKey(page: string) {
 
 export function readCatalogViewMode(
   page: "products" | "categories" | "brands",
-  fallback: CatalogViewMode = "grid",
+  fallback: CatalogViewMode = CATALOG_VIEW_DEFAULT,
 ): CatalogViewMode {
   if (typeof window === "undefined") return fallback;
   try {
@@ -36,10 +37,10 @@ export function writeCatalogViewMode(
   }
 }
 
-/** Persist grid/list preference per catalog page. */
+/** Persist grid4|grid3|grid2|list preference per catalog page. */
 export function useCatalogViewMode(
   page: "products" | "categories" | "brands",
-  fallback: CatalogViewMode = "grid",
+  fallback: CatalogViewMode = CATALOG_VIEW_DEFAULT,
 ) {
   const [viewMode, setViewModeState] = useState<CatalogViewMode>(fallback);
 
@@ -56,3 +57,8 @@ export function useCatalogViewMode(
 }
 
 export type { CatalogViewMode };
+export {
+  CATALOG_VIEW_DEFAULT,
+  isCatalogGridView,
+  isCatalogListView,
+} from "@/lib/validators/catalogView";

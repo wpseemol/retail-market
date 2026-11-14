@@ -24,6 +24,7 @@ import { CATEGORY_ICONS } from "@/lib/categoryIcons";
 import { useAuthStore } from "@/store/auth";
 import {
   CatalogViewToggle,
+  catalogItemClassName,
   catalogItemsClassName,
 } from "@/components/catalog/CatalogViewToggle";
 import { CategoryIconBadge } from "@/components/categories/CategoryIconPicker";
@@ -47,7 +48,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { useCatalogViewMode } from "@/lib/catalogView";
+import { isCatalogListView, useCatalogViewMode } from "@/lib/catalogView";
 import { cn } from "@/lib/utils";
 
 const MANAGE_ROLES = ["super_admin", "admin", "moderator"] as const;
@@ -331,33 +332,37 @@ export function CategoriesPage() {
           ) : (
             <div className={catalogItemsClassName(viewMode)}>
               {categories.map((cat) => {
-                const isList = viewMode === "list";
+                const isList = isCatalogListView(viewMode);
+                const isWide = viewMode === "grid2";
+                const statusClass = cat.is_active
+                  ? "border-brand-primary/30 bg-brand-tint/50 text-brand-deep capitalize"
+                  : "capitalize";
                 return (
                   <div
                     key={cat.id}
-                    className={cn(
-                      "group relative rounded-xl border border-border/80 bg-linear-to-br from-background to-muted/30 shadow-sm transition-shadow hover:border-brand-primary/30 hover:shadow-md",
-                      isList
-                        ? "flex flex-wrap items-center gap-3 px-3 py-2.5 sm:flex-nowrap"
-                        : "flex flex-col gap-3 p-4",
-                    )}
+                    className={catalogItemClassName(viewMode)}
                   >
                     <div
                       className={cn(
                         "flex min-w-0 flex-1 gap-3",
-                        isList ? "items-center" : "items-start",
+                        isList || isWide ? "items-center" : "items-start",
                       )}
                     >
                       <CategoryIconBadge
                         icon={cat.icon}
                         imageUrl={cat.image?.path}
                         name={cat.name}
-                        size={isList ? "sm" : "md"}
+                        size={isList ? "sm" : isWide ? "lg" : "md"}
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="truncate font-semibold tracking-tight">
+                            <p
+                              className={cn(
+                                "truncate font-semibold tracking-tight",
+                                isWide && "text-base",
+                              )}
+                            >
                               {cat.name}
                             </p>
                             <p className="truncate text-xs text-muted-foreground">
@@ -365,20 +370,18 @@ export function CategoriesPage() {
                             </p>
                           </div>
                           {!isList ? (
-                            <Badge
-                              variant="outline"
-                              className={
-                                cat.is_active
-                                  ? "border-brand-primary/30 bg-brand-tint/50 text-brand-deep capitalize"
-                                  : "capitalize"
-                              }
-                            >
+                            <Badge variant="outline" className={statusClass}>
                               {cat.is_active ? "active" : "inactive"}
                             </Badge>
                           ) : null}
                         </div>
                         {cat.description && !isList ? (
-                          <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">
+                          <p
+                            className={cn(
+                              "mt-1.5 text-xs text-muted-foreground",
+                              isWide ? "line-clamp-3" : "line-clamp-2",
+                            )}
+                          >
                             {cat.description}
                           </p>
                         ) : null}
@@ -389,19 +392,12 @@ export function CategoriesPage() {
                       className={cn(
                         "flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground",
                         isList
-                          ? "w-full shrink-0 justify-between sm:w-auto sm:justify-end"
+                          ? "justify-between sm:justify-end"
                           : "border-t border-border/70 pt-3",
                       )}
                     >
                       {isList ? (
-                        <Badge
-                          variant="outline"
-                          className={
-                            cat.is_active
-                              ? "border-brand-primary/30 bg-brand-tint/50 text-brand-deep capitalize"
-                              : "capitalize"
-                          }
-                        >
+                        <Badge variant="outline" className={statusClass}>
                           {cat.is_active ? "active" : "inactive"}
                         </Badge>
                       ) : null}
@@ -424,7 +420,7 @@ export function CategoriesPage() {
                           <span className="truncate">{cat.icon}</span>
                         </>
                       ) : null}
-                      <div className={cn(isList ? "" : "ml-auto")}>
+                      <div className={cn(!isList && "ml-auto")}>
                         {canManage ? (
                           <Button
                             asChild

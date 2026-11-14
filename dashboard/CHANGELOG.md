@@ -7,9 +7,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ### Catalog list / grid view (products, categories, brands)
 
-- Shared `CatalogViewToggle` + `useCatalogViewMode` (persists `grid`|`list` in localStorage per page).
-- `ProductsPage`, `CategoriesPage`, `BrandsPage`: status filters keep working; toggle switches card grid vs compact list rows.
-- Zod mode in `lib/validators/catalogView.ts` (re-exported from product/category/brand validators).
+- View modes: `grid4` / `grid3` / `grid2` / `list` (storefront-style density icons); legacy `grid` maps to `grid3`.
+- Shared `CatalogViewToggle` + `useCatalogViewMode` (localStorage per page) + `catalogItemClassName` for consistent cards/rows.
+- `ProductsPage`, `CategoriesPage`, `BrandsPage`: wider 2-col cards, denser 4-col, proper list rows with status + actions.
+- Zod in `lib/validators/catalogView.ts` (re-exported from product/category/brand validators).
 
 ### Page change motion ≠ login FadeUp
 

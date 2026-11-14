@@ -3,12 +3,13 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Layers, Package, Palette, Pencil, Plus, Search, Store, Tag } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
 import type { Brand } from "@/lib/brands";
-import { useCatalogViewMode } from "@/lib/catalogView";
+import { isCatalogListView, useCatalogViewMode } from "@/lib/catalogView";
 import { BRAND_OWNER_ROLES } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
 import {
   CatalogViewToggle,
+  catalogItemClassName,
   catalogItemsClassName,
 } from "@/components/catalog/CatalogViewToggle";
 import { Badge } from "@/components/ui/badge";
@@ -262,27 +263,33 @@ export function BrandsPage() {
           ) : (
             <div className={catalogItemsClassName(viewMode)}>
               {brands.map((brand) => {
-                const isList = viewMode === "list";
+                const isList = isCatalogListView(viewMode);
+                const isWide = viewMode === "grid2";
+                const isCompact = viewMode === "grid4";
+                const statusClass = brand.is_active
+                  ? "border-brand-primary/30 bg-brand-tint/50 text-brand-deep capitalize"
+                  : "capitalize";
                 return (
                   <div
                     key={brand.id}
-                    className={cn(
-                      "group rounded-xl border border-border bg-linear-to-br from-background to-muted/30 transition-shadow hover:shadow-md",
-                      isList
-                        ? "flex flex-wrap items-center gap-3 px-3 py-2.5 sm:flex-nowrap"
-                        : "flex flex-col gap-3 p-4",
-                    )}
+                    className={catalogItemClassName(viewMode)}
                   >
                     <div
                       className={cn(
                         "flex min-w-0 flex-1 gap-3",
-                        isList ? "items-center" : "items-start",
+                        isList || isWide ? "items-center" : "items-start",
                       )}
                     >
                       <div
                         className={cn(
                           "flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-brand-primary/15 bg-linear-to-br from-brand-tint to-background font-semibold text-brand-deep",
-                          isList ? "size-11 text-base" : "size-12 text-lg",
+                          isList
+                            ? "size-12 text-base"
+                            : isWide
+                              ? "size-16 text-xl"
+                              : isCompact
+                                ? "size-11 text-sm"
+                                : "size-12 text-lg",
                         )}
                       >
                         {brand.image?.path ? (
@@ -298,7 +305,12 @@ export function BrandsPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="truncate font-semibold tracking-tight">
+                            <p
+                              className={cn(
+                                "truncate font-semibold tracking-tight",
+                                isWide && "text-base",
+                              )}
+                            >
                               {brand.name}
                             </p>
                             <p className="truncate text-xs text-muted-foreground">
@@ -306,20 +318,18 @@ export function BrandsPage() {
                             </p>
                           </div>
                           {!isList ? (
-                            <Badge
-                              variant="outline"
-                              className={
-                                brand.is_active
-                                  ? "border-brand-primary/30 bg-brand-tint/50 text-brand-deep capitalize"
-                                  : "capitalize"
-                              }
-                            >
+                            <Badge variant="outline" className={statusClass}>
                               {brand.is_active ? "active" : "inactive"}
                             </Badge>
                           ) : null}
                         </div>
                         {brand.description && !isList ? (
-                          <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">
+                          <p
+                            className={cn(
+                              "mt-1.5 text-xs text-muted-foreground",
+                              isWide ? "line-clamp-3" : "line-clamp-2",
+                            )}
+                          >
                             {brand.description}
                           </p>
                         ) : null}
@@ -330,19 +340,12 @@ export function BrandsPage() {
                       className={cn(
                         "flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground",
                         isList
-                          ? "w-full shrink-0 justify-between sm:w-auto sm:justify-end"
+                          ? "justify-between sm:justify-end"
                           : "border-t border-border/70 pt-3",
                       )}
                     >
                       {isList ? (
-                        <Badge
-                          variant="outline"
-                          className={
-                            brand.is_active
-                              ? "border-brand-primary/30 bg-brand-tint/50 text-brand-deep capitalize"
-                              : "capitalize"
-                          }
-                        >
+                        <Badge variant="outline" className={statusClass}>
                           {brand.is_active ? "active" : "inactive"}
                         </Badge>
                       ) : null}
@@ -371,7 +374,7 @@ export function BrandsPage() {
                       <div
                         className={cn(
                           "flex items-center gap-1",
-                          isList ? "" : "ml-auto",
+                          !isList && "ml-auto",
                         )}
                       >
                         {canCustomize ? (
