@@ -1,13 +1,23 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useToastMessages } from "@/hooks/use-toast-messages";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Upload, UserRound } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
+import {
+  Copy,
+  Eye,
+  EyeOff,
+  Loader2,
+  ShieldCheck,
+  Upload,
+  UserRound,
+} from "lucide-react";
 import { ApiError, apiFetch, apiUpload, type StaffUser } from "@/lib/api";
 import { imageUploadHint } from "@/lib/imagePresets";
 import { ImageSizeBadge } from "@/components/dashboard/image-size-badge";
 import { useAuthStore } from "@/store/auth";
 import { useEditSave } from "@/hooks/use-edit-save";
+import { useConfirm } from "@/components/providers/ConfirmProvider";
 import {
   passwordFormSchema,
   profileFormSchema,
@@ -15,6 +25,12 @@ import {
   type PasswordFormValues,
   type ProfileFormValues,
 } from "@/lib/validators/profile";
+import {
+  disableTwoFactorSchema,
+  totpCodeSchema,
+  type DisableTwoFactorValues,
+  type TotpCodeValues,
+} from "@/lib/validators/twoFactor";
 import {
   AVATAR_PRESET_IDS,
   AvatarPresetSvg,
@@ -52,6 +68,8 @@ function toStaffUser(raw: Record<string, unknown>): StaffUser {
     avatar_id: (raw.avatar_id as string | null | undefined) ?? null,
     avatar_preset: (raw.avatar_preset as string | null | undefined) ?? null,
     avatar: raw.avatar as StaffUser["avatar"],
+    two_factor_enabled: Boolean(raw.two_factor_enabled),
+    two_factor_required: Boolean(raw.two_factor_required),
   };
 }
 

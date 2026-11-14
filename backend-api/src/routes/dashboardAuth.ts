@@ -5,6 +5,7 @@ import type { UserRole } from "@prisma/client";
 import { uploadAvatar } from "../controllers/customerAuthController.js";
 import { AVATAR_MAX_BYTES } from "../lib/avatarImage.js";
 import { isAvatarPresetId } from "../lib/avatarPresets.js";
+import { env } from "../lib/env.js";
 import { prisma } from "../lib/prisma.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
 import {
@@ -373,7 +374,7 @@ dashboardAuthRouter.post(
       secret,
       otpauth_url,
       setupToken,
-      issuer: (await import("../lib/env.js")).env.appName,
+      issuer: env.appName,
       account: accountName,
     });
   }),

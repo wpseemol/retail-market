@@ -17,6 +17,10 @@ export type StaffUser = {
   avatar_id?: string | null;
   avatar_preset?: string | null;
   avatar?: { id: string; path: string } | null;
+  /** Authenticator 2FA confirmed. */
+  two_factor_enabled?: boolean;
+  /** Policy requires 2FA for this role (super_admin / admin). */
+  two_factor_required?: boolean;
 };
 
 export type {
