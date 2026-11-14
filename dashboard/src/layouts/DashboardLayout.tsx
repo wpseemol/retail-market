@@ -4,13 +4,25 @@ import { SiteHeader } from "@/components/dashboard/site-header";
 import { MotionProvider, m, useMotionSafe } from "@/components/motion";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
+/**
+ * Nested settings tabs (Identity → Header → …) share one chrome.
+ * Keying the full pathname remounts the whole page and causes a jump —
+ * keep `/settings/*` under a stable transition key.
+ */
+function routeTransitionKey(pathname: string) {
+  if (pathname === "/settings" || pathname.startsWith("/settings/")) {
+    return "/settings";
+  }
+  return pathname;
+}
+
 /** Route enter: `pageEnter` (fade + slight x). Login keeps `FadeUp` rise separately. */
 function PageTransition() {
   const { pathname } = useLocation();
   const { pageEnter } = useMotionSafe();
   return (
     <m.div
-      key={pathname}
+      key={routeTransitionKey(pathname)}
       initial="hidden"
       animate="show"
       variants={pageEnter}

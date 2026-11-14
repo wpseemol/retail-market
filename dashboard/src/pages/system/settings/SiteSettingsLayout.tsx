@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useToastMessages } from "@/hooks/use-toast-messages";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,7 +10,7 @@ import {
     type SiteSettingsFormValues,
 } from "@/lib/validators/siteSettings";
 import { useAuthStore } from "@/store/auth";
-import { FadeIn } from "@/components/motion";
+import { FadeIn, m, useMotionSafe } from "@/components/motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -22,14 +22,40 @@ import {
     type SiteSettingsSnapshot,
 } from "./settingsContext";
 
+function SettingsPanelSkeleton() {
+    return (
+        <div
+            className="space-y-5"
+            aria-busy="true"
+            aria-live="polite"
+            aria-label="Loading settings section"
+        >
+            <div className="h-10 w-2/3 max-w-md animate-pulse rounded-xl bg-muted/70" />
+            <div className="h-4 w-full max-w-lg animate-pulse rounded-md bg-muted/50" />
+            {[1, 2, 3].map((n) => (
+                <div
+                    key={n}
+                    className="h-40 animate-pulse rounded-2xl border border-border/40 bg-muted/55"
+                    style={{ animationDelay: `${n * 60}ms` }}
+                />
+            ))}
+        </div>
+    );
+}
+
 export function SiteSettingsLayout() {
     const { token } = useAuthStore();
     const { pathname } = useLocation();
+    const { fadeIn, reduce } = useMotionSafe();
+    const panelRef = useRef<HTMLDivElement>(null);
 
     const [settings, setSettings] = useState<SiteSettingsSnapshot | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    /** Brief panel swap animation when Identity → Header (etc.) so height does not jump. */
+    const [panelPending, setPanelPending] = useState(false);
+    const [panelPath, setPanelPath] = useState(pathname);
     useToastMessages(success, error);
 
     const form = useForm<SiteSettingsFormValues>({
@@ -63,6 +89,30 @@ export function SiteSettingsLayout() {
         setError(null);
         setSuccess(null);
     }, [pathname]);
+
+    useEffect(() => {
+        if (pathname === panelPath) return;
+
+        setPanelPending(true);
+
+        const scrollRoot =
+            panelRef.current?.closest("[data-slot='sidebar-inset']") ??
+            panelRef.current?.closest("main") ??
+            null;
+        if (scrollRoot instanceof HTMLElement) {
+            scrollRoot.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+        } else if (typeof window !== "undefined") {
+            window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+        }
+
+        const delay = reduce ? 0 : 160;
+        const timer = window.setTimeout(() => {
+            setPanelPath(pathname);
+            setPanelPending(false);
+        }, delay);
+
+        return () => window.clearTimeout(timer);
+    }, [pathname, panelPath, reduce]);
 
     const showError = useCallback((m: string) => {
         setError(m);
@@ -191,20 +241,23 @@ export function SiteSettingsLayout() {
                     </nav>
                 </aside>
 
-                <div className="min-w-0 flex-1">
-                    {context ? (
-                        <FadeIn key={pathname}>
-                            <Outlet context={context} />
-                        </FadeIn>
+                <div
+                    ref={panelRef}
+                    className="min-h-[min(70vh,640px)] min-w-0 flex-1"
+                >
+                    {!context ? (
+                        <SettingsPanelSkeleton />
+                    ) : panelPending ? (
+                        <SettingsPanelSkeleton />
                     ) : (
-                        <div className="space-y-5">
-                            {[1, 2, 3].map((n) => (
-                                <div
-                                    key={n}
-                                    className="h-48 animate-pulse rounded-2xl bg-muted/60"
-                                />
-                            ))}
-                        </div>
+                        <m.div
+                            key={panelPath}
+                            initial="hidden"
+                            animate="show"
+                            variants={fadeIn}
+                        >
+                            <Outlet context={context} />
+                        </m.div>
                     )}
                 </div>
             </div>

@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-14
 
+### Settings tab switch — no page jump
+
+- `DashboardLayout`: `/settings/*` shares one `pageEnter` key so Identity → Header does not remount the whole shell.
+- `SiteSettingsLayout`: tab changes show a short pulse skeleton, keep `min-h` on the panel, soft `FadeIn`, and scroll the inset to top smoothly.
+
 ### Catalog pagination (products, categories, brands)
 
 - Shared `CatalogPagination` (page window, prev/next, 12/24/48 per page) — same pattern as Orders.
