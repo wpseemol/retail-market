@@ -10,7 +10,7 @@ import {
     type SiteSettingsFormValues,
 } from "@/lib/validators/siteSettings";
 import { useAuthStore } from "@/store/auth";
-import { FadeUp } from "@/components/motion";
+import { FadeIn } from "@/components/motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -103,7 +103,7 @@ export function SiteSettingsLayout() {
 
     return (
         <div className="flex w-full flex-col gap-6 pb-4">
-            <FadeUp>
+            <FadeIn>
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border/60 pb-4">
                     <div>
                         <h1 className="text-2xl font-semibold tracking-tight">Site settings</h1>
@@ -119,7 +119,7 @@ export function SiteSettingsLayout() {
                         Super admin
                     </Badge>
                 </div>
-            </FadeUp>
+            </FadeIn>
 
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
                 <aside className="w-full shrink-0 lg:sticky lg:top-20 lg:w-56 xl:w-64">
@@ -193,9 +193,9 @@ export function SiteSettingsLayout() {
 
                 <div className="min-w-0 flex-1">
                     {context ? (
-                        <FadeUp key={pathname}>
+                        <FadeIn key={pathname}>
                             <Outlet context={context} />
-                        </FadeUp>
+                        </FadeIn>
                     ) : (
                         <div className="space-y-5">
                             {[1, 2, 3].map((n) => (

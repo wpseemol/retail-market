@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { FadeUp } from "@/components/motion";
+import { FadeIn } from "@/components/motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +22,7 @@ export function SettingsSection({
     const [open, setOpen] = useState(defaultOpen);
 
     return (
-        <FadeUp>
+        <FadeIn>
             <section className="overflow-clip rounded-2xl border border-border/80 bg-card shadow-sm">
                 <div
                     className={cn(
@@ -73,7 +73,7 @@ export function SettingsSection({
                     <div className="space-y-4 p-5">{children}</div>
                 )}
             </section>
-        </FadeUp>
+        </FadeIn>
     );
 }
 

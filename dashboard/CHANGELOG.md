@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-14
 
+### Page change motion ≠ login FadeUp
+
+- `lib/motion.ts` `pageEnter`: short fade + slight horizontal slide (route nav only), not the login upward rise.
+- `page-shell` + settings chrome use `FadeIn` so nested sections do not re-run login-style `FadeUp` on every navigate; `LoginPage` still uses `FadeUp`.
+
 ### Staff authenticator 2FA (TOTP)
 
 - `LoginPage.tsx`: after password, setup wizard (QR + manual key + confirm) or 6-digit / recovery challenge; shows one-time recovery codes after enroll-from-login.

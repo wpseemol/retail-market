@@ -54,18 +54,21 @@ export const staggerItem: Variants = {
   },
 };
 
-/** Route change: quick fade + small rise so navigation feels connected, never slow. */
+/**
+ * Route change only (DashboardLayout). Soft fade + slight horizontal slide —
+ * not the login `fadeUp` rise. Keep login on FadeUp; keep this snappy.
+ */
 export const pageEnter: Variants = {
-  hidden: { opacity: 0, y: 10 },
+  hidden: { opacity: 0, x: 10 },
   show: {
     opacity: 1,
-    y: 0,
-    transition: { duration: 0.3, ease: MOTION_EASE },
+    x: 0,
+    transition: { duration: 0.2, ease: MOTION_EASE },
   },
 };
 
 /** Instant variants when the user prefers reduced motion. */
 export const reducedVariants: Variants = {
-  hidden: { opacity: 1, y: 0 },
-  show: { opacity: 1, y: 0 },
+  hidden: { opacity: 1, y: 0, x: 0 },
+  show: { opacity: 1, y: 0, x: 0 },
 };

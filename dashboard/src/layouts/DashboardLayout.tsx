@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/dashboard/site-header";
 import { MotionProvider, m, useMotionSafe } from "@/components/motion";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
+/** Route enter: `pageEnter` (fade + slight x). Login keeps `FadeUp` rise separately. */
 function PageTransition() {
   const { pathname } = useLocation();
   const { pageEnter } = useMotionSafe();

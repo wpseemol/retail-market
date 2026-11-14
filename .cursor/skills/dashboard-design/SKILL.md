@@ -49,4 +49,7 @@ Keep the green `#14361c` `PageHero` for create/edit flows (products, stores, use
 
 ## Motion
 
-Still use `FadeUp` / `Stagger` from `components/motion.tsx` and `useMotionSafe`. No layout animations on large tables.
+- **Login only:** `FadeUp` (opacity + rise).
+- **Route changes:** `pageEnter` in `DashboardLayout` (opacity + slight horizontal slide) — not the login rise.
+- **Page chrome** (`PageHeader` / `PageHero` / settings cards): prefer `FadeIn`.
+- `Stagger` for small lists; no layout animations on large tables. Use `useMotionSafe`.
