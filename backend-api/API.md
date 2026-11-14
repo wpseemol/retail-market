@@ -861,7 +861,13 @@ Dashboard review object: public fields plus `status`, `author_name` (full), `aut
 
 `identifier` may be email, phone, or username. Legacy keys `email` / `phone` / `username` also accepted.
 
-**Response:** `{ message, accessToken, refreshToken, token, sessionId, home, user }`
+**Success (no 2FA):** `{ message, accessToken, refreshToken, token, sessionId, home, user }`
+
+**Authenticator required (enabled):** `200` with `{ code: "TWO_FACTOR_REQUIRED", challengeToken, user: { id, email, first_name, role }, message }` — no session yet. Complete with `POST /login/2fa`.
+
+**Setup required (`super_admin` / `admin` without confirmed 2FA):** `200` with `{ code: "TWO_FACTOR_SETUP_REQUIRED", setupToken, user: { id, email, first_name, role }, message }` — call `/2fa/setup` then `/2fa/confirm` (tokens issued on confirm).
+
+**Policy:** `super_admin` and `admin` must enroll before full access. `moderator` / `vendor` may enable from Profile; once `two_factor_confirmed_at` is set, login always challenges. Customers / storefront unchanged. Public user JSON includes `two_factor_enabled` and `two_factor_required` (never the secret).
 
 **429:** same login and refresh limits as the storefront (`LOGIN_IP_RATE_LIMITED`, `LOGIN_ACCOUNT_RATE_LIMITED`, `REFRESH_RATE_LIMITED`). The account key is `identifier`.
 
@@ -871,6 +877,28 @@ Dashboard review object: public fields plus `status`, `author_name` (full), `aut
 | `admin` | `/admin` |
 | `moderator` | `/moderator` |
 | `vendor` | `/vendor` |
+
+### `POST /api/dashboard/auth/login/2fa`
+
+```json
+{ "challengeToken": "...", "code": "123456" }
+```
+
+Or recovery: `{ "challengeToken": "...", "code": "XXXX-XXXX-XXXX", "recovery": true }`.
+
+Rate-limited like login. On success returns the same session payload as password login (`accessToken`, `refreshToken`, `sessionId`, `home`, `user`). Codes: `TWO_FACTOR_CHALLENGE_EXPIRED`, `TWO_FACTOR_INVALID`, `TWO_FACTOR_NOT_ENABLED`.
+
+### Staff authenticator (TOTP) — `/api/dashboard/auth/2fa/*`
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `POST` | `/2fa/setup` | Bearer staff **or** `setupToken` in body | Begin enroll — `{ secret, otpauth_url, setupToken, issuer, account }` (pending secret lives in the new `setupToken`, not the DB) |
+| `POST` | `/2fa/confirm` | `setupToken` + `code` (Bearer optional) | Verify TOTP → encrypt secret, store hashed recovery codes, set `two_factor_confirmed_at`. Returns `{ recovery_codes }` once; from login setup also returns tokens |
+| `GET` | `/2fa/status` | Bearer staff | `{ required, enabled, confirmed_at }` |
+| `POST` | `/2fa/disable` | Bearer + `{ password, code, recovery? }` | Clears 2FA. **403** `TWO_FACTOR_REQUIRED_ROLE` for `super_admin` / `admin` |
+| `POST` | `/2fa/recovery-codes` | Bearer + `{ code }` (TOTP) | Regenerates 8 single-use codes; returns `{ recovery_codes }` once |
+
+Secrets and recovery hashes are encrypted with `SETTINGS_ENCRYPTION_KEY` (`lib/secretBox.ts` + `lib/totp.ts`). Setup/challenge JWTs are short-lived (`~10m` / `~5m`) with a `purpose` claim.
 
 ### `POST /api/dashboard/auth/refresh`
 

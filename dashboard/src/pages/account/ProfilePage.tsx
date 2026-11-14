@@ -646,6 +646,440 @@ function PasswordSection() {
   );
 }
 
+function SecuritySection({
+  user,
+  onUserUpdate,
+}: {
+  user: StaffUser;
+  onUserUpdate: (u: StaffUser) => void;
+}) {
+  const { token } = useAuthStore();
+  const confirm = useConfirm();
+  const [status, setStatus] = useState<{
+    required: boolean;
+    enabled: boolean;
+    confirmed_at: string | null;
+  } | null>(null);
+  const [phase, setPhase] = useState<"idle" | "setup" | "disable" | "regen">(
+    "idle",
+  );
+  const [setup, setSetup] = useState<{
+    secret: string;
+    otpauth_url: string;
+    setupToken: string;
+  } | null>(null);
+  const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  useToastMessages(success, error);
+
+  const enableForm = useForm<TotpCodeValues>({
+    resolver: zodResolver(totpCodeSchema),
+    defaultValues: { code: "" },
+  });
+  const regenForm = useForm<TotpCodeValues>({
+    resolver: zodResolver(totpCodeSchema),
+    defaultValues: { code: "" },
+  });
+  const disableForm = useForm<DisableTwoFactorValues>({
+    resolver: zodResolver(disableTwoFactorSchema),
+    defaultValues: { password: "", code: "", recovery: false },
+  });
+
+  const required = status?.required ?? user.two_factor_required ?? false;
+  const enabled = status?.enabled ?? user.two_factor_enabled ?? false;
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const data = await apiFetch<{
+          required: boolean;
+          enabled: boolean;
+          confirmed_at: string | null;
+        }>("/api/dashboard/auth/2fa/status", { token });
+        if (!cancelled) setStatus(data);
+      } catch {
+        /* keep user flags */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  async function startSetup() {
+    if (!token) return;
+    setError(null);
+    setSuccess(null);
+    setLoading(true);
+    try {
+      const data = await apiFetch<{
+        secret: string;
+        otpauth_url: string;
+        setupToken: string;
+      }>("/api/dashboard/auth/2fa/setup", { token, body: {} });
+      setSetup(data);
+      setPhase("setup");
+      enableForm.reset({ code: "" });
+      setRecoveryCodes(null);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not start setup");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function confirmSetup(values: TotpCodeValues) {
+    if (!token || !setup) return;
+    setError(null);
+    try {
+      const data = await apiFetch<{
+        recovery_codes: string[];
+        user: Record<string, unknown>;
+      }>("/api/dashboard/auth/2fa/confirm", {
+        token,
+        body: { setupToken: setup.setupToken, code: values.code.trim() },
+      });
+      onUserUpdate(toStaffUser(data.user));
+      setStatus({
+        required,
+        enabled: true,
+        confirmed_at: new Date().toISOString(),
+      });
+      setRecoveryCodes(data.recovery_codes);
+      setSetup(null);
+      setPhase("idle");
+      setSuccess("Authenticator enabled");
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Could not confirm authenticator",
+      );
+    }
+  }
+
+  async function regenerate(values: TotpCodeValues) {
+    if (!token) return;
+    setError(null);
+    try {
+      const data = await apiFetch<{ recovery_codes: string[] }>(
+        "/api/dashboard/auth/2fa/recovery-codes",
+        { token, body: { code: values.code.trim() } },
+      );
+      setRecoveryCodes(data.recovery_codes);
+      setPhase("idle");
+      regenForm.reset({ code: "" });
+      setSuccess("New recovery codes generated");
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Could not regenerate codes",
+      );
+    }
+  }
+
+  async function disable(values: DisableTwoFactorValues) {
+    if (!token) return;
+    const ok = await confirm({
+      title: "Disable authenticator?",
+      description:
+        "You will no longer need a code at sign-in. This cannot be undone without setting 2FA up again.",
+      confirmLabel: "Disable authenticator",
+    });
+    if (!ok) return;
+
+    setError(null);
+    try {
+      const data = await apiFetch<{ user: Record<string, unknown> }>(
+        "/api/dashboard/auth/2fa/disable",
+        {
+          token,
+          body: {
+            password: values.password,
+            code: values.code.trim(),
+            recovery: values.recovery || undefined,
+          },
+        },
+      );
+      onUserUpdate(toStaffUser(data.user));
+      setStatus({ required: false, enabled: false, confirmed_at: null });
+      setPhase("idle");
+      disableForm.reset({ password: "", code: "", recovery: false });
+      setRecoveryCodes(null);
+      setSuccess("Authenticator disabled");
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Could not disable authenticator",
+      );
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant={enabled ? "default" : "secondary"}>
+          {enabled ? "Enabled" : "Off"}
+        </Badge>
+        {required ? (
+          <Badge variant="outline">Required for your role</Badge>
+        ) : (
+          <Badge variant="outline">Optional</Badge>
+        )}
+        {status?.confirmed_at ? (
+          <span className="text-xs text-muted-foreground">
+            Confirmed {new Date(status.confirmed_at).toLocaleString()}
+          </span>
+        ) : null}
+      </div>
+
+      <p className="text-sm text-muted-foreground">
+        Use Google Authenticator, Authy, or any TOTP app.{" "}
+        {required
+          ? "Your role must keep authenticator 2FA on — it cannot be disabled."
+          : "Once enabled, every sign-in will ask for a code."}
+      </p>
+
+      {recoveryCodes ? (
+        <div className="space-y-2 rounded-xl border border-border bg-muted/40 p-4">
+          <p className="text-sm font-medium">Recovery codes (shown once)</p>
+          <ul className="grid gap-1.5 font-mono text-xs sm:grid-cols-2">
+            {recoveryCodes.map((c) => (
+              <li key={c} className="rounded bg-background px-2 py-1">
+                {c}
+              </li>
+            ))}
+          </ul>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setRecoveryCodes(null)}
+          >
+            Hide codes
+          </Button>
+        </div>
+      ) : null}
+
+      {phase === "idle" && !enabled ? (
+        <Button type="button" disabled={loading} onClick={() => void startSetup()}>
+          {loading ? (
+            <>
+              <Loader2 className="size-4 animate-spin" />
+              Preparing…
+            </>
+          ) : (
+            <>
+              <ShieldCheck className="size-4" />
+              Enable authenticator
+            </>
+          )}
+        </Button>
+      ) : null}
+
+      {phase === "idle" && enabled ? (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setPhase("regen");
+              setError(null);
+              regenForm.reset({ code: "" });
+            }}
+          >
+            Regenerate recovery codes
+          </Button>
+          {!required ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setPhase("disable");
+                setError(null);
+                disableForm.reset({ password: "", code: "", recovery: false });
+              }}
+            >
+              Disable
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {phase === "setup" && setup ? (
+        <div className="space-y-4">
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-border p-4">
+            <QRCodeSVG value={setup.otpauth_url} size={160} level="M" />
+            <div className="flex w-full items-center gap-2">
+              <code className="flex-1 break-all rounded-md bg-muted px-2 py-1.5 text-xs">
+                {setup.secret}
+              </code>
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                aria-label="Copy secret"
+                onClick={() => void navigator.clipboard.writeText(setup.secret)}
+              >
+                <Copy className="size-4" />
+              </Button>
+            </div>
+          </div>
+          <Form {...enableForm}>
+            <form
+              onSubmit={enableForm.handleSubmit(confirmSetup)}
+              className="space-y-4"
+              noValidate
+            >
+              <FormField
+                control={enableForm.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm with 6-digit code</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        inputMode="numeric"
+                        maxLength={6}
+                        autoComplete="one-time-code"
+                        className="tracking-[0.3em]"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="submit"
+                  disabled={enableForm.formState.isSubmitting}
+                >
+                  {enableForm.formState.isSubmitting
+                    ? "Enabling…"
+                    : "Confirm and enable"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setPhase("idle");
+                    setSetup(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </div>
+      ) : null}
+
+      {phase === "regen" ? (
+        <Form {...regenForm}>
+          <form
+            onSubmit={regenForm.handleSubmit(regenerate)}
+            className="space-y-4"
+            noValidate
+          >
+            <FormField
+              control={regenForm.control}
+              name="code"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Authenticator code</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      inputMode="numeric"
+                      maxLength={6}
+                      autoComplete="one-time-code"
+                      className="tracking-[0.3em]"
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Old recovery codes stop working immediately.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" disabled={regenForm.formState.isSubmitting}>
+                {regenForm.formState.isSubmitting
+                  ? "Generating…"
+                  : "Generate new codes"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setPhase("idle")}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Form>
+      ) : null}
+
+      {phase === "disable" ? (
+        <Form {...disableForm}>
+          <form
+            onSubmit={disableForm.handleSubmit(disable)}
+            className="space-y-4"
+            noValidate
+          >
+            <FormField
+              control={disableForm.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Current password</FormLabel>
+                  <FormControl>
+                    <Input type="password" autoComplete="current-password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={disableForm.control}
+              name="code"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Authenticator or recovery code</FormLabel>
+                  <FormControl>
+                    <Input autoComplete="one-time-code" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="submit"
+                variant="destructive"
+                disabled={disableForm.formState.isSubmitting}
+              >
+                {disableForm.formState.isSubmitting
+                  ? "Disabling…"
+                  : "Disable authenticator"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setPhase("idle")}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Form>
+      ) : null}
+    </div>
+  );
+}
+
 function ProfileLivePreview({ user }: { user: StaffUser }) {
   return (
     <FadeUp>
@@ -736,6 +1170,14 @@ export function ProfilePage() {
             description="Change your login password. Use at least 8 characters."
           >
             <PasswordSection />
+          </FormSection>
+
+          <FormSection
+            step="04"
+            title="Authenticator (2FA)"
+            description="Protect staff sign-in with an authenticator app."
+          >
+            <SecuritySection user={user} onUserUpdate={setUser} />
           </FormSection>
         </div>
 

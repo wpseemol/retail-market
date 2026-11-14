@@ -52,6 +52,8 @@ backend-api/
     │                        # categoryCsv (category CSV / ZIP import file, image refs),
     │                        # zipArchive (size-capped ZIP reader for imports),
     │                        # smsGateway + whatsappGateway (OTP delivery, encrypted credentials),
+    │                        # totp.ts (staff authenticator TOTP + recovery codes + setup/challenge JWTs),
+    │                        # secretBox.ts (SETTINGS_ENCRYPTION_KEY),
     │                        # storage/files.ts (local disk or S3/MinIO/R2 put, delete, read, presign)
     ├── utils/
     └── data/
@@ -65,6 +67,7 @@ backend-api/
 - **Pricing:** discounts come only from `coupon_code` via `src/lib/coupons.ts`; never accept a client-sent amount.
 - **Errors:** respond `{ message, code?, errors? }`. Use 409 with a stable `code` for state conflicts (e.g. `ORDER_NOT_DELETABLE`, `ORDER_CHANGED`).
 - **Auth:** protected routes require `Authorization: Bearer <token>`. Dashboard catalog mutations require `super_admin | admin | moderator`; order deletion is `super_admin | admin` only.
+- **Staff TOTP 2FA:** `User.two_factor_*` + `lib/totp.ts` (`otpauth`). Required for `super_admin` / `admin` (login returns `TWO_FACTOR_SETUP_REQUIRED` until confirmed). Optional for `moderator` / `vendor` but enforced at login once enabled. Password login never creates a session until challenge/confirm succeeds (`challengeToken` / `setupToken` JWTs). Encrypt secrets with `secretBox`; recovery codes are hashed then encrypted.
 - **Reviews:** `ProductReview` (`product_reviews`) is the purchase-verified review model; the older `Review` model is unused legacy. Review eligibility = a `delivered` + `paid` order matching the email/phone/user that contains the product. Vendors are scoped to their own shop's products.
 - **Showcase & SEO:** store (`Vendor`) and brand pages store their design in the `showcase` JSON column — always read it through `normalizeShowcase()` in `src/lib/showcase.ts`. Global SEO lives on `SiteSettings` and is edited only via `/api/dashboard/seo` (super_admin + admin). A brand's `vendor_id` (set by super_admin/admin) lets that store's vendor edit the brand page, never its name/slug/active state. Admins may override any store's page design but cannot create, delete or re-configure stores.
 - **Content pages (FAQ, Terms, Privacy):** one `ContentPage` row per `page_key` with JSON `content`, validated per key by `contentSchemaByKey` in `src/validators/contentPage.ts`. No row = built-in defaults from `src/lib/contentPages.ts`; `DELETE /api/dashboard/pages/:key` resets by removing the row. Editing is super_admin + admin. Add a new page by extending `CONTENT_PAGE_KEYS`, its schema, and its defaults. Default copy must pass `withSafeInput` (avoid phrases like "delete from" or "select … from"). Storefront paths: `/faq`, `/terms`, `/privacy-policy` (`privacy` key). Meta App Review data-deletion callback: `POST /api/auth/facebook/data-deletion` (no app keys).
