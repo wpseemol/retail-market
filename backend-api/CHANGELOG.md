@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-14
 
+### `.env.example` clarifies which file is live on Spaceship
+
+- Header + backups section: `.env.example` is template only; live backup vars go in `.env.prod` / cPanel Node env UI; local uses `.env.dev` + `.env`.
+
 ### Monthly backup cron + super-admin inbox notify
 
 - Default `BACKUP_CRON` → `0 3 1 * *` (1st of each month, 03:00 UTC); default retention → 400 days.
