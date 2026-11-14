@@ -31,6 +31,10 @@ import { productStatusTone } from "@/components/products/ProductFormShell";
 import { ProductBulkEditDialog } from "@/components/products/ProductBulkEditDialog";
 import { ProductImportDialog } from "@/components/products/ProductImportDialog";
 import { saveBlob } from "@/components/products/productCsvDownload";
+import {
+  CatalogViewToggle,
+  catalogItemsClassName,
+} from "@/components/catalog/CatalogViewToggle";
 import { PageHeader } from "@/components/dashboard/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,6 +54,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { useCatalogViewMode } from "@/lib/catalogView";
 import { cn } from "@/lib/utils";
 
 function SelectBox({
@@ -102,6 +107,7 @@ export function ProductsPage() {
   const [deleting, setDeleting] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [viewMode, setViewMode] = useCatalogViewMode("products");
 
   useEffect(() => {
     if (!token) return;
@@ -330,28 +336,31 @@ export function ProductsPage() {
                 Browse and edit products across the marketplace
               </CardDescription>
             </div>
-            <div className="flex flex-wrap rounded-lg border border-border bg-muted/40 p-0.5">
-              {(
-                [
-                  ["all", "All"],
-                  ["active", "Published"],
-                  ["draft", "Draft"],
-                  ["archived", "Archived"],
-                ] as const
-              ).map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setStatusFilter(key)}
-                  className={
-                    statusFilter === key
-                      ? "rounded-md bg-background px-3 py-1.5 text-xs font-medium shadow-sm"
-                      : "rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-                  }
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap rounded-lg border border-border bg-muted/40 p-0.5">
+                {(
+                  [
+                    ["all", "All"],
+                    ["active", "Published"],
+                    ["draft", "Draft"],
+                    ["archived", "Archived"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setStatusFilter(key)}
+                    className={
+                      statusFilter === key
+                        ? "rounded-md bg-background px-3 py-1.5 text-xs font-medium shadow-sm"
+                        : "rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <CatalogViewToggle value={viewMode} onChange={setViewMode} />
             </div>
           </div>
         </CardHeader>
