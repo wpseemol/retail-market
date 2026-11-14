@@ -56,11 +56,11 @@ export const staggerItem: Variants = {
 
 /** Route change: quick fade + small rise so navigation feels connected, never slow. */
 export const pageEnter: Variants = {
-  hidden: { opacity: 0, y: 8 },
+  hidden: { opacity: 0, y: 10 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.25, ease: MOTION_EASE },
+    transition: { duration: 0.3, ease: MOTION_EASE },
   },
 };
 

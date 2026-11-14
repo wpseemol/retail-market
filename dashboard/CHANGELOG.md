@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-14
 
+### World map pins + hidden sidebar scrollbar
+
+- `WorldMap.tsx`: glowing pins on each country with traffic (BD / IN / CA stay visible when small); stronger fills; hover shows ISO code.
+- Overview “Top countries” list: staggered cards, ISO badges, animated bars; clearer copy for mapped vs local visits.
+- Sidebar: `scrollbar-none` + smooth scroll (scrollable, bar hidden); global utility in `index.css`; slightly stronger `pageEnter` motion.
+
 ### Professional shadcn dashboard redesign (brand kept)
 
 - **Shell:** `DashboardLayout` soft content frame; `app-sidebar` grouped Workspace / Marketing / Content / Support / System (Site settings link); sticky `site-header` path breadcrumbs; `page-shell` adds `PageToolbar` / `PagePanel` and header border polish.

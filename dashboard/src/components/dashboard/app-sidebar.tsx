@@ -322,7 +322,7 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent className="gap-1">
+      <SidebarContent className="gap-1 scroll-smooth">
         <FadeIn>
           <Stagger className="flex flex-col gap-1">
             {workspace.length > 0 ? (

@@ -375,7 +375,7 @@ export function HomePage() {
                 </div>
             ) : null}
 
-            <Card className="border-border/80">
+            <Card className="overflow-hidden border-border/80 shadow-sm">
                 <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0">
                     <div>
                         <CardTitle className="flex items-center gap-2 text-base">
@@ -384,16 +384,16 @@ export function HomePage() {
                         </CardTitle>
                         <CardDescription>
                             {overview?.source === "sessions"
-                                ? "No storefront page visits yet, so this shows dashboard / customer sign-ins by country."
-                                : `Storefront page views by country · last ${range} days. Hover a country for details.`}
+                                ? "No storefront page visits yet, so this shows dashboard / customer sign-ins by country (e.g. Bangladesh, India, Canada)."
+                                : `Storefront page views by country · last ${range} days. Green pins mark each country — Bangladesh, India, Canada, and others when traffic arrives.`}
                         </CardDescription>
                     </div>
                     {overview ? (
                         <Badge variant="outline" className="gap-1">
                             {geoCountries.length}{" "}
                             {geoCountries.length === 1
-                                ? "country"
-                                : "countries"}
+                                ? "country on map"
+                                : "countries on map"}
                         </Badge>
                     ) : null}
                 </CardHeader>
@@ -409,8 +409,8 @@ export function HomePage() {
                         {nonGeoVisits > 0 ? (
                             <p className="mt-2 text-xs text-muted-foreground">
                                 {nonGeoVisits.toLocaleString()} visits from a
-                                local network or unknown location are not shown
-                                on the map.
+                                local network or unknown location are listed on
+                                the right but not drawn on the map.
                             </p>
                         ) : null}
                     </div>
@@ -425,50 +425,61 @@ export function HomePage() {
                         ) : allCountries.length === 0 ? (
                             <div className="rounded-xl border border-dashed border-border bg-muted/20 px-4 py-8 text-center text-sm text-muted-foreground">
                                 No visitor data yet. Open the storefront to
-                                start collecting visits.
+                                start collecting visits by country.
                             </div>
                         ) : (
-                            <ul className="max-h-75 space-y-3 overflow-y-auto pr-1">
-                                {allCountries.slice(0, 12).map((row) => (
-                                    <li
-                                        key={row.country}
-                                        className="space-y-1.5"
-                                    >
-                                        <div className="flex items-center justify-between gap-2 text-sm">
-                                            <span className="flex min-w-0 items-center gap-2">
-                                                <span
-                                                    className="text-base leading-none"
-                                                    aria-hidden
-                                                >
-                                                    {row.flag}
+                            <Stagger className="scrollbar-none max-h-75 space-y-2.5 overflow-y-auto pr-0.5">
+                                {allCountries.slice(0, 14).map((row) => {
+                                    const isLocal = NON_GEO_COUNTRIES.has(
+                                        row.country,
+                                    );
+                                    return (
+                                        <StaggerItem
+                                            key={row.country}
+                                            className="space-y-1.5 rounded-xl border border-border/60 bg-muted/15 px-3 py-2.5"
+                                        >
+                                            <div className="flex items-center justify-between gap-2 text-sm">
+                                                <span className="flex min-w-0 items-center gap-2">
+                                                    <span
+                                                        className="text-base leading-none"
+                                                        aria-hidden
+                                                    >
+                                                        {row.flag}
+                                                    </span>
+                                                    <span className="truncate font-medium">
+                                                        {row.country_name}
+                                                    </span>
+                                                    {!isLocal ? (
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="h-5 px-1.5 font-mono text-[10px] text-muted-foreground"
+                                                        >
+                                                            {row.country}
+                                                        </Badge>
+                                                    ) : null}
                                                 </span>
-                                                <span className="truncate font-medium">
-                                                    {row.country_name}
+                                                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                                                    {row.visits.toLocaleString()}{" "}
+                                                    · {row.percent}%
                                                 </span>
-                                            </span>
-                                            <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                                                {row.visits.toLocaleString()} ·{" "}
-                                                {row.percent}%
-                                            </span>
-                                        </div>
-                                        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                                            <div
-                                                className={cn(
-                                                    "h-full rounded-full",
-                                                    NON_GEO_COUNTRIES.has(
-                                                        row.country,
-                                                    )
-                                                        ? "bg-muted-foreground/40"
-                                                        : "bg-brand-primary",
-                                                )}
-                                                style={{
-                                                    width: `${Math.max(3, (row.visits / maxCountry) * 100)}%`,
-                                                }}
-                                            />
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
+                                            </div>
+                                            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                                                <div
+                                                    className={cn(
+                                                        "h-full rounded-full transition-[width] duration-700 ease-out",
+                                                        isLocal
+                                                            ? "bg-muted-foreground/40"
+                                                            : "bg-brand-primary",
+                                                    )}
+                                                    style={{
+                                                        width: `${Math.max(3, (row.visits / maxCountry) * 100)}%`,
+                                                    }}
+                                                />
+                                            </div>
+                                        </StaggerItem>
+                                    );
+                                })}
+                            </Stagger>
                         )}
                     </div>
                 </CardContent>

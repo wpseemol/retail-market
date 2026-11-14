@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-14
 
+### Fuller country display names for overview geo
+
+- `lib/geo.ts` `countryName`: falls back to `Intl.DisplayNames` so codes like BD / IN / CA always get readable names when missing from the static map.
+
 ### `.env.example` clarifies which file is live on Spaceship
 
 - Header + backups section: `.env.example` is template only; live backup vars go in `.env.prod` / cPanel Node env UI; local uses `.env.dev` + `.env`.

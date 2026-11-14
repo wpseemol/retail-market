@@ -37,10 +37,22 @@ const COUNTRY_NAMES: Record<string, string> = {
   RU: "Russia",
 };
 
+const regionNames =
+  typeof Intl !== "undefined" && "DisplayNames" in Intl
+    ? new Intl.DisplayNames(["en"], { type: "region" })
+    : null;
+
 export function countryName(code: string | null | undefined): string {
   if (!code) return COUNTRY_NAMES.XX;
   const upper = code.toUpperCase();
-  return COUNTRY_NAMES[upper] ?? upper;
+  if (COUNTRY_NAMES[upper]) return COUNTRY_NAMES[upper]!;
+  try {
+    const named = regionNames?.of(upper);
+    if (named && named !== upper) return named;
+  } catch {
+    /* ignore */
+  }
+  return upper;
 }
 
 /** Resolve ISO country code from an IP (LO = private/local, XX = unknown). */

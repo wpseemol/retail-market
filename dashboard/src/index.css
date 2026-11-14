@@ -218,6 +218,17 @@
   --sidebar-ring: #00b207;
 }
 
+/* Hidden scrollbar, still scrollable (sidebar + country lists). */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 /* Visitors who ask for reduced motion get instant state changes everywhere. */
 @media (prefers-reduced-motion: reduce) {
   *,
