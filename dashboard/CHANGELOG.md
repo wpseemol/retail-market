@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-14
 
+### Staff authenticator 2FA (TOTP)
+
+- `LoginPage.tsx`: after password, setup wizard (QR + manual key + confirm) or 6-digit / recovery challenge; shows one-time recovery codes after enroll-from-login.
+- `ProfilePage.tsx`: Authenticator security card — status, enable, regenerate recovery, disable (confirm modal; blocked for required roles).
+- `lib/validators/twoFactor.ts`, `qrcode.react`, `StaffUser.two_factor_*` flags in `lib/api.ts`. Noted in `AGENTS.md`.
+
 ### World map pins + hidden sidebar scrollbar
 
 - `WorldMap.tsx`: glowing pins on each country with traffic (BD / IN / CA stay visible when small); stronger fills; hover shows ISO code.

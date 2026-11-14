@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-14
 
+### Staff authenticator 2FA (TOTP)
+
+- `lib/totp.ts` + `otpauth`: generate/verify TOTP (±1 step), encrypt pending secret in short-lived setup/challenge JWTs, 8 hashed recovery codes via `secretBox`.
+- `routes/dashboardAuth.ts`: login may return `TWO_FACTOR_SETUP_REQUIRED` / `TWO_FACTOR_REQUIRED` without a session; `POST /login/2fa`, `/2fa/setup`, `/2fa/confirm`, `/2fa/status`, `/2fa/disable`, `/2fa/recovery-codes`. Policy: required for `super_admin`/`admin`; optional for moderator/vendor once enabled.
+- `lib/user.ts` `toPublicUser`: `two_factor_enabled`, `two_factor_required` (never secrets). Documented in `API.md` / `AGENTS.md`.
+
 ### Fuller country display names for overview geo
 
 - `lib/geo.ts` `countryName`: falls back to `Intl.DisplayNames` so codes like BD / IN / CA always get readable names when missing from the static map.
