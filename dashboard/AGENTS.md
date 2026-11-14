@@ -68,7 +68,7 @@ dashboard/
     │   ├── rbac.ts                 # route role lists named after the TARGET_REQUIREMENTS.md RBAC matrix
     │   ├── imagePresets.ts         # image ratio / size hints per upload type
     │   ├── siteBranding.ts         # cached branding + getPrintBranding()
-    │   └── validators/             # Zod schemas + safeInput helpers
+    │   └── validators/             # Zod schemas + safeInput helpers (catalogView grid|list)
     ├── hooks/
     └── store/                  # Zustand: staff session, connection, unsaved edits
 ```

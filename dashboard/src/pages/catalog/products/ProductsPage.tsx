@@ -482,20 +482,31 @@ export function ProductsPage() {
               </div>
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className={catalogItemsClassName(viewMode)}>
               {products.map((product) => {
                 const isSelected = selected.has(product.id);
+                const isList = viewMode === "list";
                 return (
                   <div
                     key={product.id}
                     className={cn(
-                      "group flex flex-col gap-3 rounded-xl border bg-gradient-to-br from-background to-muted/30 p-4 transition-shadow hover:shadow-md",
-                      isSelected ? "border-brand-primary/50 ring-1 ring-brand-primary/30" : "border-border",
+                      "group rounded-xl border bg-linear-to-br from-background to-muted/30 transition-shadow hover:shadow-md",
+                      isList
+                        ? "flex flex-wrap items-center gap-3 px-3 py-2.5 sm:flex-nowrap"
+                        : "flex flex-col gap-3 p-4",
+                      isSelected
+                        ? "border-brand-primary/50 ring-1 ring-brand-primary/30"
+                        : "border-border",
                     )}
                   >
-                    <div className="flex items-start gap-3">
+                    <div
+                      className={cn(
+                        "flex min-w-0 flex-1 items-start gap-3",
+                        isList && "items-center",
+                      )}
+                    >
                       {canSelect ? (
-                        <div className="pt-0.5">
+                        <div className={cn(!isList && "pt-0.5")}>
                           <SelectBox
                             checked={isSelected}
                             onChange={(checked) => toggle(product.id, checked)}
@@ -503,7 +514,12 @@ export function ProductsPage() {
                           />
                         </div>
                       ) : null}
-                      <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-brand-primary/15 bg-gradient-to-br from-brand-tint to-background text-brand-deep">
+                      <div
+                        className={cn(
+                          "flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-brand-primary/15 bg-linear-to-br from-brand-tint to-background text-brand-deep",
+                          isList ? "size-11" : "size-14",
+                        )}
+                      >
                         {product.thumbnail?.path ? (
                           <img
                             src={product.thumbnail.path}
@@ -524,27 +540,56 @@ export function ProductsPage() {
                               /{product.slug}
                             </p>
                           </div>
+                          {!isList ? (
+                            <Badge
+                              variant="outline"
+                              className={productStatusTone(product.status)}
+                            >
+                              {productStatusLabel(product.status)}
+                            </Badge>
+                          ) : null}
+                        </div>
+                        {!isList ? (
+                          <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">
+                            {[
+                              product.vendor?.shop_name,
+                              product.category?.name,
+                              product.brand_name ?? product.brand?.name,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ") || "No placement yet"}
+                          </p>
+                        ) : (
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            {[
+                              product.vendor?.shop_name,
+                              product.category?.name,
+                              product.brand_name ?? product.brand?.name,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ") || "No placement yet"}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div
+                      className={cn(
+                        "flex items-center gap-2",
+                        isList
+                          ? "w-full shrink-0 justify-between sm:w-auto sm:justify-end sm:gap-3"
+                          : "justify-between border-t border-border/70 pt-3",
+                      )}
+                    >
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        {isList ? (
                           <Badge
                             variant="outline"
                             className={productStatusTone(product.status)}
                           >
                             {productStatusLabel(product.status)}
                           </Badge>
-                        </div>
-                        <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">
-                          {[
-                            product.vendor?.shop_name,
-                            product.category?.name,
-                            product.brand_name ?? product.brand?.name,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ") || "No placement yet"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-2 border-t border-border/70 pt-3">
-                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        ) : null}
                         <span className="capitalize">{product.type}</span>
                         <span className="tabular-nums">
                           {product.price.toLocaleString()}

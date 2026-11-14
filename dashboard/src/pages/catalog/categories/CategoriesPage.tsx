@@ -22,6 +22,10 @@ import {
 } from "@/lib/categories";
 import { CATEGORY_ICONS } from "@/lib/categoryIcons";
 import { useAuthStore } from "@/store/auth";
+import {
+  CatalogViewToggle,
+  catalogItemsClassName,
+} from "@/components/catalog/CatalogViewToggle";
 import { CategoryIconBadge } from "@/components/categories/CategoryIconPicker";
 import { CategoryImportDialog } from "@/components/categories/CategoryImportDialog";
 import { saveBlob } from "@/components/products/productCsvDownload";
@@ -43,6 +47,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { useCatalogViewMode } from "@/lib/catalogView";
+import { cn } from "@/lib/utils";
 
 const MANAGE_ROLES = ["super_admin", "admin", "moderator"] as const;
 
@@ -66,6 +72,7 @@ export function CategoriesPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const [exporting, setExporting] = useState<"csv" | "zip" | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [viewMode, setViewMode] = useCatalogViewMode("categories");
   const setNotice = toastNotice;
 
   useEffect(() => {
@@ -250,27 +257,30 @@ export function CategoriesPage() {
                 Browse, search, and edit platform categories
               </CardDescription>
             </div>
-            <div className="flex rounded-lg border border-border bg-muted/40 p-0.5">
-              {(
-                [
-                  ["all", "All"],
-                  ["active", "Active"],
-                  ["inactive", "Inactive"],
-                ] as const
-              ).map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setStatusFilter(key)}
-                  className={
-                    statusFilter === key
-                      ? "rounded-md bg-background px-3 py-1.5 text-xs font-medium shadow-sm"
-                      : "rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-                  }
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex rounded-lg border border-border bg-muted/40 p-0.5">
+                {(
+                  [
+                    ["all", "All"],
+                    ["active", "Active"],
+                    ["inactive", "Inactive"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setStatusFilter(key)}
+                    className={
+                      statusFilter === key
+                        ? "rounded-md bg-background px-3 py-1.5 text-xs font-medium shadow-sm"
+                        : "rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <CatalogViewToggle value={viewMode} onChange={setViewMode} />
             </div>
           </div>
         </CardHeader>
@@ -319,29 +329,71 @@ export function CategoriesPage() {
               ) : null}
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {categories.map((cat) => (
-                <div
-                  key={cat.id}
-                  className="group relative flex flex-col gap-3 rounded-xl border border-border/80 bg-linear-to-br from-background to-muted/30 p-4 shadow-sm transition-shadow hover:border-brand-primary/30 hover:shadow-md"
-                >
-                  <div className="flex items-start gap-3">
-                    <CategoryIconBadge
-                      icon={cat.icon}
-                      imageUrl={cat.image?.path}
-                      name={cat.name}
-                      size="md"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold tracking-tight">
-                            {cat.name}
-                          </p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            /{cat.slug}
-                          </p>
+            <div className={catalogItemsClassName(viewMode)}>
+              {categories.map((cat) => {
+                const isList = viewMode === "list";
+                return (
+                  <div
+                    key={cat.id}
+                    className={cn(
+                      "group relative rounded-xl border border-border/80 bg-linear-to-br from-background to-muted/30 shadow-sm transition-shadow hover:border-brand-primary/30 hover:shadow-md",
+                      isList
+                        ? "flex flex-wrap items-center gap-3 px-3 py-2.5 sm:flex-nowrap"
+                        : "flex flex-col gap-3 p-4",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "flex min-w-0 flex-1 gap-3",
+                        isList ? "items-center" : "items-start",
+                      )}
+                    >
+                      <CategoryIconBadge
+                        icon={cat.icon}
+                        imageUrl={cat.image?.path}
+                        name={cat.name}
+                        size={isList ? "sm" : "md"}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold tracking-tight">
+                              {cat.name}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              /{cat.slug}
+                            </p>
+                          </div>
+                          {!isList ? (
+                            <Badge
+                              variant="outline"
+                              className={
+                                cat.is_active
+                                  ? "border-brand-primary/30 bg-brand-tint/50 text-brand-deep capitalize"
+                                  : "capitalize"
+                              }
+                            >
+                              {cat.is_active ? "active" : "inactive"}
+                            </Badge>
+                          ) : null}
                         </div>
+                        {cat.description && !isList ? (
+                          <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">
+                            {cat.description}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div
+                      className={cn(
+                        "flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground",
+                        isList
+                          ? "w-full shrink-0 justify-between sm:w-auto sm:justify-end"
+                          : "border-t border-border/70 pt-3",
+                      )}
+                    >
+                      {isList ? (
                         <Badge
                           variant="outline"
                           className={
@@ -352,53 +404,45 @@ export function CategoriesPage() {
                         >
                           {cat.is_active ? "active" : "inactive"}
                         </Badge>
+                      ) : null}
+                      <span>
+                        Parent:{" "}
+                        <span className="text-foreground">
+                          {cat.parent?.name ?? "Top level"}
+                        </span>
+                      </span>
+                      <span className="text-border">·</span>
+                      <span>
+                        Products:{" "}
+                        <span className="font-medium text-foreground tabular-nums">
+                          {cat.products_count ?? 0}
+                        </span>
+                      </span>
+                      {cat.icon && !isList ? (
+                        <>
+                          <span className="text-border">·</span>
+                          <span className="truncate">{cat.icon}</span>
+                        </>
+                      ) : null}
+                      <div className={cn(isList ? "" : "ml-auto")}>
+                        {canManage ? (
+                          <Button
+                            asChild
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2"
+                          >
+                            <Link to={`/categories/${cat.id}`}>
+                              <Pencil className="size-3.5" />
+                              Edit
+                            </Link>
+                          </Button>
+                        ) : null}
                       </div>
-                      {cat.description ? (
-                        <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">
-                          {cat.description}
-                        </p>
-                      ) : null}
                     </div>
                   </div>
-
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/70 pt-3 text-xs text-muted-foreground">
-                    <span>
-                      Parent:{" "}
-                      <span className="text-foreground">
-                        {cat.parent?.name ?? "Top level"}
-                      </span>
-                    </span>
-                    <span className="text-border">·</span>
-                    <span>
-                      Products:{" "}
-                      <span className="font-medium text-foreground tabular-nums">
-                        {cat.products_count ?? 0}
-                      </span>
-                    </span>
-                    {cat.icon ? (
-                      <>
-                        <span className="text-border">·</span>
-                        <span className="truncate">{cat.icon}</span>
-                      </>
-                    ) : null}
-                    <div className="ml-auto">
-                      {canManage ? (
-                        <Button
-                          asChild
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2"
-                        >
-                          <Link to={`/categories/${cat.id}`}>
-                            <Pencil className="size-3.5" />
-                            Edit
-                          </Link>
-                        </Button>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>

@@ -135,3 +135,9 @@ export function firstZodError(
 ): string {
   return result.error.issues[0]?.message ?? "Validation failed";
 }
+
+/** Catalog list page layout preference (Products / Categories / Brands). */
+export {
+  catalogViewModeSchema,
+  type CatalogViewMode,
+} from "./catalogView";

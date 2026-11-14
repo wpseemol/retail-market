@@ -110,3 +110,9 @@ export function validateBrandImageFile(
 }
 
 export { firstZodError };
+
+/** Catalog list page layout preference (Products / Categories / Brands). */
+export {
+  catalogViewModeSchema,
+  type CatalogViewMode,
+} from "./catalogView";

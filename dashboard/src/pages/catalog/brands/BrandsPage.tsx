@@ -3,9 +3,14 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Layers, Package, Palette, Pencil, Plus, Search, Store, Tag } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
 import type { Brand } from "@/lib/brands";
+import { useCatalogViewMode } from "@/lib/catalogView";
 import { BRAND_OWNER_ROLES } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
+import {
+  CatalogViewToggle,
+  catalogItemsClassName,
+} from "@/components/catalog/CatalogViewToggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +44,7 @@ export function BrandsPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">(
     "all",
   );
+  const [viewMode, setViewMode] = useCatalogViewMode("brands");
 
   useEffect(() => {
     if (!token) return;
@@ -178,27 +184,30 @@ export function BrandsPage() {
                 Browse and edit brands used across every store
               </CardDescription>
             </div>
-            <div className="flex rounded-lg border border-border bg-muted/40 p-0.5">
-              {(
-                [
-                  ["all", "All"],
-                  ["active", "Active"],
-                  ["inactive", "Inactive"],
-                ] as const
-              ).map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setStatusFilter(key)}
-                  className={
-                    statusFilter === key
-                      ? "rounded-md bg-background px-3 py-1.5 text-xs font-medium shadow-sm"
-                      : "rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-                  }
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex rounded-lg border border-border bg-muted/40 p-0.5">
+                {(
+                  [
+                    ["all", "All"],
+                    ["active", "Active"],
+                    ["inactive", "Inactive"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setStatusFilter(key)}
+                    className={
+                      statusFilter === key
+                        ? "rounded-md bg-background px-3 py-1.5 text-xs font-medium shadow-sm"
+                        : "rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <CatalogViewToggle value={viewMode} onChange={setViewMode} />
             </div>
           </div>
         </CardHeader>
@@ -251,34 +260,81 @@ export function BrandsPage() {
               ) : null}
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {brands.map((brand) => (
-                <div
-                  key={brand.id}
-                  className="group flex flex-col gap-3 rounded-xl border border-border bg-gradient-to-br from-background to-muted/30 p-4 transition-shadow hover:shadow-md"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-brand-primary/15 bg-gradient-to-br from-brand-tint to-background text-lg font-semibold text-brand-deep">
-                      {brand.image?.path ? (
-                        <img
-                          src={brand.image.path}
-                          alt=""
-                          className="size-full object-cover"
-                        />
-                      ) : (
-                        brand.name.charAt(0).toUpperCase()
+            <div className={catalogItemsClassName(viewMode)}>
+              {brands.map((brand) => {
+                const isList = viewMode === "list";
+                return (
+                  <div
+                    key={brand.id}
+                    className={cn(
+                      "group rounded-xl border border-border bg-linear-to-br from-background to-muted/30 transition-shadow hover:shadow-md",
+                      isList
+                        ? "flex flex-wrap items-center gap-3 px-3 py-2.5 sm:flex-nowrap"
+                        : "flex flex-col gap-3 p-4",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "flex min-w-0 flex-1 gap-3",
+                        isList ? "items-center" : "items-start",
                       )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold tracking-tight">
-                            {brand.name}
-                          </p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            /{brand.slug}
-                          </p>
+                    >
+                      <div
+                        className={cn(
+                          "flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-brand-primary/15 bg-linear-to-br from-brand-tint to-background font-semibold text-brand-deep",
+                          isList ? "size-11 text-base" : "size-12 text-lg",
+                        )}
+                      >
+                        {brand.image?.path ? (
+                          <img
+                            src={brand.image.path}
+                            alt=""
+                            className="size-full object-cover"
+                          />
+                        ) : (
+                          brand.name.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold tracking-tight">
+                              {brand.name}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              /{brand.slug}
+                            </p>
+                          </div>
+                          {!isList ? (
+                            <Badge
+                              variant="outline"
+                              className={
+                                brand.is_active
+                                  ? "border-brand-primary/30 bg-brand-tint/50 text-brand-deep capitalize"
+                                  : "capitalize"
+                              }
+                            >
+                              {brand.is_active ? "active" : "inactive"}
+                            </Badge>
+                          ) : null}
                         </div>
+                        {brand.description && !isList ? (
+                          <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">
+                            {brand.description}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div
+                      className={cn(
+                        "flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground",
+                        isList
+                          ? "w-full shrink-0 justify-between sm:w-auto sm:justify-end"
+                          : "border-t border-border/70 pt-3",
+                      )}
+                    >
+                      {isList ? (
                         <Badge
                           variant="outline"
                           className={
@@ -289,69 +345,66 @@ export function BrandsPage() {
                         >
                           {brand.is_active ? "active" : "inactive"}
                         </Badge>
-                      </div>
-                      {brand.description ? (
-                        <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">
-                          {brand.description}
-                        </p>
                       ) : null}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/70 pt-3 text-xs text-muted-foreground">
-                    <span>
-                      Products:{" "}
-                      <span className="font-medium text-foreground tabular-nums">
-                        {brand.products_count ?? 0}
-                      </span>
-                    </span>
-                    <span className="text-border">·</span>
-                    <span>
-                      Sort:{" "}
-                      <span className="font-medium text-foreground tabular-nums">
-                        {brand.sort_order}
-                      </span>
-                    </span>
-                    {brand.vendor && !mine ? (
-                      <>
-                        <span className="text-border">·</span>
-                        <span className="inline-flex items-center gap-1 truncate">
-                          <Store className="size-3" />
-                          {brand.vendor.shop_name}
+                      <span>
+                        Products:{" "}
+                        <span className="font-medium text-foreground tabular-nums">
+                          {brand.products_count ?? 0}
                         </span>
-                      </>
-                    ) : null}
-                    <div className="ml-auto flex items-center gap-1">
-                      {canCustomize ? (
-                        <Button
-                          asChild
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2"
-                        >
-                          <Link to={`/brands/${brand.id}/showcase`}>
-                            <Palette className="size-3.5" />
-                            Customize page
-                          </Link>
-                        </Button>
+                      </span>
+                      <span className="text-border">·</span>
+                      <span>
+                        Sort:{" "}
+                        <span className="font-medium text-foreground tabular-nums">
+                          {brand.sort_order}
+                        </span>
+                      </span>
+                      {brand.vendor && !mine ? (
+                        <>
+                          <span className="text-border">·</span>
+                          <span className="inline-flex items-center gap-1 truncate">
+                            <Store className="size-3" />
+                            {brand.vendor.shop_name}
+                          </span>
+                        </>
                       ) : null}
-                      {canManage ? (
-                        <Button
-                          asChild
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2"
-                        >
-                          <Link to={`/brands/${brand.id}`}>
-                            <Pencil className="size-3.5" />
-                            Edit
-                          </Link>
-                        </Button>
-                      ) : null}
+                      <div
+                        className={cn(
+                          "flex items-center gap-1",
+                          isList ? "" : "ml-auto",
+                        )}
+                      >
+                        {canCustomize ? (
+                          <Button
+                            asChild
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2"
+                          >
+                            <Link to={`/brands/${brand.id}/showcase`}>
+                              <Palette className="size-3.5" />
+                              Customize page
+                            </Link>
+                          </Button>
+                        ) : null}
+                        {canManage ? (
+                          <Button
+                            asChild
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2"
+                          >
+                            <Link to={`/brands/${brand.id}`}>
+                              <Pencil className="size-3.5" />
+                              Edit
+                            </Link>
+                          </Button>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>

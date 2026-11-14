@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-14
 
+### Catalog list / grid view (products, categories, brands)
+
+- Shared `CatalogViewToggle` + `useCatalogViewMode` (persists `grid`|`list` in localStorage per page).
+- `ProductsPage`, `CategoriesPage`, `BrandsPage`: status filters keep working; toggle switches card grid vs compact list rows.
+- Zod mode in `lib/validators/catalogView.ts` (re-exported from product/category/brand validators).
+
 ### Page change motion ≠ login FadeUp
 
 - `lib/motion.ts` `pageEnter`: short fade + slight horizontal slide (route nav only), not the login upward rise.

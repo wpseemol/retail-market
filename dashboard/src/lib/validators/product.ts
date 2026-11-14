@@ -225,3 +225,9 @@ export function validateProductImages(files: File[]) {
 }
 
 export { firstZodError, findUnsafeInputReason };
+
+/** Catalog list page layout preference (Products / Categories / Brands). */
+export {
+  catalogViewModeSchema,
+  type CatalogViewMode,
+} from "./catalogView";
