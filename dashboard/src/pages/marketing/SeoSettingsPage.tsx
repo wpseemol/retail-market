@@ -11,8 +11,11 @@ import {
   FormSection,
   FormStatusMessage,
   PageHero,
+  SegmentedControl,
+  SegmentedControlItem,
   StickyFormActions,
 } from "@/components/dashboard/page-shell";
+import { FadeUp, Stagger, StaggerItem } from "@/components/motion";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -37,7 +40,6 @@ import {
   type SeoPageKey,
   type SeoSettings,
 } from "@/lib/seo";
-import { cn } from "@/lib/utils";
 import {
   seoSettingsSchema,
   toSeoApiBody,
@@ -203,7 +205,7 @@ export function SeoSettingsPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-4">
+    <div className="flex w-full flex-col gap-6 pb-4">
       <PageHero
         eyebrow="Marketing & SEO"
         title="Search & share settings"
@@ -230,18 +232,20 @@ export function SeoSettingsPage() {
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]"
+            className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]"
             noValidate
           >
             <div className="space-y-5">
               {v.seo_noindex_site ? (
-                <div role="alert" className="flex items-start gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm">
-                  <ShieldAlert className="mt-0.5 size-4 shrink-0 text-destructive" />
-                  <p>
-                    <span className="font-semibold text-destructive">Site-wide noindex is on.</span> Search engines
-                    are told to drop every storefront page.
-                  </p>
-                </div>
+                <FadeUp>
+                  <div role="alert" className="flex items-start gap-3 rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-sm">
+                    <ShieldAlert className="mt-0.5 size-4 shrink-0 text-destructive" />
+                    <p>
+                      <span className="font-semibold text-destructive">Site-wide noindex is on.</span> Search engines
+                      are told to drop every storefront page.
+                    </p>
+                  </div>
+                </FadeUp>
               ) : null}
 
               <FormSection step="01" title="Search appearance" description="Default title, description and keywords for the whole site.">
@@ -313,31 +317,28 @@ export function SeoSettingsPage() {
               </FormSection>
 
               <FormSection step="02" title="Page defaults" description="Titles and descriptions for the main index pages. Leave blank to use the defaults.">
-                <div role="tablist" aria-label="Page" className="flex flex-wrap gap-1.5">
+                <SegmentedControl aria-label="SEO page" className="flex-wrap">
                   {SEO_PAGE_KEYS.map((key) => {
-                    const filled = Boolean(v.seo_pages?.[key]?.title || v.seo_pages?.[key]?.description);
+                    const filled = Boolean(
+                      v.seo_pages?.[key]?.title || v.seo_pages?.[key]?.description,
+                    );
                     return (
-                      <button
+                      <SegmentedControlItem
                         key={key}
-                        type="button"
-                        role="tab"
-                        aria-selected={activePage === key}
+                        active={activePage === key}
                         onClick={() => setActivePage(key)}
-                        className={cn(
-                          "rounded-full border px-3 py-1 text-xs font-medium",
-                          activePage === key
-                            ? "border-brand-primary bg-brand-primary text-white"
-                            : "border-border text-muted-foreground hover:border-brand-primary/60",
-                        )}
                       >
                         {SEO_PAGE_META[key].label}
-                        {filled ? <span className="ml-1.5 inline-block size-1.5 rounded-full bg-current align-middle" /> : null}
-                      </button>
+                        {filled ? (
+                          <span className="ml-1.5 inline-block size-1.5 rounded-full bg-brand-primary align-middle" />
+                        ) : null}
+                      </SegmentedControlItem>
                     );
                   })}
-                </div>
+                </SegmentedControl>
                 <p className="text-xs text-muted-foreground">
-                  <code>{SEO_PAGE_META[activePage].path}</code> — {SEO_PAGE_META[activePage].hint}
+                  <code className="rounded bg-muted px-1 py-0.5">{SEO_PAGE_META[activePage].path}</code>{" "}
+                  — {SEO_PAGE_META[activePage].hint}
                 </p>
                 <FormField
                   key={`${activePage}-title`}
@@ -540,24 +541,35 @@ export function SeoSettingsPage() {
               </StickyFormActions>
             </div>
 
-            <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-              <SearchPreview
-                title={previewTitle}
-                description={previewDescription}
-                path={SEO_PAGE_META[activePage].path}
-                siteName={siteName}
-                faviconUrl={settings.favicon?.path}
-                noIndex={v.seo_noindex_site}
-              />
-              <SharePreview
-                title={v.og_title || v.site_title}
-                description={v.og_description || v.site_description}
-                imageUrl={settings.og_image?.path}
-              />
-              <p className="px-1 text-xs text-muted-foreground">
-                Previewing the <span className="font-medium text-foreground">{SEO_PAGE_META[activePage].label}</span> page.
-                Switch pages under “Page defaults”.
-              </p>
+            <aside className="lg:sticky lg:top-20 lg:self-start">
+              <Stagger className="space-y-4">
+                <StaggerItem>
+                  <SearchPreview
+                    title={previewTitle}
+                    description={previewDescription}
+                    path={SEO_PAGE_META[activePage].path}
+                    siteName={siteName}
+                    faviconUrl={settings.favicon?.path}
+                    noIndex={v.seo_noindex_site}
+                  />
+                </StaggerItem>
+                <StaggerItem>
+                  <SharePreview
+                    title={v.og_title || v.site_title}
+                    description={v.og_description || v.site_description}
+                    imageUrl={settings.og_image?.path}
+                  />
+                </StaggerItem>
+                <StaggerItem>
+                  <p className="px-1 text-xs text-muted-foreground">
+                    Previewing the{" "}
+                    <span className="font-medium text-foreground">
+                      {SEO_PAGE_META[activePage].label}
+                    </span>{" "}
+                    page. Switch pages under “Page defaults”.
+                  </p>
+                </StaggerItem>
+              </Stagger>
             </aside>
           </form>
         </Form>

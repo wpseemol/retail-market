@@ -13,7 +13,7 @@ function PageTransition() {
       initial="hidden"
       animate="show"
       variants={pageEnter}
-      className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6"
+      className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-5 p-4 md:gap-6 md:p-6 lg:p-8"
     >
       <Outlet />
     </m.div>
@@ -25,9 +25,11 @@ export function DashboardLayout() {
     <MotionProvider>
       <SidebarProvider>
         <AppSidebar />
-        <SidebarInset>
+        <SidebarInset className="bg-muted/25">
           <SiteHeader />
-          <PageTransition />
+          <div className="relative flex flex-1 flex-col">
+            <PageTransition />
+          </div>
         </SidebarInset>
       </SidebarProvider>
     </MotionProvider>

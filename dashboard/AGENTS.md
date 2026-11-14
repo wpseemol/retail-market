@@ -86,7 +86,7 @@ dashboard/
   - Never use `alert`.
 - **Destructive actions:** always `const confirm = useConfirm()` and `await confirm({ title, description, tone: "destructive" })`. Never `window.confirm`.
 - **Page changes:** `NavigationProgress` in `main.tsx` shows a green top bar on reload and on each route change (`react-top-loading-bar`).
-- **Layout & motion:** list/analytics pages use flat `PageHeader` (Geist Sans, title + muted subtitle + actions — see `.cursor/skills/dashboard-design`). Create/edit flows use green `PageHero`, plus `FormSection` / `StickyFormActions`. Animate with LazyMotion `m` via `useMotionSafe`; no layout animations or `AnimatePresence` on large tables.
+- **Layout & motion:** list/analytics pages use flat `PageHeader` (Geist Sans, title + muted subtitle + actions — see `.cursor/skills/dashboard-design`). Optional `PageToolbar` / `PagePanel` for filter strips and table shells. Create/edit flows use green `PageHero`, plus `FormSection` / `StickyFormActions`. Animate with LazyMotion `m` via `useMotionSafe` (`FadeUp`, `Stagger`, `pageEnter`); no layout animations or `AnimatePresence` on large tables. Sidebar groups: Workspace / Marketing / Content / Support / System. Site settings uses a sticky left group nav (desktop) and shared `SettingsSection` / `SettingsCard` chrome.
   - Route changes already fade in through `DashboardLayout`.
   - For small enter effects, use the `tw-animate-css` classes (`animate-in fade-in zoom-in-95 duration-300`, with `key={url}` to replay on change).
   - `prefers-reduced-motion` is handled globally in `index.css`.

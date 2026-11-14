@@ -515,7 +515,7 @@ export function ReviewsModerationPage() {
 
       <FadeUp>
         <section className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
-          <div className="space-y-3 border-b border-border/70 bg-gradient-to-r from-brand-tint/40 via-background to-background p-4">
+          <div className="space-y-3 border-b border-border/70 bg-linear-to-r from-brand-tint/40 via-background to-background p-4">
             <div className="flex flex-wrap items-center gap-2">
               <div className="-mx-1 overflow-x-auto px-1 pb-0.5">
                 <div role="tablist" aria-label="Filter by review status" className="inline-flex gap-1 rounded-xl border border-border bg-muted/40 p-1">

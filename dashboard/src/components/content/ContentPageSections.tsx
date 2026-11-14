@@ -3,6 +3,7 @@ import { useFormContext } from "react-hook-form";
 import { ArrowDown, ArrowUp, ExternalLink, EyeOff, Trash2 } from "lucide-react";
 import { useConfirm } from "@/components/providers/ConfirmProvider";
 import { FormSection } from "@/components/dashboard/page-shell";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { CharCounter, SearchPreview } from "@/components/seo/SeoPreview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ export function SwitchRow({
       control={form.control}
       name={name as "content.contact_cta.enabled"}
       render={({ field }) => (
-        <FormItem className="flex items-start justify-between gap-4 rounded-xl border border-border/70 p-3.5">
+        <FormItem className="flex items-start justify-between gap-4 rounded-xl border border-border/80 bg-background p-3.5 shadow-sm">
           <div className="space-y-0.5">
             <FormLabel>{label}</FormLabel>
             <FormDescription>{description}</FormDescription>
@@ -223,7 +224,7 @@ export function PageSeoFields({ step }: { step: string }) {
         control={form.control}
         name="noindex"
         render={({ field }) => (
-          <FormItem className="flex items-start justify-between gap-4 rounded-xl border border-border/70 p-3.5">
+          <FormItem className="flex items-start justify-between gap-4 rounded-xl border border-border/80 bg-background p-3.5 shadow-sm">
             <div className="space-y-0.5">
               <FormLabel>Hide this page from search engines</FormLabel>
               <FormDescription>Adds noindex and removes the page from sitemap.xml.</FormDescription>
@@ -271,89 +272,108 @@ export function PageStatusAside({
   const siteName = getPrintBranding().siteName || "Niyenin";
 
   return (
-    <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-      <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-semibold">Status</p>
-          {isDefault ? (
-            <Badge variant="outline" className="text-[11px]">
-              Built-in default
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="border-brand-primary/30 bg-brand-tint/60 text-[11px] text-brand-deep">
-              Customized
-            </Badge>
-          )}
-        </div>
-        <FormField
-          control={form.control}
-          name="is_published"
-          render={({ field }) => (
-            <FormItem className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-muted/40 p-3">
-              <div>
-                <FormLabel className="text-sm">{field.value ? "Published" : "Unpublished"}</FormLabel>
-                <FormDescription className="text-xs">
-                  {field.value ? "Visible on the storefront." : "Visitors get a 404."}
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={async (next) => {
-                    if (!next) {
-                      const ok = await confirm({
-                        title: "Unpublish this page?",
-                        description:
-                          "After you save, visitors and search engines get “page not found” and footer links to it will be broken until you publish again.",
-                        confirmLabel: "Unpublish",
-                        tone: "warning",
-                      });
-                      if (!ok) return;
-                    }
-                    field.onChange(next);
-                  }}
-                  aria-label="Published"
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-        <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
-          {stats.map((s) => (
-            <div key={s.label} className="rounded-lg border border-border/60 px-3 py-2">
-              <dt className="text-muted-foreground">{s.label}</dt>
-              <dd className="mt-0.5 text-base font-semibold tabular-nums">{s.value}</dd>
+    <aside className="lg:sticky lg:top-20 lg:self-start">
+      <Stagger className="space-y-4">
+        <StaggerItem>
+          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold">Status</p>
+              {isDefault ? (
+                <Badge variant="outline" className="text-[11px]">
+                  Built-in default
+                </Badge>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="border-brand-primary/30 bg-brand-tint/60 text-[11px] text-brand-deep"
+                >
+                  Customized
+                </Badge>
+              )}
             </div>
-          ))}
-        </dl>
-        <p className="mt-3 text-xs text-muted-foreground">
-          {updatedAt ? `Last saved ${new Date(updatedAt).toLocaleString()}` : "Not saved yet — showing the default text."}
-        </p>
-        <Button asChild variant="secondary" size="sm" className="mt-3 w-full">
-          <a href={`${STOREFRONT_URL}${path}`} target="_blank" rel="noreferrer">
-            View live page <ExternalLink className="size-3.5" />
-          </a>
-        </Button>
-      </div>
+            <FormField
+              control={form.control}
+              name="is_published"
+              render={({ field }) => (
+                <FormItem className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-muted/40 p-3">
+                  <div>
+                    <FormLabel className="text-sm">
+                      {field.value ? "Published" : "Unpublished"}
+                    </FormLabel>
+                    <FormDescription className="text-xs">
+                      {field.value ? "Visible on the storefront." : "Visitors get a 404."}
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={async (next) => {
+                        if (!next) {
+                          const ok = await confirm({
+                            title: "Unpublish this page?",
+                            description:
+                              "After you save, visitors and search engines get “page not found” and footer links to it will be broken until you publish again.",
+                            confirmLabel: "Unpublish",
+                            tone: "warning",
+                          });
+                          if (!ok) return;
+                        }
+                        field.onChange(next);
+                      }}
+                      aria-label="Published"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
+              {stats.map((s) => (
+                <div key={s.label} className="rounded-lg border border-border/60 px-3 py-2">
+                  <dt className="text-muted-foreground">{s.label}</dt>
+                  <dd className="mt-0.5 text-base font-semibold tabular-nums">{s.value}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-3 text-xs text-muted-foreground">
+              {updatedAt
+                ? `Last saved ${new Date(updatedAt).toLocaleString()}`
+                : "Not saved yet — showing the default text."}
+            </p>
+            <Button asChild variant="secondary" size="sm" className="mt-3 w-full">
+              <a href={`${STOREFRONT_URL}${path}`} target="_blank" rel="noreferrer">
+                View live page <ExternalLink className="size-3.5" />
+              </a>
+            </Button>
+          </div>
+        </StaggerItem>
 
-      <SearchPreview
-        title={applyTitleTemplate(v.seo_title || v.content.hero.title, null, siteName)}
-        description={v.seo_description || v.content.hero.subtitle}
-        path={path}
-        siteName={siteName}
-        noIndex={v.noindex || !v.is_published}
-      />
+        <StaggerItem>
+          <SearchPreview
+            title={applyTitleTemplate(v.seo_title || v.content.hero.title, null, siteName)}
+            description={v.seo_description || v.content.hero.subtitle}
+            path={path}
+            siteName={siteName}
+            noIndex={v.noindex || !v.is_published}
+          />
+        </StaggerItem>
 
-      <div className="rounded-2xl border border-border/80 bg-card p-4 text-xs text-muted-foreground shadow-sm">
-        <p className="mb-2 text-sm font-semibold text-foreground">Formatting</p>
-        <ul className="space-y-1.5">
-          <li>Leave a blank line to start a new paragraph.</li>
-          <li>
-            Start a line with <code className="rounded bg-muted px-1">- </code> to make a bullet list.
-          </li>
-          <li>HTML and code are not allowed. Phrases like “select … from” on one line are blocked by the security filter — reword them.</li>
-        </ul>
-      </div>
+        <StaggerItem>
+          <div className="rounded-2xl border border-border/80 bg-card p-4 text-xs text-muted-foreground shadow-sm">
+            <p className="mb-2 text-sm font-semibold text-foreground">Formatting</p>
+            <ul className="space-y-1.5">
+              <li>Leave a blank line to start a new paragraph.</li>
+              <li>
+                Start a line with <code className="rounded bg-muted px-1">- </code> to make a
+                bullet list.
+              </li>
+              <li>
+                HTML and code are not allowed. Phrases like “select … from” on one line are
+                blocked by the security filter — reword them.
+              </li>
+            </ul>
+          </div>
+        </StaggerItem>
+      </Stagger>
     </aside>
   );
 }

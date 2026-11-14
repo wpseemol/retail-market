@@ -5,6 +5,15 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-14
 
+### Professional shadcn dashboard redesign (brand kept)
+
+- **Shell:** `DashboardLayout` soft content frame; `app-sidebar` grouped Workspace / Marketing / Content / Support / System (Site settings link); sticky `site-header` path breadcrumbs; `page-shell` adds `PageToolbar` / `PagePanel` and header border polish.
+- **Settings:** sticky desktop left nav + mobile chips; `SettingsSection` / new `SettingsCard` with FadeUp; tab content fades on route change.
+- **Marketing:** SEO page uses `SegmentedControl` for page keys + staggered live preview column.
+- **Content:** FAQ / Terms / Privacy full-width editors; staggered status aside; category cards use brand-tint header strip.
+- **Lists:** Overview KPI stagger; Orders/Reviews toolbar strip; Categories card hover; Notifications header matches PageHeader rhythm.
+- Motion stays LazyMotion `domAnimation` only (`FadeUp` / `Stagger` / `pageEnter`).
+
 ### Settings menu grouped + Backups cards like Social login
 
 - `settingsTabs.ts`: `SETTINGS_TAB_GROUPS` — Storefront / Integrations / Tracking / System.

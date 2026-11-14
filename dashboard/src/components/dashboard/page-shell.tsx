@@ -24,7 +24,7 @@ export function PageHeader({
     <FadeUp>
       <div
         className={cn(
-          "flex flex-wrap items-end justify-between gap-3",
+          "flex flex-wrap items-end justify-between gap-4 border-b border-border/60 pb-4",
           className,
         )}
       >
@@ -33,12 +33,58 @@ export function PageHeader({
             {title}
           </h1>
           {description ? (
-            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+            <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground">
+              {description}
+            </p>
           ) : null}
         </div>
         {actions ? (
           <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
         ) : null}
+      </div>
+    </FadeUp>
+  );
+}
+
+/** Muted strip for filters / KPI toolbars on list pages. */
+export function PageToolbar({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <FadeUp>
+      <div
+        className={cn(
+          "flex flex-wrap items-center gap-2 rounded-2xl border border-border/80 bg-card/80 px-3 py-2.5 shadow-sm",
+          className,
+        )}
+      >
+        {children}
+      </div>
+    </FadeUp>
+  );
+}
+
+/** Standard list/table surface used across dashboard pages. */
+export function PagePanel({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <FadeUp>
+      <div
+        className={cn(
+          "overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm",
+          className,
+        )}
+      >
+        {children}
       </div>
     </FadeUp>
   );
@@ -171,8 +217,8 @@ export function FormSection({
           className={cn(
             "flex items-start gap-3 border-b px-5 py-4",
             tone === "danger"
-              ? "border-destructive/20 bg-gradient-to-r from-destructive/10 via-background to-background"
-              : "border-border/70 bg-gradient-to-r from-brand-tint/50 via-background to-background",
+              ? "border-destructive/20 bg-linear-to-r from-destructive/10 via-background to-background"
+              : "border-border/70 bg-linear-to-r from-brand-tint/50 via-background to-background",
           )}
         >
           <span

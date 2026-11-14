@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useToastMessages } from "@/hooks/use-toast-messages";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { ApiError, apiFetch } from "@/lib/api";
 import {
     siteSettingsFormSchema,
@@ -10,6 +10,7 @@ import {
     type SiteSettingsFormValues,
 } from "@/lib/validators/siteSettings";
 import { useAuthStore } from "@/store/auth";
+import { FadeUp } from "@/components/motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -101,71 +102,112 @@ export function SiteSettingsLayout() {
     }
 
     return (
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 pb-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                        <Link to="/profile" className="hover:text-brand-primary transition-colors">
-                            Profile
-                        </Link>
-                        <span className="mx-1.5 text-border">/</span>
-                        Site settings
-                    </p>
-                    <h1 className="mt-1 text-2xl font-semibold tracking-tight">Site settings</h1>
-                    <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-                        Storefront identity, integrations (Google, Facebook, payments), tracking, and
-                        system backups — same card layout on every section.
-                    </p>
-                </div>
-                <Badge
-                    variant="outline"
-                    className="border-brand-primary/30 bg-brand-tint/60 text-brand-deep"
-                >
-                    Super admin
-                </Badge>
-            </div>
-
-            <nav aria-label="Settings sections" className="space-y-3">
-                {SETTINGS_TAB_GROUPS.map((group) => (
-                    <div
-                        key={group.id}
-                        className="rounded-2xl border border-border/80 bg-muted/30 p-2 sm:p-2.5"
-                    >
-                        <p className="mb-1.5 px-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                            {group.label}
+        <div className="flex w-full flex-col gap-6 pb-4">
+            <FadeUp>
+                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border/60 pb-4">
+                    <div>
+                        <h1 className="text-2xl font-semibold tracking-tight">Site settings</h1>
+                        <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                            Storefront identity, integrations, tracking, and system backups — shadcn
+                            card layout on every section.
                         </p>
-                        <div className="flex flex-wrap gap-1">
-                            {group.tabs.map((tab) => (
-                                <NavLink
-                                    key={tab.path}
-                                    to={`/settings/${tab.path}`}
-                                    className={({ isActive }) =>
-                                        cn(
-                                            "inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
-                                            isActive
-                                                ? "bg-background text-foreground shadow-sm ring-1 ring-border/80"
-                                                : "text-muted-foreground hover:bg-background/70 hover:text-foreground",
-                                        )
-                                    }
-                                >
-                                    <tab.icon className="size-3.5 shrink-0" />
-                                    {tab.label}
-                                </NavLink>
+                    </div>
+                    <Badge
+                        variant="outline"
+                        className="border-brand-primary/30 bg-brand-tint/60 text-brand-deep"
+                    >
+                        Super admin
+                    </Badge>
+                </div>
+            </FadeUp>
+
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+                <aside className="w-full shrink-0 lg:sticky lg:top-20 lg:w-56 xl:w-64">
+                    {/* Mobile: horizontal group chips */}
+                    <nav aria-label="Settings sections" className="space-y-3 lg:hidden">
+                        {SETTINGS_TAB_GROUPS.map((group) => (
+                            <div
+                                key={group.id}
+                                className="rounded-2xl border border-border/80 bg-card p-2 shadow-sm"
+                            >
+                                <p className="mb-1.5 px-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                    {group.label}
+                                </p>
+                                <div className="flex flex-wrap gap-1">
+                                    {group.tabs.map((tab) => (
+                                        <NavLink
+                                            key={tab.path}
+                                            to={`/settings/${tab.path}`}
+                                            className={({ isActive }) =>
+                                                cn(
+                                                    "inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+                                                    isActive
+                                                        ? "bg-brand-tint/70 text-brand-deep shadow-sm"
+                                                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                                                )
+                                            }
+                                        >
+                                            <tab.icon className="size-3.5 shrink-0" />
+                                            {tab.label}
+                                        </NavLink>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </nav>
+
+                    {/* Desktop: sticky vertical nav */}
+                    <nav
+                        aria-label="Settings sections"
+                        className="hidden space-y-4 rounded-2xl border border-border/80 bg-card p-3 shadow-sm lg:block"
+                    >
+                        {SETTINGS_TAB_GROUPS.map((group) => (
+                            <div key={group.id}>
+                                <p className="mb-1.5 px-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                    {group.label}
+                                </p>
+                                <ul className="space-y-0.5">
+                                    {group.tabs.map((tab) => (
+                                        <li key={tab.path}>
+                                            <NavLink
+                                                to={`/settings/${tab.path}`}
+                                                className={({ isActive }) =>
+                                                    cn(
+                                                        "flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm font-medium transition-colors",
+                                                        isActive
+                                                            ? "bg-brand-tint/70 text-brand-deep"
+                                                            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                                                    )
+                                                }
+                                            >
+                                                <tab.icon className="size-3.5 shrink-0" />
+                                                <span className="truncate">{tab.label}</span>
+                                            </NavLink>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </nav>
+                </aside>
+
+                <div className="min-w-0 flex-1">
+                    {context ? (
+                        <FadeUp key={pathname}>
+                            <Outlet context={context} />
+                        </FadeUp>
+                    ) : (
+                        <div className="space-y-5">
+                            {[1, 2, 3].map((n) => (
+                                <div
+                                    key={n}
+                                    className="h-48 animate-pulse rounded-2xl bg-muted/60"
+                                />
                             ))}
                         </div>
-                    </div>
-                ))}
-            </nav>
-
-            {context ? (
-                <Outlet context={context} />
-            ) : (
-                <div className="space-y-5">
-                    {[1, 2, 3].map((n) => (
-                        <div key={n} className="h-48 animate-pulse rounded-2xl bg-muted/60" />
-                    ))}
+                    )}
                 </div>
-            )}
+            </div>
         </div>
     );
 }

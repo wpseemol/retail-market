@@ -137,12 +137,12 @@ export function NotificationsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border/60 pb-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
             Notifications
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground">
             All inbox updates — orders, catalog, and anything else staff need
             to see.
           </p>

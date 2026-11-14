@@ -55,6 +55,7 @@ import {
     SegmentedControl,
     SegmentedControlItem,
 } from "@/components/dashboard/page-shell";
+import { Stagger, StaggerItem } from "@/components/motion";
 import { STOREFRONT_URL } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
@@ -285,21 +286,22 @@ export function HomePage() {
                 </div>
             ) : null}
 
-            <div
+            <Stagger
                 className={cn(
                     "grid gap-3 sm:grid-cols-2 xl:grid-cols-4",
                     loading && overview && "opacity-70 transition-opacity",
                 )}
             >
                 {kpis.map((kpi) => (
-                    <KpiCard
-                        key={kpi.title}
-                        {...kpi}
-                        series={series}
-                        loading={busy}
-                    />
+                    <StaggerItem key={kpi.title}>
+                        <KpiCard
+                            {...kpi}
+                            series={series}
+                            loading={busy}
+                        />
+                    </StaggerItem>
                 ))}
-            </div>
+            </Stagger>
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {[

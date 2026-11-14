@@ -323,7 +323,7 @@ export function CategoriesPage() {
               {categories.map((cat) => (
                 <div
                   key={cat.id}
-                  className="group relative flex flex-col gap-3 rounded-xl border border-border bg-gradient-to-br from-background to-muted/30 p-4 transition-shadow hover:shadow-md"
+                  className="group relative flex flex-col gap-3 rounded-xl border border-border/80 bg-linear-to-br from-background to-muted/30 p-4 shadow-sm transition-shadow hover:border-brand-primary/30 hover:shadow-md"
                 >
                   <div className="flex items-start gap-3">
                     <CategoryIconBadge

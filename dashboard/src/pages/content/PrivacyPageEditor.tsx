@@ -139,7 +139,7 @@ export function PrivacyPageEditor() {
   const allOpen = list.length > 0 && list.every((s) => open.has(s.id));
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-4">
+    <div className="flex w-full flex-col gap-6 pb-4">
       <PageHero
         eyebrow="Content pages"
         title="Privacy policy"

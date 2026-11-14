@@ -157,7 +157,7 @@ export function FaqPageEditor() {
   const q = filter.trim().toLowerCase();
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-4">
+    <div className="flex w-full flex-col gap-6 pb-4">
       <PageHero
         eyebrow="Content pages"
         title="FAQ page"
@@ -378,12 +378,12 @@ function CategoryCard({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border bg-background",
+        "overflow-hidden rounded-xl border bg-background shadow-sm",
         catErrors ? "border-destructive/50" : "border-border/80",
         !cat.enabled && "opacity-75",
       )}
     >
-      <div className="flex items-center gap-2 bg-muted/30 px-3 py-2.5">
+      <div className="flex items-center gap-2 bg-linear-to-r from-brand-tint/30 via-muted/20 to-transparent px-3 py-2.5">
         <button
           type="button"
           onClick={() => toggle(cat.id)}

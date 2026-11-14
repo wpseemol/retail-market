@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import {
   CircleHelp,
   ClipboardList,
@@ -9,6 +9,7 @@ import {
   Palette,
   ScrollText,
   SearchCheck,
+  Settings2,
   Shield,
   ShieldCheck,
   Store,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { NavUser } from "@/components/dashboard/nav-user";
+import { FadeIn, Stagger, StaggerItem } from "@/components/motion";
 import {
   Sidebar,
   SidebarContent,
@@ -35,8 +37,15 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import type { StaffRole } from "@/lib/api";
-import { CONTENT_PAGE_ROLES, REVIEW_ROLES, SEO_ROLES, STORE_ROLES } from "@/lib/rbac";
+import {
+  CONTENT_PAGE_ROLES,
+  REVIEW_ROLES,
+  SEO_ROLES,
+  STORE_ROLES,
+  SYSTEM_SETTINGS_ROLES,
+} from "@/lib/rbac";
 import { useAuthStore } from "@/store/auth";
+import { cn } from "@/lib/utils";
 
 const ROLE_HOME: Record<StaffRole, string> = {
   super_admin: "/",
@@ -45,13 +54,16 @@ const ROLE_HOME: Record<StaffRole, string> = {
   vendor: "/vendor",
 };
 
-const topLinks: Array<{
+type NavItem = {
   to: string;
   label: string;
   icon: typeof LayoutDashboard;
   roles: readonly StaffRole[];
   end?: boolean;
-}> = [
+  only?: boolean;
+};
+
+const workspaceLinks: NavItem[] = [
   {
     to: "/",
     label: "Overview",
@@ -79,13 +91,7 @@ const topLinks: Array<{
   },
 ];
 
-const productSubLinks: Array<{
-  to: string;
-  label: string;
-  icon: typeof Package;
-  roles: StaffRole[];
-  end?: boolean;
-}> = [
+const catalogLinks: NavItem[] = [
   {
     to: "/products",
     label: "Products",
@@ -107,34 +113,16 @@ const productSubLinks: Array<{
   },
 ];
 
-const supportLinks: Array<{
-  to: string;
-  label: string;
-  icon: typeof LayoutDashboard;
-  roles: readonly StaffRole[];
-}> = [
-  {
-    to: "/support/reviews",
-    label: "Product reviews",
-    icon: MessageSquareText,
-    roles: REVIEW_ROLES,
-  },
-];
-
-const marketingLinks: Array<{
-  to: string;
-  label: string;
-  icon: typeof LayoutDashboard;
-  roles: readonly StaffRole[];
-  /** Only these roles see it, even super_admin (e.g. vendor-only shortcuts). */
-  only?: boolean;
-}> = [
+const marketingLinks: NavItem[] = [
   {
     to: "/seo",
     label: "Search & SEO",
     icon: SearchCheck,
     roles: SEO_ROLES,
   },
+];
+
+const contentLinks: NavItem[] = [
   {
     to: "/content/faq",
     label: "FAQ page",
@@ -153,6 +141,9 @@ const marketingLinks: Array<{
     icon: Shield,
     roles: CONTENT_PAGE_ROLES,
   },
+];
+
+const vendorShortcuts: NavItem[] = [
   {
     to: "/stores",
     label: "My store page",
@@ -169,12 +160,25 @@ const marketingLinks: Array<{
   },
 ];
 
-const roleLinks: Array<{
-  to: string;
-  label: string;
-  icon: typeof LayoutDashboard;
-  roles: StaffRole[];
-}> = [
+const supportLinks: NavItem[] = [
+  {
+    to: "/support/reviews",
+    label: "Product reviews",
+    icon: MessageSquareText,
+    roles: REVIEW_ROLES,
+  },
+];
+
+const systemLinks: NavItem[] = [
+  {
+    to: "/settings",
+    label: "Site settings",
+    icon: Settings2,
+    roles: SYSTEM_SETTINGS_ROLES,
+  },
+];
+
+const roleLinks: NavItem[] = [
   {
     to: "/super-admin",
     label: "Super Admin",
@@ -201,31 +205,86 @@ const roleLinks: Array<{
   },
 ];
 
-function canSee(roles: readonly StaffRole[], userRole: StaffRole) {
+function canSee(roles: readonly StaffRole[], userRole: StaffRole, only?: boolean) {
+  if (only) return roles.includes(userRole);
   return userRole === "super_admin" || roles.includes(userRole);
+}
+
+function filterLinks(items: NavItem[], role: StaffRole | undefined) {
+  if (!role) return [];
+  return items.filter((link) => canSee(link.roles, role, link.only));
+}
+
+function isActivePath(pathname: string, search: string, to: string, end?: boolean) {
+  const [path, query] = to.split("?");
+  if (query) return pathname === path && search === `?${query}`;
+  if (end) return pathname === path;
+  return pathname === path || pathname.startsWith(`${path}/`);
+}
+
+function NavGroup({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/90">
+        {label}
+      </SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>{children}</SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+}
+
+function SimpleLink({
+  link,
+  pathname,
+  search,
+}: {
+  link: NavItem;
+  pathname: string;
+  search: string;
+}) {
+  const active = isActivePath(pathname, search, link.to, link.end);
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        asChild
+        isActive={active}
+        tooltip={link.label}
+        className={cn(
+          active &&
+            "bg-brand-tint/70 font-medium text-brand-deep data-[active=true]:bg-brand-tint/70 data-[active=true]:text-brand-deep",
+        )}
+      >
+        <NavLink to={link.to} end={link.end}>
+          <link.icon />
+          <span>{link.label}</span>
+        </NavLink>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
 }
 
 export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   const user = useAuthStore((state) => state.user);
   const { pathname, search } = useLocation();
   const logoHref = user ? ROLE_HOME[user.role] : "/";
+  const role = user?.role;
 
-  const links = topLinks.filter(
-    (link) => user && canSee(link.roles, user.role),
-  );
-  const catalogLinks = productSubLinks.filter(
-    (link) => user && canSee(link.roles, user.role),
-  );
-  const workspaceRoleLinks = roleLinks.filter(
-    (link) => user && canSee(link.roles, user.role),
-  );
-  const qualityLinks = supportLinks.filter(
-    (link) => user && canSee(link.roles, user.role),
-  );
-  const seoLinks = marketingLinks.filter(
-    (link) =>
-      user && (link.only ? link.roles.includes(user.role) : canSee(link.roles, user.role)),
-  );
+  const workspace = filterLinks(workspaceLinks, role);
+  const catalog = filterLinks(catalogLinks, role);
+  const marketing = filterLinks(marketingLinks, role);
+  const content = filterLinks(contentLinks, role);
+  const vendorOnly = filterLinks(vendorShortcuts, role);
+  const support = filterLinks(supportLinks, role);
+  const system = filterLinks(systemLinks, role);
+  const roles = filterLinks(roleLinks, role);
 
   const catalogOpen =
     pathname.startsWith("/products") ||
@@ -234,7 +293,7 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="border-b border-sidebar-border/60">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
@@ -255,9 +314,7 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
                   <span className="truncate font-semibold tracking-tight text-white">
                     Niyenin
                   </span>
-                  <span className="truncate text-[11px] text-white/75">
-                    Dashboard
-                  </span>
+                  <span className="truncate text-[11px] text-white/75">Dashboard</span>
                 </div>
               </NavLink>
             </SidebarMenuButton>
@@ -265,146 +322,138 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {links.map((link) => {
-                const active = link.end
-                  ? pathname === link.to
-                  : pathname === link.to || pathname.startsWith(`${link.to}/`);
+      <SidebarContent className="gap-1">
+        <FadeIn>
+          <Stagger className="flex flex-col gap-1">
+            {workspace.length > 0 ? (
+              <StaggerItem>
+                <NavGroup label="Workspace">
+                  {workspace.map((link) => (
+                    <SimpleLink
+                      key={link.to}
+                      link={link}
+                      pathname={pathname}
+                      search={search}
+                    />
+                  ))}
 
-                return (
-                  <SidebarMenuItem key={link.to}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={active}
-                      tooltip={link.label}
-                    >
-                      <NavLink to={link.to} end={link.end}>
-                        <link.icon />
-                        <span>{link.label}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-
-              {catalogLinks.length > 0 ? (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={catalogOpen}
-                    tooltip="Catalog"
-                  >
-                    <NavLink to="/products">
-                      <Package />
-                      <span>Catalog</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                  <SidebarMenuSub>
-                    {catalogLinks.map((link) => {
-                      const isActive =
-                        link.to === "/products"
-                          ? pathname === "/products" ||
-                            pathname.startsWith("/products/")
-                          : pathname === link.to ||
-                            pathname.startsWith(`${link.to}/`);
-
-                      return (
-                        <SidebarMenuSubItem key={link.to}>
-                          <SidebarMenuSubButton asChild isActive={isActive}>
-                            <NavLink to={link.to} end={link.end}>
-                              <link.icon />
-                              <span>{link.label}</span>
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      );
-                    })}
-                  </SidebarMenuSub>
-                </SidebarMenuItem>
-              ) : null}
-
-              {workspaceRoleLinks.map((link) => {
-                const active =
-                  pathname === link.to || pathname.startsWith(`${link.to}/`);
-                return (
-                  <SidebarMenuItem key={link.to}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={active}
-                      tooltip={link.label}
-                    >
-                      <NavLink to={link.to}>
-                        <link.icon />
-                        <span>{link.label}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {seoLinks.length > 0 ? (
-          <SidebarGroup>
-            <SidebarGroupLabel>Marketing &amp; content</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {seoLinks.map((link) => {
-                  const [path, query] = link.to.split("?");
-                  const active = query
-                    ? pathname === path && search === `?${query}`
-                    : pathname === path || pathname.startsWith(`${path}/`);
-                  return (
-                    <SidebarMenuItem key={link.to}>
-                      <SidebarMenuButton asChild isActive={active} tooltip={link.label}>
-                        <NavLink to={link.to} end>
-                          <link.icon />
-                          <span>{link.label}</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ) : null}
-
-        {qualityLinks.length > 0 ? (
-          <SidebarGroup>
-            <SidebarGroupLabel>Support &amp; Quality</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {qualityLinks.map((link) => {
-                  const active =
-                    pathname === link.to || pathname.startsWith(`${link.to}/`);
-                  return (
-                    <SidebarMenuItem key={link.to}>
+                  {catalog.length > 0 ? (
+                    <SidebarMenuItem>
                       <SidebarMenuButton
                         asChild
-                        isActive={active}
-                        tooltip={link.label}
+                        isActive={catalogOpen}
+                        tooltip="Catalog"
+                        className={cn(
+                          catalogOpen &&
+                            "bg-brand-tint/70 font-medium text-brand-deep data-[active=true]:bg-brand-tint/70 data-[active=true]:text-brand-deep",
+                        )}
                       >
-                        <NavLink to={link.to}>
-                          <link.icon />
-                          <span>{link.label}</span>
+                        <NavLink to="/products">
+                          <Package />
+                          <span>Catalog</span>
                         </NavLink>
                       </SidebarMenuButton>
+                      <SidebarMenuSub>
+                        {catalog.map((link) => {
+                          const active = isActivePath(
+                            pathname,
+                            search,
+                            link.to,
+                            link.end,
+                          );
+                          return (
+                            <SidebarMenuSubItem key={link.to}>
+                              <SidebarMenuSubButton asChild isActive={active}>
+                                <NavLink to={link.to} end={link.end}>
+                                  <link.icon />
+                                  <span>{link.label}</span>
+                                </NavLink>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
                     </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ) : null}
+                  ) : null}
+
+                  {roles.map((link) => (
+                    <SimpleLink
+                      key={link.to}
+                      link={link}
+                      pathname={pathname}
+                      search={search}
+                    />
+                  ))}
+                </NavGroup>
+              </StaggerItem>
+            ) : null}
+
+            {marketing.length > 0 || vendorOnly.length > 0 ? (
+              <StaggerItem>
+                <NavGroup label="Marketing">
+                  {[...marketing, ...vendorOnly].map((link) => (
+                    <SimpleLink
+                      key={link.to}
+                      link={link}
+                      pathname={pathname}
+                      search={search}
+                    />
+                  ))}
+                </NavGroup>
+              </StaggerItem>
+            ) : null}
+
+            {content.length > 0 ? (
+              <StaggerItem>
+                <NavGroup label="Content">
+                  {content.map((link) => (
+                    <SimpleLink
+                      key={link.to}
+                      link={link}
+                      pathname={pathname}
+                      search={search}
+                    />
+                  ))}
+                </NavGroup>
+              </StaggerItem>
+            ) : null}
+
+            {support.length > 0 ? (
+              <StaggerItem>
+                <NavGroup label="Support">
+                  {support.map((link) => (
+                    <SimpleLink
+                      key={link.to}
+                      link={link}
+                      pathname={pathname}
+                      search={search}
+                    />
+                  ))}
+                </NavGroup>
+              </StaggerItem>
+            ) : null}
+
+            {system.length > 0 ? (
+              <StaggerItem>
+                <NavGroup label="System">
+                  {system.map((link) => (
+                    <SimpleLink
+                      key={link.to}
+                      link={link}
+                      pathname={pathname}
+                      search={search}
+                    />
+                  ))}
+                </NavGroup>
+              </StaggerItem>
+            ) : null}
+          </Stagger>
+        </FadeIn>
       </SidebarContent>
 
-      <SidebarFooter>{user ? <NavUser user={user} /> : null}</SidebarFooter>
+      <SidebarFooter className="border-t border-sidebar-border/60">
+        {user ? <NavUser user={user} /> : null}
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
