@@ -41,7 +41,7 @@ dashboard/
     │       ├── storefront/         #   identity, header, footer, home, shop, social share
     │       ├── integrations/       #   credentials: social login, SMS, WhatsApp, email, payment, shipping
     │       ├── tracking/           #   analytics, pixels
-    │       └── audit/              #   history, backups (super_admin download of uploads + SQL ZIPs)
+    │       └── audit/              #   history, backups (card UI like Social login; super_admin ZIPs)
     ├── layouts/
     ├── components/
     │   ├── ui/                     # shadcn primitives

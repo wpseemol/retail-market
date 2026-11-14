@@ -13,7 +13,7 @@ import { useAuthStore } from "@/store/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { SETTINGS_TABS } from "./settingsTabs";
+import { SETTINGS_TAB_GROUPS } from "./settingsTabs";
 import {
     EMPTY_SITE_SETTINGS_FORM,
     toSiteSettingsFormValues,
@@ -113,7 +113,8 @@ export function SiteSettingsLayout() {
                     </p>
                     <h1 className="mt-1 text-2xl font-semibold tracking-tight">Site settings</h1>
                     <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-                        Storefront identity, shop catalog, payments, delivery, messaging, and tracking.
+                        Storefront identity, integrations (Google, Facebook, payments), tracking, and
+                        system backups — same card layout on every section.
                     </p>
                 </div>
                 <Badge
@@ -124,26 +125,35 @@ export function SiteSettingsLayout() {
                 </Badge>
             </div>
 
-            <nav
-                aria-label="Settings sections"
-                className="flex flex-wrap gap-1 rounded-2xl border border-border/80 bg-muted/40 p-1"
-            >
-                {SETTINGS_TABS.map((tab) => (
-                    <NavLink
-                        key={tab.path}
-                        to={`/settings/${tab.path}`}
-                        className={({ isActive }) =>
-                            cn(
-                                "inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
-                                isActive
-                                    ? "bg-background text-foreground shadow-sm"
-                                    : "text-muted-foreground hover:text-foreground",
-                            )
-                        }
+            <nav aria-label="Settings sections" className="space-y-3">
+                {SETTINGS_TAB_GROUPS.map((group) => (
+                    <div
+                        key={group.id}
+                        className="rounded-2xl border border-border/80 bg-muted/30 p-2 sm:p-2.5"
                     >
-                        <tab.icon className="size-3.5 shrink-0" />
-                        {tab.label}
-                    </NavLink>
+                        <p className="mb-1.5 px-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            {group.label}
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                            {group.tabs.map((tab) => (
+                                <NavLink
+                                    key={tab.path}
+                                    to={`/settings/${tab.path}`}
+                                    className={({ isActive }) =>
+                                        cn(
+                                            "inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+                                            isActive
+                                                ? "bg-background text-foreground shadow-sm ring-1 ring-border/80"
+                                                : "text-muted-foreground hover:bg-background/70 hover:text-foreground",
+                                        )
+                                    }
+                                >
+                                    <tab.icon className="size-3.5 shrink-0" />
+                                    {tab.label}
+                                </NavLink>
+                            ))}
+                        </div>
+                    </div>
                 ))}
             </nav>
 

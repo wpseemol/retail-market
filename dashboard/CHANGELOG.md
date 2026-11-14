@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-14
 
+### Settings menu grouped + Backups cards like Social login
+
+- `settingsTabs.ts`: `SETTINGS_TAB_GROUPS` — Storefront / Integrations / Tracking / System.
+- `SiteSettingsLayout.tsx`: nav shows labeled group cards instead of one long pill wrap.
+- `BackupSettingsPage.tsx`: schedule + archive rows use the same icon/badge/card pattern as Google/Facebook social login.
+
 ### Backups UI: monthly cron + super-admin notify copy
 
 - `BackupSettingsPage.tsx`: describes once-a-month schedule and cron-only super-admin notifications; Run backup now button unchanged.
