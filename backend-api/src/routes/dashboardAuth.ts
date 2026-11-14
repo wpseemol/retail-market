@@ -550,13 +550,21 @@ dashboardAuthRouter.post(
     const secret = decryptSecret(user.two_factor_secret);
     let codeOk = false;
     if (parsed.data.recovery) {
-      const used = await consumeRecoveryCode(
-        user.two_factor_recovery_codes,
-        parsed.data.code,
-      );
-      codeOk = used.ok;
-    } else if (secret) {
-      codeOk = verifyTotpCode(secret, parsed.data.code);
+      codeOk = (
+        await consumeRecoveryCode(
+          user.two_factor_recovery_codes,
+          parsed.data.code,
+        )
+      ).ok;
+    } else if (secret && verifyTotpCode(secret, parsed.data.code)) {
+      codeOk = true;
+    } else {
+      codeOk = (
+        await consumeRecoveryCode(
+          user.two_factor_recovery_codes,
+          parsed.data.code,
+        )
+      ).ok;
     }
     if (!codeOk) {
       return res.status(401).json({
