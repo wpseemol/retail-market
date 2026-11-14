@@ -5,19 +5,40 @@
  *   manifest.json
  *
  *   pnpm backup
- *   pnpm --filter backend-api backup
+ *   pnpm backup -- --notify   # also inbox-notify every super_admin (use from crontab)
  *
- * Prefer this from system crontab on Spaceship/Passenger (process may sleep):
- *   0 3 * * * cd /path/to/backend-api && /usr/bin/node --import tsx scripts/run-backup.ts
- * Or after build: node -e "import('./dist/…')" — use `pnpm backup` with tsx locally.
+ * Monthly system crontab example (1st of month 03:00 UTC):
+ *   0 3 1 * * cd /path/to/backend-api && pnpm backup -- --notify
  */
 import "../src/lib/env.js";
 import { prisma } from "../src/lib/prisma.js";
 import { runBackup } from "../src/lib/backup.js";
+import { notifySuperAdminsBackupCron } from "../src/lib/notifications.js";
+
+const notify = process.argv.includes("--notify");
 
 async function main() {
-  const manifest = await runBackup();
-  console.log(JSON.stringify(manifest, null, 2));
+  try {
+    const manifest = await runBackup();
+    console.log(JSON.stringify(manifest, null, 2));
+    if (notify) {
+      await notifySuperAdminsBackupCron({
+        ok: true,
+        stamp: manifest.stamp,
+        uploadsBytes: manifest.uploads.bytes,
+        databaseBytes: manifest.database.bytes,
+      });
+      console.log("[backup] Notified super admins");
+    }
+  } catch (err) {
+    if (notify) {
+      await notifySuperAdminsBackupCron({
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      }).catch(() => undefined);
+    }
+    throw err;
+  }
 }
 
 main()

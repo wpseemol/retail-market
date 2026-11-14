@@ -180,10 +180,13 @@ export const env = {
    */
   backup: {
     enabled: process.env.BACKUP_ENABLED === "true",
-    /** Five-field cron (minute hour day month weekday), UTC. Default: 03:00 daily. */
-    cron: (process.env.BACKUP_CRON ?? "0 3 * * *").trim() || "0 3 * * *",
-    /** Delete dated backup folders older than this many days (0 = keep forever). */
-    retentionDays: positiveInt(process.env.BACKUP_RETENTION_DAYS, 14),
+    /**
+     * Five-field cron (minute hour day-of-month month weekday), UTC.
+     * Default: 1st of each month at 03:00 UTC (`0 3 1 * *`).
+     */
+    cron: (process.env.BACKUP_CRON ?? "0 3 1 * *").trim() || "0 3 1 * *",
+    /** Delete dated backup folders older than this many days (~13 months keeps ~12 monthly runs). */
+    retentionDays: positiveInt(process.env.BACKUP_RETENTION_DAYS, 400),
     /** Relative to the API process cwd (usually `backend-api/`). */
     dir: (process.env.BACKUP_DIR ?? "backups").trim() || "backups",
   },

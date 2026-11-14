@@ -86,6 +86,40 @@ export type NewOrderNotifyInput = {
   vendorUserIds: bigint[];
 };
 
+/** Tell every active super_admin that a scheduled (cron) backup finished. */
+export async function notifySuperAdminsBackupCron(input: {
+  ok: boolean;
+  stamp?: string;
+  error?: string;
+  uploadsBytes?: number;
+  databaseBytes?: number;
+}) {
+  const ids = await findStaffUserIds(["super_admin"]);
+  if (ids.length === 0) return { count: 0 };
+
+  if (input.ok && input.stamp) {
+    return notifyUsers(ids, {
+      type: "backup.cron.done",
+      title: "Monthly backup finished",
+      body: `Cron backup ${input.stamp} is ready (uploads + database SQL ZIPs). Open Settings → Backups to download.`,
+      data: {
+        stamp: input.stamp,
+        uploads_bytes: input.uploadsBytes ?? null,
+        database_bytes: input.databaseBytes ?? null,
+      },
+      link: "/settings/backups",
+    });
+  }
+
+  return notifyUsers(ids, {
+    type: "backup.cron.failed",
+    title: "Monthly backup failed",
+    body: input.error?.slice(0, 500) || "The scheduled backup did not complete. Check the API logs or run a backup from Settings → Backups.",
+    data: { error: input.error ?? null },
+    link: "/settings/backups",
+  });
+}
+
 /** Notify elevated staff + relevant vendors when a customer places an order. */
 export async function notifyNewOrder(input: NewOrderNotifyInput) {
   const link = `/orders/${input.orderId.toString()}`;

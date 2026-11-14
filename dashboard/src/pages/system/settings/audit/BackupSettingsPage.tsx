@@ -113,7 +113,7 @@ export function BackupSettingsPage() {
     return (
         <SettingsSection
             title="Backups"
-            description="Dated ZIPs of local uploads and a full SQL dump. Only super admins can download; developers can copy the same files from the server backups folder."
+            description="Automatic backup once a month (uploads ZIP + database SQL ZIP). You can also run a backup anytime with the button. Only super admins get a notification when the monthly cron finishes."
             icon={DatabaseBackup}
         >
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -121,9 +121,13 @@ export function BackupSettingsPage() {
                     {config ? (
                         <>
                             <p>
-                                Schedule:{" "}
+                                Monthly schedule:{" "}
                                 <span className="font-medium text-foreground">
-                                    {config.enabled ? `cron ${config.cron} (UTC)` : "off"}
+                                    {config.enabled
+                                        ? config.cron === "0 3 1 * *"
+                                            ? "1st of each month at 03:00 UTC"
+                                            : `cron ${config.cron} (UTC)`
+                                        : "off (set BACKUP_ENABLED=true on the API)"}
                                 </span>
                                 {" · "}
                                 keep {config.retention_days} day
@@ -137,8 +141,7 @@ export function BackupSettingsPage() {
                                 <code className="rounded bg-muted px-1 py-0.5">
                                     database-….sql.zip
                                 </code>
-                                . On the server:{" "}
-                                <code className="rounded bg-muted px-1 py-0.5">pnpm backup</code>
+                                . Cron success/failure notifies super admins only.
                             </p>
                         </>
                     ) : (

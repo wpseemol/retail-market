@@ -39,6 +39,7 @@ function typeLabel(type: string) {
   if (type.startsWith("product.")) return "Product";
   if (type.startsWith("user.")) return "User";
   if (type.startsWith("shop.") || type.startsWith("store.")) return "Store";
+  if (type.startsWith("backup.")) return "Backup";
   return type.replaceAll(".", " ") || "Update";
 }
 

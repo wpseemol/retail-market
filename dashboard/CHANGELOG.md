@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-14
 
+### Backups UI: monthly cron + super-admin notify copy
+
+- `BackupSettingsPage.tsx`: describes once-a-month schedule and cron-only super-admin notifications; Run backup now button unchanged.
+- `NotificationsPage.tsx`: `backup.*` types labeled “Backup”.
+
 ### Super-admin Backups settings tab
 
 - `pages/system/settings/audit/BackupSettingsPage.tsx`: list dated backups, run now, download uploads ZIP and database SQL ZIP (`apiDownload`); only reachable under system settings (super_admin).

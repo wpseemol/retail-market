@@ -1,5 +1,6 @@
 import { env } from "./env.js";
 import { runBackup } from "./backup.js";
+import { notifySuperAdminsBackupCron } from "./notifications.js";
 
 type CronParts = {
   minute: number[];
@@ -79,9 +80,23 @@ async function tick(parts: CronParts, lastKey: { value: string }) {
   }
   running = true;
   try {
-    await runBackup();
+    const manifest = await runBackup();
+    await notifySuperAdminsBackupCron({
+      ok: true,
+      stamp: manifest.stamp,
+      uploadsBytes: manifest.uploads.bytes,
+      databaseBytes: manifest.database.bytes,
+    }).catch((notifyErr) => {
+      console.error("[backup] Super-admin notify failed:", notifyErr);
+    });
   } catch (err) {
     console.error("[backup] Scheduled backup failed:", err);
+    await notifySuperAdminsBackupCron({
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+    }).catch((notifyErr) => {
+      console.error("[backup] Super-admin notify failed:", notifyErr);
+    });
   } finally {
     running = false;
   }

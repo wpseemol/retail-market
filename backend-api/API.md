@@ -1157,7 +1157,7 @@ Each run writes a dated folder under `BACKUP_DIR` (default `backups/`):
 | `database-<stamp>.sql.zip` | Full MySQL dump as `database-<stamp>.sql` inside the ZIP (`mysqldump` when available, else Prisma fallback) |
 | `manifest.json` | Sizes, method, storage driver, timestamps |
 
-Stamp format: `YYYY-MM-DD_HHmm` (server local time). Developers can SSH/copy the same folder. Prefer system crontab + `pnpm backup` on Passenger; set `BACKUP_ENABLED=true` for the in-process UTC cron (`BACKUP_CRON`, default `0 3 * * *`). Old folders are pruned after `BACKUP_RETENTION_DAYS` (default 14).
+Stamp format: `YYYY-MM-DD_HHmm` (server local time). Developers can SSH/copy the same folder. Prefer system crontab + `pnpm backup -- --notify` on Passenger; set `BACKUP_ENABLED=true` for the in-process UTC cron (`BACKUP_CRON`, default `0 3 1 * *` = **1st of each month 03:00 UTC**). When the scheduled run finishes (success or failure), every **active super_admin** gets a dashboard inbox notification linking to `/settings/backups`. Manual `POST /run` does not send that notification. Old folders are pruned after `BACKUP_RETENTION_DAYS` (default 400 ≈ 13 months).
 
 | Method | Path | Notes |
 |--------|------|--------|

@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-14
 
+### Monthly backup cron + super-admin inbox notify
+
+- Default `BACKUP_CRON` → `0 3 1 * *` (1st of each month, 03:00 UTC); default retention → 400 days.
+- `lib/notifications.ts` `notifySuperAdminsBackupCron`: only active `super_admin` users get “Monthly backup finished/failed” with link to `/settings/backups`.
+- `backupScheduler.ts` notifies after each scheduled run; CLI `pnpm backup -- --notify` for system crontab.
+- `.env.example`, `API.md`, dashboard Backups copy updated.
+
 ### Restore complete `.env.example`
 
 - Rewrote emptied `backend-api/.env.example` with every env key from `lib/env.ts` + storage config: server, MySQL, JWT/role TTLs, CORS/app keys, Redis/rate caps, URLs, SSLCOMMERZ, SMTP/SMS/WhatsApp fallbacks, backups, and `STORAGE_DRIVER=local` with commented S3 block.
