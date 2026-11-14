@@ -20,6 +20,9 @@ pnpm-debug.log*
 uploads/
 uploads.backup-*/
 
+# Dated ZIP + SQL backups (uploads-*.zip, database-*.sql.zip)
+backups/
+
 # Operating system and editor files
 .DS_Store
 Thumbs.db

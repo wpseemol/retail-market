@@ -1,6 +1,7 @@
 import {
     BarChart3,
     CreditCard,
+    DatabaseBackup,
     Globe,
     History,
     KeyRound,
@@ -40,4 +41,5 @@ export const SETTINGS_TABS: SettingsTab[] = [
     { path: "analytics", label: "Analytics", icon: BarChart3 },
     { path: "pixels", label: "Pixels", icon: Megaphone },
     { path: "history", label: "History", icon: History },
+    { path: "backups", label: "Backups", icon: DatabaseBackup },
 ];

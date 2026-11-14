@@ -24,6 +24,7 @@ import { SeoSettingsPage } from "./pages/marketing";
 import { FaqPageEditor, PrivacyPageEditor, TermsPageEditor } from "./pages/content";
 import {
   AnalyticsSettingsPage,
+  BackupSettingsPage,
   EmailProviderSettingsPage,
   FooterSettingsPage,
   HeaderSettingsPage,
@@ -139,6 +140,7 @@ export default function App() {
               <Route path="analytics" element={<AnalyticsSettingsPage />} />
               <Route path="pixels" element={<PixelsSettingsPage />} />
               <Route path="history" element={<HistorySettingsPage />} />
+              <Route path="backups" element={<BackupSettingsPage />} />
               <Route path="*" element={<Navigate to="identity" replace />} />
             </Route>
           </Route>

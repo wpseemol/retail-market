@@ -18,3 +18,4 @@ export { AnalyticsSettingsPage } from "./tracking/AnalyticsSettingsPage";
 export { PixelsSettingsPage } from "./tracking/PixelsSettingsPage";
 
 export { HistorySettingsPage } from "./audit/HistorySettingsPage";
+export { BackupSettingsPage } from "./audit/BackupSettingsPage";

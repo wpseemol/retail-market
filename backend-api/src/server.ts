@@ -40,12 +40,14 @@ import { publicSitemapRouter } from "./routes/publicSitemap.js";
 import { dashboardSeoRouter } from "./routes/dashboardSeo.js";
 import { publicPagesRouter } from "./routes/publicPages.js";
 import { dashboardPagesRouter } from "./routes/dashboardPages.js";
+import { dashboardBackupsRouter } from "./routes/dashboardBackups.js";
 import { requireAppKeys } from "./middleware/appKeys.js";
 import { closeKvStore, initKvStore } from "./lib/kvStore.js";
 import {
   globalApiLimiter,
   isGlobalRateLimitExempt,
 } from "./lib/rateLimit.js";
+import { startBackupScheduler, stopBackupScheduler } from "./lib/backupScheduler.js";
 
 const app = express();
 
@@ -120,6 +122,7 @@ app.use("/api/dashboard/orders", dashboardOrdersRouter);
 app.use("/api/dashboard/reviews", dashboardReviewsRouter);
 app.use("/api/dashboard/seo", dashboardSeoRouter);
 app.use("/api/dashboard/pages", dashboardPagesRouter);
+app.use("/api/dashboard/backups", dashboardBackupsRouter);
 
 app.use(
   (
@@ -148,6 +151,7 @@ type PassengerRuntime = {
 
 async function start() {
   await initKvStore();
+  startBackupScheduler();
 
   const passenger = (globalThis as { PhusionPassenger?: PassengerRuntime }).PhusionPassenger;
   if (passenger) {
@@ -163,9 +167,11 @@ async function start() {
 }
 
 process.on("SIGTERM", () => {
+  stopBackupScheduler();
   void closeKvStore();
 });
 process.on("SIGINT", () => {
+  stopBackupScheduler();
   void closeKvStore();
 });
 

@@ -14,7 +14,8 @@
         "db:push": "prisma db push",
         "db:seed": "tsx prisma/seed.ts",
         "db:studio": "prisma studio",
-        "images:optimize": "tsx scripts/optimize-images.ts"
+        "images:optimize": "tsx scripts/optimize-images.ts",
+        "backup": "tsx scripts/run-backup.ts"
     },
     "prisma": {
         "seed": "tsx prisma/seed.ts"

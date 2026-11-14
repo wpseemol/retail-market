@@ -3,6 +3,19 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-14
+
+### Restore complete `.env.example`
+
+- Rewrote emptied `backend-api/.env.example` with every env key from `lib/env.ts` + storage config: server, MySQL, JWT/role TTLs, CORS/app keys, Redis/rate caps, URLs, SSLCOMMERZ, SMTP/SMS/WhatsApp fallbacks, backups, and `STORAGE_DRIVER=local` with commented S3 block.
+
+### Scheduled uploads + SQL ZIP backups (super_admin download)
+
+- `lib/backup.ts` + `lib/backupScheduler.ts`: dated folders under `backups/<YYYY-MM-DD_HHmm>/` with `uploads-*.zip`, `database-*.sql.zip` (mysqldump or Prisma fallback), and `manifest.json`; retention prune via `BACKUP_RETENTION_DAYS`.
+- `routes/dashboardBackups.ts` + `server.ts`: `GET/POST /api/dashboard/backups`, download `/:stamp/uploads|database` — `super_admin` only; downloads re-check active super_admin in the DB.
+- `scripts/run-backup.ts` + `package.json` `backup` script for developers / system crontab; env knobs in `lib/env.ts` and `.env.example` (`BACKUP_ENABLED`, `BACKUP_CRON`, `BACKUP_RETENTION_DAYS`, `BACKUP_DIR`).
+- Documented in `API.md` and `AGENTS.md`; `backups/` gitignored.
+
 ## 2026-11-13
 
 ### Local `.env.dev` / `.env` for Docker MySQL + `pnpm dev`

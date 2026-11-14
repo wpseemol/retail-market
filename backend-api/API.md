@@ -126,6 +126,7 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/dashboard/categories` | `routes/dashboardCategories.ts` | Staff |
 | `/api/dashboard/brands` | `routes/dashboardBrands.ts` | Staff (showcase: `super_admin`, `admin`, linked vendor) |
 | `/api/dashboard/products` | `routes/dashboardProducts.ts` | Staff |
+| `/api/dashboard/backups` | `routes/dashboardBackups.ts` | `super_admin` |
 
 Static files: `GET /uploads/*` (only when `STORAGE_DRIVER=local`, or for older rows with `medias.disk=public`).
 
@@ -1141,6 +1142,29 @@ Dashboard UI uses **`/stores/{slug}`** (not id).
 `DELETE /api/dashboard/site-settings/history` — clear all history rows for the singleton settings.
 
 Saves and OG image uploads append history with field diffs.
+
+---
+
+## Dashboard backups — `/api/dashboard/backups`
+
+Auth: **`super_admin` only** (Bearer). Download and “run now” **re-check the user row in the DB** — the JWT role alone is not enough (`SUPER_ADMIN_REQUIRED` if the account is no longer an active super admin).
+
+Each run writes a dated folder under `BACKUP_DIR` (default `backups/`):
+
+| File | Contents |
+|------|----------|
+| `uploads-<stamp>.zip` | Local `uploads/` tree (`STORAGE_DRIVER=s3` may produce an empty or leftover-only ZIP) |
+| `database-<stamp>.sql.zip` | Full MySQL dump as `database-<stamp>.sql` inside the ZIP (`mysqldump` when available, else Prisma fallback) |
+| `manifest.json` | Sizes, method, storage driver, timestamps |
+
+Stamp format: `YYYY-MM-DD_HHmm` (server local time). Developers can SSH/copy the same folder. Prefer system crontab + `pnpm backup` on Passenger; set `BACKUP_ENABLED=true` for the in-process UTC cron (`BACKUP_CRON`, default `0 3 * * *`). Old folders are pruned after `BACKUP_RETENTION_DAYS` (default 14).
+
+| Method | Path | Notes |
+|--------|------|--------|
+| GET | `/` | `{ backups[], config: { enabled, cron, retention_days, dir } }` |
+| POST | `/run` | Create a backup now · `201` `{ message, backup }` · `409 BACKUP_IN_PROGRESS` |
+| GET | `/:stamp/uploads` | ZIP download · `Content-Disposition` filename · DB role re-verified |
+| GET | `/:stamp/database` | SQL ZIP download · same |
 
 ---
 

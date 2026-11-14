@@ -22,6 +22,7 @@ Run from `backend-api/` (or `pnpm --filter backend-api <script>` from the root):
 | `db:generate` | `prisma generate` (stop the dev server first on Windows — the query engine DLL is locked) |
 | `db:migrate` / `db:push` / `db:seed` / `db:studio` | Prisma helpers |
 | `images:optimize` | `scripts/optimize-images.ts` — re-encodes stored media, keeps originals, `--prune-orphans` optional |
+| `backup` | `scripts/run-backup.ts` — writes `backups/<stamp>/uploads-*.zip` + `database-*.sql.zip` (also used from system crontab) |
 
 ## Folder structure
 
@@ -31,7 +32,9 @@ backend-api/
 │   ├── schema.prisma
 │   └── migrations/<timestamp>_<name>/migration.sql
 ├── scripts/optimize-images.ts
+├── scripts/run-backup.ts    # CLI / crontab entry for dated ZIP + SQL backups
 ├── uploads/                 # local driver only (gitignored). Empty when STORAGE_DRIVER=s3
+├── backups/                 # gitignored dated folders: uploads-*.zip + database-*.sql.zip
 └── src/
     ├── config/storage.config.ts  # STORAGE_DRIVER + S3_* validation
     ├── server.ts            # express app, cors, route mounting
@@ -40,7 +43,7 @@ backend-api/
     ├── services/
     ├── middleware/          # auth (Bearer), requireRoles, upload (multer)
     ├── validators/          # Zod schemas per domain (order.ts, cart.ts, ...)
-    ├── lib/                 # env, prisma, cart, sslcommerz, image helpers, productReviews,
+    ├── lib/                 # env, prisma, backup + backupScheduler, cart, sslcommerz, image helpers, productReviews,
     │                        # reviewImage, rateLimit + kvStore (memory or Redis via REDIS_URL),
     │                        # responseCache (short public GET JSON), showcase (store/brand page
     │                        # JSON), showcaseMedia (banner / share image finalize), revalidate,
@@ -78,6 +81,7 @@ backend-api/
 - **App keys:** `requireAppKeys` blocks every `/api` route except `GET /api/health` and the SSLCOMMERZ success, fail, cancel, and IPN callbacks. Callers send `X-Public-Key` and `X-Api-Secret`. `/uploads` stays public. Production will not start unless both keys are at least 32 bytes.
 - **Rate limits & cache:** `src/lib/kvStore.ts` is memory when `REDIS_URL` is empty (Spaceship), Redis when set. `rateLimit` and `cacheJsonGet` both use it. Global `/api` limit skips health + SSLCOMMERZ callbacks. Public GETs for home hero, site-settings, categories, and brands list cache ~45 s; `revalidateFrontend` also clears those keys.
 - **Env files:** `.env.dev` locally, `.env.prod` when `NODE_ENV=production`. `.env` stays a copy of `.env.dev` because Prisma reads that name. `index.html` and `.htaccess` are what the host serves when Passenger is stopped, so the folder listing and the env files are not public.
+- **Backups:** `lib/backup.ts` writes dated folders under `BACKUP_DIR` (`uploads-*.zip` + `database-*.sql.zip`). Prefer `mysqldump` on PATH; Prisma dumps as fallback. In-process cron starts when `BACKUP_ENABLED=true` (`BACKUP_CRON` UTC). Super-admin list/download/run: `/api/dashboard/backups` — downloads re-verify `super_admin` from the DB. Developers copy files from the server or run `pnpm backup`.
 
 ## Workspace rules
 

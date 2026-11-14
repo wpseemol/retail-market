@@ -3,6 +3,13 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-14
+
+### Super-admin Backups settings tab
+
+- `pages/system/settings/audit/BackupSettingsPage.tsx`: list dated backups, run now, download uploads ZIP and database SQL ZIP (`apiDownload`); only reachable under system settings (super_admin).
+- Wired in `settingsTabs.ts`, `settings/index.ts`, and `App.tsx` at `/settings/backups`. Noted in `AGENTS.md`.
+
 ## 2026-11-13
 
 ### Local `.env.dev` for `pnpm dev`

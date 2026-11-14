@@ -173,4 +173,18 @@ export const env = {
     apiVersion: process.env.WHATSAPP_API_VERSION ?? "v21.0",
     templateButtonParam: process.env.WHATSAPP_TEMPLATE_BUTTON_PARAM !== "false",
   },
+  /**
+   * Scheduled + on-demand backups under `backups/<YYYY-MM-DD_HHmm>/`:
+   * `uploads-….zip` and `database-….sql.zip`. Super admins download via the API;
+   * developers can copy the folder from the server. Cron is UTC.
+   */
+  backup: {
+    enabled: process.env.BACKUP_ENABLED === "true",
+    /** Five-field cron (minute hour day month weekday), UTC. Default: 03:00 daily. */
+    cron: (process.env.BACKUP_CRON ?? "0 3 * * *").trim() || "0 3 * * *",
+    /** Delete dated backup folders older than this many days (0 = keep forever). */
+    retentionDays: positiveInt(process.env.BACKUP_RETENTION_DAYS, 14),
+    /** Relative to the API process cwd (usually `backend-api/`). */
+    dir: (process.env.BACKUP_DIR ?? "backups").trim() || "backups",
+  },
 };
