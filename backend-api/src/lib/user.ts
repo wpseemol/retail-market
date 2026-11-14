@@ -1,6 +1,7 @@
 import type { Media, User } from "@prisma/client";
 import { env } from "./env.js";
 import { publicObjectUrl } from "./storage/files.js";
+import { isTwoFactorEnabled, roleRequiresTwoFactor } from "./totp.js";
 
 export type UserWithAvatar = User & { avatar?: Media | null };
 
@@ -52,6 +53,10 @@ export function toPublicUser(user: UserWithAvatar) {
     provider_name: user.provider_name,
     /** True when a local password is set (email login and/or social + password). */
     has_password: Boolean(user.password),
+    /** Authenticator 2FA is confirmed. Never exposes the secret. */
+    two_factor_enabled: isTwoFactorEnabled(user),
+    /** Policy: super_admin / admin must keep 2FA on. */
+    two_factor_required: roleRequiresTwoFactor(user.role),
     avatar_id: user.avatar_id?.toString() ?? null,
     avatar_preset: user.avatar_preset ?? null,
     last_login_at: user.last_login_at,

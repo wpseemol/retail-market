@@ -13,6 +13,21 @@ import {
 } from "../lib/userSession.js";
 import { toPublicUser, userWithAvatarInclude } from "../lib/user.js";
 import { verifyRefreshToken } from "../lib/token.js";
+import { encryptSecret, decryptSecret } from "../lib/secretBox.js";
+import {
+  buildOtpauthUrl,
+  consumeRecoveryCode,
+  generateRecoveryCodes,
+  generateTotpSecret,
+  isTwoFactorEnabled,
+  loginNeedsTwoFactor,
+  packRecoveryHashes,
+  pendingSecretFromToken,
+  roleRequiresTwoFactor,
+  signTwoFactorToken,
+  verifyTotpCode,
+  verifyTwoFactorToken,
+} from "../lib/totp.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {
   requireAuth,
@@ -26,6 +41,7 @@ import {
   loginIpLimiter,
   refreshLimiter,
 } from "../lib/rateLimit.js";
+import type { Request } from "express";
 
 export const dashboardAuthRouter = Router();
 
