@@ -5,8 +5,13 @@ import { ApiError, apiFetch } from "@/lib/api";
 import type { Brand } from "@/lib/brands";
 import { isCatalogListView, useCatalogViewMode } from "@/lib/catalogView";
 import { BRAND_OWNER_ROLES } from "@/lib/rbac";
+import {
+  CATALOG_PAGE_SIZE_DEFAULT,
+  type CatalogPageSize,
+} from "@/lib/validators/catalogView";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
+import { CatalogPagination } from "@/components/catalog/CatalogPagination";
 import {
   CatalogViewToggle,
   catalogItemClassName,
@@ -38,6 +43,9 @@ export function BrandsPage() {
 
   const [brands, setBrands] = useState<Brand[]>([]);
   const [total, setTotal] = useState(0);
+  const [pages, setPages] = useState(1);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState<CatalogPageSize>(CATALOG_PAGE_SIZE_DEFAULT);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
@@ -55,7 +63,10 @@ export function BrandsPage() {
       setLoading(true);
       setError(null);
       try {
-        const params = new URLSearchParams({ limit: "100" });
+        const params = new URLSearchParams({
+          page: String(page),
+          limit: String(limit),
+        });
         if (mine) params.set("mine", "1");
         if (q.trim()) params.set("q", q.trim());
         if (statusFilter === "active") params.set("active", "true");
@@ -63,11 +74,19 @@ export function BrandsPage() {
         if (statusFilter === "all") params.set("active", "all");
         const data = await apiFetch<{
           brands: Brand[];
-          pagination: { total: number };
+          pagination: { total: number; page: number; pages: number; limit: number };
         }>(`/api/dashboard/brands?${params.toString()}`, { token });
         if (cancelled) return;
         setBrands(data.brands);
         setTotal(data.pagination.total);
+        setPages(Math.max(1, data.pagination.pages));
+        if (
+          data.brands.length === 0 &&
+          data.pagination.page > 1 &&
+          data.pagination.page > data.pagination.pages
+        ) {
+          setPage(Math.max(1, data.pagination.pages));
+        }
       } catch (err) {
         if (cancelled) return;
         setError(
@@ -82,7 +101,7 @@ export function BrandsPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, q, statusFilter, mine]);
+  }, [token, q, statusFilter, mine, page, limit]);
 
   const activeCount = brands.filter((b) => b.is_active).length;
   const productLinks = brands.reduce(
@@ -113,7 +132,10 @@ export function BrandsPage() {
                 <button
                   key={label}
                   type="button"
-                  onClick={() => setSearchParams(value ? { mine: "1" } : {})}
+                  onClick={() => {
+                    setSearchParams(value ? { mine: "1" } : {});
+                    setPage(1);
+                  }}
                   className={cn(
                     "rounded-md px-3 py-1.5 text-xs font-medium",
                     mine === value
@@ -197,7 +219,10 @@ export function BrandsPage() {
                   <button
                     key={key}
                     type="button"
-                    onClick={() => setStatusFilter(key)}
+                    onClick={() => {
+                      setStatusFilter(key);
+                      setPage(1);
+                    }}
                     className={
                       statusFilter === key
                         ? "rounded-md bg-background px-3 py-1.5 text-xs font-medium shadow-sm"
@@ -218,6 +243,7 @@ export function BrandsPage() {
             onSubmit={(e) => {
               e.preventDefault();
               setQ(searchDraft.trim());
+              setPage(1);
             }}
           >
             <div className="relative min-w-[220px] flex-1">
@@ -410,6 +436,21 @@ export function BrandsPage() {
               })}
             </div>
           )}
+
+          {!loading && total > 0 ? (
+            <CatalogPagination
+              page={page}
+              pages={pages}
+              total={total}
+              limit={limit}
+              noun="brands"
+              onPage={setPage}
+              onLimit={(next) => {
+                setLimit(next as CatalogPageSize);
+                setPage(1);
+              }}
+            />
+          ) : null}
         </CardContent>
       </Card>
     </div>

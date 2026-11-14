@@ -22,6 +22,7 @@ import {
 } from "@/lib/categories";
 import { CATEGORY_ICONS } from "@/lib/categoryIcons";
 import { useAuthStore } from "@/store/auth";
+import { CatalogPagination } from "@/components/catalog/CatalogPagination";
 import {
   CatalogViewToggle,
   catalogItemClassName,
@@ -49,6 +50,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { isCatalogListView, useCatalogViewMode } from "@/lib/catalogView";
+import {
+  CATALOG_PAGE_SIZE_DEFAULT,
+  type CatalogPageSize,
+} from "@/lib/validators/catalogView";
 import { cn } from "@/lib/utils";
 
 const MANAGE_ROLES = ["super_admin", "admin", "moderator"] as const;
@@ -60,6 +65,9 @@ export function CategoriesPage() {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [total, setTotal] = useState(0);
+  const [pages, setPages] = useState(1);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState<CatalogPageSize>(CATALOG_PAGE_SIZE_DEFAULT);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
@@ -84,20 +92,31 @@ export function CategoriesPage() {
       setLoading(true);
       setError(null);
       try {
-        const params = new URLSearchParams({ limit: "100" });
+        const params = new URLSearchParams({
+          page: String(page),
+          limit: String(limit),
+        });
         if (q.trim()) params.set("q", q.trim());
         if (statusFilter === "active") params.set("active", "true");
         if (statusFilter === "inactive") params.set("active", "false");
         if (statusFilter === "all") params.set("active", "all");
         const data = await apiFetch<{
           categories: Category[];
-          pagination: { total: number };
+          pagination: { total: number; page: number; pages: number; limit: number };
           permissions?: CategoryBulkPermissions;
         }>(`/api/dashboard/categories?${params.toString()}`, { token });
         if (cancelled) return;
         setCategories(data.categories);
         setTotal(data.pagination.total);
+        setPages(Math.max(1, data.pagination.pages));
         setPermissions(data.permissions ?? NO_CATEGORY_BULK_PERMISSIONS);
+        if (
+          data.categories.length === 0 &&
+          data.pagination.page > 1 &&
+          data.pagination.page > data.pagination.pages
+        ) {
+          setPage(Math.max(1, data.pagination.pages));
+        }
       } catch (err) {
         if (cancelled) return;
         setError(
@@ -112,7 +131,7 @@ export function CategoriesPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, q, statusFilter, reloadKey]);
+  }, [token, q, statusFilter, reloadKey, page, limit]);
 
   const activeCount = categories.filter((c) => c.is_active).length;
   const withIconCount = categories.filter((c) => c.icon || c.image).length;
@@ -270,7 +289,10 @@ export function CategoriesPage() {
                   <button
                     key={key}
                     type="button"
-                    onClick={() => setStatusFilter(key)}
+                    onClick={() => {
+                      setStatusFilter(key);
+                      setPage(1);
+                    }}
                     className={
                       statusFilter === key
                         ? "rounded-md bg-background px-3 py-1.5 text-xs font-medium shadow-sm"
@@ -291,6 +313,7 @@ export function CategoriesPage() {
             onSubmit={(e) => {
               e.preventDefault();
               setQ(searchDraft.trim());
+              setPage(1);
             }}
           >
             <div className="relative min-w-[220px] flex-1">
@@ -441,6 +464,21 @@ export function CategoriesPage() {
               })}
             </div>
           )}
+
+          {!loading && total > 0 ? (
+            <CatalogPagination
+              page={page}
+              pages={pages}
+              total={total}
+              limit={limit}
+              noun="categories"
+              onPage={setPage}
+              onLimit={(next) => {
+                setLimit(next as CatalogPageSize);
+                setPage(1);
+              }}
+            />
+          ) : null}
         </CardContent>
       </Card>
 

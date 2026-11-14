@@ -17,6 +17,31 @@ export const CATALOG_VIEW_MODES = catalogViewModeSchema.options;
 
 export const CATALOG_VIEW_DEFAULT: CatalogViewMode = "grid3";
 
+/** Page sizes for catalog lists (API limit max 100). */
+export const CATALOG_PAGE_SIZES = [12, 24, 48] as const;
+
+export const catalogPageSizeSchema = z
+  .number()
+  .int()
+  .refine(
+    (n): n is (typeof CATALOG_PAGE_SIZES)[number] =>
+      (CATALOG_PAGE_SIZES as readonly number[]).includes(n),
+    { message: "Invalid page size" },
+  );
+
+export const CATALOG_PAGE_SIZE_DEFAULT: (typeof CATALOG_PAGE_SIZES)[number] = 12;
+
+export type CatalogPageSize = (typeof CATALOG_PAGE_SIZES)[number];
+
+export function parseCatalogPageSize(
+  value: unknown,
+  fallback: CatalogPageSize = CATALOG_PAGE_SIZE_DEFAULT,
+): CatalogPageSize {
+  const n = typeof value === "string" ? Number(value) : value;
+  const parsed = catalogPageSizeSchema.safeParse(n);
+  return parsed.success ? parsed.data : fallback;
+}
+
 /** Legacy single `grid` preference → `grid3`. */
 export function parseCatalogViewMode(
   value: unknown,

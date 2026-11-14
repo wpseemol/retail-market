@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-14
 
+### Catalog pagination (products, categories, brands)
+
+- Shared `CatalogPagination` (page window, prev/next, 12/24/48 per page) — same pattern as Orders.
+- `ProductsPage` / `CategoriesPage` / `BrandsPage` send `page` + `limit` to the API instead of `limit=100`; filters/search reset to page 1.
+- Page sizes validated in `lib/validators/catalogView.ts` (`CATALOG_PAGE_SIZES`).
+
 ### Catalog list / grid view (products, categories, brands)
 
 - View modes: `grid4` / `grid3` / `grid2` / `list` (storefront-style density icons); legacy `grid` maps to `grid3`.

@@ -31,6 +31,7 @@ import { productStatusTone } from "@/components/products/ProductFormShell";
 import { ProductBulkEditDialog } from "@/components/products/ProductBulkEditDialog";
 import { ProductImportDialog } from "@/components/products/ProductImportDialog";
 import { saveBlob } from "@/components/products/productCsvDownload";
+import { CatalogPagination } from "@/components/catalog/CatalogPagination";
 import {
   CatalogViewToggle,
   catalogItemClassName,
@@ -56,6 +57,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { isCatalogListView, useCatalogViewMode } from "@/lib/catalogView";
+import {
+  CATALOG_PAGE_SIZE_DEFAULT,
+  type CatalogPageSize,
+} from "@/lib/validators/catalogView";
 import { cn } from "@/lib/utils";
 
 function SelectBox({
@@ -92,6 +97,9 @@ export function ProductsPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
+  const [pages, setPages] = useState(1);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState<CatalogPageSize>(CATALOG_PAGE_SIZE_DEFAULT);
   const [permissions, setPermissions] = useState<ProductBulkPermissions>(NO_BULK_PERMISSIONS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -118,22 +126,29 @@ export function ProductsPage() {
       setLoading(true);
       setError(null);
       try {
-        const params = new URLSearchParams({ limit: "100" });
+        const params = new URLSearchParams({
+          page: String(page),
+          limit: String(limit),
+        });
         if (q.trim()) params.set("q", q.trim());
         if (statusFilter !== "all") params.set("status", statusFilter);
         const data = await apiFetch<{
           products: Product[];
-          pagination: { total: number };
+          pagination: { total: number; page: number; pages: number; limit: number };
           permissions?: ProductBulkPermissions;
         }>(`/api/dashboard/products?${params.toString()}`, { token });
         if (cancelled) return;
         setProducts(data.products);
         setTotal(data.pagination.total);
+        setPages(Math.max(1, data.pagination.pages));
         setPermissions(data.permissions ?? NO_BULK_PERMISSIONS);
-        setSelected((prev) => {
-          const visible = new Set(data.products.map((p) => p.id));
-          return new Set([...prev].filter((id) => visible.has(id)));
-        });
+        if (
+          data.products.length === 0 &&
+          data.pagination.page > 1 &&
+          data.pagination.page > data.pagination.pages
+        ) {
+          setPage(Math.max(1, data.pagination.pages));
+        }
       } catch (err) {
         if (cancelled) return;
         setError(
@@ -148,7 +163,7 @@ export function ProductsPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, q, statusFilter, reloadKey]);
+  }, [token, q, statusFilter, reloadKey, page, limit]);
 
   const publishedCount = products.filter((p) => p.status === "active").length;
   const draftCount = products.filter((p) => p.status === "draft").length;
@@ -350,7 +365,11 @@ export function ProductsPage() {
                   <button
                     key={key}
                     type="button"
-                    onClick={() => setStatusFilter(key)}
+                    onClick={() => {
+                      setStatusFilter(key);
+                      setPage(1);
+                      setSelected(new Set());
+                    }}
                     className={
                       statusFilter === key
                         ? "rounded-md bg-background px-3 py-1.5 text-xs font-medium shadow-sm"
@@ -371,6 +390,8 @@ export function ProductsPage() {
             onSubmit={(e) => {
               e.preventDefault();
               setQ(searchDraft.trim());
+              setPage(1);
+              setSelected(new Set());
             }}
           >
             <div className="relative min-w-[220px] flex-1">
@@ -620,6 +641,21 @@ export function ProductsPage() {
               })}
             </div>
           )}
+
+          {!loading && total > 0 ? (
+            <CatalogPagination
+              page={page}
+              pages={pages}
+              total={total}
+              limit={limit}
+              noun="products"
+              onPage={setPage}
+              onLimit={(next) => {
+                setLimit(next as CatalogPageSize);
+                setPage(1);
+              }}
+            />
+          ) : null}
         </CardContent>
       </Card>
 
