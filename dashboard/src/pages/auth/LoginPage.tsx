@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { QRCodeSVG } from "qrcode.react";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -22,6 +21,7 @@ import {
   type TotpCodeValues,
 } from "@/lib/validators/twoFactor";
 import { useAuthStore } from "@/store/auth";
+import { TotpQrCode } from "@/components/auth/TotpQrCode";
 import { FadeUp, MotionProvider } from "@/components/motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -595,12 +595,7 @@ export function LoginPage() {
               {step === "setup" && setup ? (
                 <div className="mt-8 space-y-5">
                   <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-5">
-                    <QRCodeSVG
-                      value={setup.otpauth_url}
-                      size={168}
-                      level="M"
-                      includeMargin={false}
-                    />
+                    <TotpQrCode value={setup.otpauth_url} size={168} />
                     <div className="w-full space-y-1.5 text-center">
                       <p className="text-xs text-text-secondary">
                         Or enter this key manually

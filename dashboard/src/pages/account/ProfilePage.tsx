@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useToastMessages } from "@/hooks/use-toast-messages";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { QRCodeSVG } from "qrcode.react";
 import {
   Copy,
   Eye,
@@ -17,6 +16,7 @@ import { imageUploadHint } from "@/lib/imagePresets";
 import { ImageSizeBadge } from "@/components/dashboard/image-size-badge";
 import { useAuthStore } from "@/store/auth";
 import { useEditSave } from "@/hooks/use-edit-save";
+import { TotpQrCode } from "@/components/auth/TotpQrCode";
 import { useConfirm } from "@/components/providers/ConfirmProvider";
 import {
   passwordFormSchema,
@@ -836,8 +836,8 @@ function SecuritySection({
       <p className="text-sm text-muted-foreground">
         Use Google Authenticator, Authy, or any TOTP app.{" "}
         {required
-          ? "Your role must keep authenticator 2FA on — it cannot be disabled."
-          : "Once enabled, every sign-in will ask for a code."}
+          ? "Super admins and admins must keep authenticator on. Disable is locked for your role — you can still regenerate recovery codes."
+          : "Once enabled, every sign-in asks for a code. Disable requires your password plus an authenticator or recovery code."}
       </p>
 
       {recoveryCodes ? (
@@ -878,7 +878,7 @@ function SecuritySection({
       ) : null}
 
       {phase === "idle" && enabled ? (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
             variant="outline"
@@ -890,7 +890,16 @@ function SecuritySection({
           >
             Regenerate recovery codes
           </Button>
-          {!required ? (
+          {required ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled
+              title="Authenticator is required for super admin and admin roles"
+            >
+              Disable locked
+            </Button>
+          ) : (
             <Button
               type="button"
               variant="outline"
@@ -902,14 +911,22 @@ function SecuritySection({
             >
               Disable
             </Button>
-          ) : null}
+          )}
         </div>
+      ) : null}
+
+      {required && enabled && phase === "idle" ? (
+        <p className="rounded-lg border border-border/80 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          Policy: your role cannot turn authenticator off. If you lost your
+          phone, regenerate recovery codes above (needs a working authenticator
+          code), or ask another super admin to help reset your account.
+        </p>
       ) : null}
 
       {phase === "setup" && setup ? (
         <div className="space-y-4">
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-border p-4">
-            <QRCodeSVG value={setup.otpauth_url} size={160} level="M" />
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-4">
+            <TotpQrCode value={setup.otpauth_url} size={160} />
             <div className="flex w-full items-center gap-2">
               <code className="flex-1 break-all rounded-md bg-muted px-2 py-1.5 text-xs">
                 {setup.secret}

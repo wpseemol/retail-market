@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-14
 
+### 2FA QR dark mode + required-role disable clarity
+
+- `TotpQrCode`: always white pad + black modules so scans work in dark theme (Login + Profile).
+- Profile: required roles show locked “Disable” with policy copy; optional roles still disable with password + authenticator/recovery code.
+
 ### Settings tab switch — no page jump
 
 - `DashboardLayout`: `/settings/*` shares one `pageEnter` key so Identity → Header does not remount the whole shell.
