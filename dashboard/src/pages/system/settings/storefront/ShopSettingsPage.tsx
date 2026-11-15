@@ -138,7 +138,7 @@ export function ShopSettingsPage() {
         <GeneralSettingsForm>
             <SettingsSection
                 title="Shop catalog"
-                description="Default product grid, pagination, and sidebar category/brand preview on /shop."
+                description="Global /shop defaults only. Each store owner sets their own page theme, accent color, and layout under Stores → Edit store / Customize store page — not here."
                 icon={LayoutGrid}
             >
                 <div className="grid gap-4 sm:grid-cols-2">

@@ -122,6 +122,7 @@ const en = {
             tvAudio: "TV & Audio",
             gadgets: "Gadgets",
             headphones: "Waterproof Headphones",
+            allStores: "All stores",
             quickLinks: "Quick Links",
             myAccount: "My Account",
             trackOrder: "Track Your Order",

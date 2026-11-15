@@ -123,6 +123,7 @@ const bn: Dictionary = {
             tvAudio: "টিভি ও অডিও",
             gadgets: "গ্যাজেট",
             headphones: "ওয়াটারপ্রুফ হেডফোন",
+            allStores: "সব স্টোর",
             quickLinks: "দ্রুত লিংক",
             myAccount: "আমার অ্যাকাউন্ট",
             trackOrder: "অর্ডার ট্র্যাক করুন",

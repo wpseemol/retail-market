@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-15
 
+### Per-store design note + footer All stores hint
+
+- `StoreEditPage`: storefront layout callout — each owner’s theme/accent is separate from global Settings → Storefront; link to Customize store page.
+- `ShopSettingsPage` / `FooterSettingsPage`: copy clarifies global shop vs per-store design; footer Find It Fast should include All stores → `/stores`.
+
 ### Hide fee plan on super-admin house store
 
 - `StoreEditPage`: Fee plan section hidden when the store owner is super admin (your My store). Fees only apply to partner-owned stores.

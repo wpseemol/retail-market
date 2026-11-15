@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-15
 
+### Footer Find It Fast — All stores link
+
+- `lib/siteChrome.ts`: default nav includes **All stores** → `/stores`; `ensureFooterAllStoresQuickLink` adds it for existing DBs on chrome ensure.
+
 ### House store (super_admin owner) has no partner fee
 
 - `routes/dashboardVendors.ts`: create/update forces `commission` + `0%` when the store owner is `super_admin`; partner stores still default to 3%.

@@ -715,8 +715,24 @@ export function StoreEditPage() {
           <StoreFormSection
             step="03"
             title="Storefront layout"
-            description="How this store appears on the customer site."
+            description="This store’s own theme — separate from global Settings → Storefront. Each owner can use a different layout, accent, and page design."
           >
+            <div className="rounded-xl border border-brand-primary/25 bg-brand-tint/40 px-3 py-3 text-xs text-muted-foreground">
+              <p className="font-medium text-foreground">
+                Separate store design
+              </p>
+              <p className="mt-1">
+                Pick a layout theme here, then open{" "}
+                <Link
+                  to={`/stores/${shop.slug}/design`}
+                  className="font-medium text-brand-primary underline-offset-2 hover:underline"
+                >
+                  Customize store page
+                </Link>{" "}
+                for accent color, banner sections, about, and SEO — only this
+                storefront uses them.
+              </p>
+            </div>
             <div className="space-y-2">
               <Label>Page design</Label>
               <Select

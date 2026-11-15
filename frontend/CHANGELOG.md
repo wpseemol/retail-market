@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-15
 
+### Footer Find It Fast — All stores
+
+- `Footer.tsx` + `i18n` en/bn: Find It Fast includes **All stores** → `/stores` (and injects the link if site chrome nav omitted it).
+
 ### Guest cart cookie lasts 1 year
 
 - `lib/guestCartCookie.ts`: `GUEST_CART_MAX_AGE_SEC` 30 days → 1 year (encrypted `nyn_cart` Max-Age + JWT `exp`).

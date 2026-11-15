@@ -39,6 +39,7 @@ const findItFastLinks: FallbackLink[] = [
     { key: "tvAudio", href: "/shop?category=tv-audio" },
     { key: "gadgets", href: "/shop?category=gadgets" },
     { key: "headphones", href: "/shop?category=headphones" },
+    { key: "allStores", href: "/stores" },
     { key: "quickLinks", href: "/shop" },
 ];
 
@@ -168,10 +169,19 @@ export default function Footer() {
     const { t, locale } = useI18n();
     const footer = t.footer;
     const goToDashboard = dashboardCtaLabel(locale);
-    const findLinks =
+    const findLinksRaw =
         chrome.nav.footer_find.length > 0
             ? chrome.nav.footer_find
             : localizeLinks(findItFastLinks, footer.links);
+    // Always expose /stores in Find It Fast even if CMS nav was seeded without it.
+    const findLinks: FooterLink[] = findLinksRaw.some(
+        (l) => l.href === "/stores" || l.href.startsWith("/stores?"),
+    )
+        ? findLinksRaw
+        : [
+              ...findLinksRaw,
+              { label: footer.links.allStores, href: "/stores" },
+          ];
     const careLinks =
         chrome.nav.footer_care.length > 0
             ? chrome.nav.footer_care

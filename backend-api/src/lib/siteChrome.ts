@@ -91,7 +91,8 @@ export const DEFAULT_NAV_SEED: Array<{
     href: "/shop?category=headphones",
     position: 6,
   },
-  { menu: "footer_find", label: "Quick Links", href: "/shop", position: 7 },
+  { menu: "footer_find", label: "All stores", href: "/stores", position: 7 },
+  { menu: "footer_find", label: "Quick Links", href: "/shop", position: 8 },
 
   { menu: "footer_care", label: "My Account", href: "/account", position: 0 },
   {
@@ -254,6 +255,39 @@ export async function ensureSiteChromeDefaults() {
       })),
     });
   }
+
+  await ensureFooterAllStoresQuickLink();
+}
+
+/** Add Find-it-fast “All stores” → /stores when missing (existing DBs). */
+export async function ensureFooterAllStoresQuickLink() {
+  const existing = await prisma.siteNavItem.findFirst({
+    where: {
+      settings_id: 1,
+      menu: "footer_find",
+      href: "/stores",
+      parent_id: null,
+    },
+    select: { id: true },
+  });
+  if (existing) return;
+
+  const maxPos = await prisma.siteNavItem.aggregate({
+    where: { settings_id: 1, menu: "footer_find", parent_id: null },
+    _max: { position: true },
+  });
+
+  await prisma.siteNavItem.create({
+    data: {
+      settings_id: 1,
+      menu: "footer_find",
+      label: "All stores",
+      href: "/stores",
+      external: false,
+      position: (maxPos._max.position ?? -1) + 1,
+      is_enabled: true,
+    },
+  });
 }
 
 export async function loadSiteNavTree(includeDisabled = false) {

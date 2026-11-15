@@ -10,7 +10,7 @@ export function FooterSettingsPage() {
     return (
         <SettingsSection
             title="Footer"
-            description="Support blurb, phone, and footer link columns (drag to reorder)."
+            description="Support blurb, phone, and footer link columns (drag to reorder). Find It Fast should include All stores → /stores so shoppers can open every partner storefront."
             icon={PanelBottom}
         >
             <FooterSettingsPanel
