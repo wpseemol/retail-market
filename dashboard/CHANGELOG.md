@@ -3,6 +3,14 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-15
+
+### Authenticator code auto-submits at 6 digits
+
+- Added `components/auth/TotpCodeInput.tsx` — digits-only, fires `onComplete` when 6 characters are typed/pasted.
+- `LoginPage` challenge + setup and Profile enable + regenerate: auto-submit on complete; wrong code shows the API error, clears the field, and refocuses for the next code.
+- Submit button still works as a fallback and shows “Checking code…” while verifying.
+
 ## 2026-11-14
 
 ### 2FA QR dark mode + required-role disable clarity

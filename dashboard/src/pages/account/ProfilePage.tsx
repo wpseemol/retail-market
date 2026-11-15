@@ -16,6 +16,7 @@ import { imageUploadHint } from "@/lib/imagePresets";
 import { ImageSizeBadge } from "@/components/dashboard/image-size-badge";
 import { useAuthStore } from "@/store/auth";
 import { useEditSave } from "@/hooks/use-edit-save";
+import { TotpCodeInput } from "@/components/auth/TotpCodeInput";
 import { TotpQrCode } from "@/components/auth/TotpQrCode";
 import { useConfirm } from "@/components/providers/ConfirmProvider";
 import {
@@ -757,6 +758,8 @@ function SecuritySection({
       setError(
         err instanceof ApiError ? err.message : "Could not confirm authenticator",
       );
+      enableForm.reset({ code: "" });
+      enableForm.setFocus("code");
     }
   }
 
@@ -776,6 +779,8 @@ function SecuritySection({
       setError(
         err instanceof ApiError ? err.message : "Could not regenerate codes",
       );
+      regenForm.reset({ code: "" });
+      regenForm.setFocus("code");
     }
   }
 
@@ -955,14 +960,25 @@ function SecuritySection({
                   <FormItem>
                     <FormLabel>Confirm with 6-digit code</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        inputMode="numeric"
-                        maxLength={6}
-                        autoComplete="one-time-code"
-                        className="tracking-[0.3em]"
+                      <TotpCodeInput
+                        name={field.name}
+                        value={field.value}
+                        onBlur={field.onBlur}
+                        ref={field.ref}
+                        disabled={enableForm.formState.isSubmitting}
+                        autoFocus
+                        onChange={(code) => {
+                          field.onChange(code);
+                          if (error) setError(null);
+                        }}
+                        onComplete={() => {
+                          void enableForm.handleSubmit(confirmSetup)();
+                        }}
                       />
                     </FormControl>
+                    <FormDescription>
+                      Submits automatically when all 6 digits are entered.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -973,7 +989,7 @@ function SecuritySection({
                   disabled={enableForm.formState.isSubmitting}
                 >
                   {enableForm.formState.isSubmitting
-                    ? "Enabling…"
+                    ? "Checking code…"
                     : "Confirm and enable"}
                 </Button>
                 <Button
@@ -1006,16 +1022,25 @@ function SecuritySection({
                 <FormItem>
                   <FormLabel>Authenticator code</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      inputMode="numeric"
-                      maxLength={6}
-                      autoComplete="one-time-code"
-                      className="tracking-[0.3em]"
+                    <TotpCodeInput
+                      name={field.name}
+                      value={field.value}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      disabled={regenForm.formState.isSubmitting}
+                      autoFocus
+                      onChange={(code) => {
+                        field.onChange(code);
+                        if (error) setError(null);
+                      }}
+                      onComplete={() => {
+                        void regenForm.handleSubmit(regenerate)();
+                      }}
                     />
                   </FormControl>
                   <FormDescription>
-                    Old recovery codes stop working immediately.
+                    Submits when all 6 digits are entered. Old recovery codes
+                    stop working immediately.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -1024,7 +1049,7 @@ function SecuritySection({
             <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={regenForm.formState.isSubmitting}>
                 {regenForm.formState.isSubmitting
-                  ? "Generating…"
+                  ? "Checking code…"
                   : "Generate new codes"}
               </Button>
               <Button

@@ -21,6 +21,7 @@ import {
   type TotpCodeValues,
 } from "@/lib/validators/twoFactor";
 import { useAuthStore } from "@/store/auth";
+import { TotpCodeInput } from "@/components/auth/TotpCodeInput";
 import { TotpQrCode } from "@/components/auth/TotpQrCode";
 import { FadeUp, MotionProvider } from "@/components/motion";
 import { Button } from "@/components/ui/button";
@@ -526,16 +527,27 @@ export function LoginPage() {
                             <FormItem>
                               <FormLabel>6-digit code</FormLabel>
                               <FormControl>
-                                <Input
-                                  {...field}
-                                  inputMode="numeric"
-                                  autoComplete="one-time-code"
-                                  className="h-11 tracking-[0.3em]"
-                                  placeholder="000000"
-                                  maxLength={6}
+                                <TotpCodeInput
+                                  name={field.name}
+                                  value={field.value}
+                                  onBlur={field.onBlur}
+                                  ref={field.ref}
+                                  className="h-11"
                                   disabled={submitting}
+                                  autoFocus
+                                  onChange={(code) => {
+                                    field.onChange(code);
+                                    if (error) setError(null);
+                                  }}
+                                  onComplete={() => {
+                                    void totpForm.handleSubmit(onChallengeSubmit)();
+                                  }}
                                 />
                               </FormControl>
+                              <FormDescription>
+                                Submits automatically when all 6 digits are
+                                entered.
+                              </FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -556,7 +568,7 @@ export function LoginPage() {
                           {submitting ? (
                             <>
                               <Loader2 className="size-4 animate-spin" />
-                              Verifying…
+                              Checking code…
                             </>
                           ) : (
                             "Verify and continue"
@@ -630,18 +642,26 @@ export function LoginPage() {
                           <FormItem>
                             <FormLabel>Confirm with a code</FormLabel>
                             <FormControl>
-                              <Input
-                                {...field}
-                                inputMode="numeric"
-                                autoComplete="one-time-code"
-                                className="h-11 tracking-[0.3em]"
-                                placeholder="000000"
-                                maxLength={6}
+                              <TotpCodeInput
+                                name={field.name}
+                                value={field.value}
+                                onBlur={field.onBlur}
+                                ref={field.ref}
+                                className="h-11"
                                 disabled={submitting}
+                                autoFocus
+                                onChange={(code) => {
+                                  field.onChange(code);
+                                  if (error) setError(null);
+                                }}
+                                onComplete={() => {
+                                  void totpForm.handleSubmit(onSetupConfirm)();
+                                }}
                               />
                             </FormControl>
                             <FormDescription>
-                              Google Authenticator, Authy, or any TOTP app.
+                              Google Authenticator, Authy, or any TOTP app —
+                              submits when all 6 digits are entered.
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -663,7 +683,7 @@ export function LoginPage() {
                         {submitting ? (
                           <>
                             <Loader2 className="size-4 animate-spin" />
-                            Enabling…
+                            Checking code…
                           </>
                         ) : (
                           <>
