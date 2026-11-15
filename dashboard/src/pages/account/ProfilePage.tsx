@@ -839,10 +839,9 @@ function SecuritySection({
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Use Google Authenticator, Authy, or any TOTP app.{" "}
-        {required
-          ? "Super admins and admins must keep authenticator on. Disable is locked for your role — you can still regenerate recovery codes."
-          : "Once enabled, every sign-in asks for a code. Disable requires your password plus an authenticator or recovery code."}
+        Use Google Authenticator, Authy, or any TOTP app. Turn it on here when
+        you want it; once enabled, every sign-in asks for a code. Disable
+        requires your password plus an authenticator or recovery code.
       </p>
 
       {recoveryCodes ? (
@@ -895,37 +894,18 @@ function SecuritySection({
           >
             Regenerate recovery codes
           </Button>
-          {required ? (
-            <Button
-              type="button"
-              variant="outline"
-              disabled
-              title="Authenticator is required for super admin and admin roles"
-            >
-              Disable locked
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setPhase("disable");
-                setError(null);
-                disableForm.reset({ password: "", code: "", recovery: false });
-              }}
-            >
-              Disable
-            </Button>
-          )}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setPhase("disable");
+              setError(null);
+              disableForm.reset({ password: "", code: "", recovery: false });
+            }}
+          >
+            Disable
+          </Button>
         </div>
-      ) : null}
-
-      {required && enabled && phase === "idle" ? (
-        <p className="rounded-lg border border-border/80 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-          Policy: your role cannot turn authenticator off. If you lost your
-          phone, regenerate recovery codes above (needs a working authenticator
-          code), or ask another super admin to help reset your account.
-        </p>
       ) : null}
 
       {phase === "setup" && setup ? (

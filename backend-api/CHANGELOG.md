@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-15
 
+### Authenticator 2FA optional for all staff
+
+- `lib/totp.ts`: `TWO_FACTOR_REQUIRED_ROLES` is empty — no forced setup at login for admin/super_admin.
+- `routes/dashboardAuth.ts`: `/2fa/disable` allowed for every staff role (password + code).
+- Login only returns `TWO_FACTOR_REQUIRED` when the account already enabled 2FA. Profile enable/disable is the control.
+- `API.md` / `AGENTS.md` policy updated.
+
 ### Multi-vendor store fees + store staff teams
 
 - `prisma/schema.prisma` + migration `20261115120000_vendor_fees_members_settlements`: `Vendor` fee fields (`fee_plan`, `commission_percent`, `rent_amount`, `rent_period`), `VendorMember` (owner/helper, unique per user), `OrderVendorSettlement`; SQL backfills owner memberships.

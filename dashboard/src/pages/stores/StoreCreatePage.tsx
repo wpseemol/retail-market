@@ -5,7 +5,8 @@ import { checkImageDimensions } from "@/lib/imagePresets";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Search, X } from "lucide-react";
+import { Search, UserRound, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { ApiError, apiFetch, apiUpload } from "@/lib/api";
 import { slugifyClient, type Shop } from "@/lib/shops";
 import {
@@ -273,11 +274,28 @@ export function StoreCreatePage() {
     }
   }
 
+  const creatingForOwner = Boolean(isSuper && ownerId && ownerId !== user?.id);
+  const creatingMine = Boolean(isSuper && ownerId && ownerId === user?.id);
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-4">
       <StoreFormHeader
-        title="Create store"
-        subtitle="Set up a partner storefront — name, slug, and optional logo."
+        title={isSuper ? "Create store for an owner" : "Create store"}
+        subtitle={
+          isSuper
+            ? "Pick who owns this storefront, then set the name, slug, and optional logo. Partner stores are not “yours” unless you assign yourself."
+            : "Set up your storefront — name, slug, and optional logo."
+        }
+        badge={
+          isSuper ? (
+            <Badge
+              variant="outline"
+              className="border-brand-primary/30 bg-brand-tint/60 text-brand-deep"
+            >
+              Owner required
+            </Badge>
+          ) : undefined
+        }
       />
 
       <Form {...form}>
@@ -287,135 +305,37 @@ export function StoreCreatePage() {
           noValidate
         >
           <div className="space-y-5">
-            <StoreFormSection
-              step="01"
-              title="Store identity"
-              description="Logo, store name, and URL slug shown on the storefront."
-            >
-              <StoreImageDropzone
-                label="Store logo"
-                previewUrl={logoPreview}
-                disabled={form.formState.isSubmitting}
-                inputRef={fileRef}
-                onPick={() => fileRef.current?.click()}
-                onFile={onPickLogo}
-                onClear={
-                  logoFile
-                    ? () => {
-                        onPickLogo(null);
-                        if (fileRef.current) fileRef.current.value = "";
-                      }
-                    : undefined
-                }
-              />
-              <FormField
-                control={form.control}
-                name="shop_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Store name</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Niyenin Gadgets"
-                        autoFocus
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="slug"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Slug {previewing ? "(updating…)" : ""}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        onChange={(e) => {
-                          setSlugTouched(true);
-                          field.onChange(slugifyClient(e.target.value));
-                        }}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Lowercase letters, numbers, and hyphens only.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </StoreFormSection>
-
-            <StoreFormSection
-              step="02"
-              title="Details & visibility"
-              description="Optional description and draft vs publish. Brands stay on products."
-            >
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        rows={3}
-                        placeholder="Optional short store description"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="publish">Publish</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Draft keeps the store private; publish makes it live.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {isSuper ? (
-                <div className="space-y-2" ref={ownerWrapRef}>
+            {isSuper ? (
+              <section className="overflow-hidden rounded-2xl border border-brand-primary/35 bg-card shadow-sm ring-1 ring-brand-primary/10">
+                <div className="flex items-start gap-3 border-b border-brand-primary/20 bg-linear-to-r from-brand-tint/70 via-brand-tint/30 to-background px-5 py-4">
+                  <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand-primary text-white">
+                    <UserRound className="size-3.5" />
+                  </span>
+                  <div className="min-w-0">
+                    <h2 className="text-sm font-semibold tracking-tight">
+                      Store owner
+                    </h2>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      This create flow always assigns an owner. Use yourself for
+                      a house store, or pick a vendor / staff member for a
+                      partner store.
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-3 p-5" ref={ownerWrapRef}>
                   <div className="flex items-center justify-between gap-2">
                     <FormLabel htmlFor="owner_email">
-                      Owner (member email)
+                      Owner email
                     </FormLabel>
                     {user?.email ? (
                       <Button
                         type="button"
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         className="h-7 px-2 text-xs"
                         onClick={selectMyself}
                       >
-                        Use my email
+                        Assign to me (my store)
                       </Button>
                     ) : null}
                   </div>
@@ -426,7 +346,7 @@ export function StoreCreatePage() {
                       type="search"
                       autoComplete="off"
                       value={ownerQuery}
-                      placeholder="Search email (super admin, admin, moderator, vendor)…"
+                      placeholder="Search email (vendor, admin, moderator…)…"
                       className="pr-9 pl-9"
                       onFocus={() => setOwnerOpen(true)}
                       onChange={(e) => {
@@ -492,22 +412,147 @@ export function StoreCreatePage() {
                       </div>
                     ) : null}
                   </div>
-                  {ownerId ? (
-                    <p className="text-xs text-brand-primary">
-                      Selected owner: {ownerEmail}
+                  {creatingMine ? (
+                    <p className="rounded-lg border border-brand-primary/25 bg-brand-tint/50 px-3 py-2 text-xs text-brand-deep">
+                      Creating <strong>your</strong> store — it will show under
+                      My store on the Stores page.
+                    </p>
+                  ) : creatingForOwner ? (
+                    <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                      Creating a <strong>partner store</strong> owned by{" "}
+                      <span className="font-medium text-foreground">
+                        {ownerEmail}
+                      </span>
+                      . They manage products and orders; you keep platform
+                      control.
                     </p>
                   ) : (
                     <p className="text-xs text-muted-foreground">
-                      Assign to your email or any staff member. Shows up to{" "}
+                      Search and select an owner before creating. Shows up to{" "}
                       {OWNER_SEARCH_LIMIT} matches.
                     </p>
                   )}
                 </div>
-              ) : null}
+              </section>
+            ) : null}
+
+            <StoreFormSection
+              step={isSuper ? "02" : "01"}
+              title="Store identity"
+              description="Logo, store name, and URL slug shown on the storefront."
+            >
+              <StoreImageDropzone
+                label="Store logo"
+                previewUrl={logoPreview}
+                disabled={form.formState.isSubmitting}
+                inputRef={fileRef}
+                onPick={() => fileRef.current?.click()}
+                onFile={onPickLogo}
+                onClear={
+                  logoFile
+                    ? () => {
+                        onPickLogo(null);
+                        if (fileRef.current) fileRef.current.value = "";
+                      }
+                    : undefined
+                }
+              />
+              <FormField
+                control={form.control}
+                name="shop_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Store name</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Niyenin Gadgets"
+                        autoFocus
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Slug {previewing ? "(updating…)" : ""}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        onChange={(e) => {
+                          setSlugTouched(true);
+                          field.onChange(slugifyClient(e.target.value));
+                        }}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Lowercase letters, numbers, and hyphens only.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </StoreFormSection>
 
             <StoreFormSection
-              step="03"
+              step={isSuper ? "03" : "02"}
+              title="Details & visibility"
+              description="Optional description and draft vs publish. Brands stay on products."
+            >
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        rows={3}
+                        placeholder="Optional short store description"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="publish">Publish</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Draft keeps the store private; publish makes it live.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </StoreFormSection>
+
+            <StoreFormSection
+              step={isSuper ? "04" : "03"}
               title="Bangla version"
               description="Optional — skip it and the storefront shows the English text in Bangla too."
             >
@@ -543,7 +588,13 @@ export function StoreCreatePage() {
                   form.formState.isSubmitting || (isSuper && !ownerId)
                 }
               >
-                {form.formState.isSubmitting ? "Creating…" : "Create store"}
+                {form.formState.isSubmitting
+                  ? "Creating…"
+                  : isSuper
+                    ? creatingMine
+                      ? "Create my store"
+                      : "Create store for owner"
+                    : "Create store"}
               </Button>
             </StoreStickyActions>
           </div>

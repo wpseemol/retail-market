@@ -515,13 +515,6 @@ dashboardAuthRouter.post(
   requireAuth,
   requireRoles(...STAFF_ROLES),
   asyncHandler(async (req, res) => {
-    if (roleRequiresTwoFactor(req.auth!.role)) {
-      return res.status(403).json({
-        message: "Authenticator cannot be disabled for your role",
-        code: "TWO_FACTOR_REQUIRED_ROLE",
-      });
-    }
-
     const parsed = disableTwoFactorSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({

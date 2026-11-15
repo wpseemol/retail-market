@@ -6,7 +6,11 @@ import { env } from "./env.js";
 import { decryptSecret, encryptSecret } from "./secretBox.js";
 import { hashPassword, verifyPassword } from "./password.js";
 
-export const TWO_FACTOR_REQUIRED_ROLES: UserRole[] = ["super_admin", "admin"];
+/**
+ * Roles that must enroll before a session is issued.
+ * Empty = optional for every staff role; enable/disable from Profile.
+ */
+export const TWO_FACTOR_REQUIRED_ROLES: UserRole[] = [];
 
 export function roleRequiresTwoFactor(role: UserRole) {
   return TWO_FACTOR_REQUIRED_ROLES.includes(role);

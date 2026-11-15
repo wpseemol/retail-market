@@ -79,6 +79,121 @@ export function StoresPage() {
     }, [token, q, isVendor, isSuper, navigate]);
 
     const activeCount = stores.filter((s) => s.status === "active").length;
+    const myUserId = user?.id;
+    const myStores = isSuper
+        ? stores.filter((s) => s.user_id === myUserId)
+        : [];
+    const partnerStores = isSuper
+        ? stores.filter((s) => s.user_id !== myUserId)
+        : stores;
+
+    function renderStoreCard(store: Shop, mine: boolean) {
+        return (
+            <li key={store.id}>
+                <div
+                    className={cn(
+                        "group flex h-full flex-col overflow-hidden rounded-2xl border transition-all hover:shadow-md",
+                        mine
+                            ? "border-brand-primary/40 bg-linear-to-br from-brand-tint/50 to-background ring-1 ring-brand-primary/15 hover:border-brand-primary/55"
+                            : "border-border/80 bg-linear-to-br from-background to-muted/20 hover:border-brand-primary/30",
+                    )}
+                >
+                    <Link
+                        to={
+                            canEditStore
+                                ? `/stores/${store.slug}`
+                                : `/stores/${store.slug}/design`
+                        }
+                        className="relative block aspect-video bg-linear-to-br from-[#002603] via-[#0a4a10] to-brand-primary"
+                    >
+                        {store.banner?.path ? (
+                            <img
+                                src={store.banner.path}
+                                alt=""
+                                className="size-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
+                            />
+                        ) : (
+                            <div className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full bg-white/10 blur-2xl" />
+                        )}
+                        <div className="absolute bottom-3 left-3 flex size-12 items-center justify-center overflow-hidden rounded-xl border border-white/25 bg-white/15 shadow-lg backdrop-blur-sm">
+                            {store.logo?.path ? (
+                                <img
+                                    src={store.logo.path}
+                                    alt=""
+                                    className="size-full object-cover"
+                                />
+                            ) : (
+                                <Store className="size-5 text-white" />
+                            )}
+                        </div>
+                        <div className="absolute right-3 top-3 flex flex-col items-end gap-1.5">
+                            {mine ? (
+                                <Badge className="h-6 rounded-full border-transparent bg-brand-primary px-2.5 text-[11px] font-semibold text-white shadow-md hover:bg-brand-primary">
+                                    My store
+                                </Badge>
+                            ) : null}
+                            <Badge
+                                className={cn(
+                                    "h-6 gap-1.5 rounded-full px-2.5 text-[11px] font-semibold capitalize shadow-md",
+                                    store.status === "active"
+                                        ? "border-transparent bg-white text-[#14361c] hover:bg-white dark:bg-white dark:text-[#14361c]"
+                                        : "border-white/20 bg-black/60 text-white backdrop-blur-sm hover:bg-black/60",
+                                )}
+                            >
+                                <span
+                                    aria-hidden
+                                    className={cn(
+                                        "size-1.5 rounded-full",
+                                        store.status === "active"
+                                            ? "bg-brand-primary"
+                                            : "bg-white/70",
+                                    )}
+                                />
+                                {shopStatusLabel(store.status)}
+                            </Badge>
+                        </div>
+                    </Link>
+                    <div className="flex flex-1 flex-col gap-3 p-4">
+                        <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold tracking-tight">
+                                {store.shop_name}
+                            </p>
+                            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                /stores/{store.slug}
+                            </p>
+                        </div>
+                        {seesAll && store.user ? (
+                            <p className="truncate text-[11px] text-muted-foreground">
+                                {mine
+                                    ? "Owned by you"
+                                    : `Owner · ${store.user.first_name} ${store.user.last_name}`}
+                            </p>
+                        ) : null}
+                        <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
+                            {canEditStore ? (
+                                <Button asChild size="sm" variant="outline">
+                                    <Link to={`/stores/${store.slug}`}>
+                                        <Pencil className="size-3" />
+                                        Edit store
+                                    </Link>
+                                </Button>
+                            ) : null}
+                            <Button
+                                asChild
+                                size="sm"
+                                variant={canEditStore ? "ghost" : "outline"}
+                            >
+                                <Link to={`/stores/${store.slug}/design`}>
+                                    <Palette className="size-3" />
+                                    Customize page
+                                </Link>
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </li>
+        );
+    }
 
     return (
         <div className="flex flex-col gap-6">
@@ -86,17 +201,21 @@ export function StoresPage() {
                 title="Stores"
                 description={
                     isSuper
-                        ? "Partner storefronts — name, slug, logo, status, and owner."
+                        ? "Your house store stays marked as Mine. Create other stores for a chosen owner."
                         : isAdmin
                           ? "Partner storefronts. As admin you can customize any store's public page."
-                          : "Your store profile and public store page on the Niyenin marketplace."
+                          : isModerator
+                            ? "Assign helper vendors to store teams. Fee plans stay with super admin."
+                            : "Your store profile and public store page on the Niyenin marketplace."
                 }
                 actions={
                     canManage ? (
                         <Button asChild>
                             <Link to="/stores/new">
                                 <Plus className="size-4" />
-                                Create store
+                                {isSuper
+                                    ? "Create store for owner"
+                                    : "Create store"}
                             </Link>
                         </Button>
                     ) : null
@@ -136,9 +255,15 @@ export function StoresPage() {
                         <Users className="size-4" />
                     </span>
                     <div>
-                        <p className="text-xs text-muted-foreground">Showing</p>
+                        <p className="text-xs text-muted-foreground">
+                            {isSuper ? "My stores" : "Showing"}
+                        </p>
                         <p className="text-xl font-semibold tabular-nums">
-                            {loading ? "…" : stores.length}
+                            {loading
+                                ? "…"
+                                : isSuper
+                                  ? myStores.length
+                                  : stores.length}
                         </p>
                     </div>
                 </div>
@@ -153,12 +278,16 @@ export function StoresPage() {
                         </span>
                         <div>
                             <h2 className="text-sm font-semibold tracking-tight">
-                                All stores
+                                {isSuper ? "Store catalog" : "All stores"}
                             </h2>
                             <p className="mt-0.5 text-xs text-muted-foreground">
-                                {canManage
-                                    ? "Edit the store profile, or customize its public page design"
-                                    : "Customize a store's public page design (admin override)"}
+                                {isSuper
+                                    ? "Mine first, then partner stores you created for other owners"
+                                    : canManage
+                                      ? "Edit the store profile, or customize its public page design"
+                                      : isModerator
+                                        ? "Open a store to manage its helper team"
+                                        : "Customize a store's public page design (admin override)"}
                             </p>
                         </div>
                     </div>
@@ -209,105 +338,72 @@ export function StoresPage() {
                                 No stores yet
                             </p>
                             <p className="mt-1 text-xs text-muted-foreground">
-                                {canManage
-                                    ? "Create a store to sell on the marketplace."
-                                    : "Stores appear here once vendors create them."}
+                                {isSuper
+                                    ? "Create a house store for yourself, or create one for a partner owner."
+                                    : canManage
+                                      ? "Create a store to sell on the marketplace."
+                                      : "Stores appear here once vendors create them."}
                             </p>
                             {canManage ? (
                                 <Button asChild size="sm" className="mt-4">
                                     <Link to="/stores/new">
                                         <Plus className="size-3.5" />
-                                        Create store
+                                        {isSuper
+                                            ? "Create store for owner"
+                                            : "Create store"}
                                     </Link>
                                 </Button>
                             ) : null}
                         </div>
                     ) : (
-                        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                            {stores.map((store) => (
-                                <li key={store.id}>
-                                    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-linear-to-br from-background to-muted/20 transition-all hover:border-brand-primary/30 hover:shadow-md">
-                                        <Link
-                                            to={canEditStore ? `/stores/${store.slug}` : `/stores/${store.slug}/design`}
-                                            className="relative block aspect-video bg-linear-to-br from-[#002603] via-[#0a4a10] to-brand-primary"
-                                        >
-                                            {store.banner?.path ? (
-                                                <img
-                                                    src={store.banner.path}
-                                                    alt=""
-                                                    className="size-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
-                                                />
-                                            ) : (
-                                                <div className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full bg-white/10 blur-2xl" />
-                                            )}
-                                            <div className="absolute bottom-3 left-3 flex size-12 items-center justify-center overflow-hidden rounded-xl border border-white/25 bg-white/15 shadow-lg backdrop-blur-sm">
-                                                {store.logo?.path ? (
-                                                    <img
-                                                        src={store.logo.path}
-                                                        alt=""
-                                                        className="size-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <Store className="size-5 text-white" />
-                                                )}
-                                            </div>
-                                            <Badge
-                                                className={cn(
-                                                    "absolute right-3 top-3 h-6 gap-1.5 rounded-full px-2.5 text-[11px] font-semibold capitalize shadow-md",
-                                                    store.status === "active"
-                                                        ? "border-transparent bg-white text-[#14361c] hover:bg-white dark:bg-white dark:text-[#14361c]"
-                                                        : "border-white/20 bg-black/60 text-white backdrop-blur-sm hover:bg-black/60",
-                                                )}
-                                            >
-                                                <span
-                                                    aria-hidden
-                                                    className={cn(
-                                                        "size-1.5 rounded-full",
-                                                        store.status === "active"
-                                                            ? "bg-brand-primary"
-                                                            : "bg-white/70",
-                                                    )}
-                                                />
-                                                {shopStatusLabel(store.status)}
-                                            </Badge>
-                                        </Link>
-                                        <div className="flex flex-1 flex-col gap-3 p-4">
-                                            <div className="min-w-0">
-                                                <p className="truncate text-sm font-semibold tracking-tight">
-                                                    {store.shop_name}
-                                                </p>
-                                                <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                                                    /stores/{store.slug}
-                                                </p>
-                                            </div>
-                                            {seesAll && store.user ? (
-                                                <p className="truncate text-[11px] text-muted-foreground">
-                                                    Owner ·{" "}
-                                                    {store.user.first_name}{" "}
-                                                    {store.user.last_name}
-                                                </p>
-                                            ) : null}
-                                            <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
-                                                {canEditStore ? (
-                                                    <Button asChild size="sm" variant="outline">
-                                                        <Link to={`/stores/${store.slug}`}>
-                                                            <Pencil className="size-3" />
-                                                            Edit store
-                                                        </Link>
-                                                    </Button>
-                                                ) : null}
-                                                <Button asChild size="sm" variant={canEditStore ? "ghost" : "outline"}>
-                                                    <Link to={`/stores/${store.slug}/design`}>
-                                                        <Palette className="size-3" />
-                                                        Customize page
-                                                    </Link>
-                                                </Button>
-                                            </div>
-                                        </div>
+                        <div className="space-y-8">
+                            {isSuper && myStores.length > 0 ? (
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-xs font-semibold uppercase tracking-wide text-brand-deep">
+                                            My store
+                                        </h3>
+                                        <span className="h-px flex-1 bg-brand-primary/20" />
                                     </div>
-                                </li>
-                            ))}
-                        </ul>
+                                    <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                        {myStores.map((store) =>
+                                            renderStoreCard(store, true),
+                                        )}
+                                    </ul>
+                                </div>
+                            ) : null}
+
+                            {partnerStores.length > 0 ? (
+                                <div className="space-y-3">
+                                    {isSuper ? (
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                                Partner stores
+                                            </h3>
+                                            <span className="h-px flex-1 bg-border" />
+                                        </div>
+                                    ) : null}
+                                    <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                        {partnerStores.map((store) =>
+                                            renderStoreCard(
+                                                store,
+                                                !isSuper &&
+                                                    store.user_id === myUserId,
+                                            ),
+                                        )}
+                                    </ul>
+                                </div>
+                            ) : isSuper && myStores.length > 0 ? (
+                                <p className="rounded-xl border border-dashed border-border bg-muted/20 px-4 py-8 text-center text-sm text-muted-foreground">
+                                    No partner stores yet. Use{" "}
+                                    <span className="font-medium text-foreground">
+                                        Create store for owner
+                                    </span>{" "}
+                                    to assign a store to a vendor or staff
+                                    member.
+                                </p>
+                            ) : null}
+                        </div>
                     )}
                 </div>
             </section>

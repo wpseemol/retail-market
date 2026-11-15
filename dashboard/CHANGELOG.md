@@ -5,6 +5,17 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-15
 
+### Super admin stores — My store vs create-for-owner
+
+- `StoresPage`: for super admin, **My store** section (highlighted) vs **Partner stores**; CTA **Create store for owner**.
+- `StoreCreatePage`: distinct owner-first panel — create assigns an owner; copy distinguishes house store (you) vs partner owner.
+
+### Authenticator optional — Profile on/off for admins too
+
+- `ProfilePage` Authenticator card: Enable / Disable for every role (no “Disable locked” for admin).
+- Login no longer forces admin 2FA setup; challenge only if already enabled (API policy).
+- `AGENTS.md` updated.
+
 ### Store fee plan + team UI + order settlements
 
 - `lib/validators/shop.ts` + `lib/shops.ts`: fee plan / rent fields and `members` on shop type.

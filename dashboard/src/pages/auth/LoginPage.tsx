@@ -314,7 +314,7 @@ export function LoginPage() {
         ? "Enter one of your single-use recovery codes."
         : "Open your authenticator app and enter the 6-digit code."
       : step === "setup"
-        ? "Admins must enable an authenticator app before accessing the dashboard."
+        ? "Scan the QR code with your authenticator app, then enter a 6-digit code."
         : step === "recovery_codes"
           ? "Store these codes somewhere safe. Each can be used once if you lose your phone."
           : "Use your username, email or phone number.";
