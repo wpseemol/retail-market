@@ -29,13 +29,19 @@ import {
   storeShowcaseImage,
 } from "../lib/showcaseMedia.js";
 import { revalidateFrontend } from "../lib/revalidate.js";
+import {
+  actorStoreIds,
+  canAccessShop,
+  VENDOR_HELPER_MAX,
+  VENDOR_MEMBER_MAX,
+} from "../lib/vendorAccess.js";
 
 export const dashboardVendorsRouter = Router();
 
-/** Admins can read every store and override its design; everything else stays super_admin / owner. */
+/** Admins/moderators manage teams; super_admin owns fees; vendors use membership. */
 dashboardVendorsRouter.use(
   requireAuth,
-  requireRoles("super_admin", "admin", "vendor"),
+  requireRoles("super_admin", "admin", "moderator", "vendor"),
 );
 
 function withSafeInput(schema: z.ZodString) {
@@ -123,6 +129,10 @@ const shopInclude = {
   user: { include: userWithAvatarInclude },
   logo: true,
   banner: true,
+  members: {
+    include: { user: { include: userWithAvatarInclude } },
+    orderBy: [{ role: "asc" as const }, { id: "asc" as const }],
+  },
 } as const;
 
 type ChangeMap = Record<string, { from: unknown; to: unknown }>;
@@ -145,6 +155,11 @@ async function recordHistory(input: {
   });
 }
 
+function money(value: { toString(): string } | number | null | undefined) {
+  if (value === null || value === undefined) return null;
+  return Number(value);
+}
+
 function toPublicShop(
   vendor: {
     id: bigint;
@@ -162,12 +177,23 @@ function toPublicShop(
     featured_products_count?: number;
     show_banned_brands?: boolean;
     product_sort?: string;
+    fee_plan?: string;
+    commission_percent?: { toString(): string } | number | null;
+    rent_amount?: { toString(): string } | number | null;
+    rent_period?: string | null;
     created_at: Date;
     updated_at: Date;
     deleted_at: Date | null;
     logo?: Parameters<typeof toPublicMedia>[0];
     banner?: Parameters<typeof toPublicMedia>[0];
     user?: Parameters<typeof toPublicUser>[0];
+    members?: Array<{
+      id: bigint;
+      role: string;
+      user_id: bigint;
+      created_at: Date;
+      user?: Parameters<typeof toPublicUser>[0];
+    }>;
   },
 ) {
   return {
@@ -186,11 +212,22 @@ function toPublicShop(
     featured_products_count: vendor.featured_products_count ?? 4,
     show_banned_brands: vendor.show_banned_brands ?? true,
     product_sort: vendor.product_sort ?? "featured_first",
+    fee_plan: vendor.fee_plan ?? "commission",
+    commission_percent: money(vendor.commission_percent ?? null),
+    rent_amount: money(vendor.rent_amount ?? null),
+    rent_period: vendor.rent_period ?? null,
     created_at: vendor.created_at,
     updated_at: vendor.updated_at,
     logo: toPublicMedia(vendor.logo),
     banner: toPublicMedia(vendor.banner),
     user: vendor.user ? toPublicUser(vendor.user) : undefined,
+    members: (vendor.members ?? []).map((m) => ({
+      id: m.id.toString(),
+      role: m.role,
+      user_id: m.user_id.toString(),
+      created_at: m.created_at,
+      user: m.user ? toPublicUser(m.user) : undefined,
+    })),
   };
 }
 
@@ -246,18 +283,16 @@ async function slugTaken(slug: string, excludeId?: bigint) {
 }
 
 /**
- * `read` and `design` (showcase, logo, banner, share image) are open to admins;
- * `manage` (settings PATCH, history clear) is super_admin or the store owner only.
+ * `read` / `design`: owner, helper, admin, super_admin (moderator: read for team mgmt).
+ * `manage`: owner or super_admin only (helpers cannot change store settings).
  */
 async function assertCanAccessShop(
-  vendor: { user_id: bigint },
+  vendor: { id: bigint; user_id: bigint },
   actorId: bigint,
   role: string,
   mode: "read" | "design" | "manage" = "manage",
 ) {
-  if (role === "super_admin") return true;
-  if (role === "admin") return mode !== "manage";
-  return vendor.user_id === actorId;
+  return canAccessShop(vendor, actorId, role, mode);
 }
 
 function shopAccessDeniedMessage(role: string) {
