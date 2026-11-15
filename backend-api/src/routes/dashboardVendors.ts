@@ -830,6 +830,7 @@ dashboardVendorsRouter.post("/", async (req, res) => {
     "vendor",
   ] as const;
 
+  let ownerRole: string = req.auth!.role;
   if (isSuper) {
     if (!data.user_id) {
       return res.status(400).json({
@@ -851,6 +852,7 @@ dashboardVendorsRouter.post("/", async (req, res) => {
           "Shop owner must be a staff member (super admin, admin, moderator, or vendor)",
       });
     }
+    ownerRole = owner.role;
   } else if (data.user_id) {
     return res.status(403).json({
       message: "Vendors can only create a shop for themselves",
@@ -884,6 +886,8 @@ dashboardVendorsRouter.post("/", async (req, res) => {
 
   // Create UI: draft → pending, publish → active (default draft).
   const status: UserStatus = data.status ?? "pending";
+  // House store (owned by super_admin) has no partner fee; partner stores default 3%.
+  const ownerIsPlatform = ownerRole === "super_admin";
 
   const vendor = await prisma.vendor.create({
     data: {
@@ -895,7 +899,7 @@ dashboardVendorsRouter.post("/", async (req, res) => {
       description_bn: data.description_bn ?? null,
       status,
       fee_plan: "commission",
-      commission_percent: 3,
+      commission_percent: ownerIsPlatform ? 0 : 3,
       members: {
         create: { user_id: ownerId, role: "owner" },
       },
@@ -1011,22 +1015,38 @@ dashboardVendorsRouter.patch("/:idOrSlug", async (req, res) => {
     }
   }
 
-  const nextFeePlan = data.fee_plan ?? existing.fee_plan;
-  const nextCommission =
+  const effectiveOwnerId = nextUserId ?? existing.user_id;
+  const effectiveOwner = await prisma.user.findFirst({
+    where: { id: effectiveOwnerId, deleted_at: null },
+    select: { id: true, role: true },
+  });
+  const isHouseStore = effectiveOwner?.role === "super_admin";
+
+  let nextFeePlan = data.fee_plan ?? existing.fee_plan;
+  let nextCommission =
     data.commission_percent !== undefined
       ? data.commission_percent
       : existing.commission_percent !== null
         ? Number(existing.commission_percent)
         : null;
-  const nextRentAmount =
+  let nextRentAmount =
     data.rent_amount !== undefined
       ? data.rent_amount
       : existing.rent_amount !== null
         ? Number(existing.rent_amount)
         : null;
-  const nextRentPeriod =
+  let nextRentPeriod =
     data.rent_period !== undefined ? data.rent_period : existing.rent_period;
-  if (feeTouched) {
+
+  // Platform / house store (super_admin owner): no partner fee plan.
+  if (isHouseStore) {
+    nextFeePlan = "commission";
+    nextCommission = 0;
+    nextRentAmount = null;
+    nextRentPeriod = null;
+  }
+
+  if (feeTouched && !isHouseStore) {
     if (
       (nextFeePlan === "commission" || nextFeePlan === "both") &&
       nextCommission === null
@@ -1177,18 +1197,25 @@ dashboardVendorsRouter.patch("/:idOrSlug", async (req, res) => {
       featured_products_count: data.featured_products_count,
       show_banned_brands: data.show_banned_brands,
       product_sort: data.product_sort,
-      ...(isSuper && feeTouched
-        ? {
-            fee_plan: data.fee_plan,
-            commission_percent:
-              data.commission_percent === undefined
-                ? undefined
-                : data.commission_percent,
-            rent_amount:
-              data.rent_amount === undefined ? undefined : data.rent_amount,
-            rent_period:
-              data.rent_period === undefined ? undefined : data.rent_period,
-          }
+      ...(isSuper && (feeTouched || isHouseStore)
+        ? isHouseStore
+          ? {
+              fee_plan: "commission" as const,
+              commission_percent: 0,
+              rent_amount: null,
+              rent_period: null,
+            }
+          : {
+              fee_plan: data.fee_plan,
+              commission_percent:
+                data.commission_percent === undefined
+                  ? undefined
+                  : data.commission_percent,
+              rent_amount:
+                data.rent_amount === undefined ? undefined : data.rent_amount,
+              rent_period:
+                data.rent_period === undefined ? undefined : data.rent_period,
+            }
         : {}),
     },
     include: shopInclude,

@@ -104,7 +104,6 @@ export function StoreEditPage() {
   const confirm = useConfirm();
   const { token, user } = useAuthStore();
   const isSuper = user?.role === "super_admin";
-  const canEditFees = Boolean(user && STORE_FEE_ROLES.includes(user.role));
   const canManageTeam = Boolean(user && STORE_TEAM_ROLES.includes(user.role));
   const fileRef = useRef<HTMLInputElement>(null);
   const bannerRef = useRef<HTMLInputElement>(null);
@@ -142,6 +141,15 @@ export function StoreEditPage() {
       myMembership?.role === "owner",
   );
   const canEditProfile = isSuper || isOwner;
+  /** Partner stores only — house stores owned by super admin have no fee plan. */
+  const isHouseStoreOwner = Boolean(
+    (user?.role === "super_admin" && ownerId === user.id) ||
+      (shop?.user?.role === "super_admin" && shop.user_id === ownerId),
+  );
+  const canEditFees = Boolean(
+    user && STORE_FEE_ROLES.includes(user.role) && !isHouseStoreOwner,
+  );
+  const showFeePlan = !isHouseStoreOwner;
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -382,7 +390,15 @@ export function StoreEditPage() {
                   rent_amount: rentAmount,
                   rent_period: rentPeriod,
                 }
-              : {}),
+              : isHouseStoreOwner && isSuper
+                ? {
+                    // Platform / house store — no partner fee
+                    fee_plan: "commission" as const,
+                    commission_percent: 0,
+                    rent_amount: null,
+                    rent_period: null,
+                  }
+                : {}),
           },
         },
       );
@@ -793,11 +809,11 @@ export function StoreEditPage() {
             </label>
           </StoreFormSection>
 
-          {(canEditFees || shop.fee_plan) && (
+          {showFeePlan && (canEditFees || shop.fee_plan) ? (
             <StoreFormSection
               step="03"
               title="Fee plan"
-              description="How Niyenin earns from this store — commission on each sale, fixed rent, or both."
+              description="How Niyenin earns from this partner store — commission on each sale, fixed rent, or both. Not used on your house store."
             >
               {canEditFees ? (
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -898,7 +914,7 @@ export function StoreEditPage() {
                 </p>
               )}
             </StoreFormSection>
-          )}
+          ) : null}
 
           <StoreFormSection
             step="04"

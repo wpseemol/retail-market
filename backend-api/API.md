@@ -1164,8 +1164,8 @@ Access uses **`VendorMember`** (not only `vendors.user_id`). Cap: **1 owner + 2 
 | DELETE | `/:idOrSlug/members/:userId` | Remove a **helper** (not the owner) · team managers only |
 | GET | `/:idOrSlug/history` | Audit log |
 | DELETE | `/:idOrSlug/history` | Clear audit log (DB delete) · super or owner |
-| POST | `/` | Create (`shop_name`, `slug?`, `description?`, `shop_name_bn?`, `description_bn?`, `user_id?` required for super, `status?`) · defaults `fee_plan: commission`, `commission_percent: 3` + owner membership row · admin/moderator → 403 |
-| PATCH | `/:idOrSlug` | Update settings (incl. Bangla, theme) · **super or owner**. Fee fields (**super_admin only**): `fee_plan` (`commission`\|`rent`\|`both`), `commission_percent` (0–100), `rent_amount`, `rent_period` (`monthly`\|`yearly`). Owner change via `user_id` is **super_admin** only |
+| POST | `/` | Create (`shop_name`, `slug?`, `description?`, `shop_name_bn?`, `description_bn?`, `user_id?` required for super, `status?`) · partner default `commission` + `3%`; **super_admin owner** → `0%` · owner membership row · admin/moderator → 403 |
+| PATCH | `/:idOrSlug` | Update settings (incl. Bangla, theme) · **super or owner**. Fee fields (**super_admin only**, partner stores): `fee_plan` (`commission`\|`rent`\|`both`), `commission_percent` (0–100), `rent_amount`, `rent_period` (`monthly`\|`yearly`). House stores owned by `super_admin` always stay `commission` / `0%`. Owner change via `user_id` is **super_admin** only |
 | POST | `/:idOrSlug/logo` | Multipart **`logo`** · max **5 MB** · always resized |
 | POST | `/:idOrSlug/banner` | Multipart **`banner`** · max **5 MB** · always resized |
 | GET | `/:idOrSlug/showcase` | Page design for the editor: `shop_name`, `logo`, `banner`, `tagline`, `accent_color`, `seo_*`, `noindex`, `og_image`, full `showcase` (incl. disabled sections), `owned_by_actor` |
@@ -1174,7 +1174,7 @@ Access uses **`VendorMember`** (not only `vendors.user_id`). Cap: **1 owner + 2 
 | DELETE | `/:idOrSlug/og-image` | Remove the share image |
 | DELETE | `/:idOrSlug` | Soft-delete (super only) |
 
-**Fee plan validation:** `commission` / `both` require `commission_percent`; `rent` / `both` require `rent_amount` + `rent_period`. Rent is shown on the store for Phase 1 and is **not** deducted on checkout (no wallet/payout yet).
+**Fee plan validation:** `commission` / `both` require `commission_percent`; `rent` / `both` require `rent_amount` + `rent_period`. **House store** (owner role `super_admin`): no partner fee — API keeps `commission` at `0%` and clears rent. Rent on partner stores is shown for Phase 1 and is **not** deducted on checkout (no wallet/payout yet).
 
 **`members[]` on shop:** `{ id, user_id, role: owner\|helper, user: { id, first_name, last_name, email, … } }`.
 

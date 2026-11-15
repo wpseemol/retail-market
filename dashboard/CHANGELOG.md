@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-15
 
+### Hide fee plan on super-admin house store
+
+- `StoreEditPage`: Fee plan section hidden when the store owner is super admin (your My store). Fees only apply to partner-owned stores.
+
 ### Store edit — logo/banner wait for Save changes
 
 - `StoreEditPage`: picking logo or banner only sets a local preview; upload runs with the form when **Save changes** is clicked (no immediate auto-save).
