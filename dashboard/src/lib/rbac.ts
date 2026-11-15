@@ -33,11 +33,34 @@ export const TAXONOMY_MANAGE_ROLES: readonly StaffRole[] = ["super_admin", "admi
 /**
  * Vendor store profiles — vendors manage their own; admins can open any store to
  * override its page design (logo, banner, showcase) but not create or delete stores.
+ * Moderators list stores to assign helper vendors.
  */
-export const STORE_ROLES: readonly StaffRole[] = ["super_admin", "admin", "vendor"];
-/** Create a store / edit its profile and storefront settings. */
+export const STORE_ROLES: readonly StaffRole[] = [
+  "super_admin",
+  "admin",
+  "moderator",
+  "vendor",
+];
+/** Create a store (super_admin or vendor owner). */
 export const STORE_MANAGE_ROLES: readonly StaffRole[] = ["super_admin", "vendor"];
+/**
+ * Open store settings page: owners/super_admin edit profile; admin/moderator
+ * manage the helper team; super_admin also sets fee plans.
+ */
+export const STORE_EDIT_ROLES: readonly StaffRole[] = [
+  "super_admin",
+  "admin",
+  "moderator",
+  "vendor",
+];
+/** Assign / remove store helpers (not fee plan, not ownership). */
+export const STORE_TEAM_ROLES: readonly StaffRole[] = [
+  "super_admin",
+  "admin",
+  "moderator",
+];
 export const STORE_DELETE_ROLES: readonly StaffRole[] = ["super_admin"];
+export const STORE_FEE_ROLES: readonly StaffRole[] = ["super_admin"];
 
 /** Global storefront SEO (`/api/dashboard/seo`). */
 export const SEO_ROLES: readonly StaffRole[] = ["super_admin", "admin"];

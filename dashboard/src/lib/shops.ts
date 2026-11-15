@@ -21,6 +21,26 @@ export type ShopMedia = {
   alt_text?: string | null;
 };
 
+export type VendorFeePlan = "commission" | "rent" | "both";
+export type VendorRentPeriod = "monthly" | "yearly";
+export type VendorMemberRole = "owner" | "helper";
+
+export type ShopMember = {
+  id: string;
+  role: VendorMemberRole;
+  user_id: string;
+  created_at?: string;
+  user?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    username?: string | null;
+    role: string;
+    status: string;
+  };
+};
+
 export type Shop = {
   id: string;
   user_id: string;
@@ -37,6 +57,10 @@ export type Shop = {
   featured_products_count?: number;
   show_banned_brands?: boolean;
   product_sort?: ProductSort;
+  fee_plan?: VendorFeePlan;
+  commission_percent?: number | null;
+  rent_amount?: number | null;
+  rent_period?: VendorRentPeriod | null;
   created_at?: string;
   updated_at?: string;
   logo?: ShopMedia | null;
@@ -50,6 +74,7 @@ export type Shop = {
     role: string;
     status: string;
   };
+  members?: ShopMember[];
 };
 
 export type ShopHistoryItem = {
@@ -98,6 +123,19 @@ export function productSortLabel(sort: ProductSort): string {
   if (sort === "price_asc") return "Price: low to high";
   if (sort === "price_desc") return "Price: high to low";
   return "Featured first";
+}
+
+export const VENDOR_FEE_PLANS: VendorFeePlan[] = ["commission", "rent", "both"];
+export const VENDOR_RENT_PERIODS: VendorRentPeriod[] = ["monthly", "yearly"];
+
+export function feePlanLabel(plan: VendorFeePlan): string {
+  if (plan === "rent") return "Fixed rent";
+  if (plan === "both") return "Commission + rent";
+  return "Commission %";
+}
+
+export function rentPeriodLabel(period: VendorRentPeriod): string {
+  return period === "yearly" ? "Yearly" : "Monthly";
 }
 
 /** Create-shop UI: only draft + publish (maps to pending / active in API). */

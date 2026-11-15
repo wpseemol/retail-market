@@ -88,4 +88,51 @@ export function validateShopImageFile(
   return validateSafeImageFile(file, SHOP_IMAGE_MAX_BYTES, "Store image");
 }
 
+export const shopFeeFormSchema = z
+  .object({
+    fee_plan: z.enum(["commission", "rent", "both"]),
+    commission_percent: z
+      .number({ message: "Enter a commission percent" })
+      .finite()
+      .min(0, "Min 0%")
+      .max(100, "Max 100%")
+      .nullable(),
+    rent_amount: z
+      .number({ message: "Enter a rent amount" })
+      .finite()
+      .min(0)
+      .max(10_000_000)
+      .nullable(),
+    rent_period: z.enum(["monthly", "yearly"]).nullable(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.fee_plan === "commission" || data.fee_plan === "both") {
+      if (data.commission_percent === null) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["commission_percent"],
+          message: "Commission percent is required",
+        });
+      }
+    }
+    if (data.fee_plan === "rent" || data.fee_plan === "both") {
+      if (data.rent_amount === null) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["rent_amount"],
+          message: "Rent amount is required",
+        });
+      }
+      if (data.rent_period === null) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["rent_period"],
+          message: "Rent period is required",
+        });
+      }
+    }
+  });
+
+export type ShopFeeFormValues = z.infer<typeof shopFeeFormSchema>;
+
 export { firstZodError };

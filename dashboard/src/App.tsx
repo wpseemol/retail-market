@@ -54,6 +54,7 @@ import {
   SEO_ROLES,
   STAFF_MANAGEMENT_ROLES,
   STORE_MANAGE_ROLES,
+  STORE_EDIT_ROLES,
   STORE_ROLES,
   SYSTEM_SETTINGS_ROLES,
   TAXONOMY_MANAGE_ROLES,
@@ -153,8 +154,11 @@ export default function App() {
 
           <Route element={<ProtectedRoute roles={STORE_MANAGE_ROLES} />}>
             <Route path="stores/new" element={<StoreCreatePage />} />
-            <Route path="stores/:slug" element={<StoreEditPage />} />
             <Route path="shops/new" element={<StoreCreatePage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={STORE_EDIT_ROLES} />}>
+            <Route path="stores/:slug" element={<StoreEditPage />} />
             <Route path="shops/:slug" element={<StoreEditPage />} />
           </Route>
 
