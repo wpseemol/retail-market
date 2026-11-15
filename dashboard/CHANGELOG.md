@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-15
 
+### Store edit — logo/banner wait for Save changes
+
+- `StoreEditPage`: picking logo or banner only sets a local preview; upload runs with the form when **Save changes** is clicked (no immediate auto-save).
+
 ### Super admin stores — My store vs create-for-owner
 
 - `StoresPage`: for super admin, **My store** section (highlighted) vs **Partner stores**; CTA **Create store for owner**.

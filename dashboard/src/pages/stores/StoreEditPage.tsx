@@ -93,6 +93,8 @@ function storeDraftFromShop(shop: Shop) {
         : shop.commission_percent,
     rentAmount: shop.rent_amount ?? null,
     rentPeriod: shop.rent_period ?? null,
+    hasPendingLogo: false,
+    hasPendingBanner: false,
   };
 }
 
@@ -145,9 +147,38 @@ export function StoreEditPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   useToastMessages(saveSuccess, saveError);
-  const [logoUploading, setLogoUploading] = useState(false);
-  const [bannerUploading, setBannerUploading] = useState(false);
+  const [pendingLogo, setPendingLogo] = useState<File | null>(null);
+  const [pendingLogoUrl, setPendingLogoUrl] = useState<string | null>(null);
+  const [pendingBanner, setPendingBanner] = useState<File | null>(null);
+  const [pendingBannerUrl, setPendingBannerUrl] = useState<string | null>(null);
+  const [logoFieldError, setLogoFieldError] = useState<string | null>(null);
+  const [bannerFieldError, setBannerFieldError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  function clearPendingLogo() {
+    if (pendingLogoUrl) URL.revokeObjectURL(pendingLogoUrl);
+    setPendingLogo(null);
+    setPendingLogoUrl(null);
+    setLogoFieldError(null);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  function clearPendingBanner() {
+    if (pendingBannerUrl) URL.revokeObjectURL(pendingBannerUrl);
+    setPendingBanner(null);
+    setPendingBannerUrl(null);
+    setBannerFieldError(null);
+    if (bannerRef.current) bannerRef.current.value = "";
+  }
+
+  useEffect(() => {
+    return () => {
+      if (pendingLogoUrl) URL.revokeObjectURL(pendingLogoUrl);
+      if (pendingBannerUrl) URL.revokeObjectURL(pendingBannerUrl);
+    };
+    // Only revoke on unmount / URL change via clear helpers.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function refreshHistory() {
     if (!token || !routeSlug) return;
@@ -239,6 +270,8 @@ export function StoreEditPage() {
       commissionPercent,
       rentAmount,
       rentPeriod,
+      hasPendingLogo: Boolean(pendingLogo),
+      hasPendingBanner: Boolean(pendingBanner),
     },
     !loading && shop !== null,
   );
@@ -295,8 +328,33 @@ export function StoreEditPage() {
     setSaveSuccess(null);
 
     try {
+      let latestShop: Shop | null = shop;
+      const slugForUpload = encodeURIComponent(routeSlug);
+
+      if (pendingLogo) {
+        const form = new FormData();
+        form.append("logo", pendingLogo);
+        const uploaded = await apiUpload<{ message: string; shop: Shop }>(
+          `/api/dashboard/shops/${slugForUpload}/logo`,
+          form,
+          { token },
+        );
+        latestShop = uploaded.shop;
+      }
+
+      if (pendingBanner) {
+        const form = new FormData();
+        form.append("banner", pendingBanner);
+        const uploaded = await apiUpload<{ message: string; shop: Shop }>(
+          `/api/dashboard/shops/${slugForUpload}/banner`,
+          form,
+          { token },
+        );
+        latestShop = uploaded.shop;
+      }
+
       const data = await apiFetch<{ message: string; shop: Shop }>(
-        `/api/dashboard/shops/${encodeURIComponent(routeSlug)}`,
+        `/api/dashboard/shops/${slugForUpload}`,
         {
           method: "PATCH",
           token,
@@ -328,12 +386,15 @@ export function StoreEditPage() {
           },
         },
       );
-      applyShop(data.shop);
-      baseline.markClean(storeDraftFromShop(data.shop));
+      latestShop = data.shop;
+      clearPendingLogo();
+      clearPendingBanner();
+      applyShop(latestShop);
+      baseline.markClean(storeDraftFromShop(latestShop));
       setSaveSuccess(data.message || "Store updated");
       await refreshHistory();
-      if (data.shop.slug !== routeSlug) {
-        navigate(`/stores/${data.shop.slug}`, { replace: true });
+      if (latestShop.slug !== routeSlug) {
+        navigate(`/stores/${latestShop.slug}`, { replace: true });
       }
     } catch (err) {
       setSaveError(err instanceof ApiError ? err.message : "Update failed");
@@ -342,75 +403,54 @@ export function StoreEditPage() {
     }
   }
 
-  async function onLogoChange(file: File | null) {
-    if (!file || !token || !routeSlug) return;
+  async function onLogoPick(file: File | null) {
+    if (!file) {
+      clearPendingLogo();
+      return;
+    }
     const typeCheck = validateShopImageFile(file);
     const checked = typeCheck.ok
       ? await checkImageDimensions(file, "shopLogo")
       : typeCheck;
     if (!checked.ok) {
-      setSaveError(checked.message);
+      setLogoFieldError(checked.message);
+      setSaveError(null);
       setSaveSuccess(null);
       if (fileRef.current) fileRef.current.value = "";
       return;
     }
-    setLogoUploading(true);
+    if (pendingLogoUrl) URL.revokeObjectURL(pendingLogoUrl);
+    setLogoFieldError(null);
     setSaveError(null);
     setSaveSuccess(null);
-    try {
-      const form = new FormData();
-      form.append("logo", file);
-      const data = await apiUpload<{ message: string; shop: Shop }>(
-        `/api/dashboard/shops/${encodeURIComponent(routeSlug)}/logo`,
-        form,
-        { token },
-      );
-      applyShop(data.shop);
-      setSaveSuccess(data.message || "Store logo updated");
-      await refreshHistory();
-    } catch (err) {
-      setSaveError(
-        err instanceof ApiError ? err.message : "Logo upload failed",
-      );
-    } finally {
-      setLogoUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
-    }
+    setPendingLogo(file);
+    setPendingLogoUrl(URL.createObjectURL(file));
+    if (fileRef.current) fileRef.current.value = "";
   }
 
-  async function onBannerChange(file: File | null) {
-    if (!file || !token || !routeSlug) return;
+  async function onBannerPick(file: File | null) {
+    if (!file) {
+      clearPendingBanner();
+      return;
+    }
     const typeCheck = validateShopImageFile(file);
     const checked = typeCheck.ok
       ? await checkImageDimensions(file, "shopBanner")
       : typeCheck;
     if (!checked.ok) {
-      setSaveError(checked.message);
+      setBannerFieldError(checked.message);
+      setSaveError(null);
       setSaveSuccess(null);
+      if (bannerRef.current) bannerRef.current.value = "";
       return;
     }
-    setBannerUploading(true);
+    if (pendingBannerUrl) URL.revokeObjectURL(pendingBannerUrl);
+    setBannerFieldError(null);
     setSaveError(null);
     setSaveSuccess(null);
-    try {
-      const form = new FormData();
-      form.append("banner", file);
-      const data = await apiUpload<{ message: string; shop: Shop }>(
-        `/api/dashboard/shops/${encodeURIComponent(routeSlug)}/banner`,
-        form,
-        { token },
-      );
-      applyShop(data.shop);
-      setSaveSuccess(data.message || "Store banner updated");
-      await refreshHistory();
-    } catch (err) {
-      setSaveError(
-        err instanceof ApiError ? err.message : "Banner upload failed",
-      );
-    } finally {
-      setBannerUploading(false);
-      if (bannerRef.current) bannerRef.current.value = "";
-    }
+    setPendingBanner(file);
+    setPendingBannerUrl(URL.createObjectURL(file));
+    if (bannerRef.current) bannerRef.current.value = "";
   }
 
   async function onDelete() {
@@ -525,26 +565,38 @@ export function StoreEditPage() {
             <StoreImageDropzone
               variant="logo"
               label="Store logo"
-              hint={imageUploadHint("shopLogo", 5, { prefix: "Square brand mark" })}
-              previewUrl={shop.logo?.path}
-              uploading={logoUploading}
-              disabled={saving}
+              hint={imageUploadHint("shopLogo", 5, {
+                prefix: pendingLogo
+                  ? "Selected — click Save changes to upload"
+                  : "Square brand mark",
+              })}
+              previewUrl={pendingLogoUrl ?? shop.logo?.path}
+              disabled={saving || !canEditProfile}
               inputRef={fileRef}
               onPick={() => fileRef.current?.click()}
-              onFile={(file) => void onLogoChange(file)}
+              onFile={(file) => void onLogoPick(file)}
+              onClear={
+                pendingLogo ? () => clearPendingLogo() : undefined
+              }
+              error={logoFieldError}
             />
             <StoreImageDropzone
               variant="banner"
               label="Store banner"
               hint={imageUploadHint("shopBanner", 5, {
-                prefix: `Wide hero on /stores/${shop.slug}`,
+                prefix: pendingBanner
+                  ? "Selected — click Save changes to upload"
+                  : `Wide hero on /stores/${shop.slug}`,
               })}
-              previewUrl={shop.banner?.path}
-              uploading={bannerUploading}
-              disabled={saving}
+              previewUrl={pendingBannerUrl ?? shop.banner?.path}
+              disabled={saving || !canEditProfile}
               inputRef={bannerRef}
               onPick={() => bannerRef.current?.click()}
-              onFile={(file) => void onBannerChange(file)}
+              onFile={(file) => void onBannerPick(file)}
+              onClear={
+                pendingBanner ? () => clearPendingBanner() : undefined
+              }
+              error={bannerFieldError}
             />
 
             <div className="space-y-2">
@@ -999,8 +1051,8 @@ export function StoreEditPage() {
           slug={slug}
           description={description}
           status={status}
-          imageUrl={shop.logo?.path}
-          bannerUrl={shop.banner?.path}
+          imageUrl={pendingLogoUrl ?? shop.logo?.path}
+          bannerUrl={pendingBannerUrl ?? shop.banner?.path}
           ownerEmail={ownerEmail}
           theme={theme}
         />
