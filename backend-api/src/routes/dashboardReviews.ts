@@ -47,11 +47,8 @@ function parseReviewId(req: Request) {
 /** `undefined` = staff (no scope); `null` = vendor without a shop. */
 async function vendorScope(req: Request): Promise<bigint | null | undefined> {
   if (req.auth!.role !== "vendor") return undefined;
-  const shop = await prisma.vendor.findFirst({
-    where: { user_id: req.auth!.userId, deleted_at: null },
-    select: { id: true },
-  });
-  return shop?.id ?? null;
+  const { actorPrimaryShopId } = await import("../lib/vendorAccess.js");
+  return (await actorPrimaryShopId(req.auth!.userId, req.auth!.role)) ?? null;
 }
 
 type Loaded = { ok: true; review: DashboardReviewRow } | { ok: false; status: number; message: string };

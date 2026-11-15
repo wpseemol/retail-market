@@ -19,6 +19,10 @@ import {
 } from "../lib/shipping.js";
 import { couponDiscount, findCoupon, publicCoupon } from "../lib/coupons.js";
 import {
+  buildOrderSettlements,
+  persistOrderSettlements,
+} from "../lib/orderSettlements.js";
+import {
   orderPlaceLimiter,
   rateLimit,
   shippingQuoteLimiter,
@@ -211,7 +215,14 @@ async function placeStorefrontOrder(
         stock_qty: true,
         shipping_fee: true,
         vendor_id: true,
-        vendor: { select: { user_id: true } },
+        vendor: {
+          select: {
+            user_id: true,
+            shop_name: true,
+            fee_plan: true,
+            commission_percent: true,
+          },
+        },
       },
     });
     const productMap = new Map(products.map((p) => [p.id.toString(), p]));
@@ -238,6 +249,16 @@ async function placeStorefrontOrder(
     const lineItems = [...requested].map(([pid, qty]) => {
       const product = productMap.get(pid)!;
       const unit = new Prisma.Decimal(product.price);
+      const feePlan = product.vendor?.fee_plan ?? "commission";
+      const rawPercent = product.vendor?.commission_percent;
+      const commissionPercent =
+        product.vendor_id === null
+          ? 100
+          : feePlan === "rent"
+            ? 0
+            : rawPercent !== null && rawPercent !== undefined
+              ? Number(rawPercent)
+              : 3;
       return {
         product_id: product.id,
         product_name: product.name,
@@ -247,6 +268,8 @@ async function placeStorefrontOrder(
         line_total: unit.mul(qty),
         vendor_user_id: product.vendor?.user_id ?? null,
         vendor_id: product.vendor_id ?? null,
+        shop_name: product.vendor?.shop_name ?? null,
+        commission_percent: commissionPercent,
         product_shipping_fee: product.shipping_fee ?? null,
       };
     });
@@ -382,6 +405,18 @@ async function placeStorefrontOrder(
           },
         });
       }
+
+      const settlements = buildOrderSettlements({
+        lines: lineItems.map((l) => ({
+          vendorId: l.vendor_id,
+          shopName: l.shop_name,
+          lineTotal: Number(l.line_total),
+          commissionPercent: l.commission_percent,
+        })),
+        orderDiscount: Number(discount),
+      });
+      await persistOrderSettlements(tx, created.id, settlements);
+
       return created;
     });
 

@@ -21,6 +21,7 @@ import {
   dashboardProductsBulkRouter,
   productBulkPermissions,
 } from "./dashboardProductsBulk.js";
+import { actorPrimaryShopId, actorStoreIds } from "../lib/vendorAccess.js";
 
 export const dashboardProductsRouter = Router();
 
@@ -201,14 +202,11 @@ async function resolveVendorIdForActor(input: {
   requestedVendorId?: string | null;
 }) {
   if (input.role === "vendor") {
-    const shop = await prisma.vendor.findFirst({
-      where: { user_id: input.userId, deleted_at: null },
-      select: { id: true },
-    });
-    if (!shop) {
-      return { error: "Create a shop before adding products" as const };
+    const shopId = await actorPrimaryShopId(input.userId, input.role);
+    if (!shopId) {
+      return { error: "Join or create a shop before adding products" as const };
     }
-    return { vendorId: shop.id };
+    return { vendorId: shopId };
   }
 
   // Elevated: omit / null / "" → platform catalog (Niyenin), not a partner store.
@@ -233,11 +231,9 @@ async function assertCanAccessProduct(
   if (isElevated(role)) return true;
   // Platform (Niyenin) catalog — vendors never edit these.
   if (!product.vendor_id) return false;
-  const shop = await prisma.vendor.findFirst({
-    where: { id: product.vendor_id, user_id: userId, deleted_at: null },
-    select: { id: true },
-  });
-  return Boolean(shop);
+  const storeIds = await actorStoreIds(userId, role);
+  if (!storeIds || storeIds.length === 0) return false;
+  return storeIds.some((id) => id === product.vendor_id);
 }
 
 function productAccessDeniedMessage(role: string) {
@@ -405,18 +401,15 @@ dashboardProductsRouter.get("/", async (req, res) => {
   const permissions = productBulkPermissions(req.auth!.role);
 
   if (req.auth!.role === "vendor") {
-    const shop = await prisma.vendor.findFirst({
-      where: { user_id: req.auth!.userId, deleted_at: null },
-      select: { id: true },
-    });
-    if (!shop) {
+    const storeIds = await actorStoreIds(req.auth!.userId, req.auth!.role);
+    if (!storeIds || storeIds.length === 0) {
       return res.json({
         products: [],
         pagination: { page, limit, total: 0, pages: 0 },
         permissions,
       });
     }
-    where.vendor_id = shop.id;
+    where.vendor_id = storeIds.length === 1 ? storeIds[0] : { in: storeIds };
   } else if (vendor_id) {
     where.vendor_id = BigInt(vendor_id);
   }

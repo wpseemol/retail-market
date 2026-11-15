@@ -52,11 +52,8 @@ function canAssignOwner(role: string) {
 }
 
 async function actorVendorId(userId: bigint) {
-  const vendor = await prisma.vendor.findFirst({
-    where: { user_id: userId, deleted_at: null },
-    select: { id: true },
-  });
-  return vendor?.id ?? null;
+  const { actorPrimaryShopId } = await import("../lib/vendorAccess.js");
+  return actorPrimaryShopId(userId, "vendor");
 }
 
 /** super_admin / admin, or the vendor whose store the brand is linked to. Moderators are excluded. */

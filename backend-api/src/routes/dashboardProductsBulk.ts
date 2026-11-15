@@ -75,11 +75,9 @@ function validationError(res: Response, error: z.ZodError, fallback = "Validatio
 /** Vendor's own shop id, `null` for staff, `undefined` when a vendor has no shop yet. */
 async function shopScope(role: string, userId: bigint): Promise<bigint | null | undefined> {
   if (productBulkPermissions(role).all_stores) return null;
-  const shop = await prisma.vendor.findFirst({
-    where: { user_id: userId, deleted_at: null },
-    select: { id: true },
-  });
-  return shop?.id;
+  const { actorPrimaryShopId } = await import("../lib/vendorAccess.js");
+  const id = await actorPrimaryShopId(userId, role);
+  return id ?? undefined;
 }
 
 /* ---------- Export ---------- */

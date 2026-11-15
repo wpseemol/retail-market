@@ -86,6 +86,12 @@ const detailInclude = {
   },
   addresses: true,
   payments: { orderBy: { created_at: "desc" as const }, take: 10 },
+  settlements: {
+    include: {
+      vendor: { select: { id: true, shop_name: true, slug: true } },
+    },
+    orderBy: { id: "asc" as const },
+  },
 } satisfies Prisma.OrderInclude;
 
 type ListRow = Prisma.OrderGetPayload<{ include: typeof listInclude }>;
@@ -179,7 +185,17 @@ function toPublicOrder(order: ListRow | DetailRow) {
   };
 }
 
-function toDetailOrder(order: DetailRow) {
+function toDetailOrder(
+  order: DetailRow,
+  opts?: { vendorStoreIds?: bigint[] | null },
+) {
+  let settlements = order.settlements ?? [];
+  if (opts?.vendorStoreIds && opts.vendorStoreIds.length > 0) {
+    const allowed = new Set(opts.vendorStoreIds.map(String));
+    settlements = settlements.filter(
+      (s) => s.vendor_id != null && allowed.has(s.vendor_id.toString()),
+    );
+  }
   return {
     ...toPublicOrder(order),
     addresses: order.addresses.map(publicAddress),
@@ -193,6 +209,23 @@ function toDetailOrder(order: DetailRow) {
       paid_at: p.paid_at?.toISOString() ?? null,
       created_at: p.created_at.toISOString(),
     })),
+    settlements: settlements.map((s) => ({
+      id: s.id.toString(),
+      vendor_id: s.vendor_id?.toString() ?? null,
+      shop_name: s.shop_name ?? s.vendor?.shop_name ?? "Niyenin",
+      vendor: s.vendor
+        ? {
+            id: s.vendor.id.toString(),
+            shop_name: s.vendor.shop_name,
+            slug: s.vendor.slug,
+          }
+        : null,
+      subtotal: money(s.subtotal),
+      discount_share: money(s.discount_share),
+      commission_percent: Number(s.commission_percent).toFixed(2),
+      platform_fee: money(s.platform_fee),
+      vendor_net: money(s.vendor_net),
+    })),
   };
 }
 
@@ -201,15 +234,13 @@ async function vendorScopedWhere(
   userId: bigint,
 ): Promise<Prisma.OrderWhereInput | null> {
   if (role !== "vendor") return {};
-  const vendor = await prisma.vendor.findFirst({
-    where: { user_id: userId, deleted_at: null },
-    select: { id: true },
-  });
-  if (!vendor) return null;
+  const { actorStoreIds } = await import("../lib/vendorAccess.js");
+  const storeIds = await actorStoreIds(userId, role);
+  if (!storeIds || storeIds.length === 0) return null;
   return {
     items: {
       some: {
-        product: { vendor_id: vendor.id },
+        product: { vendor_id: { in: storeIds } },
       },
     },
   };
@@ -572,8 +603,18 @@ dashboardOrdersRouter.get(
       return res.status(404).json({ message: "Order not found" });
     }
 
+    const vendorStoreIds =
+      req.auth!.role === "vendor"
+        ? ((await import("../lib/vendorAccess.js")).actorStoreIds(
+            req.auth!.userId,
+            req.auth!.role,
+          ))
+        : Promise.resolve(null);
+
     return res.json({
-      order: toDetailOrder(order),
+      order: toDetailOrder(order, {
+        vendorStoreIds: await vendorStoreIds,
+      }),
       next_statuses: NEXT_STATUSES[order.status],
     });
   }),

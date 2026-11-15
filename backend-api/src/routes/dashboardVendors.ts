@@ -101,28 +101,107 @@ const createShopSchema = z.object({
   status: z.enum(CREATE_SHOP_STATUSES).optional(),
 });
 
-const updateShopSchema = z.object({
-  shop_name: withSafeInput(z.string().trim().min(2).max(200)).optional(),
-  slug: withSafeInput(
-    z
-      .string()
-      .trim()
-      .min(2)
-      .max(220)
-      .regex(
-        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-        "Slug must be lowercase letters, numbers, and hyphens",
-      ),
-  ).optional(),
-  description: withSafeInput(z.string().trim().max(5000)).optional().nullable(),
-  ...bnFields,
-  status: z.enum(SHOP_STATUSES as [UserStatus, ...UserStatus[]]).optional(),
-  user_id: z.string().regex(/^\d+$/).optional(),
-  storefront_theme: z.enum(STOREFRONT_THEMES).optional(),
-  products_per_page: z.coerce.number().int().min(4).max(48).optional(),
-  featured_products_count: z.coerce.number().int().min(0).max(12).optional(),
-  show_banned_brands: z.boolean().optional(),
-  product_sort: z.enum(PRODUCT_SORTS).optional(),
+const FEE_PLANS = ["commission", "rent", "both"] as const;
+const RENT_PERIODS = ["monthly", "yearly"] as const;
+
+const feeFieldsSchema = z
+  .object({
+    fee_plan: z.enum(FEE_PLANS).optional(),
+    commission_percent: z
+      .number()
+      .finite()
+      .min(0)
+      .max(100)
+      .nullable()
+      .optional(),
+    rent_amount: z.number().finite().min(0).max(10_000_000).nullable().optional(),
+    rent_period: z.enum(RENT_PERIODS).nullable().optional(),
+  })
+  .superRefine((data, ctx) => {
+    const plan = data.fee_plan;
+    if (!plan && data.commission_percent === undefined && data.rent_amount === undefined) {
+      return;
+    }
+    const effective = plan ?? "commission";
+    if (
+      (effective === "commission" || effective === "both") &&
+      data.commission_percent === null
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["commission_percent"],
+        message: "Commission percent is required for this fee plan",
+      });
+    }
+    if (effective === "rent" || effective === "both") {
+      if (data.rent_amount === null) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["rent_amount"],
+          message: "Rent amount is required for this fee plan",
+        });
+      }
+      if (data.rent_period === null) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["rent_period"],
+          message: "Rent period is required for this fee plan",
+        });
+      }
+    }
+  });
+
+const updateShopSchema = z
+  .object({
+    shop_name: withSafeInput(z.string().trim().min(2).max(200)).optional(),
+    slug: withSafeInput(
+      z
+        .string()
+        .trim()
+        .min(2)
+        .max(220)
+        .regex(
+          /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+          "Slug must be lowercase letters, numbers, and hyphens",
+        ),
+    ).optional(),
+    description: withSafeInput(z.string().trim().max(5000)).optional().nullable(),
+    ...bnFields,
+    status: z.enum(SHOP_STATUSES as [UserStatus, ...UserStatus[]]).optional(),
+    user_id: z.string().regex(/^\d+$/).optional(),
+    storefront_theme: z.enum(STOREFRONT_THEMES).optional(),
+    products_per_page: z.coerce.number().int().min(4).max(48).optional(),
+    featured_products_count: z.coerce.number().int().min(0).max(12).optional(),
+    show_banned_brands: z.boolean().optional(),
+    product_sort: z.enum(PRODUCT_SORTS).optional(),
+    fee_plan: z.enum(FEE_PLANS).optional(),
+    commission_percent: z
+      .number()
+      .finite()
+      .min(0)
+      .max(100)
+      .nullable()
+      .optional(),
+    rent_amount: z
+      .number()
+      .finite()
+      .min(0)
+      .max(10_000_000)
+      .nullable()
+      .optional(),
+    rent_period: z.enum(RENT_PERIODS).nullable().optional(),
+  })
+  .superRefine((data, ctx) => {
+    const feeParsed = feeFieldsSchema.safeParse(data);
+    if (!feeParsed.success) {
+      for (const issue of feeParsed.error.issues) {
+        ctx.addIssue(issue);
+      }
+    }
+  });
+
+const addMemberSchema = z.object({
+  user_id: z.string().regex(/^\d+$/, "Select a vendor user"),
 });
 
 const shopInclude = {
@@ -352,12 +431,20 @@ dashboardVendorsRouter.get("/", async (req, res) => {
     });
   }
 
-  const isSuper = ["super_admin", "admin"].includes(req.auth!.role);
+  const seesAll = ["super_admin", "admin", "moderator"].includes(req.auth!.role);
   const { q, page, limit } = parsed.data;
+
+  const storeIds = seesAll
+    ? null
+    : await actorStoreIds(req.auth!.userId, req.auth!.role);
 
   const where: Prisma.VendorWhereInput = {
     deleted_at: null,
-    ...(isSuper ? {} : { user_id: req.auth!.userId }),
+    ...(storeIds === null
+      ? {}
+      : storeIds.length === 0
+        ? { id: BigInt(0) }
+        : { id: { in: storeIds } }),
   };
 
   if (q) {
@@ -391,10 +478,25 @@ dashboardVendorsRouter.get("/", async (req, res) => {
 });
 
 dashboardVendorsRouter.get("/me", async (req, res) => {
-  const vendor = await prisma.vendor.findFirst({
-    where: { user_id: req.auth!.userId, deleted_at: null },
-    include: shopInclude,
-  });
+  const storeIds = await actorStoreIds(req.auth!.userId, req.auth!.role);
+  const shopId =
+    storeIds === null
+      ? null
+      : storeIds[0] ??
+        (
+          await prisma.vendor.findFirst({
+            where: { user_id: req.auth!.userId, deleted_at: null },
+            select: { id: true },
+          })
+        )?.id ??
+        null;
+
+  const vendor = shopId
+    ? await prisma.vendor.findFirst({
+        where: { id: shopId, deleted_at: null },
+        include: shopInclude,
+      })
+    : null;
 
   return res.json({
     shop: vendor ? toPublicShop(vendor) : null,
@@ -472,9 +574,160 @@ dashboardVendorsRouter.get("/:idOrSlug", async (req, res) => {
   return res.json({ shop: toPublicShop(vendor) });
 });
 
+function canManageStoreTeam(role: string) {
+  return role === "super_admin" || role === "admin" || role === "moderator";
+}
+
+/** List store team (owner + helpers). */
+dashboardVendorsRouter.get("/:idOrSlug/members", async (req, res) => {
+  const vendor = await findVendorWithMedia(String(req.params.idOrSlug));
+  if (!vendor) return res.status(404).json({ message: "Store not found" });
+  if (
+    !(await assertCanAccessShop(vendor, req.auth!.userId, req.auth!.role, "read"))
+  ) {
+    return res.status(403).json({ message: shopAccessDeniedMessage(req.auth!.role) });
+  }
+  return res.json({
+    members: toPublicShop(vendor).members,
+    limits: { max_members: VENDOR_MEMBER_MAX, max_helpers: VENDOR_HELPER_MAX },
+  });
+});
+
+/** Add a helper vendor (moderator / admin / super_admin). Max 2 helpers. */
+dashboardVendorsRouter.post("/:idOrSlug/members", async (req, res) => {
+  if (!canManageStoreTeam(req.auth!.role)) {
+    return res.status(403).json({
+      message: "Only super admin, admin, or moderator can assign store helpers",
+    });
+  }
+
+  const parsed = addMemberSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: parsed.error.issues[0]?.message ?? "Validation failed",
+      errors: parsed.error.flatten().fieldErrors,
+    });
+  }
+
+  const vendor = await findVendorWithMedia(String(req.params.idOrSlug));
+  if (!vendor) return res.status(404).json({ message: "Store not found" });
+
+  const userId = BigInt(parsed.data.user_id);
+  if (userId === vendor.user_id) {
+    return res.status(400).json({ message: "That user is already the store owner" });
+  }
+
+  const user = await prisma.user.findFirst({
+    where: { id: userId, deleted_at: null },
+  });
+  if (!user) return res.status(404).json({ message: "User not found" });
+  if (user.role !== "vendor") {
+    return res.status(400).json({
+      message: "Only vendor-role accounts can be store helpers",
+    });
+  }
+
+  const helperCount = await prisma.vendorMember.count({
+    where: { vendor_id: vendor.id, role: "helper" },
+  });
+  if (helperCount >= VENDOR_HELPER_MAX) {
+    return res.status(409).json({
+      message: `A store can have at most ${VENDOR_HELPER_MAX} helpers`,
+    });
+  }
+
+  const ownsShop = await prisma.vendor.findFirst({
+    where: { user_id: userId, deleted_at: null },
+  });
+  if (ownsShop) {
+    return res.status(409).json({
+      message: "That user already owns a store and cannot be a helper elsewhere",
+    });
+  }
+
+  const existingMember = await prisma.vendorMember.findFirst({
+    where: { user_id: userId },
+  });
+  if (existingMember) {
+    return res.status(409).json({
+      message:
+        existingMember.vendor_id === vendor.id
+          ? "That user is already on this store team"
+          : "That user is already on another store team",
+    });
+  }
+
+  await prisma.vendorMember.create({
+    data: { vendor_id: vendor.id, user_id: userId, role: "helper" },
+  });
+
+  await recordHistory({
+    vendorId: vendor.id,
+    actorId: req.auth!.userId,
+    action: "member_added",
+    changes: {
+      helper_user_id: { from: null, to: userId.toString() },
+    },
+  });
+
+  const refreshed = await findVendorWithMedia(String(req.params.idOrSlug));
+  return res.status(201).json({
+    message: "Helper added to store",
+    shop: refreshed ? toPublicShop(refreshed) : toPublicShop(vendor),
+  });
+});
+
+/** Remove a helper (not the owner). */
+dashboardVendorsRouter.delete("/:idOrSlug/members/:userId", async (req, res) => {
+  if (!canManageStoreTeam(req.auth!.role)) {
+    return res.status(403).json({
+      message: "Only super admin, admin, or moderator can remove store helpers",
+    });
+  }
+
+  const vendor = await findVendorByIdOrSlug(String(req.params.idOrSlug));
+  if (!vendor) return res.status(404).json({ message: "Store not found" });
+
+  const memberUserId = parseId(String(req.params.userId));
+  if (!memberUserId) {
+    return res.status(400).json({ message: "Invalid member user id" });
+  }
+
+  const member = await prisma.vendorMember.findFirst({
+    where: { vendor_id: vendor.id, user_id: memberUserId },
+  });
+  if (!member) {
+    return res.status(404).json({ message: "Store member not found" });
+  }
+  if (member.role === "owner") {
+    return res.status(400).json({
+      message: "Cannot remove the store owner. Transfer ownership first.",
+    });
+  }
+
+  await prisma.vendorMember.delete({ where: { id: member.id } });
+
+  await recordHistory({
+    vendorId: vendor.id,
+    actorId: req.auth!.userId,
+    action: "member_removed",
+    changes: {
+      helper_user_id: { from: memberUserId.toString(), to: null },
+    },
+  });
+
+  const refreshed = await findVendorWithMedia(String(req.params.idOrSlug));
+  return res.json({
+    message: "Helper removed from store",
+    shop: refreshed ? toPublicShop(refreshed) : undefined,
+  });
+});
+
 dashboardVendorsRouter.post("/", async (req, res) => {
-  if (req.auth!.role === "admin") {
-    return res.status(403).json({ message: "Only super admin can create stores for others" });
+  if (req.auth!.role === "admin" || req.auth!.role === "moderator") {
+    return res.status(403).json({
+      message: "Only super admin or a vendor can create stores",
+    });
   }
 
   const parsed = createShopSchema.safeParse(req.body);
@@ -534,6 +787,15 @@ dashboardVendorsRouter.post("/", async (req, res) => {
     });
   }
 
+  const alreadyMember = await prisma.vendorMember.findFirst({
+    where: { user_id: ownerId },
+  });
+  if (alreadyMember) {
+    return res.status(409).json({
+      message: "This user is already on another store team",
+    });
+  }
+
   const slug = data.slug
     ? (await slugTaken(data.slug)
         ? await uniqueVendorSlug(data.slug, (s) => slugTaken(s))
@@ -552,6 +814,11 @@ dashboardVendorsRouter.post("/", async (req, res) => {
       shop_name_bn: data.shop_name_bn ?? null,
       description_bn: data.description_bn ?? null,
       status,
+      fee_plan: "commission",
+      commission_percent: 3,
+      members: {
+        create: { user_id: ownerId, role: "owner" },
+      },
     },
     include: shopInclude,
   });
@@ -612,6 +879,17 @@ dashboardVendorsRouter.patch("/:idOrSlug", async (req, res) => {
     });
   }
 
+  const feeTouched =
+    data.fee_plan !== undefined ||
+    data.commission_percent !== undefined ||
+    data.rent_amount !== undefined ||
+    data.rent_period !== undefined;
+  if (feeTouched && !isSuper) {
+    return res.status(403).json({
+      message: "Only super admin can change store fee plans",
+    });
+  }
+
   let nextUserId: bigint | undefined;
   if (isSuper && data.user_id) {
     nextUserId = BigInt(data.user_id);
@@ -641,6 +919,48 @@ dashboardVendorsRouter.patch("/:idOrSlug", async (req, res) => {
         return res.status(409).json({
           message: "That user already owns another shop",
         });
+      }
+      const memberElsewhere = await prisma.vendorMember.findFirst({
+        where: { user_id: nextUserId, NOT: { vendor_id: id } },
+      });
+      if (memberElsewhere) {
+        return res.status(409).json({
+          message: "That user is already on another store team",
+        });
+      }
+    }
+  }
+
+  const nextFeePlan = data.fee_plan ?? existing.fee_plan;
+  const nextCommission =
+    data.commission_percent !== undefined
+      ? data.commission_percent
+      : existing.commission_percent !== null
+        ? Number(existing.commission_percent)
+        : null;
+  const nextRentAmount =
+    data.rent_amount !== undefined
+      ? data.rent_amount
+      : existing.rent_amount !== null
+        ? Number(existing.rent_amount)
+        : null;
+  const nextRentPeriod =
+    data.rent_period !== undefined ? data.rent_period : existing.rent_period;
+  if (feeTouched) {
+    if (
+      (nextFeePlan === "commission" || nextFeePlan === "both") &&
+      nextCommission === null
+    ) {
+      return res.status(400).json({
+        message: "Commission percent is required for this fee plan",
+      });
+    }
+    if (nextFeePlan === "rent" || nextFeePlan === "both") {
+      if (nextRentAmount === null) {
+        return res.status(400).json({ message: "Rent amount is required for this fee plan" });
+      }
+      if (!nextRentPeriod) {
+        return res.status(400).json({ message: "Rent period is required for this fee plan" });
       }
     }
   }
@@ -737,6 +1057,29 @@ dashboardVendorsRouter.patch("/:idOrSlug", async (req, res) => {
       to: data.product_sort,
     };
   }
+  if (isSuper && feeTouched) {
+    if (data.fee_plan !== undefined && data.fee_plan !== existing.fee_plan) {
+      changes.fee_plan = { from: existing.fee_plan, to: data.fee_plan };
+    }
+    if (data.commission_percent !== undefined) {
+      changes.commission_percent = {
+        from: existing.commission_percent?.toString() ?? null,
+        to: data.commission_percent,
+      };
+    }
+    if (data.rent_amount !== undefined) {
+      changes.rent_amount = {
+        from: existing.rent_amount?.toString() ?? null,
+        to: data.rent_amount,
+      };
+    }
+    if (data.rent_period !== undefined) {
+      changes.rent_period = {
+        from: existing.rent_period,
+        to: data.rent_period,
+      };
+    }
+  }
 
   const vendor = await prisma.vendor.update({
     where: { id },
@@ -754,9 +1097,36 @@ dashboardVendorsRouter.patch("/:idOrSlug", async (req, res) => {
       featured_products_count: data.featured_products_count,
       show_banned_brands: data.show_banned_brands,
       product_sort: data.product_sort,
+      ...(isSuper && feeTouched
+        ? {
+            fee_plan: data.fee_plan,
+            commission_percent:
+              data.commission_percent === undefined
+                ? undefined
+                : data.commission_percent,
+            rent_amount:
+              data.rent_amount === undefined ? undefined : data.rent_amount,
+            rent_period:
+              data.rent_period === undefined ? undefined : data.rent_period,
+          }
+        : {}),
     },
     include: shopInclude,
   });
+
+  if (
+    nextUserId !== undefined &&
+    nextUserId !== existing.user_id
+  ) {
+    await prisma.vendorMember.deleteMany({
+      where: { vendor_id: id, role: "owner" },
+    });
+    await prisma.vendorMember.upsert({
+      where: { user_id: nextUserId },
+      create: { vendor_id: id, user_id: nextUserId, role: "owner" },
+      update: { vendor_id: id, role: "owner" },
+    });
+  }
 
   if (Object.keys(changes).length > 0) {
     await recordHistory({
