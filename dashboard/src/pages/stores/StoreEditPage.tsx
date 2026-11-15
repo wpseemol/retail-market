@@ -76,6 +76,7 @@ function storeDraftFromShop(shop: Shop) {
     shopName: shop.shop_name,
     slug: shop.slug,
     description: shop.description ?? "",
+    searchTags: shop.search_tags ?? "",
     bnEnabled: Boolean(shop.shop_name_bn || shop.description_bn),
     shopNameBn: shop.shop_name_bn ?? "",
     descriptionBn: shop.description_bn ?? "",
@@ -117,6 +118,7 @@ export function StoreEditPage() {
   const [shopName, setShopName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
+  const [searchTags, setSearchTags] = useState("");
   const [bnEnabled, setBnEnabled] = useState(false);
   const [shopNameBn, setShopNameBn] = useState("");
   const [descriptionBn, setDescriptionBn] = useState("");
@@ -239,6 +241,7 @@ export function StoreEditPage() {
     setShopName(next.shop_name);
     setSlug(next.slug);
     setDescription(next.description ?? "");
+    setSearchTags(next.search_tags ?? "");
     setShopNameBn(next.shop_name_bn ?? "");
     setDescriptionBn(next.description_bn ?? "");
     setBnEnabled(Boolean(next.shop_name_bn || next.description_bn));
@@ -264,6 +267,7 @@ export function StoreEditPage() {
       shopName,
       slug,
       description,
+      searchTags,
       bnEnabled,
       shopNameBn,
       descriptionBn,
@@ -370,6 +374,7 @@ export function StoreEditPage() {
             shop_name: shopName.trim(),
             slug: slug.trim(),
             description: description.trim() || null,
+            search_tags: searchTags.trim() || null,
             shop_name_bn: bnOrNull(bnEnabled, shopNameBn),
             description_bn: bnOrNull(bnEnabled, descriptionBn),
             storefront_theme: theme,
@@ -638,14 +643,30 @@ export function StoreEditPage() {
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="store_description">Description</Label>
+              <Label htmlFor="store_description">Short description</Label>
               <Textarea
                 id="store_description"
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional short store description"
+                placeholder="Short public blurb — shown on /stores (not the owner’s name)"
               />
+              <p className="text-xs text-muted-foreground">
+                Shoppers see this on the store directory and store page. Owner
+                account names stay private.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="store_search_tags">Search tags</Label>
+              <Input
+                id="store_search_tags"
+                value={searchTags}
+                onChange={(e) => setSearchTags(e.target.value)}
+                placeholder="electronics, gadgets, phone accessories"
+              />
+              <p className="text-xs text-muted-foreground">
+                Comma-separated tags for header search and the /stores directory.
+              </p>
             </div>
 
             {isSuper ? (

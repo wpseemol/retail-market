@@ -30,6 +30,12 @@ export const shopCreateFormSchema = z.object({
       ),
   ),
   description: withSafeInput(z.string().trim().max(5000)),
+  search_tags: withSafeInput(
+    z
+      .string()
+      .trim()
+      .max(500, "Search tags must be at most 500 characters"),
+  ),
   /** UI-only switch; when off the Bangla fields are sent as null. */
   bn_enabled: z.boolean(),
   shop_name_bn: withSafeInput(
@@ -73,6 +79,7 @@ export function toShopCreateApiBody(
     shop_name: values.shop_name,
     slug: values.slug,
     description: values.description.trim() ? values.description.trim() : null,
+    search_tags: values.search_tags.trim() ? values.search_tags.trim() : null,
     shop_name_bn: bnOrNull(values.bn_enabled, values.shop_name_bn),
     description_bn: bnOrNull(values.bn_enabled, values.description_bn),
     status: shopCreateStatusToApi(values.status as ShopCreateStatus),

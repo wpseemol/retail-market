@@ -51,6 +51,8 @@ export type Shop = {
   slug: string;
   description?: string | null;
   description_bn?: string | null;
+  /** Comma-separated public search tags (not owner name). */
+  search_tags?: string | null;
   status: ShopStatus;
   storefront_theme?: StorefrontTheme;
   products_per_page?: number;

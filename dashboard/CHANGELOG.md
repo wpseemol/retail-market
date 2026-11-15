@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-15
 
+### Store create/edit — search tags + short description
+
+- `validators/shop.ts` + `StoreCreatePage` / `StoreEditPage`: **Short description** (public blurb) and **Search tags** (comma-separated) — owner name is not published on the storefront.
+
 ### Per-store design note + footer All stores hint
 
 - `StoreEditPage`: storefront layout callout — each owner’s theme/accent is separate from global Settings → Storefront; link to Customize store page.

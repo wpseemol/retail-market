@@ -33,23 +33,28 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   }
 
   const { store } = data;
-  const description =
-    store.seo.description ||
-    store.tagline ||
+  const shortDescription =
     store.description?.trim() ||
+    store.seo.description ||
     format(t.storeFallbackDescription, { name: store.shop_name, site: seo.siteName });
+  const keywords = [
+    ...(store.seo.keywords
+      ? store.seo.keywords.split(",").map((k) => k.trim()).filter(Boolean)
+      : []),
+    ...(store.search_tags
+      ? store.search_tags.split(",").map((k) => k.trim()).filter(Boolean)
+      : []),
+  ];
 
   return buildMetadata({
     title: store.seo.title || store.shop_name,
-    description: description.slice(0, 170),
+    description: shortDescription.slice(0, 170),
     path: `/stores/${store.slug}`,
     image: store.seo.og_image?.path || store.logo?.path || store.banner?.path || undefined,
     imageAlt: store.shop_name,
-    keywords: store.seo.keywords
-      ? store.seo.keywords.split(",").map((k) => k.trim()).filter(Boolean)
-      : undefined,
+    keywords: keywords.length ? keywords : undefined,
     noIndex: store.seo.noindex || Boolean(query.sort),
-    ogType: "profile",
+    ogType: "website",
   });
 }
 
@@ -79,7 +84,7 @@ export default async function StoreDetailPage({ params, searchParams }: PageProp
           storeJsonLd({
             name: store.shop_name,
             slug: store.slug,
-            description: store.seo.description || store.tagline || store.description,
+            description: store.description || store.seo.description,
             logo: store.logo?.path,
             image: store.banner?.path,
             social: content.social,
@@ -107,7 +112,7 @@ export default async function StoreDetailPage({ params, searchParams }: PageProp
           style={content.hero_style}
           kicker={t.storeKicker}
           name={display.name}
-          tagline={store.tagline}
+          tagline={null}
           description={display.description}
           logo={store.logo}
           banner={store.banner ?? null}

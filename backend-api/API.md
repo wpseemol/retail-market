@@ -171,11 +171,11 @@ No auth. Active stores only (dashboard create/edit stays on `/api/dashboard/shop
 
 ### `GET /api/shops`
 
-Query: `page` (default 1), `limit` (default 24, max 48), `q?` (search name/slug/description).
+Query: `page` (default 1), `limit` (default 24, max 48), `q?` (search name/slug/description/`search_tags`/tagline/keywords — never owner name).
 
 **200** → `{ stores, pagination }`
 
-`stores[]`: `id`, `shop_name`, `shop_name_bn`, `slug`, `description`, `description_bn`, `logo`, `banner`, storefront layout fields, `products_count`
+`stores[]`: `id`, `shop_name`, `shop_name_bn`, `slug`, `description`, `description_bn`, `search_tags`, `logo`, `banner`, storefront layout fields, `products_count` (no owner / user fields)
 
 ### `GET /api/shops/:slug`
 
@@ -1164,8 +1164,8 @@ Access uses **`VendorMember`** (not only `vendors.user_id`). Cap: **1 owner + 2 
 | DELETE | `/:idOrSlug/members/:userId` | Remove a **helper** (not the owner) · team managers only |
 | GET | `/:idOrSlug/history` | Audit log |
 | DELETE | `/:idOrSlug/history` | Clear audit log (DB delete) · super or owner |
-| POST | `/` | Create (`shop_name`, `slug?`, `description?`, `shop_name_bn?`, `description_bn?`, `user_id?` required for super, `status?`) · partner default `commission` + `3%`; **super_admin owner** → `0%` · owner membership row · admin/moderator → 403 |
-| PATCH | `/:idOrSlug` | Update settings (incl. Bangla, theme) · **super or owner**. Fee fields (**super_admin only**, partner stores): `fee_plan` (`commission`\|`rent`\|`both`), `commission_percent` (0–100), `rent_amount`, `rent_period` (`monthly`\|`yearly`). House stores owned by `super_admin` always stay `commission` / `0%`. Owner change via `user_id` is **super_admin** only |
+| POST | `/` | Create (`shop_name`, `slug?`, `description?`, `search_tags?`, `shop_name_bn?`, `description_bn?`, `user_id?` required for super, `status?`) · partner default `commission` + `3%`; **super_admin owner** → `0%` · owner membership row · admin/moderator → 403 |
+| PATCH | `/:idOrSlug` | Update settings (incl. Bangla, theme, `search_tags?`) · **super or owner**. Fee fields (**super_admin only**, partner stores): `fee_plan` (`commission`\|`rent`\|`both`), `commission_percent` (0–100), `rent_amount`, `rent_period` (`monthly`\|`yearly`). House stores owned by `super_admin` always stay `commission` / `0%`. Owner change via `user_id` is **super_admin** only |
 | POST | `/:idOrSlug/logo` | Multipart **`logo`** · max **5 MB** · always resized |
 | POST | `/:idOrSlug/banner` | Multipart **`banner`** · max **5 MB** · always resized |
 | GET | `/:idOrSlug/showcase` | Page design for the editor: `shop_name`, `logo`, `banner`, `tagline`, `accent_color`, `seo_*`, `noindex`, `og_image`, full `showcase` (incl. disabled sections), `owned_by_actor` |
@@ -1184,7 +1184,7 @@ Store edits call the storefront's `POST /api/revalidate` (tags `stores`, `store:
 
 **Bangla fields:** `shop_name_bn` (≤200) and `description_bn` (≤5000) are optional and safe-text checked; `""`/`null` clears them. The slug is shared by both languages, and the storefront falls back to the English text when they are empty.
 
-**Shop object:** `id`, `user_id`, `logo_id`, `shop_name`, `shop_name_bn`, `slug`, `description`, `description_bn`, `status` (`pending`\|`active`\|…), `fee_plan`, `commission_percent`, `rent_amount`, `rent_period`, `members[]`, timestamps, `logo`, `user?` (owner).
+**Shop object:** `id`, `user_id`, `logo_id`, `shop_name`, `shop_name_bn`, `slug`, `description`, `description_bn`, `search_tags` (comma-separated, for directory/header search), `status` (`pending`\|`active`\|…), `fee_plan`, `commission_percent`, `rent_amount`, `rent_period`, `members[]`, timestamps, `logo`, `user?` (owner — **dashboard only**; public `/api/shops` never returns owner identity).
 
 Dashboard UI uses **`/stores/{slug}`** (not id).
 

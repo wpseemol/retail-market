@@ -110,12 +110,21 @@ publicSearchRouter.get("/suggest", async (req, res) => {
       where: {
         status: "active",
         deleted_at: null,
-        OR: [{ shop_name: { contains: q } }, { slug: { contains: q } }],
+        OR: [
+          { shop_name: { contains: q } },
+          { shop_name_bn: { contains: q } },
+          { slug: { contains: q } },
+          { description: { contains: q } },
+          { search_tags: { contains: q } },
+          { tagline: { contains: q } },
+          { seo_keywords: { contains: q } },
+        ],
       },
       select: {
         id: true,
         shop_name: true,
         slug: true,
+        description: true,
         logo: true,
         _count: {
           select: {
@@ -151,6 +160,7 @@ publicSearchRouter.get("/suggest", async (req, res) => {
       id: s.id.toString(),
       name: s.shop_name,
       slug: s.slug,
+      description: s.description,
       logo: toPublicMedia(s.logo)?.path ?? null,
       products_count: s._count.products,
     })),

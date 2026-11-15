@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-15
 
+### Store search tags + public short description
+
+- `Vendor.search_tags` + migration; `lib/storeSearchTags.ts` normalizes comma tags.
+- Create/update shop accept `search_tags`; public `/api/shops` and `/api/search` match tags (and Bangla/tagline/keywords). Public shop payloads never include owner identity.
+
 ### Footer Find It Fast — All stores link
 
 - `lib/siteChrome.ts`: default nav includes **All stores** → `/stores`; `ensureFooterAllStoresQuickLink` adds it for existing DBs on chrome ensure.

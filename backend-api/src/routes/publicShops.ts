@@ -52,6 +52,7 @@ function toStorefrontShop(vendor: {
   slug: string;
   description: string | null;
   description_bn: string | null;
+  search_tags?: string | null;
   storefront_theme: string;
   products_per_page: number;
   featured_products_count: number;
@@ -72,6 +73,8 @@ function toStorefrontShop(vendor: {
     slug: vendor.slug,
     description: vendor.description,
     description_bn: vendor.description_bn,
+    /** Public tags for display/search hints — never includes owner identity. */
+    search_tags: vendor.search_tags ?? null,
     tagline: vendor.tagline ?? null,
     accent_color: vendor.accent_color ?? null,
     logo: toPublicMedia(vendor.logo),
@@ -128,8 +131,13 @@ publicShopsRouter.get("/", async (req, res) => {
       ? {
           OR: [
             { shop_name: { contains: q } },
+            { shop_name_bn: { contains: q } },
             { slug: { contains: q } },
             { description: { contains: q } },
+            { description_bn: { contains: q } },
+            { tagline: { contains: q } },
+            { search_tags: { contains: q } },
+            { seo_keywords: { contains: q } },
           ],
         }
       : {}),

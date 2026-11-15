@@ -35,6 +35,7 @@ import {
   VENDOR_HELPER_MAX,
   VENDOR_MEMBER_MAX,
 } from "../lib/vendorAccess.js";
+import { normalizeSearchTags } from "../lib/storeSearchTags.js";
 
 export const dashboardVendorsRouter = Router();
 
@@ -96,6 +97,7 @@ const createShopSchema = z.object({
       ),
   ).optional(),
   description: withSafeInput(z.string().trim().max(5000)).optional().nullable(),
+  search_tags: withSafeInput(z.string().trim().max(500)).optional().nullable(),
   ...bnFields,
   user_id: z.string().regex(/^\d+$/).optional(),
   status: z.enum(CREATE_SHOP_STATUSES).optional(),
@@ -166,6 +168,7 @@ const updateShopSchema = z
         ),
     ).optional(),
     description: withSafeInput(z.string().trim().max(5000)).optional().nullable(),
+    search_tags: withSafeInput(z.string().trim().max(500)).optional().nullable(),
     ...bnFields,
     status: z.enum(SHOP_STATUSES as [UserStatus, ...UserStatus[]]).optional(),
     user_id: z.string().regex(/^\d+$/).optional(),
@@ -257,6 +260,7 @@ function toPublicShop(
     slug: string;
     description: string | null;
     description_bn: string | null;
+    search_tags?: string | null;
     status: UserStatus;
     storefront_theme?: string;
     products_per_page?: number;
@@ -292,6 +296,7 @@ function toPublicShop(
     slug: vendor.slug,
     description: vendor.description,
     description_bn: vendor.description_bn,
+    search_tags: vendor.search_tags ?? null,
     status: vendor.status,
     storefront_theme: vendor.storefront_theme ?? "classic",
     products_per_page: vendor.products_per_page ?? 12,
@@ -461,8 +466,10 @@ dashboardVendorsRouter.get("/", async (req, res) => {
   if (q) {
     where.OR = [
       { shop_name: { contains: q } },
+      { shop_name_bn: { contains: q } },
       { slug: { contains: q } },
       { description: { contains: q } },
+      { search_tags: { contains: q } },
     ];
   }
 
@@ -897,6 +904,7 @@ dashboardVendorsRouter.post("/", async (req, res) => {
       description: data.description ?? null,
       shop_name_bn: data.shop_name_bn ?? null,
       description_bn: data.description_bn ?? null,
+      search_tags: normalizeSearchTags(data.search_tags),
       status,
       fee_plan: "commission",
       commission_percent: ownerIsPlatform ? 0 : 3,
@@ -1085,6 +1093,19 @@ dashboardVendorsRouter.patch("/:idOrSlug", async (req, res) => {
       to: data.description,
     };
   }
+  const nextSearchTags =
+    data.search_tags !== undefined
+      ? normalizeSearchTags(data.search_tags)
+      : undefined;
+  if (
+    nextSearchTags !== undefined &&
+    nextSearchTags !== (existing.search_tags ?? null)
+  ) {
+    changes.search_tags = {
+      from: existing.search_tags,
+      to: nextSearchTags,
+    };
+  }
   if (
     data.shop_name_bn !== undefined &&
     data.shop_name_bn !== existing.shop_name_bn
@@ -1190,6 +1211,7 @@ dashboardVendorsRouter.patch("/:idOrSlug", async (req, res) => {
         data.description === undefined ? undefined : data.description,
       shop_name_bn: data.shop_name_bn,
       description_bn: data.description_bn,
+      search_tags: nextSearchTags,
       status: isSuper ? data.status : undefined,
       user_id: nextUserId,
       storefront_theme: data.storefront_theme,

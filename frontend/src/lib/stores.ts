@@ -13,6 +13,8 @@ export type StorefrontStore = {
   slug: string;
   description: string | null;
   description_bn?: string | null;
+  /** Public search tags — never owner identity. */
+  search_tags?: string | null;
   tagline?: string | null;
   accent_color?: string | null;
   logo: StoreMedia;

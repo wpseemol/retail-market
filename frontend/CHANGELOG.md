@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-15
 
+### Store pages — short description only; search tags
+
+- `/stores` cards and `/stores/[slug]` hero show the store **short description** only (no owner name; tagline not used as the public blurb).
+- Header search shop hits show description when present; search matches API `search_tags`.
+
 ### Footer Find It Fast — All stores
 
 - `Footer.tsx` + `i18n` en/bn: Find It Fast includes **All stores** → `/stores` (and injects the link if site chrome nav omitted it).

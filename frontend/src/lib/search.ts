@@ -26,6 +26,7 @@ export type SearchSuggestShop = {
   id: string;
   name: string;
   slug: string;
+  description?: string | null;
   logo: string | null;
   products_count: number;
 };

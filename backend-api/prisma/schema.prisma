@@ -393,6 +393,8 @@ model Vendor {
   description             String?         @db.Text
   /// Optional Bangla description; falls back to `description` when empty.
   description_bn          String?         @db.Text
+  /// Comma-separated search tags for directory / header search (not owner name).
+  search_tags             String?         @db.VarChar(500)
   status                  UserStatus      @default(pending)
   /// Customer /stores/[slug] layout theme.
   storefront_theme        StorefrontTheme @default(classic)

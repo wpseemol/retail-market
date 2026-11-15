@@ -47,7 +47,7 @@ function StoreCard({ store, t, locale }: { store: StorefrontStore; t: T; locale:
             {display.name}
           </h2>
           <p className="mt-1 line-clamp-2 min-h-[2.5rem] text-[13px] leading-relaxed text-text-secondary">
-            {store.tagline || display.description?.trim() || "\u00a0"}
+            {display.description?.trim() || "\u00a0"}
           </p>
           <div className="mt-3 flex items-center justify-between border-t border-border-default pt-3 text-xs">
             <span className="text-text-secondary">

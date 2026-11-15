@@ -82,6 +82,7 @@ export function StoreCreatePage() {
       shop_name: "",
       slug: "",
       description: "",
+      search_tags: "",
       bn_enabled: false,
       shop_name_bn: "",
       description_bn: "",
@@ -510,14 +511,38 @@ export function StoreCreatePage() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>Short description</FormLabel>
                     <FormControl>
                       <Textarea
                         rows={3}
-                        placeholder="Optional short store description"
+                        placeholder="Short public blurb — shown on /stores (not the owner’s name)"
                         {...field}
                       />
                     </FormControl>
+                    <FormDescription>
+                      Shoppers see this on the store directory and store page.
+                      Owner account names stay private.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="search_tags"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Search tags</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="electronics, gadgets, phone accessories"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Comma-separated tags so shoppers can find this store in
+                      search and the /stores directory.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

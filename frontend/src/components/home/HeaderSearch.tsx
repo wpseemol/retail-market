@@ -873,14 +873,21 @@ export default function HeaderSearch({
                                                                           key,
                                                                       )}
                                                                   >
-                                                                      <Highlight
-                                                                          text={
-                                                                              shop.name
-                                                                          }
-                                                                          query={
-                                                                              trimmed
-                                                                          }
-                                                                      />
+                                                                      <span className="flex min-w-0 flex-col">
+                                                                          <Highlight
+                                                                              text={
+                                                                                  shop.name
+                                                                              }
+                                                                              query={
+                                                                                  trimmed
+                                                                              }
+                                                                          />
+                                                                          {shop.description?.trim() ? (
+                                                                              <span className="truncate text-[11px] text-text-secondary">
+                                                                                  {shop.description.trim()}
+                                                                              </span>
+                                                                          ) : null}
+                                                                      </span>
                                                                   </Link>
                                                               </li>
                                                           );
