@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowUpRight, Palette, Pencil, Plus, Search, Store, Users } from "lucide-react";
 import { ApiError, apiFetch } from "@/lib/api";
-import { STORE_MANAGE_ROLES } from "@/lib/rbac";
+import { STORE_EDIT_ROLES, STORE_MANAGE_ROLES } from "@/lib/rbac";
 import type { Shop } from "@/lib/shops";
 import { shopStatusLabel } from "@/lib/shops";
 import { useAuthStore } from "@/store/auth";
@@ -19,8 +19,10 @@ export function StoresPage() {
     const isSuper = user?.role === "super_admin";
     const isVendor = user?.role === "vendor";
     const isAdmin = user?.role === "admin";
+    const isModerator = user?.role === "moderator";
     const canManage = Boolean(user && STORE_MANAGE_ROLES.includes(user.role));
-    const seesAll = isSuper || isAdmin;
+    const canEditStore = Boolean(user && STORE_EDIT_ROLES.includes(user.role));
+    const seesAll = isSuper || isAdmin || isModerator;
 
     const [stores, setStores] = useState<Shop[]>([]);
     const [total, setTotal] = useState(0);
@@ -226,7 +228,7 @@ export function StoresPage() {
                                 <li key={store.id}>
                                     <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-linear-to-br from-background to-muted/20 transition-all hover:border-brand-primary/30 hover:shadow-md">
                                         <Link
-                                            to={canManage ? `/stores/${store.slug}` : `/stores/${store.slug}/design`}
+                                            to={canEditStore ? `/stores/${store.slug}` : `/stores/${store.slug}/design`}
                                             className="relative block aspect-video bg-linear-to-br from-[#002603] via-[#0a4a10] to-brand-primary"
                                         >
                                             {store.banner?.path ? (
@@ -286,7 +288,7 @@ export function StoresPage() {
                                                 </p>
                                             ) : null}
                                             <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
-                                                {canManage ? (
+                                                {canEditStore ? (
                                                     <Button asChild size="sm" variant="outline">
                                                         <Link to={`/stores/${store.slug}`}>
                                                             <Pencil className="size-3" />
@@ -294,7 +296,7 @@ export function StoresPage() {
                                                         </Link>
                                                     </Button>
                                                 ) : null}
-                                                <Button asChild size="sm" variant={canManage ? "ghost" : "outline"}>
+                                                <Button asChild size="sm" variant={canEditStore ? "ghost" : "outline"}>
                                                     <Link to={`/stores/${store.slug}/design`}>
                                                         <Palette className="size-3" />
                                                         Customize page

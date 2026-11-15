@@ -52,9 +52,11 @@ backend-api/
     │                        # categoryCsv (category CSV / ZIP import file, image refs),
     │                        # zipArchive (size-capped ZIP reader for imports),
     │                        # smsGateway + whatsappGateway (OTP delivery, encrypted credentials),
-    │                        # totp.ts (staff authenticator TOTP + recovery codes + setup/challenge JWTs),
-    │                        # secretBox.ts (SETTINGS_ENCRYPTION_KEY),
-    │                        # storage/files.ts (local disk or S3/MinIO/R2 put, delete, read, presign)
+│                        # totp.ts (staff authenticator TOTP + recovery codes + setup/challenge JWTs),
+│                        # secretBox.ts (SETTINGS_ENCRYPTION_KEY),
+│                        # vendorAccess.ts (store membership / actorStoreIds),
+│                        # orderSettlements.ts (per-store platform_fee / vendor_net on checkout),
+│                        # storage/files.ts (local disk or S3/MinIO/R2 put, delete, read, presign)
     ├── utils/
     └── data/
 ```
@@ -66,7 +68,8 @@ backend-api/
 - **Secrets:** with `NODE_ENV=production` the API refuses to start unless `JWT_SECRET` and `SETTINGS_ENCRYPTION_KEY` are each 32+ bytes.
 - **Pricing:** discounts come only from `coupon_code` via `src/lib/coupons.ts`; never accept a client-sent amount.
 - **Errors:** respond `{ message, code?, errors? }`. Use 409 with a stable `code` for state conflicts (e.g. `ORDER_NOT_DELETABLE`, `ORDER_CHANGED`).
-- **Auth:** protected routes require `Authorization: Bearer <token>`. Dashboard catalog mutations require `super_admin | admin | moderator`; order deletion is `super_admin | admin` only. Product list/mutations for `vendor` are scoped to their shop; `vendor_id` null is the Niyenin platform catalog (elevated only). Vendor 403 copy: `This product is not in your store` / `This is not your store`.
+- **Auth:** protected routes require `Authorization: Bearer <token>`. Dashboard catalog mutations require `super_admin | admin | moderator`; order deletion is `super_admin | admin` only. Product list/mutations for `vendor` are scoped via `VendorMember` (`lib/vendorAccess.ts` `actorStoreIds`); `vendor_id` null is the Niyenin platform catalog (elevated only). Vendor 403 copy: `This product is not in your store` / `This is not your store`.
+- **Store fees & teams:** each `Vendor` has `fee_plan` (`commission`|`rent`|`both`) + optional percent/rent fields — only **super_admin** mutates fees. Teams: `VendorMember` with 1 owner + up to 2 helpers; moderator/admin/super_admin assign helpers; only super_admin changes owner (`user_id` + owner member). Checkout writes `OrderVendorSettlement` snapshots (`lib/orderSettlements.ts`); rent is not deducted per order yet (no payouts).
 - **Staff TOTP 2FA:** `User.two_factor_*` + `lib/totp.ts` (`otpauth`). Required for `super_admin` / `admin` (login returns `TWO_FACTOR_SETUP_REQUIRED` until confirmed). Optional for `moderator` / `vendor` but enforced at login once enabled. Password login never creates a session until challenge/confirm succeeds (`challengeToken` / `setupToken` JWTs). Encrypt secrets with `secretBox`; recovery codes are hashed then encrypted.
 - **Reviews:** `ProductReview` (`product_reviews`) is the purchase-verified review model; the older `Review` model is unused legacy. Review eligibility = a `delivered` + `paid` order matching the email/phone/user that contains the product. Vendors are scoped to their own shop's products.
 - **Showcase & SEO:** store (`Vendor`) and brand pages store their design in the `showcase` JSON column — always read it through `normalizeShowcase()` in `src/lib/showcase.ts`. Global SEO lives on `SiteSettings` and is edited only via `/api/dashboard/seo` (super_admin + admin). A brand's `vendor_id` (set by super_admin/admin) lets that store's vendor edit the brand page, never its name/slug/active state. Admins may override any store's page design but cannot create, delete or re-configure stores.

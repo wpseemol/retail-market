@@ -49,11 +49,10 @@ export function StoreTeamSection({
     setSearching(true);
     try {
       const data = await apiFetch<{ users: VendorOption[] }>(
-        `/api/dashboard/users?role=vendor&q=${encodeURIComponent(q.trim())}&limit=20`,
+        `/api/dashboard/shops/helper-candidates?q=${encodeURIComponent(q.trim())}&limit=20`,
         { token },
       );
-      const taken = new Set(members.map((m) => m.user_id));
-      setResults(data.users.filter((u) => !taken.has(u.id)));
+      setResults(data.users);
     } catch {
       setResults([]);
     } finally {

@@ -90,9 +90,22 @@ export type OrderPayment = {
   created_at: string;
 };
 
+export type OrderVendorSettlement = {
+  id: string;
+  vendor_id: string | null;
+  shop_name: string;
+  vendor: { id: string; shop_name: string; slug: string } | null;
+  subtotal: string;
+  discount_share: string;
+  commission_percent: string;
+  platform_fee: string;
+  vendor_net: string;
+};
+
 export type OrderDetail = OrderRow & {
   addresses: OrderAddress[];
   payments: OrderPayment[];
+  settlements?: OrderVendorSettlement[];
 };
 
 export type StatusCounts = Record<OrderStatus, number> & { total: number };

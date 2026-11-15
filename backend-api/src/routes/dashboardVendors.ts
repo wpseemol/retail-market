@@ -195,7 +195,11 @@ const updateShopSchema = z
     const feeParsed = feeFieldsSchema.safeParse(data);
     if (!feeParsed.success) {
       for (const issue of feeParsed.error.issues) {
-        ctx.addIssue(issue);
+        ctx.addIssue({
+          code: "custom",
+          path: issue.path,
+          message: issue.message,
+        });
       }
     }
   });
@@ -210,9 +214,12 @@ const shopInclude = {
   banner: true,
   members: {
     include: { user: { include: userWithAvatarInclude } },
-    orderBy: [{ role: "asc" as const }, { id: "asc" as const }],
+    orderBy: [{ role: "asc" as const }, { id: "asc" as const }] as Array<{
+      role?: "asc" | "desc";
+      id?: "asc" | "desc";
+    }>,
   },
-} as const;
+};
 
 type ChangeMap = Record<string, { from: unknown; to: unknown }>;
 
@@ -378,6 +385,10 @@ function shopAccessDeniedMessage(role: string) {
   return role === "vendor" ? "This is not your store" : "Insufficient permissions";
 }
 
+function canManageStoreTeam(role: string) {
+  return role === "super_admin" || role === "admin" || role === "moderator";
+}
+
 function storeTags(...slugs: string[]) {
   return ["stores", "brands", ...slugs.map((s) => `store:${s}`)];
 }
@@ -477,6 +488,79 @@ dashboardVendorsRouter.get("/", async (req, res) => {
   });
 });
 
+/** Vendor accounts that can be added as store helpers (team managers only). */
+dashboardVendorsRouter.get("/helper-candidates", async (req, res) => {
+  if (!canManageStoreTeam(req.auth!.role)) {
+    return res.status(403).json({
+      message: "Only super admin, admin, or moderator can search helper candidates",
+    });
+  }
+
+  const parsed = z
+    .object({
+      q: withSafeInput(z.string().trim().min(1).max(120)).optional(),
+      limit: z.coerce.number().int().min(1).max(50).default(20),
+    })
+    .safeParse(req.query);
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: parsed.error.issues[0]?.message ?? "Invalid query",
+    });
+  }
+
+  const { q, limit } = parsed.data;
+  const memberUserIds = (
+    await prisma.vendorMember.findMany({ select: { user_id: true } })
+  ).map((m) => m.user_id);
+  const ownerIds = (
+    await prisma.vendor.findMany({
+      where: { deleted_at: null },
+      select: { user_id: true },
+    })
+  ).map((v) => v.user_id);
+  const taken = [...new Set([...memberUserIds, ...ownerIds].map(String))];
+
+  const where: Prisma.UserWhereInput = {
+    deleted_at: null,
+    role: "vendor",
+    status: "active",
+    ...(taken.length > 0
+      ? { id: { notIn: taken.map((id) => BigInt(id)) } }
+      : {}),
+  };
+  if (q) {
+    where.OR = [
+      { email: { contains: q } },
+      { first_name: { contains: q } },
+      { last_name: { contains: q } },
+      { username: { contains: q } },
+    ];
+  }
+
+  const users = await prisma.user.findMany({
+    where,
+    select: {
+      id: true,
+      first_name: true,
+      last_name: true,
+      email: true,
+      username: true,
+    },
+    orderBy: [{ email: "asc" }],
+    take: limit,
+  });
+
+  return res.json({
+    users: users.map((u) => ({
+      id: u.id.toString(),
+      first_name: u.first_name,
+      last_name: u.last_name,
+      email: u.email,
+      username: u.username,
+    })),
+  });
+});
+
 dashboardVendorsRouter.get("/me", async (req, res) => {
   const storeIds = await actorStoreIds(req.auth!.userId, req.auth!.role);
   const shopId =
@@ -573,10 +657,6 @@ dashboardVendorsRouter.get("/:idOrSlug", async (req, res) => {
 
   return res.json({ shop: toPublicShop(vendor) });
 });
-
-function canManageStoreTeam(role: string) {
-  return role === "super_admin" || role === "admin" || role === "moderator";
-}
 
 /** List store team (owner + helpers). */
 dashboardVendorsRouter.get("/:idOrSlug/members", async (req, res) => {
@@ -1377,15 +1457,19 @@ async function loadShowcaseVendor(
   return vendor;
 }
 
-function showcasePayload(
+async function showcasePayload(
   vendor: NonNullable<Awaited<ReturnType<typeof loadShowcaseVendor>>>,
   actorId: bigint,
 ) {
+  const membership = await prisma.vendorMember.findFirst({
+    where: { vendor_id: vendor.id, user_id: actorId },
+    select: { id: true },
+  });
   return {
     id: vendor.id.toString(),
     slug: vendor.slug,
     shop_name: vendor.shop_name,
-    owned_by_actor: vendor.user_id === actorId,
+    owned_by_actor: vendor.user_id === actorId || Boolean(membership),
     logo: toPublicMedia(vendor.logo),
     banner: toPublicMedia(vendor.banner),
     ...toDashboardShowcase(vendor),
@@ -1397,7 +1481,7 @@ dashboardVendorsRouter.get("/:idOrSlug/showcase", async (req, res) => {
   const vendor = await loadShowcaseVendor(req, res);
   if (!vendor) return;
   return res.json({
-    showcase: showcasePayload(vendor, req.auth!.userId),
+    showcase: await showcasePayload(vendor, req.auth!.userId),
   });
 });
 
@@ -1437,7 +1521,7 @@ dashboardVendorsRouter.patch("/:idOrSlug/showcase", async (req, res) => {
   revalidateFrontend(storeTags(vendor.slug));
   return res.json({
     message: "Store page saved",
-    showcase: showcasePayload(vendor, req.auth!.userId),
+    showcase: await showcasePayload(vendor, req.auth!.userId),
   });
 });
 
@@ -1491,7 +1575,7 @@ dashboardVendorsRouter.post(
     revalidateFrontend(storeTags(vendor.slug));
     return res.json({
       message: "Share image updated",
-      showcase: showcasePayload(vendor, req.auth!.userId),
+      showcase: await showcasePayload(vendor, req.auth!.userId),
     });
   },
 );
@@ -1519,7 +1603,7 @@ dashboardVendorsRouter.delete("/:idOrSlug/og-image", async (req, res) => {
   revalidateFrontend(storeTags(vendor.slug));
   return res.json({
     message: "Share image removed",
-    showcase: showcasePayload(vendor, req.auth!.userId),
+    showcase: await showcasePayload(vendor, req.auth!.userId),
   });
 });
 

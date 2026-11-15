@@ -5,6 +5,16 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-15
 
+### Multi-vendor store fees + store staff teams
+
+- `prisma/schema.prisma` + migration `20261115120000_vendor_fees_members_settlements`: `Vendor` fee fields (`fee_plan`, `commission_percent`, `rent_amount`, `rent_period`), `VendorMember` (owner/helper, unique per user), `OrderVendorSettlement`; SQL backfills owner memberships.
+- `lib/vendorAccess.ts`: `actorStoreIds` / `canAccessShop` / member caps — shops, products, orders, reviews, brands, bulk tools scope vendors by membership.
+- `routes/dashboardVendors.ts`: fee PATCH (**super_admin** only); `GET/POST/DELETE …/members` + `GET /helper-candidates` (**moderator+**); create seeds owner member + default 3% commission.
+- `lib/orderSettlements.ts` + `routes/customerOrders.ts`: on checkout, group product subtotals by store, snapshot `platform_fee` / `vendor_net` (shipping excluded).
+- `routes/dashboardOrders.ts`: order detail returns `settlements[]` (vendors filtered to their shops).
+- `prisma/seed.ts`: house store 0% commission; partner store 3%; owner membership rows.
+- `API.md` / `AGENTS.md`: fee plan, team endpoints, settlement shape.
+
 ### Vendor cannot edit Niyenin / other-store products
 
 - `routes/dashboardProducts.ts`: elevated create/update may set `vendor_id` to `null` (Niyenin platform catalog). Vendors still only get their own shop. Denied product access returns **403** `This product is not in your store` for vendors.

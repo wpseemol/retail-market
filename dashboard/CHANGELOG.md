@@ -5,6 +5,15 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-15
 
+### Store fee plan + team UI + order settlements
+
+- `lib/validators/shop.ts` + `lib/shops.ts`: fee plan / rent fields and `members` on shop type.
+- `lib/rbac.ts`: `STORE_EDIT_ROLES`, `STORE_TEAM_ROLES`, `STORE_FEE_ROLES` (super_admin fees; moderator+ helpers).
+- `StoreEditPage`: Fee plan Form section (super_admin edit; others read-only); Team section via `StoreTeamSection` (search helpers, confirm before remove).
+- `components/shops/StoreTeamSection.tsx`: helper-candidates search, add/remove with confirm modal.
+- `OrderDetailPanel` + `lib/orders.ts`: show per-store `platform_fee` / `vendor_net` from `settlements[]`.
+- `StoresPage` / `App` routes: moderators can open store edit for team management.
+
 ### Vendor product edit — not your store
 
 - `ProductCreatePage` / `ProductEditPage`: elevated Store select includes **Niyenin (platform)**; default create is platform (not a partner shop). Helper copy notes vendors only edit their own store.

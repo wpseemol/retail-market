@@ -120,7 +120,7 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/dashboard/site-settings` | `routes/dashboardSiteSettings.ts` | `super_admin` |
 | `/api/dashboard/home-hero` | `routes/dashboardHomeHero.ts` | `super_admin` |
 | `/api/dashboard/home-blocks` | `routes/dashboardHomeBlocks.ts` | `super_admin` |
-| `/api/dashboard/shops` | `routes/dashboardVendors.ts` | `super_admin`, `admin` (read + design), `vendor` (own) |
+| `/api/dashboard/shops` | `routes/dashboardVendors.ts` | `super_admin`, `admin` (read + design), `moderator` (read + team), `vendor` (member shops) |
 | `/api/dashboard/seo` | `routes/dashboardSeo.ts` | `super_admin`, `admin` |
 | `/api/dashboard/pages` | `routes/dashboardPages.ts` | `super_admin`, `admin` |
 | `/api/dashboard/categories` | `routes/dashboardCategories.ts` | Staff |
@@ -807,7 +807,7 @@ Auth: Bearer **staff**. Vendors only see orders that include their products and 
 |--------|------|--------|
 | GET | `/?page=&limit=&status=&q=&payment_status=&payment_method=` | List (`limit` ≤ 100). Returns `orders`, `pagination`, `summary` (counts per status for everything you can see — KPI cards) and `status_counts` (same, narrowed by `q` / payment filters) |
 | GET | `/export?status=&q=&payment_status=&payment_method=` | `text/csv` (UTF-8 BOM) of the filtered list, newest first, max 5000 rows · cells starting with `= + - @` are prefixed with `'` |
-| GET | `/:id` | Detail: addresses, items with `thumbnail` + `vendor { id, shop_name, slug }`, last 10 `payments` (incl. SSLCOMMERZ `card_type`), plus `next_statuses` |
+| GET | `/:id` | Detail: addresses, items with `thumbnail` + `vendor { id, shop_name, slug }`, last 10 `payments` (incl. SSLCOMMERZ `card_type`), `settlements[]` (per-store fee split — see below), plus `next_statuses` |
 | PATCH | `/:id/status` | `{ status, courier_name?, tracking_number? }` → `{ message, order, next_statuses }` · 409 `STATUS_UNCHANGED` / `INVALID_STATUS_TRANSITION` / `ORDER_CHANGED` |
 | PATCH | `/:id/tracking` | `{ courier_name?, tracking_number? }` (max 80 chars each, `""`/`null` clears) |
 | POST | `/bulk-status` | `{ ids: string[1..100], status }` → `{ message, updated: id[], skipped: [{ id, order_number, reason }] }` — each order follows the same transition rules |
@@ -826,6 +826,21 @@ Query filters:
 Status transitions: `pending → confirmed | processing | shipped | cancelled`, `confirmed → pending | processing | shipped | cancelled`, `processing → confirmed | shipped | cancelled`, `shipped → processing | delivered | cancelled`, `delivered → refunded`; `cancelled` and `refunded` are final. Side effects: `shipped_at` is set on shipped/delivered, `delivered_at` on delivered (a pending **cash on delivery** payment becomes `paid`), `cancelled_at` on cancelled, and a paid order moved to `refunded` gets `payment_status: refunded`. Stock and money are not moved automatically.
 
 Each order includes `is_guest`, `claimed_at`, `customer: { id | null, name, email, phone, avatar }`, `billing`, `payment_channel`, `courier_name`, `tracking_number`, `shipped_at`, `delivered_at`, `cancelled_at` — for guest orders `customer.id` is `null`, `name` comes from the billing address and `email`/`phone` from checkout. `payment_channel` is filled when an SSLCOMMERZ payment settles (from the gateway `card_type`).
+
+**`settlements[]`** (written at checkout; snapshot so later store fee changes do not rewrite history):
+
+| Field | Notes |
+|-------|--------|
+| `vendor_id` | Store id, or `null` for Niyenin platform lines |
+| `shop_name` | Snapshot name at sale |
+| `vendor` | `{ id, shop_name, slug } \| null` when linked |
+| `subtotal` | That store’s product line totals (before discount share) |
+| `discount_share` | Proportional coupon allocation |
+| `commission_percent` | Copied from the store at sale (`100` for platform lines) |
+| `platform_fee` | `round((subtotal − discount_share) × percent / 100)` — product subtotal only, not shipping |
+| `vendor_net` | Net after platform fee (`0` for platform lines) |
+
+Staff see every store’s row. Vendors only see settlements for shops they belong to (`VendorMember`). Rent plans are not deducted per order (Phase 2).
 
 ---
 
@@ -1128,22 +1143,29 @@ List response: `{ users, pagination: { page, limit, total, totalPages } }`
 
 ## Dashboard shops — `/api/dashboard/shops`
 
-Auth: Bearer **`super_admin`**, **`admin`** or **`vendor`**.
+Auth: Bearer **`super_admin`**, **`admin`**, **`moderator`**, or **`vendor`**.
 
-- **vendor:** only their own store (`vendors.user_id`).
-- **admin:** reads every store and can override its page design (showcase, logo, banner, share image). Cannot create, delete, change status/owner, edit settings (`PATCH /:idOrSlug`) or clear history.
-- **super_admin:** everything. Soft-delete is **super_admin** only.
+Access uses **`VendorMember`** (not only `vendors.user_id`). Cap: **1 owner + 2 helpers** (3 members max). `vendors.user_id` remains the owner.
+
+- **vendor:** shops where they are owner or helper (products/orders scoped the same way). Helpers can manage catalog/orders; only the **owner** can change store settings.
+- **moderator:** list/read stores; assign/remove helpers. Cannot change fee plan, owner, or store settings.
+- **admin:** reads every store and can override page design (showcase, logo, banner, share image) and manage helpers. Cannot create, delete, change status/owner, edit settings (`PATCH` settings), or clear history. Can **view** fee plan fields.
+- **super_admin:** everything, including fee plan and owner transfer. Soft-delete is **super_admin** only.
 
 | Method | Path | Purpose |
 |--------|------|---------|
 | GET | `/slug-preview?name=` | `{ slug, base }` · `exclude_id?` |
-| GET | `/` | List shops (admin/super: all) |
-| GET | `/me` | Current vendor shop (or `null`) |
-| GET | `/:idOrSlug` | Detail (numeric id **or** slug) |
+| GET | `/helper-candidates?q=&limit=` | Active `vendor`-role users not already on a store team · **super_admin / admin / moderator** |
+| GET | `/` | List shops (elevated: all; vendor: member shops) |
+| GET | `/me` | Current vendor’s primary shop (or `null`) |
+| GET | `/:idOrSlug` | Detail (numeric id **or** slug) · includes fee fields + `members[]` |
+| GET | `/:idOrSlug/members` | `{ members, limits: { max_members: 3, max_helpers: 2 } }` |
+| POST | `/:idOrSlug/members` | Body `{ user_id }` · add helper · team managers only · 409 if cap / already on a team |
+| DELETE | `/:idOrSlug/members/:userId` | Remove a **helper** (not the owner) · team managers only |
 | GET | `/:idOrSlug/history` | Audit log |
 | DELETE | `/:idOrSlug/history` | Clear audit log (DB delete) · super or owner |
-| POST | `/` | Create (`shop_name`, `slug?`, `description?`, `shop_name_bn?`, `description_bn?`, `user_id?` required for super, `status?`) · admin → 403 |
-| PATCH | `/:idOrSlug` | Update settings (incl. `shop_name_bn?`, `description_bn?`) · super or owner. Bangla edits are logged in history |
+| POST | `/` | Create (`shop_name`, `slug?`, `description?`, `shop_name_bn?`, `description_bn?`, `user_id?` required for super, `status?`) · defaults `fee_plan: commission`, `commission_percent: 3` + owner membership row · admin/moderator → 403 |
+| PATCH | `/:idOrSlug` | Update settings (incl. Bangla, theme) · **super or owner**. Fee fields (**super_admin only**): `fee_plan` (`commission`\|`rent`\|`both`), `commission_percent` (0–100), `rent_amount`, `rent_period` (`monthly`\|`yearly`). Owner change via `user_id` is **super_admin** only |
 | POST | `/:idOrSlug/logo` | Multipart **`logo`** · max **5 MB** · always resized |
 | POST | `/:idOrSlug/banner` | Multipart **`banner`** · max **5 MB** · always resized |
 | GET | `/:idOrSlug/showcase` | Page design for the editor: `shop_name`, `logo`, `banner`, `tagline`, `accent_color`, `seo_*`, `noindex`, `og_image`, full `showcase` (incl. disabled sections), `owned_by_actor` |
@@ -1152,13 +1174,17 @@ Auth: Bearer **`super_admin`**, **`admin`** or **`vendor`**.
 | DELETE | `/:idOrSlug/og-image` | Remove the share image |
 | DELETE | `/:idOrSlug` | Soft-delete (super only) |
 
+**Fee plan validation:** `commission` / `both` require `commission_percent`; `rent` / `both` require `rent_amount` + `rent_period`. Rent is shown on the store for Phase 1 and is **not** deducted on checkout (no wallet/payout yet).
+
+**`members[]` on shop:** `{ id, user_id, role: owner\|helper, user: { id, first_name, last_name, email, … } }`.
+
 **`showcase` body** (validator `src/validators/showcase.ts`): `hero_style` (`banner`|`split`|`minimal`), `sections[] { key: featured|products|about|reviews|contact|policies, enabled }` (each key once, order = page order), `about` (≤5000), `contact { phone ≤40, email, address ≤300, hours ≤160 }`, `social { facebook, instagram, youtube, tiktok, x, website }` (https only; each network must use its own host, e.g. `instagram.com`; `website` any https host), `policies { shipping ≤3000, returns ≤3000 }`, `announcement { enabled, text ≤160 (required when enabled), link (site path like `/shop` or https URL), tone: brand|info|success|warning }`. Errors include `issues[] { path, message }`.
 
 Store edits call the storefront's `POST /api/revalidate` (tags `stores`, `store:<slug>`) when `REVALIDATE_SECRET` is set.
 
 **Bangla fields:** `shop_name_bn` (≤200) and `description_bn` (≤5000) are optional and safe-text checked; `""`/`null` clears them. The slug is shared by both languages, and the storefront falls back to the English text when they are empty.
 
-**Shop object:** `id`, `user_id`, `logo_id`, `shop_name`, `shop_name_bn`, `slug`, `description`, `description_bn`, `status` (`pending`\|`active`\|…), timestamps, `logo`, `user?`.
+**Shop object:** `id`, `user_id`, `logo_id`, `shop_name`, `shop_name_bn`, `slug`, `description`, `description_bn`, `status` (`pending`\|`active`\|…), `fee_plan`, `commission_percent`, `rent_amount`, `rent_period`, `members[]`, timestamps, `logo`, `user?` (owner).
 
 Dashboard UI uses **`/stores/{slug}`** (not id).
 

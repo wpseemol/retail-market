@@ -286,6 +286,25 @@ export function OrderDetailPanel({
         />
         {tax > 0 ? <Row label="Tax" value={formatBdt(tax, order.currency)} /> : null}
         <Row label="Total" value={formatBdt(order.total, order.currency)} strong />
+        {order.settlements && order.settlements.length > 0 ? (
+          <ul className="mt-3 space-y-2 border-t border-border/70 pt-3">
+            {order.settlements.map((s) => (
+              <li key={s.id} className="rounded-lg bg-muted/30 px-2.5 py-2 text-xs">
+                <p className="font-medium text-foreground">{s.shop_name}</p>
+                <p className="mt-0.5 text-muted-foreground tabular-nums">
+                  Subtotal {formatBdt(s.subtotal, order.currency)}
+                  {Number(s.discount_share) > 0
+                    ? ` · discount −${formatBdt(s.discount_share, order.currency)}`
+                    : ""}
+                  {" · "}
+                  {s.commission_percent}% fee {formatBdt(s.platform_fee, order.currency)}
+                  {" · "}
+                  vendor net {formatBdt(s.vendor_net, order.currency)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         <p className="mt-2 text-xs text-muted-foreground">
           {paymentMethodLabel(order)} · {PAYMENT_STATUS_META[order.payment_status].label}
         </p>

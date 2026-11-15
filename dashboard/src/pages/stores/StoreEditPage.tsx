@@ -10,15 +10,24 @@ import {
   shopStatusLabel,
   storefrontThemeLabel,
   productSortLabel,
+  feePlanLabel,
+  rentPeriodLabel,
   type Shop,
   type ShopHistoryItem,
   type ShopStatus,
   type StorefrontTheme,
   type ProductSort,
+  type VendorFeePlan,
+  type VendorRentPeriod,
   SHOP_STATUSES,
   STOREFRONT_THEMES,
   PRODUCT_SORTS,
+  VENDOR_FEE_PLANS,
+  VENDOR_RENT_PERIODS,
 } from "@/lib/shops";
+import { STORE_FEE_ROLES, STORE_TEAM_ROLES } from "@/lib/rbac";
+import { StoreTeamSection } from "@/components/shops/StoreTeamSection";
+import { shopFeeFormSchema } from "@/lib/validators/shop";
 import {
   STORE_BANGLA_COPY,
   bnOrNull,
@@ -77,6 +86,13 @@ function storeDraftFromShop(shop: Shop) {
     featuredCount: shop.featured_products_count ?? 4,
     showBannedBrands: shop.show_banned_brands ?? true,
     productSort: shop.product_sort ?? "featured_first",
+    feePlan: shop.fee_plan ?? "commission",
+    commissionPercent:
+      shop.commission_percent === undefined || shop.commission_percent === null
+        ? 3
+        : shop.commission_percent,
+    rentAmount: shop.rent_amount ?? null,
+    rentPeriod: shop.rent_period ?? null,
   };
 }
 
@@ -86,6 +102,8 @@ export function StoreEditPage() {
   const confirm = useConfirm();
   const { token, user } = useAuthStore();
   const isSuper = user?.role === "super_admin";
+  const canEditFees = Boolean(user && STORE_FEE_ROLES.includes(user.role));
+  const canManageTeam = Boolean(user && STORE_TEAM_ROLES.includes(user.role));
   const fileRef = useRef<HTMLInputElement>(null);
   const bannerRef = useRef<HTMLInputElement>(null);
 
@@ -110,6 +128,18 @@ export function StoreEditPage() {
   const [showBannedBrands, setShowBannedBrands] = useState(true);
   const [productSort, setProductSort] =
     useState<ProductSort>("featured_first");
+  const [feePlan, setFeePlan] = useState<VendorFeePlan>("commission");
+  const [commissionPercent, setCommissionPercent] = useState<number | null>(3);
+  const [rentAmount, setRentAmount] = useState<number | null>(null);
+  const [rentPeriod, setRentPeriod] = useState<VendorRentPeriod | null>(null);
+
+  const myMembership = shop?.members?.find((m) => m.user_id === user?.id);
+  const isOwner = Boolean(
+    isSuper ||
+      (user && shop && shop.user_id === user.id) ||
+      myMembership?.role === "owner",
+  );
+  const canEditProfile = isSuper || isOwner;
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -180,6 +210,14 @@ export function StoreEditPage() {
     setFeaturedCount(next.featured_products_count ?? 4);
     setShowBannedBrands(next.show_banned_brands ?? true);
     setProductSort(next.product_sort ?? "featured_first");
+    setFeePlan(next.fee_plan ?? "commission");
+    setCommissionPercent(
+      next.commission_percent === undefined || next.commission_percent === null
+        ? 3
+        : next.commission_percent,
+    );
+    setRentAmount(next.rent_amount ?? null);
+    setRentPeriod(next.rent_period ?? null);
   }
 
   const baseline = useBaselineDirty(
@@ -197,6 +235,10 @@ export function StoreEditPage() {
       featuredCount,
       showBannedBrands,
       productSort,
+      feePlan,
+      commissionPercent,
+      rentAmount,
+      rentPeriod,
     },
     !loading && shop !== null,
   );
@@ -223,7 +265,7 @@ export function StoreEditPage() {
 
   async function onSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!token || !routeSlug) return;
+    if (!token || !routeSlug || !canEditProfile) return;
     if (bnEnabled) {
       const bn = shopBanglaSchema.safeParse({
         shop_name_bn: shopNameBn,
@@ -231,6 +273,19 @@ export function StoreEditPage() {
       });
       if (!bn.success) {
         setSaveError(firstZodError(bn.error));
+        setSaveSuccess(null);
+        return;
+      }
+    }
+    if (canEditFees) {
+      const fee = shopFeeFormSchema.safeParse({
+        fee_plan: feePlan,
+        commission_percent: commissionPercent,
+        rent_amount: rentAmount,
+        rent_period: rentPeriod,
+      });
+      if (!fee.success) {
+        setSaveError(firstZodError(fee.error));
         setSaveSuccess(null);
         return;
       }
@@ -260,6 +315,14 @@ export function StoreEditPage() {
               ? {
                   status,
                   user_id: ownerId || undefined,
+                }
+              : {}),
+            ...(canEditFees
+              ? {
+                  fee_plan: feePlan,
+                  commission_percent: commissionPercent,
+                  rent_amount: rentAmount,
+                  rent_period: rentPeriod,
                 }
               : {}),
           },
@@ -678,46 +741,186 @@ export function StoreEditPage() {
             </label>
           </StoreFormSection>
 
-          <StoreStickyActions
-            message={
-              saveError ? (
-                <p className="text-destructive" role="alert">
-                  {saveError}
-                </p>
-              ) : saveSuccess ? (
-                <p className="text-brand-primary" role="status">
-                  {saveSuccess}
-                </p>
-              ) : (
-                <p className="text-muted-foreground">{save.hint}</p>
-              )
-            }
-          >
-            <Button asChild type="button" variant="outline">
-              <Link to="/stores">Cancel</Link>
-            </Button>
-            {isSuper ? (
-              <Button
-                type="button"
-                variant="destructive"
-                disabled={deleting || saving}
-                onClick={() => void onDelete()}
-              >
-                <Trash2 className="size-3.5" />
-                {deleting ? "Deleting…" : "Delete"}
-              </Button>
-            ) : null}
-            <Button
-              type="submit"
-              disabled={!save.canSave}
-              title={save.blockedReason}
+          {(canEditFees || shop.fee_plan) && (
+            <StoreFormSection
+              step="03"
+              title="Fee plan"
+              description="How Niyenin earns from this store — commission on each sale, fixed rent, or both."
             >
-              {saving ? "Saving…" : "Save changes"}
-            </Button>
-          </StoreStickyActions>
+              {canEditFees ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label>Plan</Label>
+                    <Select
+                      value={feePlan}
+                      onValueChange={(v) => setFeePlan(v as VendorFeePlan)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {VENDOR_FEE_PLANS.map((p) => (
+                          <SelectItem key={p} value={p}>
+                            {feePlanLabel(p)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {feePlan === "commission" || feePlan === "both" ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="commission_percent">
+                        Commission % per sale
+                      </Label>
+                      <Input
+                        id="commission_percent"
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={0.01}
+                        value={commissionPercent ?? ""}
+                        onChange={(e) =>
+                          setCommissionPercent(
+                            e.target.value === ""
+                              ? null
+                              : Number(e.target.value),
+                          )
+                        }
+                      />
+                    </div>
+                  ) : null}
+                  {feePlan === "rent" || feePlan === "both" ? (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="rent_amount">Rent amount (৳)</Label>
+                        <Input
+                          id="rent_amount"
+                          type="number"
+                          min={0}
+                          step={1}
+                          value={rentAmount ?? ""}
+                          onChange={(e) =>
+                            setRentAmount(
+                              e.target.value === ""
+                                ? null
+                                : Number(e.target.value),
+                            )
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Rent period</Label>
+                        <Select
+                          value={rentPeriod ?? undefined}
+                          onValueChange={(v) =>
+                            setRentPeriod(v as VendorRentPeriod)
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select period" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {VENDOR_RENT_PERIODS.map((p) => (
+                              <SelectItem key={p} value={p}>
+                                {rentPeriodLabel(p)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {feePlanLabel(shop.fee_plan ?? "commission")}
+                  {(shop.fee_plan === "commission" ||
+                    shop.fee_plan === "both") &&
+                  shop.commission_percent != null
+                    ? ` · ${shop.commission_percent}% per sale`
+                    : ""}
+                  {(shop.fee_plan === "rent" || shop.fee_plan === "both") &&
+                  shop.rent_amount != null
+                    ? ` · ৳${shop.rent_amount.toLocaleString()} ${shop.rent_period ?? ""}`
+                    : ""}
+                </p>
+              )}
+            </StoreFormSection>
+          )}
 
           <StoreFormSection
             step="04"
+            title="Store team"
+            description="One owner plus up to two helper vendors who can manage products and orders."
+          >
+            {token ? (
+              <StoreTeamSection
+                shop={shop}
+                token={token}
+                canManageTeam={canManageTeam}
+                onShopUpdated={applyShop}
+                onError={setSaveError}
+                onSuccess={setSaveSuccess}
+              />
+            ) : null}
+          </StoreFormSection>
+
+          {canEditProfile ? (
+            <StoreStickyActions
+              message={
+                saveError ? (
+                  <p className="text-destructive" role="alert">
+                    {saveError}
+                  </p>
+                ) : saveSuccess ? (
+                  <p className="text-brand-primary" role="status">
+                    {saveSuccess}
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground">{save.hint}</p>
+                )
+              }
+            >
+              <Button asChild type="button" variant="outline">
+                <Link to="/stores">Cancel</Link>
+              </Button>
+              {isSuper ? (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={deleting || saving}
+                  onClick={() => void onDelete()}
+                >
+                  <Trash2 className="size-3.5" />
+                  {deleting ? "Deleting…" : "Delete"}
+                </Button>
+              ) : null}
+              <Button
+                type="submit"
+                disabled={!save.canSave}
+                title={save.blockedReason}
+              >
+                {saving ? "Saving…" : "Save changes"}
+              </Button>
+            </StoreStickyActions>
+          ) : (
+            <div className="rounded-xl border border-border/70 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+              Only the store owner or super admin can change store settings.
+              {saveError ? (
+                <p className="mt-2 text-destructive" role="alert">
+                  {saveError}
+                </p>
+              ) : null}
+              {saveSuccess ? (
+                <p className="mt-2 text-brand-primary" role="status">
+                  {saveSuccess}
+                </p>
+              ) : null}
+            </div>
+          )}
+
+          <StoreFormSection
+            step="05"
             title="Change history"
             description="Tracks create, edits, media uploads, and deletes. Clear removes rows from the database."
           >

@@ -548,6 +548,10 @@ const HOUSE_SHOP = {
   featured_products_count: 6,
   show_banned_brands: true,
   product_sort: "featured_first" as const,
+  fee_plan: "commission" as const,
+  commission_percent: 0,
+  rent_amount: null as null,
+  rent_period: null as null,
 };
 
 const PARTNER_SHOP = {
@@ -562,7 +566,19 @@ const PARTNER_SHOP = {
   featured_products_count: 4,
   show_banned_brands: true,
   product_sort: "featured_first" as const,
+  fee_plan: "commission" as const,
+  commission_percent: 3,
+  rent_amount: null as null,
+  rent_period: null as null,
 };
+
+async function ensureOwnerMembership(vendorId: bigint, userId: bigint) {
+  await prisma.vendorMember.upsert({
+    where: { user_id: userId },
+    create: { vendor_id: vendorId, user_id: userId, role: "owner" },
+    update: { vendor_id: vendorId, role: "owner" },
+  });
+}
 
 /**
  * Partner demo shop for the vendor account first (frees `niyenin-gadgets` slug
@@ -578,19 +594,19 @@ async function ensureShopForVendor() {
     where: { user_id: vendorUser.id },
     orderBy: { id: "desc" },
   });
-  if (existing) {
-    return prisma.vendor.update({
-      where: { id: existing.id },
-      data: PARTNER_SHOP,
-    });
-  }
-
-  return prisma.vendor.create({
-    data: {
-      user_id: vendorUser.id,
-      ...PARTNER_SHOP,
-    },
-  });
+  const shop = existing
+    ? await prisma.vendor.update({
+        where: { id: existing.id },
+        data: PARTNER_SHOP,
+      })
+    : await prisma.vendor.create({
+        data: {
+          user_id: vendorUser.id,
+          ...PARTNER_SHOP,
+        },
+      });
+  await ensureOwnerMembership(shop.id, vendorUser.id);
+  return shop;
 }
 
 /**
@@ -607,6 +623,7 @@ async function ensureNiyeninGadgetsStore() {
     where: { user_id: superAdmin.id },
     orderBy: { id: "desc" },
   });
+  let shop;
   if (owned) {
     // Free the house slug if another row still holds it.
     if (owned.slug !== HOUSE_SHOP.slug) {
@@ -623,30 +640,31 @@ async function ensureNiyeninGadgetsStore() {
         },
       });
     }
-    return prisma.vendor.update({
+    shop = await prisma.vendor.update({
       where: { id: owned.id },
       data: HOUSE_SHOP,
     });
-  }
-
-  const bySlug = await prisma.vendor.findFirst({
-    where: { slug: HOUSE_SHOP.slug },
-    orderBy: { id: "desc" },
-  });
-  if (bySlug) {
-    // Owner must be free (partner shop already moved the vendor off this row).
-    return prisma.vendor.update({
-      where: { id: bySlug.id },
-      data: { user_id: superAdmin.id, ...HOUSE_SHOP },
+  } else {
+    const bySlug = await prisma.vendor.findFirst({
+      where: { slug: HOUSE_SHOP.slug },
+      orderBy: { id: "desc" },
     });
+    if (bySlug) {
+      shop = await prisma.vendor.update({
+        where: { id: bySlug.id },
+        data: { user_id: superAdmin.id, ...HOUSE_SHOP },
+      });
+    } else {
+      shop = await prisma.vendor.create({
+        data: {
+          user_id: superAdmin.id,
+          ...HOUSE_SHOP,
+        },
+      });
+    }
   }
-
-  return prisma.vendor.create({
-    data: {
-      user_id: superAdmin.id,
-      ...HOUSE_SHOP,
-    },
-  });
+  await ensureOwnerMembership(shop.id, superAdmin.id);
+  return shop;
 }
 
 async function seedCatalog() {
