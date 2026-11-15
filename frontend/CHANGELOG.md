@@ -3,6 +3,13 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-15
+
+### Guest cart cookie lasts 1 year
+
+- `lib/guestCartCookie.ts`: `GUEST_CART_MAX_AGE_SEC` 30 days → 1 year (encrypted `nyn_cart` Max-Age + JWT `exp`).
+- `lib/cartUiCookie.ts`: header badge cookie `niyenin-cart-ui` Max-Age matched to 1 year so SSR count/total stay in sync.
+
 ## 2026-11-13
 
 ### Local `.env.dev` for `pnpm dev`

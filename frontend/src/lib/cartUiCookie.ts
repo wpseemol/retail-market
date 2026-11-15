@@ -5,7 +5,7 @@
  */
 
 export const CART_UI_COOKIE_KEY = "niyenin-cart-ui";
-export const CART_UI_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
+export const CART_UI_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
 export type CartUiSnapshot = {
   count: number;

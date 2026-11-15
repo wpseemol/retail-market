@@ -11,7 +11,8 @@ import {
 // Server-only: reads AUTH_SECRET and the httpOnly guest cart cookie.
 
 export const GUEST_CART_COOKIE = "nyn_cart";
-const GUEST_CART_MAX_AGE_SEC = 60 * 60 * 24 * 30;
+/** Keep guest cart lines for 1 year (cookie Max-Age + JWT exp). */
+const GUEST_CART_MAX_AGE_SEC = 60 * 60 * 24 * 365;
 
 /** Compact `[productId, quantity, selected 1|0]` tuples keep the cookie well under 4 KB. */
 type PackedLine = [string, number, 0 | 1];
