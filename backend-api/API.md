@@ -1426,7 +1426,7 @@ type Category = {
 
 ## Dashboard products — `/api/dashboard/products`
 
-Auth: STAFF. Vendors are scoped to their own shop. Elevated may pass `vendor_id` when creating.
+Auth: STAFF. Vendors are scoped to their own shop and **cannot** open or edit Niyenin platform products (`vendor_id` null) or another store’s products — those return **403** `{ message: "This product is not in your store" }`. Elevated may pass `vendor_id` when creating, or omit / send `null` / `""` for the **Niyenin platform** catalog (no partner store).
 
 ### List / detail
 
@@ -1469,6 +1469,7 @@ Auth: STAFF. Vendors are scoped to their own shop. Elevated may pass `vendor_id`
 
 | Field | Notes |
 |-------|--------|
+| `vendor_id` | Shop id · elevated only · omit / `null` / `""` = Niyenin platform catalog · vendors always use their own shop (field ignored) |
 | `type` | `simple` \| `variable` |
 | `status` | `draft` \| `active` \| `archived` \| `out_of_stock` |
 | `description` | Safe HTML subset (no script/PHP) · ≤20_000 |

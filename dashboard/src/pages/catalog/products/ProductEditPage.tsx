@@ -26,6 +26,7 @@ import {
   productBanglaValues,
   PRODUCT_BANGLA_DEFAULTS,
   PRODUCT_IMAGE_MAX_COUNT,
+  PRODUCT_PLATFORM_VENDOR_VALUE,
   type ProductFormValues,
 } from "@/lib/validators/product";
 import { ProductBanglaSection } from "@/components/products/ProductBanglaSection";
@@ -127,7 +128,7 @@ export function ProductEditPage() {
         const p = prodRes.product;
         setProduct(p);
         form.reset({
-          vendor_id: p.vendor_id ?? "",
+          vendor_id: p.vendor_id ?? PRODUCT_PLATFORM_VENDOR_VALUE,
           category_id: p.category_id ?? "",
           brand_id: p.brand_id ?? p.brand?.id ?? "",
           name: p.name,
@@ -244,7 +245,11 @@ export function ProductEditPage() {
 
   const categoryName = categories.find((c) => c.id === categoryId)?.name;
   const brandName = brands.find((b) => b.id === brandId)?.name;
-  const shopName = shops.find((s) => s.id === vendorId)?.shop_name;
+  const shopName =
+    vendorId === PRODUCT_PLATFORM_VENDOR_VALUE || !vendorId
+      ? "Niyenin"
+      : shops.find((s) => s.id === vendorId)?.shop_name ??
+        product?.vendor?.shop_name;
   const localPrimaryImage =
     localImages.find((i) => i.key === localPrimaryKey)?.preview ??
     localImages[0]?.preview;
@@ -400,11 +405,28 @@ export function ProductEditPage() {
   }
 
   if (loadError || !product) {
+    const notOwnStore =
+      loadError?.toLowerCase().includes("not in your store") ||
+      loadError?.toLowerCase().includes("not your store");
     return (
-      <div className="space-y-3">
-        <p className="text-sm text-destructive">{loadError ?? "Not found"}</p>
-        <Button asChild variant="outline">
-          <Link to="/products">Back</Link>
+      <div className="mx-auto flex w-full max-w-lg flex-col gap-4 rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+        <div className="space-y-2">
+          <p className="text-base font-semibold tracking-tight">
+            {notOwnStore ? "Not your store" : "Could not open product"}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {loadError ??
+              "This product was not found or you do not have access."}
+          </p>
+          {notOwnStore ? (
+            <p className="text-sm text-muted-foreground">
+              Vendors can only edit products that belong to their own store.
+              Niyenin platform products are managed by super admin.
+            </p>
+          ) : null}
+        </div>
+        <Button asChild variant="outline" className="w-fit">
+          <Link to="/products">Back to products</Link>
         </Button>
       </div>
     );
@@ -465,7 +487,7 @@ export function ProductEditPage() {
                     <FormItem>
                       <FormLabel>Store</FormLabel>
                       <Select
-                        value={field.value || undefined}
+                        value={field.value || PRODUCT_PLATFORM_VENDOR_VALUE}
                         onValueChange={field.onChange}
                       >
                         <FormControl>
@@ -474,6 +496,9 @@ export function ProductEditPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
+                          <SelectItem value={PRODUCT_PLATFORM_VENDOR_VALUE}>
+                            Niyenin (platform) — super admin only
+                          </SelectItem>
                           {shops.map((s) => (
                             <SelectItem key={s.id} value={s.id}>
                               {s.shop_name}
@@ -481,6 +506,10 @@ export function ProductEditPage() {
                           ))}
                         </SelectContent>
                       </Select>
+                      <FormDescription>
+                        Platform products belong to Niyenin. Vendors can only
+                        edit products under their own store.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

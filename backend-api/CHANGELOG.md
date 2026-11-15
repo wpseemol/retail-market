@@ -3,6 +3,15 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-15
+
+### Vendor cannot edit Niyenin / other-store products
+
+- `routes/dashboardProducts.ts`: elevated create/update may set `vendor_id` to `null` (Niyenin platform catalog). Vendors still only get their own shop. Denied product access returns **403** `This product is not in your store` for vendors.
+- `routes/dashboardVendors.ts`: denied store read/manage/design returns **403** `This is not your store` for vendors (was generic “Insufficient permissions” / customize-own-page copy).
+- `prisma/seed.ts`: **Niyenin Gadgets** is owned by `super_admin`; the vendor account gets **Demo Partner Store** with a few SKUs. Most demo products stay on the house store so vendors no longer see Edit on Niyenin catalog rows.
+- `API.md`: documents platform `vendor_id` and the vendor 403 message.
+
 ## 2026-11-14
 
 ### Staff authenticator 2FA (TOTP)

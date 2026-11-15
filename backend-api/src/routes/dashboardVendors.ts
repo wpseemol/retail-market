@@ -260,6 +260,10 @@ async function assertCanAccessShop(
   return vendor.user_id === actorId;
 }
 
+function shopAccessDeniedMessage(role: string) {
+  return role === "vendor" ? "This is not your store" : "Insufficient permissions";
+}
+
 function storeTags(...slugs: string[]) {
   return ["stores", "brands", ...slugs.map((s) => `store:${s}`)];
 }
@@ -372,7 +376,7 @@ dashboardVendorsRouter.get("/:idOrSlug/history", async (req, res) => {
   if (
     !(await assertCanAccessShop(vendor, req.auth!.userId, req.auth!.role, "read"))
   ) {
-    return res.status(403).json({ message: "Insufficient permissions" });
+    return res.status(403).json({ message: shopAccessDeniedMessage(req.auth!.role) });
   }
 
   const rows = await prisma.vendorHistory.findMany({
@@ -406,7 +410,7 @@ dashboardVendorsRouter.delete("/:idOrSlug/history", async (req, res) => {
   if (
     !(await assertCanAccessShop(vendor, req.auth!.userId, req.auth!.role))
   ) {
-    return res.status(403).json({ message: "Insufficient permissions" });
+    return res.status(403).json({ message: shopAccessDeniedMessage(req.auth!.role) });
   }
 
   const result = await prisma.vendorHistory.deleteMany({
@@ -427,7 +431,7 @@ dashboardVendorsRouter.get("/:idOrSlug", async (req, res) => {
   if (
     !(await assertCanAccessShop(vendor, req.auth!.userId, req.auth!.role, "read"))
   ) {
-    return res.status(403).json({ message: "Insufficient permissions" });
+    return res.status(403).json({ message: shopAccessDeniedMessage(req.auth!.role) });
   }
 
   return res.json({ shop: toPublicShop(vendor) });
@@ -564,7 +568,7 @@ dashboardVendorsRouter.patch("/:idOrSlug", async (req, res) => {
   if (
     !(await assertCanAccessShop(existing, req.auth!.userId, req.auth!.role))
   ) {
-    return res.status(403).json({ message: "Insufficient permissions" });
+    return res.status(403).json({ message: shopAccessDeniedMessage(req.auth!.role) });
   }
 
   if (!isSuper && (data.status !== undefined || data.user_id !== undefined)) {
@@ -768,7 +772,7 @@ dashboardVendorsRouter.post(
       !(await assertCanAccessShop(existing, req.auth!.userId, req.auth!.role, "design"))
     ) {
       discardUpload(file);
-      return res.status(403).json({ message: "Insufficient permissions" });
+      return res.status(403).json({ message: shopAccessDeniedMessage(req.auth!.role) });
     }
 
     const finalized = await finalizeShopImageUpload(uploadBytes(file), file.mimetype, "shopLogo");
@@ -871,7 +875,7 @@ dashboardVendorsRouter.post(
       !(await assertCanAccessShop(existing, req.auth!.userId, req.auth!.role, "design"))
     ) {
       discardTempUpload(file);
-      return res.status(403).json({ message: "Insufficient permissions" });
+      return res.status(403).json({ message: shopAccessDeniedMessage(req.auth!.role) });
     }
 
     const finalized = await finalizeShopImageUpload(uploadBytes(file), file.mimetype, "shopBanner");
@@ -957,7 +961,12 @@ async function loadShowcaseVendor(
     return null;
   }
   if (!(await assertCanAccessShop(vendor, req.auth!.userId, req.auth!.role, "design"))) {
-    res.status(403).json({ message: "You can only customize your own store page" });
+    res.status(403).json({
+      message:
+        req.auth!.role === "vendor"
+          ? "This is not your store"
+          : "You can only customize your own store page",
+    });
     return null;
   }
   return vendor;

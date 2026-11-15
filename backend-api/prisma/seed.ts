@@ -536,6 +536,38 @@ function copyProductImage(sourceName: string): {
   return { fileName, size, mime };
 }
 
+const HOUSE_SHOP = {
+  shop_name: "Niyenin Gadgets",
+  slug: "niyenin-gadgets",
+  description:
+    "Official Niyenin electronics catalog — managed by super admin.",
+  status: "active" as const,
+  deleted_at: null,
+  storefront_theme: "marketplace" as const,
+  products_per_page: 24,
+  featured_products_count: 6,
+  show_banned_brands: true,
+  product_sort: "featured_first" as const,
+};
+
+const PARTNER_SHOP = {
+  shop_name: "Demo Partner Store",
+  slug: "demo-partner-store",
+  description:
+    "Demo partner shop. Vendors only create and edit products under their own store.",
+  status: "active" as const,
+  deleted_at: null,
+  storefront_theme: "classic" as const,
+  products_per_page: 12,
+  featured_products_count: 4,
+  show_banned_brands: true,
+  product_sort: "featured_first" as const,
+};
+
+/**
+ * Partner demo shop for the vendor account first (frees `niyenin-gadgets` slug
+ * if an older seed had given it to the vendor).
+ */
 async function ensureShopForVendor() {
   const vendorUser = await prisma.user.findUnique({
     where: { email: "vendor@niyenin.local" },
@@ -549,35 +581,70 @@ async function ensureShopForVendor() {
   if (existing) {
     return prisma.vendor.update({
       where: { id: existing.id },
-      data: {
-        shop_name: "Niyenin Gadgets",
-        slug: "niyenin-gadgets",
-        description:
-          "Demo electronics store stocked with cameras, phones, audio, and more.",
-        status: "active",
-        deleted_at: null,
-        storefront_theme: "marketplace",
-        products_per_page: 24,
-        featured_products_count: 6,
-        show_banned_brands: true,
-        product_sort: "featured_first",
-      },
+      data: PARTNER_SHOP,
     });
   }
 
   return prisma.vendor.create({
     data: {
       user_id: vendorUser.id,
-      shop_name: "Niyenin Gadgets",
-      slug: "niyenin-gadgets",
-      description:
-        "Demo electronics store stocked with cameras, phones, audio, and more.",
-      status: "active",
-      storefront_theme: "marketplace",
-      products_per_page: 24,
-      featured_products_count: 6,
-      show_banned_brands: true,
-      product_sort: "featured_first",
+      ...PARTNER_SHOP,
+    },
+  });
+}
+
+/**
+ * House store for Niyenin — owned by super_admin only.
+ * Vendors must not edit these products (API scopes them out of the vendor list).
+ */
+async function ensureNiyeninGadgetsStore() {
+  const superAdmin = await prisma.user.findUnique({
+    where: { email: "superadmin@niyenin.local" },
+  });
+  if (!superAdmin) return null;
+
+  const owned = await prisma.vendor.findFirst({
+    where: { user_id: superAdmin.id },
+    orderBy: { id: "desc" },
+  });
+  if (owned) {
+    // Free the house slug if another row still holds it.
+    if (owned.slug !== HOUSE_SHOP.slug) {
+      await prisma.vendor.updateMany({
+        where: {
+          slug: HOUSE_SHOP.slug,
+          NOT: { id: owned.id },
+          deleted_at: null,
+        },
+        data: {
+          slug: `niyenin-gadgets-old-${owned.id.toString()}`,
+          status: "inactive",
+          deleted_at: new Date(),
+        },
+      });
+    }
+    return prisma.vendor.update({
+      where: { id: owned.id },
+      data: HOUSE_SHOP,
+    });
+  }
+
+  const bySlug = await prisma.vendor.findFirst({
+    where: { slug: HOUSE_SHOP.slug },
+    orderBy: { id: "desc" },
+  });
+  if (bySlug) {
+    // Owner must be free (partner shop already moved the vendor off this row).
+    return prisma.vendor.update({
+      where: { id: bySlug.id },
+      data: { user_id: superAdmin.id, ...HOUSE_SHOP },
+    });
+  }
+
+  return prisma.vendor.create({
+    data: {
+      user_id: superAdmin.id,
+      ...HOUSE_SHOP,
     },
   });
 }
@@ -636,8 +703,15 @@ async function seedCatalog() {
     data: { status: "inactive", deleted_at: new Date() },
   });
 
-  const shop = await ensureShopForVendor();
-  const vendorId = shop?.id ?? null;
+  // Partner first so `niyenin-gadgets` can be claimed by super admin next.
+  const partnerShop = await ensureShopForVendor();
+  const houseShop = await ensureNiyeninGadgetsStore();
+  const houseId = houseShop?.id ?? null;
+  const partnerId = partnerShop?.id ?? null;
+  // Last few demo SKUs belong to the partner vendor; the rest are Niyenin Gadgets (super admin).
+  const partnerSlugs = new Set(
+    DEMO_PRODUCTS.slice(-4).map((p) => p.slug),
+  );
 
   let created = 0;
   for (const item of DEMO_PRODUCTS) {
@@ -647,6 +721,8 @@ async function seedCatalog() {
       console.warn(`Skip ${item.slug}: missing category/brand`);
       continue;
     }
+
+    const vendorId = partnerSlugs.has(item.slug) ? partnerId : houseId;
 
     const product = await prisma.product.upsert({
       where: { slug: item.slug },
@@ -769,7 +845,8 @@ async function seedCatalog() {
 
   console.log(
     `Seeded ${CATEGORIES.length} categories, ${BRANDS.length} brands, ${created} demo products` +
-      (shop ? ` under store ${shop.slug}` : " (no vendor shop)"),
+      (houseShop ? ` · house ${houseShop.slug}` : "") +
+      (partnerShop ? ` · partner ${partnerShop.slug}` : ""),
   );
 }
 

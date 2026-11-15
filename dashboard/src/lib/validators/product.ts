@@ -9,6 +9,9 @@ import {
 export const PRODUCT_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 export const PRODUCT_IMAGE_MAX_COUNT = 12;
 
+/** Store select value for Niyenin platform catalog (no partner shop / vendor_id null). */
+export const PRODUCT_PLATFORM_VENDOR_VALUE = "__platform__";
+
 /** TipTap HTML may include tags; still block scripts / PHP / JS / SQL payloads. */
 function findUnsafeRichTextReason(value: string): string | null {
   if (/<\s*\/?\s*script\b/i.test(value)) return "Script tags are not allowed";
@@ -181,8 +184,11 @@ export function toProductApiBody(
     shipping_fee: values.shipping_fee,
   };
 
-  if (opts.includeVendor && values.vendor_id) {
-    body.vendor_id = values.vendor_id;
+  if (opts.includeVendor) {
+    // Empty / platform sentinel → Niyenin platform catalog (vendor_id null).
+    const raw = values.vendor_id.trim();
+    body.vendor_id =
+      !raw || raw === PRODUCT_PLATFORM_VENDOR_VALUE ? null : raw;
   }
 
   if (values.type === "variable") {

@@ -23,6 +23,7 @@ import {
   validateProductImages,
   PRODUCT_BANGLA_DEFAULTS,
   PRODUCT_IMAGE_MAX_COUNT,
+  PRODUCT_PLATFORM_VENDOR_VALUE,
   type ProductFormValues,
 } from "@/lib/validators/product";
 import { ProductBanglaSection } from "@/components/products/ProductBanglaSection";
@@ -135,8 +136,9 @@ export function ProductCreatePage() {
         setCategories(catRes.categories);
         setBrands(brandRes.brands);
         setShops(shopRes.shops);
-        if (shopRes.shops[0] && !form.getValues("vendor_id")) {
-          form.setValue("vendor_id", shopRes.shops[0].id);
+        // Elevated default: Niyenin platform catalog (not a partner store).
+        if (isElevated && !form.getValues("vendor_id")) {
+          form.setValue("vendor_id", PRODUCT_PLATFORM_VENDOR_VALUE);
         }
         const unknown = brandRes.brands.find(
           (b) => b.slug === "unknown" || b.name === "Unknown",
@@ -203,7 +205,10 @@ export function ProductCreatePage() {
 
   const categoryName = categories.find((c) => c.id === categoryId)?.name;
   const brandName = brands.find((b) => b.id === brandId)?.name;
-  const shopName = shops.find((s) => s.id === vendorId)?.shop_name;
+  const shopName =
+    vendorId === PRODUCT_PLATFORM_VENDOR_VALUE || !vendorId
+      ? "Niyenin"
+      : shops.find((s) => s.id === vendorId)?.shop_name;
   const localPrimaryImage =
     localImages.find((i) => i.key === localPrimaryKey)?.preview ??
     localImages[0]?.preview;
@@ -315,7 +320,7 @@ export function ProductCreatePage() {
                     <FormItem>
                       <FormLabel>Store</FormLabel>
                       <Select
-                        value={field.value || undefined}
+                        value={field.value || PRODUCT_PLATFORM_VENDOR_VALUE}
                         onValueChange={field.onChange}
                       >
                         <FormControl>
@@ -324,6 +329,9 @@ export function ProductCreatePage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
+                          <SelectItem value={PRODUCT_PLATFORM_VENDOR_VALUE}>
+                            Niyenin (platform) — super admin only
+                          </SelectItem>
                           {shops.map((s) => (
                             <SelectItem key={s.id} value={s.id}>
                               {s.shop_name}
@@ -331,6 +339,10 @@ export function ProductCreatePage() {
                           ))}
                         </SelectContent>
                       </Select>
+                      <FormDescription>
+                        Platform products are sold as Niyenin. Partner-store
+                        products can only be edited by that store&apos;s vendor.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

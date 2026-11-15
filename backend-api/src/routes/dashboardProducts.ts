@@ -99,11 +99,13 @@ const optionalBrandId = z
   ])
   .optional();
 
+/** Shop id, or empty/null = Niyenin platform catalog (elevated only). */
 const productBodyObject = z.object({
   vendor_id: z
     .union([
       z.string().regex(/^\d+$/),
-      z.literal("").transform(() => undefined),
+      z.literal("").transform(() => null),
+      z.null(),
     ])
     .optional(),
   category_id: z.string().regex(/^\d+$/),
@@ -195,7 +197,8 @@ async function slugTaken(slug: string, excludeId?: bigint) {
 async function resolveVendorIdForActor(input: {
   role: string;
   userId: bigint;
-  requestedVendorId?: string;
+  /** Shop id, or `null` / omitted for Niyenin platform (elevated only). */
+  requestedVendorId?: string | null;
 }) {
   if (input.role === "vendor") {
     const shop = await prisma.vendor.findFirst({
@@ -208,8 +211,9 @@ async function resolveVendorIdForActor(input: {
     return { vendorId: shop.id };
   }
 
-  if (!input.requestedVendorId) {
-    return { error: "Select a shop for this product" as const };
+  // Elevated: omit / null / "" → platform catalog (Niyenin), not a partner store.
+  if (input.requestedVendorId == null || input.requestedVendorId === "") {
+    return { vendorId: null };
   }
 
   const vendorId = BigInt(input.requestedVendorId);
@@ -227,12 +231,19 @@ async function assertCanAccessProduct(
   role: string,
 ) {
   if (isElevated(role)) return true;
+  // Platform (Niyenin) catalog — vendors never edit these.
   if (!product.vendor_id) return false;
   const shop = await prisma.vendor.findFirst({
     where: { id: product.vendor_id, user_id: userId, deleted_at: null },
     select: { id: true },
   });
   return Boolean(shop);
+}
+
+function productAccessDeniedMessage(role: string) {
+  return role === "vendor"
+    ? "This product is not in your store"
+    : "Insufficient permissions";
 }
 
 function cartesianOptions(
@@ -477,7 +488,9 @@ dashboardProductsRouter.get("/:id", async (req, res) => {
   if (!row) return res.status(404).json({ message: "Product not found" });
 
   if (!(await assertCanAccessProduct(row, req.auth!.userId, req.auth!.role))) {
-    return res.status(403).json({ message: "Insufficient permissions" });
+    return res
+      .status(403)
+      .json({ message: productAccessDeniedMessage(req.auth!.role) });
   }
 
   return res.json({ product: await toPublicProductDetail(row) });
@@ -630,7 +643,9 @@ dashboardProductsRouter.patch("/:id", async (req, res) => {
   if (
     !(await assertCanAccessProduct(existing, req.auth!.userId, req.auth!.role))
   ) {
-    return res.status(403).json({ message: "Insufficient permissions" });
+    return res
+      .status(403)
+      .json({ message: productAccessDeniedMessage(req.auth!.role) });
   }
 
   const data = parsed.data;
@@ -673,14 +688,18 @@ dashboardProductsRouter.patch("/:id", async (req, res) => {
     return res.status(409).json({ message: "Slug already in use" });
   }
 
-  let vendorId: bigint | undefined;
-  if (isElevated(req.auth!.role) && data.vendor_id) {
-    const shop = await prisma.vendor.findFirst({
-      where: { id: BigInt(data.vendor_id), deleted_at: null },
-      select: { id: true },
-    });
-    if (!shop) return res.status(400).json({ message: "Shop not found" });
-    vendorId = shop.id;
+  let vendorId: bigint | null | undefined;
+  if (isElevated(req.auth!.role) && data.vendor_id !== undefined) {
+    if (data.vendor_id === null) {
+      vendorId = null; // Niyenin platform catalog
+    } else {
+      const shop = await prisma.vendor.findFirst({
+        where: { id: BigInt(data.vendor_id), deleted_at: null },
+        select: { id: true },
+      });
+      if (!shop) return res.status(400).json({ message: "Shop not found" });
+      vendorId = shop.id;
+    }
   }
 
   const nextType = (data.type ?? existing.type) as ProductType;
@@ -839,7 +858,9 @@ dashboardProductsRouter.post(
       ))
     ) {
       discardTempUpload(file);
-      return res.status(403).json({ message: "Insufficient permissions" });
+      return res
+        .status(403)
+        .json({ message: productAccessDeniedMessage(req.auth!.role) });
     }
 
     const finalized = await finalizeProductImageUpload(uploadBytes(file), file.mimetype);
@@ -918,7 +939,9 @@ dashboardProductsRouter.post(
       ))
     ) {
       for (const file of files) discardTempUpload(file);
-      return res.status(403).json({ message: "Insufficient permissions" });
+      return res
+        .status(403)
+        .json({ message: productAccessDeniedMessage(req.auth!.role) });
     }
 
     const createdIds: bigint[] = [];
@@ -983,7 +1006,9 @@ dashboardProductsRouter.post("/:id/images/:mediaId/primary", async (req, res) =>
   if (
     !(await assertCanAccessProduct(existing, req.auth!.userId, req.auth!.role))
   ) {
-    return res.status(403).json({ message: "Insufficient permissions" });
+    return res
+      .status(403)
+      .json({ message: productAccessDeniedMessage(req.auth!.role) });
   }
 
   const media = await prisma.media.findFirst({
@@ -1028,7 +1053,9 @@ dashboardProductsRouter.delete("/:id/images/:mediaId", async (req, res) => {
   if (
     !(await assertCanAccessProduct(existing, req.auth!.userId, req.auth!.role))
   ) {
-    return res.status(403).json({ message: "Insufficient permissions" });
+    return res
+      .status(403)
+      .json({ message: productAccessDeniedMessage(req.auth!.role) });
   }
 
   const media = await prisma.media.findFirst({
@@ -1083,7 +1110,9 @@ dashboardProductsRouter.delete("/:id", async (req, res) => {
   if (
     !(await assertCanAccessProduct(existing, req.auth!.userId, req.auth!.role))
   ) {
-    return res.status(403).json({ message: "Insufficient permissions" });
+    return res
+      .status(403)
+      .json({ message: productAccessDeniedMessage(req.auth!.role) });
   }
 
   await prisma.product.update({

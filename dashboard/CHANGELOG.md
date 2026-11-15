@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-15
 
+### Vendor product edit — not your store
+
+- `ProductCreatePage` / `ProductEditPage`: elevated Store select includes **Niyenin (platform)**; default create is platform (not a partner shop). Helper copy notes vendors only edit their own store.
+- `lib/validators/product.ts`: `PRODUCT_PLATFORM_VENDOR_VALUE` + `toProductApiBody` sends `vendor_id: null` for platform.
+- `ProductEditPage`: 403 “not in your store” shows a clear “Not your store” empty state instead of a bare error line.
+- `ProductsPage`: platform rows (no shop) show **Niyenin** in the placement line.
+
 ### Authenticator code auto-submits at 6 digits
 
 - Added `components/auth/TotpCodeInput.tsx` — digits-only, fires `onComplete` when 6 characters are typed/pasted.

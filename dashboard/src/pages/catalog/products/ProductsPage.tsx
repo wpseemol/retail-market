@@ -512,7 +512,8 @@ export function ProductsPage() {
                 const isCompact = viewMode === "grid4";
                 const placement =
                   [
-                    product.vendor?.shop_name,
+                    product.vendor?.shop_name ??
+                      (product.vendor_id ? null : "Niyenin"),
                     product.category?.name,
                     product.brand_name ?? product.brand?.name,
                   ]
