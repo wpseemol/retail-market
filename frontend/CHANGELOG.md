@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Best seller tab + arrow motion
+
+- `BestSellerSection`: tab switches animate via Web Animations API (staggered cards); carousel uses CSS `translate3d` transitions (framer-motion is skipped site-wide); arrow buttons stay visible with hover/press scale and disable at ends.
+
 ### Promo slider product art + ratio presets
 
 - Added `PromoBannerSlider_Product_2.png` (UltraWide) and `Product_3.png` (Yoga); refreshed `PromoBannerSlider_bg.png` (1920×870).

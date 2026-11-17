@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
 
 interface ProductItem {
     id: number;
@@ -14,6 +13,13 @@ interface ProductItem {
     currentPrice: number;
     originalPrice: number;
     isNew?: boolean;
+}
+
+const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+
+function prefersReducedMotion() {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 const tabCategories = [
@@ -299,6 +305,8 @@ export default function BestSellerSection(_props: {
     const [activeTab, setActiveTab] = useState<TabCategory>("Fuel Tank");
     const [rawIndex, setCurrentIndex] = useState(0);
     const [itemsPerView, setItemsPerView] = useState(4);
+    const [tabDir, setTabDir] = useState<1 | -1>(1);
+    const stageRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const updateItemsPerView = () => {
@@ -320,7 +328,49 @@ export default function BestSellerSection(_props: {
     const slidePercent = 100 / itemsPerView;
     const currentIndex = Math.min(rawIndex, maxIndex);
 
+    // Tab change: WAAPI enter (framer-motion is disabled site-wide).
+    useLayoutEffect(() => {
+        const stage = stageRef.current;
+        if (!stage) return;
+        stage.getAnimations().forEach((a) => a.cancel());
+        if (prefersReducedMotion()) return;
+
+        stage.animate(
+            [
+                {
+                    opacity: 0,
+                    transform: `translate3d(${tabDir > 0 ? 28 : -28}px, 10px, 0)`,
+                },
+                { opacity: 1, transform: "translate3d(0, 0, 0)" },
+            ],
+            { duration: 420, easing: EASE, fill: "both" },
+        );
+
+        stage.querySelectorAll<HTMLElement>("[data-bs-card]").forEach((card, i) => {
+            card.getAnimations().forEach((a) => a.cancel());
+            card.animate(
+                [
+                    {
+                        opacity: 0,
+                        transform: `translate3d(0, ${tabDir > 0 ? 16 : -16}px, 0)`,
+                    },
+                    { opacity: 1, transform: "translate3d(0, 0, 0)" },
+                ],
+                {
+                    duration: 400,
+                    delay: 50 + i * 55,
+                    easing: EASE,
+                    fill: "both",
+                },
+            );
+        });
+    }, [activeTab, tabDir]);
+
     const handleTabChange = (tab: TabCategory) => {
+        if (tab === activeTab) return;
+        const from = tabCategories.indexOf(activeTab);
+        const to = tabCategories.indexOf(tab);
+        setTabDir(to >= from ? 1 : -1);
         setActiveTab(tab);
         setCurrentIndex(0);
     };
@@ -333,54 +383,53 @@ export default function BestSellerSection(_props: {
         setCurrentIndex((prev) => Math.min(maxIndex, prev + 1));
     };
 
+    const arrowBtn =
+        "absolute top-1/2 z-30 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-border-default bg-bg-surface text-brand-primary shadow-md transition-all duration-200 cursor-pointer hover:scale-110 hover:bg-brand-primary hover:text-white hover:shadow-lg active:scale-95 disabled:pointer-events-none disabled:opacity-0";
+
     return (
         <section
             aria-label="Best Seller Products"
-            className="w-full py-8 bg-bg-base transition-colors duration-200"
+            className="w-full bg-bg-base py-8 transition-colors duration-200"
         >
             <div className="container mx-auto">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
                     {/* ================= Left: Promo Banner ================= */}
-                    <aside className="lg:col-span-3 w-full relative overflow-hidden rounded-2xl bg-bg-surface border border-border-default flex flex-col justify-between p-6 sm:p-8 min-h-130">
-                        {/* 25% Offer Badge */}
+                    <aside className="relative flex min-h-130 w-full flex-col justify-between overflow-hidden rounded-2xl border border-border-default bg-bg-surface p-6 sm:p-8 lg:col-span-3">
                         <div
-                            className="absolute top-16 right-5 w-16 h-16 rounded-full bg-brand-primary text-white flex flex-col items-center justify-center text-center shadow-lg z-20"
+                            className="absolute top-16 right-5 z-20 flex size-16 flex-col items-center justify-center rounded-full bg-brand-primary text-center text-white shadow-lg"
                             aria-label="25 percent offer"
                         >
-                            <span className="text-base font-black leading-none tracking-tight">
+                            <span className="text-base leading-none font-black tracking-tight">
                                 25%
                             </span>
-                            <span className="text-xs font-semibold leading-tight">
+                            <span className="text-xs leading-tight font-semibold">
                                 offer
                             </span>
                         </div>
 
-                        {/* Banner Top Info */}
                         <div className="relative z-10 flex flex-col items-start pr-14">
-                            <span className="bg-brand-primary text-white text-xs font-bold px-3 py-1 rounded mb-3 inline-block">
+                            <span className="mb-3 inline-block rounded bg-brand-primary px-3 py-1 text-xs font-bold text-white">
                                 New
                             </span>
 
-                            <h2 className="text-text-primary text-lg sm:text-xl font-bold uppercase leading-snug mb-3">
+                            <h2 className="mb-3 text-lg leading-snug font-bold text-text-primary uppercase sm:text-xl">
                                 CLOUD CAM, SECURITY CAMERA
                             </h2>
 
-                            <div className="flex items-baseline text-brand-primary mb-5">
-                                <span className="flex flex-col text-2.5 font-bold uppercase leading-none mr-1.5 self-center">
+                            <div className="mb-5 flex items-baseline text-brand-primary">
+                                <span className="mr-1.5 flex flex-col self-center text-2.5 leading-none font-bold uppercase">
                                     <span>Up</span>
                                     <span>To</span>
                                 </span>
-                                <span className="text-3xl sm:text-4xl font-black leading-none">
+                                <span className="text-3xl leading-none font-black sm:text-4xl">
                                     70
                                 </span>
-                                <span className="text-sm font-bold ml-0.5">
-                                    %
-                                </span>
+                                <span className="ml-0.5 text-sm font-bold">%</span>
                             </div>
 
                             <Link
                                 href="/shop?category=cloud-cam"
-                                className="inline-flex items-center gap-2 border-2 border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white text-xs sm:text-[13px] font-bold uppercase px-5 py-2.5 rounded-full transition-all duration-200 group bg-bg-surface"
+                                className="group inline-flex items-center gap-2 rounded-full border-2 border-brand-primary bg-bg-surface px-5 py-2.5 text-xs font-bold text-brand-primary uppercase transition-all duration-200 hover:bg-brand-primary hover:text-white sm:text-[13px]"
                             >
                                 <span>SHOP NOW</span>
                                 <span
@@ -392,9 +441,8 @@ export default function BestSellerSection(_props: {
                             </Link>
                         </div>
 
-                        {/* Desk Phone Image */}
-                        <div className="relative z-10 mt-8 w-full flex justify-center items-end">
-                            <div className="relative w-57.5 h-52.5 sm:w-62.5 sm:h-57.5">
+                        <div className="relative z-10 mt-8 flex w-full items-end justify-center">
+                            <div className="relative h-52.5 w-57.5 sm:h-57.5 sm:w-62.5">
                                 <Image
                                     src="/images/best_seller_product_banner_poset_image.png"
                                     alt="Cloud Cam Security Deskphone"
@@ -407,20 +455,19 @@ export default function BestSellerSection(_props: {
                         </div>
                     </aside>
 
-                    {/* ================= Right: Product Frame with Matched Height ================= */}
-                    <div className="lg:col-span-9 w-full flex flex-col justify-between">
-                        {/* Tabs Header */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 mb-4 border-b border-border-default/60">
+                    {/* ================= Right: Product Frame ================= */}
+                    <div className="flex w-full flex-col justify-between lg:col-span-9">
+                        <div className="mb-4 flex flex-col justify-between gap-4 border-b border-border-default/60 pb-2 sm:flex-row sm:items-center">
                             <div className="relative">
-                                <h2 className="text-text-primary text-xl sm:text-2xl font-bold tracking-tight pb-2">
+                                <h2 className="pb-2 text-xl font-bold tracking-tight text-text-primary sm:text-2xl">
                                     Best Seller Product
                                 </h2>
-                                <span className="absolute bottom-0 left-0 w-28 h-[2.5px] bg-brand-primary" />
+                                <span className="absolute bottom-0 left-0 h-[2.5px] w-28 bg-brand-primary" />
                             </div>
 
                             <nav
                                 aria-label="Best seller category tabs"
-                                className="flex items-center gap-4 sm:gap-6 overflow-x-auto pb-1 sm:pb-0 scrollbar-none"
+                                className="scrollbar-none flex items-center gap-4 overflow-x-auto pb-1 sm:gap-6 sm:pb-0"
                             >
                                 {tabCategories.map((tab) => {
                                     const isActive = activeTab === tab;
@@ -429,31 +476,34 @@ export default function BestSellerSection(_props: {
                                             key={tab}
                                             type="button"
                                             onClick={() => handleTabChange(tab)}
-                                            className={`text-xs sm:text-sm font-medium transition-colors relative pb-2 whitespace-nowrap cursor-pointer ${
+                                            aria-pressed={isActive}
+                                            className={`relative cursor-pointer pb-2 text-xs font-medium whitespace-nowrap transition-colors sm:text-sm ${
                                                 isActive
-                                                    ? "text-brand-primary font-semibold"
+                                                    ? "font-semibold text-brand-primary"
                                                     : "text-text-secondary hover:text-text-primary"
                                             }`}
                                         >
                                             {tab}
-                                            {isActive && (
-                                                <span className="absolute bottom-0 left-0 w-full h-[2.5px] bg-brand-primary" />
-                                            )}
+                                            <span
+                                                aria-hidden
+                                                className={`absolute bottom-0 left-0 h-[2.5px] bg-brand-primary transition-all duration-300 ${
+                                                    isActive ? "w-full" : "w-0"
+                                                }`}
+                                            />
                                         </button>
                                     );
                                 })}
                             </nav>
                         </div>
 
-                        {/* Height-Adjusted Frame (h-full flex-1) */}
-                        <div className="relative w-full flex-1 rounded-xl border-2 border-brand-primary bg-bg-surface p-4 sm:p-6 shadow-xs flex items-center overflow-hidden sm:overflow-visible">
-                            {/* Conditional Previous Arrow */}
-                            {canSlide && currentIndex > 0 && (
+                        <div className="relative flex w-full flex-1 items-center overflow-hidden rounded-xl border-2 border-brand-primary bg-bg-surface p-4 shadow-xs sm:overflow-visible sm:p-6">
+                            {canSlide ? (
                                 <button
                                     type="button"
                                     onClick={handlePrev}
+                                    disabled={currentIndex <= 0}
                                     aria-label="Previous products"
-                                    className="absolute left-1 sm:-left-4 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-bg-surface border border-border-default text-brand-primary flex items-center justify-center shadow-md hover:bg-brand-primary hover:text-white transition-all cursor-pointer"
+                                    className={`${arrowBtn} left-1 sm:-left-4`}
                                 >
                                     <svg
                                         width="15"
@@ -464,43 +514,41 @@ export default function BestSellerSection(_props: {
                                         strokeWidth="2.5"
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
+                                        aria-hidden
                                     >
                                         <path d="M15 18l-6-6 6-6" />
                                     </svg>
                                 </button>
-                            )}
+                            ) : null}
 
-                            {/* Slider Viewport */}
-                            <div className="w-full h-full overflow-hidden flex items-center">
-                                <motion.div
-                                    className="w-full flex flex-nowrap items-stretch divide-x divide-border-default/60"
-                                    animate={{
-                                        x: `-${currentIndex * slidePercent}%`,
-                                    }}
-                                    transition={{
-                                        type: "spring",
-                                        stiffness: 260,
-                                        damping: 28,
+                            <div
+                                ref={stageRef}
+                                className="flex h-full w-full items-center overflow-hidden"
+                            >
+                                {/* CSS transition — site allows transitions; framer-motion is skipped. */}
+                                <div
+                                    className="flex w-full flex-nowrap items-stretch divide-x divide-border-default/60 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                                    style={{
+                                        transform: `translate3d(-${currentIndex * slidePercent}%, 0, 0)`,
                                     }}
                                 >
                                     {products.map((product) => (
                                         <article
-                                            key={product.id}
-                                            className="w-full sm:w-1/2 md:w-1/3 xl:w-1/4 shrink-0 flex flex-col justify-between items-center text-center px-4 py-4"
+                                            key={`${activeTab}-${product.id}`}
+                                            data-bs-card
+                                            className="flex w-full shrink-0 flex-col items-center justify-between px-4 py-4 text-center sm:w-1/2 md:w-1/3 xl:w-1/4"
                                         >
-                                            {/* NEW Badge */}
-                                            <div className="w-full flex justify-start">
-                                                {product.isNew && (
-                                                    <div className="-skew-x-12 bg-brand-primary text-white text-2.5 font-bold px-2 py-0.5 rounded-xs tracking-wider mb-2">
-                                                        <span className="skew-x-12 inline-block">
+                                            <div className="flex w-full justify-start">
+                                                {product.isNew ? (
+                                                    <div className="-skew-x-12 mb-2 rounded-xs bg-brand-primary px-2 py-0.5 text-2.5 font-bold tracking-wider text-white">
+                                                        <span className="inline-block skew-x-12">
                                                             NEW
                                                         </span>
                                                     </div>
-                                                )}
+                                                ) : null}
                                             </div>
 
-                                            {/* Enlarged Image Area */}
-                                            <div className="relative w-full h-44 sm:h-48 flex items-center justify-center my-2">
+                                            <div className="relative my-2 flex h-44 w-full items-center justify-center sm:h-48">
                                                 <Image
                                                     src={product.image}
                                                     alt={product.alt}
@@ -510,41 +558,34 @@ export default function BestSellerSection(_props: {
                                                 />
                                             </div>
 
-                                            {/* Meta Information */}
-                                            <div className="w-full flex flex-col items-center mt-3">
-                                                <StarRating
-                                                    rating={product.rating}
-                                                />
+                                            <div className="mt-3 flex w-full flex-col items-center">
+                                                <StarRating rating={product.rating} />
 
-                                                <h3 className="text-text-primary text-[13px] sm:text-sm font-medium leading-snug line-clamp-2 h-9.5 my-1 hover:text-brand-primary transition-colors">
-                                                    <Link
-                                                        href="/shop"
-                                                    >
-                                                        {product.name}
-                                                    </Link>
+                                                <h3 className="my-1 h-9.5 text-[13px] leading-snug font-medium text-text-primary transition-colors line-clamp-2 hover:text-brand-primary sm:text-sm">
+                                                    <Link href="/shop">{product.name}</Link>
                                                 </h3>
 
-                                                <div className="flex items-center gap-1.5 text-xs sm:text-[13px] font-semibold mt-2">
+                                                <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold sm:text-[13px]">
                                                     <span className="text-brand-primary">
                                                         ${product.currentPrice}
                                                     </span>
-                                                    <span className="text-text-secondary line-through font-normal">
+                                                    <span className="font-normal text-text-secondary line-through">
                                                         ${product.originalPrice}
                                                     </span>
                                                 </div>
                                             </div>
                                         </article>
                                     ))}
-                                </motion.div>
+                                </div>
                             </div>
 
-                            {/* Conditional Next Arrow */}
-                            {canSlide && currentIndex < maxIndex && (
+                            {canSlide ? (
                                 <button
                                     type="button"
                                     onClick={handleNext}
+                                    disabled={currentIndex >= maxIndex}
                                     aria-label="Next products"
-                                    className="absolute right-1 sm:-right-4 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-bg-surface border border-border-default text-brand-primary flex items-center justify-center shadow-md hover:bg-brand-primary hover:text-white transition-all cursor-pointer"
+                                    className={`${arrowBtn} right-1 sm:-right-4`}
                                 >
                                     <svg
                                         width="15"
@@ -555,11 +596,12 @@ export default function BestSellerSection(_props: {
                                         strokeWidth="2.5"
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
+                                        aria-hidden
                                     >
                                         <path d="M9 18l6-6-6-6" />
                                     </svg>
                                 </button>
-                            )}
+                            ) : null}
                         </div>
                     </div>
                 </div>
