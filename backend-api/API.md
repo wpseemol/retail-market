@@ -440,9 +440,35 @@ Revenue = order `total` excluding `cancelled` and `refunded` orders.
 
 ---
 
+## CSRF — `/api/csrf`
+
+### `GET /api/csrf`
+
+Issues a signed CSRF token for auth forms. Sets cookie `rm_csrf` (`SameSite=Lax`; `Secure` in production) and returns:
+
+```json
+{ "csrfToken": "…", "expires_at": "2026-11-17T14:00:00.000Z" }
+```
+
+Send the same value as header `X-CSRF-Token` and/or body field `csrfToken` on protected POSTs. When the cookie is present it must match (double-submit). Server-to-server callers with app keys may send the signed body token alone (no cookie).
+
+**403:** `CSRF_INVALID` / `CSRF_MISMATCH`.
+
 ## Customer auth — `/api/auth`
 
+### `GET /api/auth/captcha-config`
+
+Public. Whether Google reCAPTCHA is required on login/register (configured by super admin). Never includes the secret.
+
+```json
+{ "enabled": true, "version": "v2", "site_key": "6Lc…" }
+```
+
+When disabled or incomplete: `{ "enabled": false }`.
+
 ### `POST /api/auth/register`
+
+Requires CSRF. Optional `captchaToken` when reCAPTCHA is enabled.
 
 ```json
 {
@@ -450,7 +476,9 @@ Revenue = order `total` excluding `cancelled` and `refunded` orders.
   "last_name": "Lovelace",
   "email": "ada@example.com",
   "password": "secret123",
-  "phone": "+8801..."
+  "phone": "+8801...",
+  "csrfToken": "…",
+  "captchaToken": "…"
 }
 ```
 
@@ -458,10 +486,14 @@ Revenue = order `total` excluding `cancelled` and `refunded` orders.
 
 `phone` is normalized to E.164 (`01712345678` → `+8801712345678`). Register, login and Google login all return `claimed_orders`: the number of guest orders attached to the account because its **verified** email or phone matched (see *Guest orders & verification* below).
 
+**400:** `CAPTCHA_REQUIRED` / `CAPTCHA_FAILED` when reCAPTCHA is enabled and the token is missing or rejected by Google siteverify (v3 also enforces `v3_min_score`).
+
 ### `POST /api/auth/login`
 
+Requires CSRF. Optional `captchaToken` when reCAPTCHA is enabled.
+
 ```json
-{ "email": "ada@example.com", "password": "secret123" }
+{ "email": "ada@example.com", "password": "secret123", "csrfToken": "…", "captchaToken": "…" }
 ```
 
 Staff accounts must use dashboard login (not this endpoint).
@@ -870,8 +902,10 @@ Dashboard review object: public fields plus `status`, `author_name` (full), `aut
 
 ### `POST /api/dashboard/auth/login`
 
+Requires CSRF (`X-CSRF-Token` and/or `csrfToken`). Optional `captchaToken` when reCAPTCHA is enabled in Settings.
+
 ```json
-{ "identifier": "admin@example.com", "password": "..." }
+{ "identifier": "admin@example.com", "password": "...", "csrfToken": "…", "captchaToken": "…" }
 ```
 
 `identifier` may be email, phone, or username. Legacy keys `email` / `phone` / `username` also accepted.
@@ -1069,6 +1103,14 @@ Callback URLs are built from `PUBLIC_API_URL` (not editable in the dashboard). W
 
 | Method | Path | Notes |
 |--------|------|--------|
+| GET | `/recaptcha` | `{ recaptcha: { is_enabled, version, site_key, has_site_key, has_secret_key, v3_min_score, ready, updated_at } }` · secret is **never** returned here |
+| PATCH | `/recaptcha` | Body `{ is_enabled?, version?: "v2"\|"v3", site_key?, secret_key?, v3_min_score? }` · default version **v2** · omit → keep · `null` clears key · enabling without both keys → 400 `RECAPTCHA_INCOMPLETE` · history `recaptcha_updated` |
+| POST | `/recaptcha/reveal` | Body `{ password }` · shared re-auth + rate limit · returns `{ secrets: { site_key, secret_key, version, v3_min_score } }` · history `recaptcha_secrets_revealed` |
+
+**Google reCAPTCHA** (table `recaptcha_settings`, secret AES-256-GCM). When `is_enabled` and both keys are set, storefront login/register and dashboard password login require `captchaToken` (verified via Google `siteverify`). v3 also enforces `v3_min_score` (default `0.5`). Disabled → captcha optional (dev-friendly).
+
+| Method | Path | Notes |
+|--------|------|--------|
 | GET | `/shipping` | `{ shipping: { default_fee, free_threshold, vendor_override } }` |
 | PATCH | `/shipping` | Body `{ default_fee?, free_threshold?, vendor_override? }` · `default_fee` 0–1,000,000 · `free_threshold` number or `null` (off) · history action `shipping_updated` |
 
@@ -1082,7 +1124,7 @@ Callback URLs are built from `PUBLIC_API_URL` (not editable in the dashboard). W
 **Analytics IDs:** Google Analytics (`G-…`), GTM (`GTM-…`), Hotjar, Plerdy
 **Pixels:** Google Ads (`AW-…`), TikTok, LinkedIn, Twitter/X, Meta (Facebook)
 
-Dashboard UI: `/settings/:tab` (shadcn Form + Zod), one page per tab — `identity`, `header`, `footer`, `home`, `shop`, `social`, `social-login`, `sms`, `whatsapp`, `email`, `payment`, `shipping`, `analytics`, `pixels`, `history`. `/settings` redirects to `identity`.
+Dashboard UI: `/settings/:tab` (shadcn Form + Zod), one page per tab — `identity`, `header`, `footer`, `home`, `shop`, `social`, `social-login`, `sms`, `whatsapp`, `email`, `payment`, `shipping`, `recaptcha`, `analytics`, `pixels`, `history`. `/settings` redirects to `identity`.
 
 ---
 

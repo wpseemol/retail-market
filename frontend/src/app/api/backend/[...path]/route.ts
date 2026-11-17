@@ -32,10 +32,12 @@ async function proxy(request: NextRequest, context: RouteContext) {
       : await request.arrayBuffer();
 
   const contentType = request.headers.get("content-type") ?? undefined;
+  const csrfToken = request.headers.get("x-csrf-token") ?? undefined;
   // Shopper IP is attached in `backendFetch` via PROXY_IP_SECRET. Do not copy
   // the raw X-Forwarded-For header — the caller can set that themselves.
   const forwardHeaders: Record<string, string> = {
     ...(contentType ? { "Content-Type": contentType } : {}),
+    ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
   };
 
   let bearer = accessToken;
@@ -72,15 +74,22 @@ async function proxy(request: NextRequest, context: RouteContext) {
   const status = upstream.status;
   const noBody = status === 204 || status === 205 || status === 304;
   const payload = noBody ? null : await upstream.arrayBuffer();
-  return new NextResponse(payload, {
-    status,
-    headers: noBody
-      ? {}
-      : {
-          "Content-Type":
-            upstream.headers.get("Content-Type") ?? "application/json",
-        },
-  });
+  const headers = new Headers();
+  if (!noBody) {
+    headers.set(
+      "Content-Type",
+      upstream.headers.get("Content-Type") ?? "application/json",
+    );
+  }
+  // Forward CSRF cookie from the API when issuing tokens.
+  const setCookies =
+    typeof upstream.headers.getSetCookie === "function"
+      ? upstream.headers.getSetCookie()
+      : [];
+  for (const cookie of setCookies) {
+    headers.append("Set-Cookie", cookie);
+  }
+  return new NextResponse(payload, { status, headers });
 }
 
 export const GET = proxy;

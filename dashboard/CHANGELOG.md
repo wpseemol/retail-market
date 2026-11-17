@@ -3,6 +3,14 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-17
+
+### CSRF + Google reCAPTCHA on staff login + settings
+
+- Settings → Integrations → **reCAPTCHA** (`RecaptchaSettingsPage` / `RecaptchaSettingsPanel`): enable, v2/v3 (default v2), site/secret keys (encrypted reveal), v3 min score.
+- `LoginPage`: fetches CSRF + captcha-config; sends `X-CSRF-Token` / `csrfToken` / `captchaToken`; v2 widget or v3 execute on password submit.
+- `lib/csrf.ts`, `lib/recaptcha.ts`, `apiFetch` CSRF header + `credentials: include`; gateway forwards CSRF header/cookie and Set-Cookie.
+
 ## 2026-11-15
 
 ### Store create/edit — search tags + short description

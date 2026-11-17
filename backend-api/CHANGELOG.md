@@ -3,6 +3,15 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-17
+
+### CSRF + Google reCAPTCHA on auth forms
+
+- `lib/csrf.ts` + `middleware/csrf.ts` + `routes/csrf.ts`: signed CSRF tokens (`GET /api/csrf`, cookie `rm_csrf`); `requireCsrf` on customer login/register and dashboard password login. Works in dev (no Secure cookie) and prod (`Secure`).
+- `prisma` `RecaptchaSettings` + migration `20261117120000_recaptcha_settings`; `lib/recaptcha.ts` siteverify; dashboard CRUD `/api/dashboard/site-settings/recaptcha` (+ reveal); public `GET /api/auth/captcha-config`.
+- Login/register verify `captchaToken` when enabled (v2 checkbox or v3 score; default version **v2**). CORS allows `X-CSRF-Token`.
+- `API.md` updated.
+
 ## 2026-11-15
 
 ### Store search tags + public short description

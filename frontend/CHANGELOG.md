@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-17
 
+### CSRF + Google reCAPTCHA on login/register
+
+- `LoginForm` / `SignUpForm`: shadcn Form + Zod; fetch CSRF + captcha-config; pass `csrfToken` / `captchaToken` through Auth.js; v2 widget or v3 execute.
+- `lib/csrf.ts`, `lib/recaptcha.ts`, `components/auth/RecaptchaField.tsx`; `auth.ts` forwards tokens to the API with `X-CSRF-Token`.
+- BFF `/api/backend` forwards CSRF header and Set-Cookie; `authErrors` maps `CSRF_*` / `CAPTCHA_*`.
+
 ### Shop grid/list view — swap animation
 
 - `types.ts`: from `md` up, grid4 / grid3 / grid2 map to **4 / 3 / 2** columns.
