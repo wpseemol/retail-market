@@ -40,16 +40,26 @@ pnpm dev:backend
 | Dashboard | http://localhost:4173 |
 | API | http://localhost:8001 |
 
-### Local database only (MySQL + phpMyAdmin)
+### Local Docker deps (MySQL + Mailpit + SMS catcher)
 
-For day-to-day work on WSL Ubuntu (apps via `pnpm dev`), start just the database:
+For day-to-day work on WSL Ubuntu (apps via `pnpm dev`), start MySQL and the local mail / phone OTP inboxes:
 
 ```bash
 cp .env.example .env   # once
 pnpm docker:db
+# same stack: pnpm docker:dev
 ```
 
-Uses `docker-compose.db.yml` and the same volume name as the full local stack (`retail_market_mysql_data`). MySQL: `localhost:3306`, phpMyAdmin: http://localhost:8183. Point `backend-api` `DATABASE_URL` at `127.0.0.1:3306`.
+Uses `docker-compose.db.yml` and the same MySQL volume name as the full local stack (`retail_market_mysql_data`). Point `backend-api` `DATABASE_URL` at `127.0.0.1:3306`, and use the SMTP / SMS values from `backend-api/.env.example` (Mailpit + SMS catcher).
+
+| Service | URL / port |
+| --- | --- |
+| MySQL | `localhost:3306` |
+| phpMyAdmin | http://localhost:8183 |
+| Mailpit (email OTP inbox) | http://localhost:8025 · SMTP `localhost:1025` |
+| SMS catcher (phone OTP inbox) | http://localhost:8026 |
+
+WhatsApp OTP stays console-log in development unless you configure a real gateway.
 
 Build:
 

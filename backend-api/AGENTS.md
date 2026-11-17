@@ -101,3 +101,5 @@ See `../.cursor/rules/`:
 
 `backend-api/Dockerfile`; the compose service is still named `backend` because the
 frontend uses `INTERNAL_API_URL=http://backend:8001`.
+
+**Local deps** (`pnpm docker:db` / `pnpm docker:dev` → `docker-compose.db.yml`): MySQL, phpMyAdmin, **Mailpit** (SMTP `127.0.0.1:1025`, UI `:8025`), and an **SMS catcher** (BulkSMSBD-shaped `SMS_API_URL=http://127.0.0.1:8026/api/smsapi`, inbox `:8026`). Dev `.env` should point `SMTP_*` / `SMS_*` there so email and phone OTPs show in the UIs instead of only the API console. WhatsApp stays console unless a real gateway is configured.

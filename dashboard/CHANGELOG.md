@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-17
 
+### Local Docker mail + SMS catcher (workspace)
+
+- Root `docker-compose.db.yml` / `pnpm docker:db` (+ `docker:dev`): Mailpit + SMS catcher for dashboard email/SMS test sends while apps run via `pnpm dev`. See root README.
+
 ### CSRF + Google reCAPTCHA on staff login + settings
 
 - Settings → Integrations → **reCAPTCHA** (`RecaptchaSettingsPage` / `RecaptchaSettingsPanel`): enable, v2/v3 (default v2), site/secret keys (encrypted reveal), v3 min score.

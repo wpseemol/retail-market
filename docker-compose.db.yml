@@ -1,11 +1,14 @@
-# MySQL + phpMyAdmin only (apps run on the host / WSL).
-# Same volume name as docker-compose.yml so existing local data is reused.
+# Local Docker deps for day-to-day `pnpm dev` (apps run on the host / WSL):
+#   MySQL + phpMyAdmin + Mailpit (dev mail) + SMS catcher (phone OTP inbox)
+# Same MySQL volume name as docker-compose.yml so existing local data is reused.
 #
 # From WSL Ubuntu (current):
 #   docker compose -f docker-compose.db.yml --env-file .env up -d
+#   # or: pnpm docker:db   /   pnpm docker:dev
 #
 # Later from Windows Docker: same command; volume name stays retail_market_mysql_data.
 # Point backend DATABASE_URL at 127.0.0.1:3306 (see backend-api/.env.example).
+# Point SMTP_* at Mailpit and SMS_* at the SMS catcher (defaults in .env.example).
 
 services:
   mysql:
@@ -43,6 +46,38 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    networks:
+      - retail_market_network
+
+  # Catches all SMTP from the API (verification codes, dashboard test mail).
+  # Web UI: http://localhost:8025  · SMTP: localhost:1025 (no auth)
+  mailpit:
+    image: axllent/mailpit:v1.27
+    container_name: retail_market_mailpit
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    networks:
+      - retail_market_network
+
+  # Catches phone OTP SMS (BulkSMSBD-shaped GET /api/smsapi).
+  # Inbox UI: http://localhost:8026
+  sms-catcher:
+    build:
+      context: ./dev/sms-catcher
+      dockerfile: Dockerfile
+    image: retail_market_sms_catcher
+    container_name: retail_market_sms_catcher
+    restart: unless-stopped
+    ports:
+      - "${SMS_CATCHER_PORT:-8026}:8026"
+    environment:
+      PORT: 8026
     networks:
       - retail_market_network
 

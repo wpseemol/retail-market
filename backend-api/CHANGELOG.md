@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-17
 
+### Docker Mailpit + SMS catcher for local OTP testing
+
+- Root `docker-compose.db.yml`: Mailpit (SMTP 1025 / UI 8025) and `dev/sms-catcher` (BulkSMSBD-shaped inbox on 8026) alongside MySQL/phpMyAdmin; `pnpm docker:db` / `pnpm docker:dev` build and start them.
+- `.env.example` + `backend-api/.env.example`: local SMTP → Mailpit, SMS → catcher; README / `AGENTS.md` document the inboxes.
+
 ### CSRF + Google reCAPTCHA on auth forms
 
 - `lib/csrf.ts` + `middleware/csrf.ts` + `routes/csrf.ts`: signed CSRF tokens (`GET /api/csrf`, cookie `rm_csrf`); `requireCsrf` on customer login/register and dashboard password login. Works in dev (no Secure cookie) and prod (`Secure`).
