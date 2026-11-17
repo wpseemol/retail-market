@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Deals of the Day editor + ratios
+
+- `DealsOfDayEditor`: edit left promo, countdown, autoplay, and center/right slide arrays with confirm-on-remove; image uploads via `HomeImageField`.
+- Presets: center main/thumb **4:3**, right main/thumb **10:9**, left product transparent **13:12** — wrong ratio shows field error before upload.
+
 ### Promo slider upload ratio
 
 - `homePromoSlide` preset is **1000×750 (4:3)**; `homePromoBg` is **1920×870 (~11:5)** so dashboard uploads match the storefront strip (was wrongly 760×540 / 1920×500).

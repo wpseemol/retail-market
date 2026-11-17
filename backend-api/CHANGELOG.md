@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Deals of the Day CMS slides + image ratios
+
+- `deals_of_day` content: left promo + `autoplay_ms` + `deal_ends_at` + `center_slides[]` / `right_slides[]` (Zod); `repairLegacyDealsOfDayContent` upgrades old sort/limit-only rows and legacy/non-`-v2` art paths.
+- Defaults use HQ transparent `/images/deals/*-v2.webp` cutouts.
+- Image presets: `homeDealsCenterMain/Thumb` (4:3), `homeDealsRightMain/Thumb` (10:9); nested `homeBlockImagePreset` path matching; API.md updated.
+
 ### Promo slider art + image presets
 
 - `homePromoSlide` → 1000×750; `homePromoBg` → 1920×870 (synced with dashboard).

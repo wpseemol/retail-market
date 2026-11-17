@@ -1185,13 +1185,80 @@ function LatestProductsEditor(props: Props) {
   );
 }
 
+const EMPTY_DEALS_CENTER: DealsOfDayFormValues["center_slides"][number] = {
+  brand: "Brand",
+  title: "New deal product",
+  subtitle: "Short product line",
+  price: 0,
+  original_price: 0,
+  discount_percent: 0,
+  rating: 4,
+  main_image: "/images/deals/center-main-1-v2.webp",
+  thumb_image: "/images/deals/center-thumb-1-v2.webp",
+  alt: "Deal product",
+  href: "/shop",
+};
+
+const EMPTY_DEALS_RIGHT: DealsOfDayFormValues["right_slides"][number] = {
+  name: "New flash deal product",
+  price: 0,
+  original_price: 0,
+  discount_percent: 0,
+  rating: 4,
+  available: 100,
+  sold_out: 0,
+  main_image: "/images/deals/right-main-1-v2.webp",
+  thumb_image: "/images/deals/right-thumb-1-v2.webp",
+  alt: "Flash deal product",
+  href: "/shop",
+};
+
 function DealsOfDayEditor(props: Props) {
+  const confirm = useConfirm();
   const form = useForm<DealsOfDayFormValues>({
     resolver: zodResolver(dealsOfDayFormSchema),
+    defaultValues: {
+      title: "Deals of the Day",
+      left_badge: "",
+      left_headline: "",
+      left_cta_label: "SHOP NOW",
+      left_cta_href: "/shop",
+      left_image: "",
+      left_bg: "",
+      autoplay_ms: 4500,
+      deal_ends_at: "2026-12-31T23:59:59.000Z",
+      center_slides: [],
+      right_slides: [],
+    },
+  });
+  const centerArray = useFieldArray({
+    control: form.control,
+    name: "center_slides",
+  });
+  const rightArray = useFieldArray({
+    control: form.control,
+    name: "right_slides",
   });
   const resetForm = useCallback(
-    (c: Record<string, unknown>) =>
-      form.reset(c as unknown as DealsOfDayFormValues),
+    (c: Record<string, unknown>) => {
+      form.reset({
+        title: String(c.title ?? "Deals of the Day"),
+        left_badge: String(c.left_badge ?? ""),
+        left_headline: String(c.left_headline ?? ""),
+        left_cta_label: String(c.left_cta_label ?? "SHOP NOW"),
+        left_cta_href: String(c.left_cta_href ?? "/shop"),
+        left_image: String(c.left_image ?? ""),
+        left_bg: String(c.left_bg ?? ""),
+        autoplay_ms: Number(c.autoplay_ms ?? 4500),
+        deal_ends_at: String(c.deal_ends_at ?? "2026-12-31T23:59:59.000Z"),
+        center_slides: Array.isArray(c.center_slides)
+          ? (c.center_slides as DealsOfDayFormValues["center_slides"])
+          : [],
+        right_slides: Array.isArray(c.right_slides)
+          ? (c.right_slides as DealsOfDayFormValues["right_slides"])
+          : [],
+      });
+    },
     [form],
   );
   const { loading, persist, reset } = useBlockFormLifecycle(
@@ -1202,40 +1269,470 @@ function DealsOfDayEditor(props: Props) {
     resetForm,
   );
   const meta = HOME_COMPONENT_META.find((m) => m.key === "deals_of_day")!;
+
+  async function onRemoveCenter(index: number) {
+    if (centerArray.fields.length <= 1) {
+      props.onError("Keep at least one center slide");
+      return;
+    }
+    const title =
+      form.getValues(`center_slides.${index}.title`) || `Center ${index + 1}`;
+    const ok = await confirm({
+      title: `Remove “${title}”?`,
+      description:
+        "This center slide is removed from the form. Save to publish. This cannot be undone after save.",
+      confirmLabel: "Remove slide",
+    });
+    if (!ok) return;
+    centerArray.remove(index);
+  }
+
+  async function onRemoveRight(index: number) {
+    if (rightArray.fields.length <= 1) {
+      props.onError("Keep at least one right slide");
+      return;
+    }
+    const name =
+      form.getValues(`right_slides.${index}.name`) || `Right ${index + 1}`;
+    const ok = await confirm({
+      title: `Remove “${name}”?`,
+      description:
+        "This right slide is removed from the form. Save to publish. This cannot be undone after save.",
+      confirmLabel: "Remove slide",
+    });
+    if (!ok) return;
+    rightArray.remove(index);
+  }
+
   if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
   return (
-    <SimpleChromeForm
-      meta={meta}
-      form={form}
-      token={props.token}
-      blockKey="deals_of_day"
-      onError={props.onError}
-      onSuccess={props.onSuccess}
-      onSubmit={(v) => void persist(v)}
-      onReset={() => void reset()}
-      fields={[
-        { name: "title", label: "Section title", hint: "Heading with the green underline" },
-        { name: "left_badge", label: "Left badge", hint: "Pill on the left promo" },
-        { name: "left_headline", label: "Left headline", hint: "Promo headline" },
-        { name: "left_cta_label", label: "Left CTA", hint: "Button label" },
-        { name: "left_cta_href", label: "Left link", hint: "CTA destination" },
-        {
-          name: "left_image",
-          label: "Left product image",
-          hint: "Foreground product art",
-          image: true,
-        },
-        {
-          name: "left_bg",
-          label: "Left background image",
-          hint: "Promo panel background",
-          image: true,
-        },
-        { name: "product_sort", label: "Carousel sort", hint: "Center/right product source sort", sort: true },
-        { name: "product_limit", label: "Product limit", hint: "How many deal products", number: true },
-      ]}
-    />
+    <div className="space-y-4">
+      <WhereItShows {...meta} />
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit((v) => void persist(v))}
+          className="space-y-4"
+          noValidate
+        >
+          <EditorCard
+            title="Section + left promo"
+            hint="Left column copy/images. Center/right use their own slides below."
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              {(
+                [
+                  ["title", "Section title"],
+                  ["left_badge", "Left badge"],
+                  ["left_headline", "Left headline"],
+                  ["left_cta_label", "Left CTA label"],
+                  ["left_cta_href", "Left CTA link"],
+                  ["deal_ends_at", "Countdown ends (ISO date)"],
+                ] as const
+              ).map(([name, label]) => (
+                <FormField
+                  key={name}
+                  control={form.control}
+                  name={name}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{label}</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={String(field.value ?? "")} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ))}
+              <FormField
+                control={form.control}
+                name="autoplay_ms"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Autoplay (ms)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={2000}
+                        max={20000}
+                        value={field.value}
+                        onChange={(e) =>
+                          field.onChange(Number(e.target.value) || 4500)
+                        }
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Dwell time between center/right thumb slides (2000–20000).
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="left_image"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <HomeImageField
+                        label="Left product image"
+                        description="Foreground product · JPEG/PNG/WebP/GIF · max 1 MB · always resized on the server"
+                        value={field.value}
+                        blockKey="deals_of_day"
+                        fieldPath="left_image"
+                        token={props.token}
+                        disabled={form.formState.isSubmitting}
+                        onUploaded={(path) =>
+                          form.setValue("left_image", path, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          })
+                        }
+                        onSuccess={props.onSuccess}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="left_bg"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <HomeImageField
+                        label="Left background"
+                        description="Promo panel background · JPEG/PNG/WebP/GIF · max 1 MB · always resized on the server"
+                        value={field.value}
+                        blockKey="deals_of_day"
+                        fieldPath="left_bg"
+                        token={props.token}
+                        disabled={form.formState.isSubmitting}
+                        onUploaded={(path) =>
+                          form.setValue("left_bg", path, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          })
+                        }
+                        onSuccess={props.onSuccess}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </EditorCard>
+
+          {centerArray.fields.map((field, index) => (
+            <EditorCard
+              key={field.id}
+              title={`Center slide ${index + 1}`}
+              hint="Main 4:3 hero + matching thumb. Wrong ratio uploads are rejected."
+            >
+              <div className="mb-3 grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name={`center_slides.${index}.main_image`}
+                  render={({ field: f }) => (
+                    <FormItem>
+                      <FormControl>
+                        <HomeImageField
+                          label="Main image (4:3 · ≥960×720)"
+                          description="Center hero · transparent PNG/WebP preferred · max 1 MB · always resized on the server"
+                          value={f.value}
+                          blockKey="deals_of_day"
+                          fieldPath={`center_slides.${index}.main_image`}
+                          token={props.token}
+                          disabled={form.formState.isSubmitting}
+                          onUploaded={(path) =>
+                            form.setValue(
+                              `center_slides.${index}.main_image`,
+                              path,
+                              { shouldDirty: true, shouldValidate: true },
+                            )
+                          }
+                          onSuccess={props.onSuccess}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name={`center_slides.${index}.thumb_image`}
+                  render={({ field: f }) => (
+                    <FormItem>
+                      <FormControl>
+                        <HomeImageField
+                          label="Thumb image (4:3 · ≥320×240)"
+                          description="Thumbnail strip · max 1 MB · always resized on the server"
+                          value={f.value}
+                          blockKey="deals_of_day"
+                          fieldPath={`center_slides.${index}.thumb_image`}
+                          token={props.token}
+                          disabled={form.formState.isSubmitting}
+                          onUploaded={(path) =>
+                            form.setValue(
+                              `center_slides.${index}.thumb_image`,
+                              path,
+                              { shouldDirty: true, shouldValidate: true },
+                            )
+                          }
+                          onSuccess={props.onSuccess}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {(
+                  [
+                    ["brand", "Brand"],
+                    ["title", "Title"],
+                    ["subtitle", "Subtitle"],
+                    ["alt", "Image alt"],
+                    ["href", "Product link"],
+                  ] as const
+                ).map(([name, label]) => (
+                  <FormField
+                    key={name}
+                    control={form.control}
+                    name={`center_slides.${index}.${name}`}
+                    render={({ field: f }) => (
+                      <FormItem>
+                        <FormLabel>{label}</FormLabel>
+                        <FormControl>
+                          <Input {...f} value={String(f.value ?? "")} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ))}
+                {(
+                  [
+                    ["price", "Price (BDT)"],
+                    ["original_price", "Original price"],
+                    ["discount_percent", "Discount %"],
+                    ["rating", "Rating (0–5)"],
+                  ] as const
+                ).map(([name, label]) => (
+                  <FormField
+                    key={name}
+                    control={form.control}
+                    name={`center_slides.${index}.${name}`}
+                    render={({ field: f }) => (
+                      <FormItem>
+                        <FormLabel>{label}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            value={f.value as number}
+                            onChange={(e) =>
+                              f.onChange(Number(e.target.value) || 0)
+                            }
+                            onBlur={f.onBlur}
+                            name={f.name}
+                            ref={f.ref}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="mt-3 text-destructive"
+                disabled={
+                  form.formState.isSubmitting || centerArray.fields.length <= 1
+                }
+                onClick={() => void onRemoveCenter(index)}
+              >
+                Remove center slide
+              </Button>
+            </EditorCard>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            disabled={
+              form.formState.isSubmitting || centerArray.fields.length >= 8
+            }
+            onClick={() => centerArray.append({ ...EMPTY_DEALS_CENTER })}
+          >
+            Add center slide
+          </Button>
+
+          {rightArray.fields.map((field, index) => (
+            <EditorCard
+              key={field.id}
+              title={`Right slide ${index + 1}`}
+              hint="Main ~10:9 hero + matching thumb. Wrong ratio uploads are rejected."
+            >
+              <div className="mb-3 grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name={`right_slides.${index}.main_image`}
+                  render={({ field: f }) => (
+                    <FormItem>
+                      <FormControl>
+                        <HomeImageField
+                          label="Main image (10:9 · ≥800×720)"
+                          description="Right hero · transparent PNG/WebP preferred · max 1 MB · always resized on the server"
+                          value={f.value}
+                          blockKey="deals_of_day"
+                          fieldPath={`right_slides.${index}.main_image`}
+                          token={props.token}
+                          disabled={form.formState.isSubmitting}
+                          onUploaded={(path) =>
+                            form.setValue(
+                              `right_slides.${index}.main_image`,
+                              path,
+                              { shouldDirty: true, shouldValidate: true },
+                            )
+                          }
+                          onSuccess={props.onSuccess}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name={`right_slides.${index}.thumb_image`}
+                  render={({ field: f }) => (
+                    <FormItem>
+                      <FormControl>
+                        <HomeImageField
+                          label="Thumb image (10:9 · ≥240×216)"
+                          description="Thumbnail strip · max 1 MB · always resized on the server"
+                          value={f.value}
+                          blockKey="deals_of_day"
+                          fieldPath={`right_slides.${index}.thumb_image`}
+                          token={props.token}
+                          disabled={form.formState.isSubmitting}
+                          onUploaded={(path) =>
+                            form.setValue(
+                              `right_slides.${index}.thumb_image`,
+                              path,
+                              { shouldDirty: true, shouldValidate: true },
+                            )
+                          }
+                          onSuccess={props.onSuccess}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {(
+                  [
+                    ["name", "Product name"],
+                    ["alt", "Image alt"],
+                    ["href", "Product link"],
+                  ] as const
+                ).map(([name, label]) => (
+                  <FormField
+                    key={name}
+                    control={form.control}
+                    name={`right_slides.${index}.${name}`}
+                    render={({ field: f }) => (
+                      <FormItem className={name === "name" ? "sm:col-span-2" : undefined}>
+                        <FormLabel>{label}</FormLabel>
+                        <FormControl>
+                          <Input {...f} value={String(f.value ?? "")} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ))}
+                {(
+                  [
+                    ["price", "Price (BDT)"],
+                    ["original_price", "Original price"],
+                    ["discount_percent", "Discount %"],
+                    ["rating", "Rating (0–5)"],
+                    ["available", "Available"],
+                    ["sold_out", "Sold out"],
+                  ] as const
+                ).map(([name, label]) => (
+                  <FormField
+                    key={name}
+                    control={form.control}
+                    name={`right_slides.${index}.${name}`}
+                    render={({ field: f }) => (
+                      <FormItem>
+                        <FormLabel>{label}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            value={f.value as number}
+                            onChange={(e) =>
+                              f.onChange(Number(e.target.value) || 0)
+                            }
+                            onBlur={f.onBlur}
+                            name={f.name}
+                            ref={f.ref}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="mt-3 text-destructive"
+                disabled={
+                  form.formState.isSubmitting || rightArray.fields.length <= 1
+                }
+                onClick={() => void onRemoveRight(index)}
+              >
+                Remove right slide
+              </Button>
+            </EditorCard>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            disabled={
+              form.formState.isSubmitting || rightArray.fields.length >= 8
+            }
+            onClick={() => rightArray.append({ ...EMPTY_DEALS_RIGHT })}
+          >
+            Add right slide
+          </Button>
+
+          <StickyEditorActions
+            dirty={form.formState.isDirty}
+            saving={form.formState.isSubmitting}
+            onReset={() => void reset()}
+          />
+        </form>
+      </Form>
+    </div>
   );
 }
 

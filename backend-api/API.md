@@ -313,6 +313,8 @@ Auth: Bearer **`super_admin`** or **`admin`**. Drives **Content → Home content
 
 **Promo slider:** `bg_image`, `autoplay_ms` (2000–20000), `slides[]` (`price`, `tagline`, `highlight_text`, `sub_highlight`, `category_tag`, `title_line1`, `title_line2`, `cta_label`, `cta_href`, `image`, `image_alt`) · 1–8 slides.
 
+**Deals of the day:** `title`, left promo (`left_badge`, `left_headline`, `left_cta_label`, `left_cta_href`, `left_image`, `left_bg`), `autoplay_ms` (2000–20000), `deal_ends_at` (ISO), `center_slides[]` (brand/title/subtitle/prices/rating/`main_image`/`thumb_image`/alt/href) · 1–8, `right_slides[]` (name/prices/rating/available/sold_out/`main_image`/`thumb_image`/alt/href) · 1–8. Image uploads enforce ratios: left product **13:12 ≥520×480**, left bg **~4:5 ≥720×920**, center main/thumb **4:3 ≥960×720 / ≥320×240**, right main/thumb **10:9 ≥800×720 / ≥240×216** · multipart field **`image`** · max **1 MB** · always resized.
+
 **Welcome modal fields:** `badge_label`, `eyebrow`, `headline_before`, `discount_percent` (0–100), `headline_after`, `body`, `cta_label`, `cta_href`, `dismiss_label`, `countdown_seconds` (5–120), `product_image`, `bg_image`.
 
 Dashboard UI: **Settings → Home → Welcome modal** (shadcn Form + Zod · image preview + file upload).

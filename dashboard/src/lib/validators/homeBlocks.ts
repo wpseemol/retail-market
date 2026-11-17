@@ -147,8 +147,44 @@ export const dealsOfDayFormSchema = z.object({
   left_cta_href: safe(1, 300, "Left link"),
   left_image: path,
   left_bg: path,
-  product_sort: z.enum(["newest", "default", "price-asc", "price-desc", "name-asc"]),
-  product_limit: z.number().int().min(2).max(12),
+  autoplay_ms: z.number().int().min(2000).max(20000),
+  deal_ends_at: safe(1, 40, "Deal ends at"),
+  center_slides: z
+    .array(
+      z.object({
+        brand: safe(1, 60, "Brand"),
+        title: safe(1, 80, "Title"),
+        subtitle: safe(1, 120, "Subtitle"),
+        price: z.number().min(0).max(10_000_000),
+        original_price: z.number().min(0).max(10_000_000),
+        discount_percent: z.number().int().min(0).max(100),
+        rating: z.number().int().min(0).max(5),
+        main_image: path,
+        thumb_image: path,
+        alt: safe(1, 120, "Alt text"),
+        href: safe(1, 300, "Link"),
+      }),
+    )
+    .min(1)
+    .max(8),
+  right_slides: z
+    .array(
+      z.object({
+        name: safe(1, 120, "Name"),
+        price: z.number().min(0).max(10_000_000),
+        original_price: z.number().min(0).max(10_000_000),
+        discount_percent: z.number().int().min(0).max(100),
+        rating: z.number().int().min(0).max(5),
+        available: z.number().int().min(0).max(1_000_000),
+        sold_out: z.number().int().min(0).max(1_000_000),
+        main_image: path,
+        thumb_image: path,
+        alt: safe(1, 120, "Alt text"),
+        href: safe(1, 300, "Link"),
+      }),
+    )
+    .min(1)
+    .max(8),
 });
 
 export const productGroupsFormSchema = z.object({
@@ -214,7 +250,8 @@ export const HOME_COMPONENT_META = [
     label: "Deals of the day",
     type: "Deal layout",
     where: "Three-column deals block",
-    description: "Left promo art/copy and product carousel settings.",
+    description:
+      "Left promo plus center/right product thumb sliders (strict image ratios).",
   },
   {
     key: "laptop_repair",

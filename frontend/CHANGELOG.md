@@ -5,6 +5,16 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Deals of the Day slides + motion
+
+- `DealsOfTheDaySection` / left / center / right consume CMS `deals_of_day` (center + right slide arrays).
+- Center/right thumb carousels use WAAPI product change animation + autoplay loop (pause on hover); dropped framer-motion.
+- HQ transparent `public/images/deals/*-v2.webp` cutouts (white BG removed) at preset sizes; Next Image `quality={90–92}`.
+
+### Deals product art quality + transparency
+
+- Regenerated left/center/right deal product WebPs with flood-fill background removal; thumbs derived from mains.
+
 ### Latest products tab + sidebar motion
 
 - `LatestProductsSection`: WAAPI staggered product enter on tab change; tabs auto-advance every 4.5s (pause on hover/focus); dropped framer-motion.

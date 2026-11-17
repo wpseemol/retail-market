@@ -281,6 +281,34 @@ export const DEFAULT_LATEST_PRODUCTS: LatestProductsContent = {
   sidebar_limit: 6,
 };
 
+export type DealsOfDayCenterSlide = {
+  brand: string;
+  title: string;
+  subtitle: string;
+  price: number;
+  original_price: number;
+  discount_percent: number;
+  rating: number;
+  main_image: string;
+  thumb_image: string;
+  alt: string;
+  href: string;
+};
+
+export type DealsOfDayRightSlide = {
+  name: string;
+  price: number;
+  original_price: number;
+  discount_percent: number;
+  rating: number;
+  available: number;
+  sold_out: number;
+  main_image: string;
+  thumb_image: string;
+  alt: string;
+  href: string;
+};
+
 export type DealsOfDayContent = {
   title: string;
   left_badge: string;
@@ -289,20 +317,130 @@ export type DealsOfDayContent = {
   left_cta_href: string;
   left_image: string;
   left_bg: string;
-  product_sort: string;
-  product_limit: number;
+  autoplay_ms: number;
+  deal_ends_at: string;
+  center_slides: DealsOfDayCenterSlide[];
+  right_slides: DealsOfDayRightSlide[];
 };
 
 export const DEFAULT_DEALS_OF_DAY: DealsOfDayContent = {
   title: "Deals of the Day",
-  left_badge: "Special Offer",
-  left_headline: "Save Big Today",
-  left_cta_label: "Shop Now",
+  left_badge: "GET SAVE 30% OFF",
+  left_headline: "General Motors Buick Sonic Engine",
+  left_cta_label: "SHOP NOW",
   left_cta_href: "/shop",
-  left_image: "/images/Deals of The Day left product image.png",
+  left_image: "/images/deals/left-product-v2.webp",
   left_bg: "/images/Deals of The Day_left_bg.jpg",
-  product_sort: "newest",
-  product_limit: 4,
+  autoplay_ms: 4500,
+  deal_ends_at: "2026-12-31T23:59:59.000Z",
+  center_slides: [
+    {
+      brand: "Microsoft Surface",
+      title: "Surface Pro 9",
+      subtitle: "Laptop Power, Tablet Flexibility",
+      price: 19200,
+      original_price: 24000,
+      discount_percent: 20,
+      rating: 3,
+      main_image: "/images/deals/center-main-1-v2.webp",
+      thumb_image: "/images/deals/center-thumb-1-v2.webp",
+      alt: "Surface Pro 9 Convertible Laptop",
+      href: "/shop",
+    },
+    {
+      brand: "Logitech Vision",
+      title: "StreamCam HD Pro",
+      subtitle: "Ultra 1080p 60FPS Video Streaming",
+      price: 11880,
+      original_price: 15480,
+      discount_percent: 23,
+      rating: 4,
+      main_image: "/images/deals/center-main-2-v2.webp",
+      thumb_image: "/images/deals/center-thumb-2-v2.webp",
+      alt: "Logitech StreamCam 1080p",
+      href: "/shop",
+    },
+    {
+      brand: "Razer Gaming",
+      title: "Basilisk V3 Pro",
+      subtitle: "Customizable Ergonomic Gaming Mouse",
+      price: 8280,
+      original_price: 10680,
+      discount_percent: 22,
+      rating: 5,
+      main_image: "/images/deals/center-main-3-v2.webp",
+      thumb_image: "/images/deals/center-thumb-3-v2.webp",
+      alt: "Razer Basilisk Gaming Mouse",
+      href: "/shop",
+    },
+    {
+      brand: "Lenovo IdeaPad",
+      title: "IdeaPad Flex 5",
+      subtitle: "2-in-1 Touchscreen Laptop Mode",
+      price: 59880,
+      original_price: 71880,
+      discount_percent: 17,
+      rating: 4,
+      main_image: "/images/deals/center-main-4-v2.webp",
+      thumb_image: "/images/deals/center-thumb-4-v2.webp",
+      alt: "Lenovo Flex 2-in-1 Laptop",
+      href: "/shop",
+    },
+  ],
+  right_slides: [
+    {
+      name: "AltoPlus Amplified Corded Phone with Caller ID",
+      price: 17640,
+      original_price: 18000,
+      discount_percent: 20,
+      rating: 3,
+      available: 334,
+      sold_out: 180,
+      main_image: "/images/deals/right-main-1-v2.webp",
+      thumb_image: "/images/deals/right-thumb-1-v2.webp",
+      alt: "AltoPlus Amplified Desk Phone",
+      href: "/shop",
+    },
+    {
+      name: "Corsair RM850x Fully Modular Power Supply",
+      price: 16680,
+      original_price: 20280,
+      discount_percent: 18,
+      rating: 4,
+      available: 120,
+      sold_out: 240,
+      main_image: "/images/deals/right-main-2-v2.webp",
+      thumb_image: "/images/deals/right-thumb-2-v2.webp",
+      alt: "Corsair Desktop Power Supply Unit",
+      href: "/shop",
+    },
+    {
+      name: "Dell Inspiron 15 Core i5 Workstation Laptop",
+      price: 62400,
+      original_price: 78000,
+      discount_percent: 20,
+      rating: 4,
+      available: 95,
+      sold_out: 110,
+      main_image: "/images/deals/right-main-3-v2.webp",
+      thumb_image: "/images/deals/right-thumb-3-v2.webp",
+      alt: "Dell Inspiron Business Laptop",
+      href: "/shop",
+    },
+    {
+      name: "Beats Solo3 Wireless Over-Ear Headphones",
+      price: 19080,
+      original_price: 23880,
+      discount_percent: 20,
+      rating: 5,
+      available: 210,
+      sold_out: 320,
+      main_image: "/images/deals/right-main-4-v2.webp",
+      thumb_image: "/images/deals/right-thumb-4-v2.webp",
+      alt: "Beats Solo3 Red Headphones",
+      href: "/shop",
+    },
+  ],
 };
 
 export type ProductGroupsContent = {

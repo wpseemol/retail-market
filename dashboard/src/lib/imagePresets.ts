@@ -42,8 +42,37 @@ export const IMAGE_PRESETS = {
   homeModalProduct: { width: 500, height: 460, ratio: "25:23", transparent: true },
   homeModalBg: { width: 800, height: 720, ratio: "10:9" },
   homePromoImage: { width: 500, height: 460, ratio: "25:23" },
-  homeDealsLeftImage: { width: 520, height: 480, ratio: "13:12" },
+  homeDealsLeftImage: {
+    width: 520,
+    height: 480,
+    ratio: "13:12",
+    transparent: true,
+  },
   homeDealsLeftBg: { width: 720, height: 920, ratio: "~4:5" },
+  homeDealsCenterMain: {
+    width: 960,
+    height: 720,
+    ratio: "4:3",
+    transparent: true,
+  },
+  homeDealsCenterThumb: {
+    width: 320,
+    height: 240,
+    ratio: "4:3",
+    transparent: true,
+  },
+  homeDealsRightMain: {
+    width: 800,
+    height: 720,
+    ratio: "10:9",
+    transparent: true,
+  },
+  homeDealsRightThumb: {
+    width: 240,
+    height: 216,
+    ratio: "10:9",
+    transparent: true,
+  },
   homeGeneric: { width: 1600, height: 1600, ratio: "any" },
 } as const satisfies Record<string, ImagePreset>;
 
@@ -62,14 +91,23 @@ const HOME_BLOCK_PRESETS: Record<string, ImagePresetKey> = {
   "best_sellers.promo_image": "homePromoImage",
   "deals_of_day.left_image": "homeDealsLeftImage",
   "deals_of_day.left_bg": "homeDealsLeftBg",
+  "deals_of_day.center_slides.main_image": "homeDealsCenterMain",
+  "deals_of_day.center_slides.thumb_image": "homeDealsCenterThumb",
+  "deals_of_day.right_slides.main_image": "homeDealsRightMain",
+  "deals_of_day.right_slides.thumb_image": "homeDealsRightThumb",
 };
 
 export function homeBlockImagePreset(
   blockKey: string,
   fieldPath: string,
 ): ImagePresetKey {
+  const normalized = fieldPath.replace(/\.\d+(?=\.|$)/g, "");
   const leaf = fieldPath.split(".").pop() ?? fieldPath;
-  return HOME_BLOCK_PRESETS[`${blockKey}.${leaf}`] ?? "homeGeneric";
+  return (
+    HOME_BLOCK_PRESETS[`${blockKey}.${normalized}`] ??
+    HOME_BLOCK_PRESETS[`${blockKey}.${leaf}`] ??
+    "homeGeneric"
+  );
 }
 
 /** Presets with no size rule. Avatars are shared with storefront customers. */

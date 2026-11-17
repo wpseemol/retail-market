@@ -120,11 +120,47 @@ export const homeBlockContentSchemas = {
     left_badge: safe(1, 40),
     left_headline: safe(1, 120),
     left_cta_label: safe(1, 40),
-    left_cta_href: safe(1, 300),
+    left_cta_href: storefrontHref,
     left_image: path,
     left_bg: path,
-    product_sort: sortEnum,
-    product_limit: z.coerce.number().int().min(2).max(12),
+    autoplay_ms: z.coerce.number().int().min(2000).max(20000),
+    deal_ends_at: safe(1, 40),
+    center_slides: z
+      .array(
+        z.object({
+          brand: safe(1, 60),
+          title: safe(1, 80),
+          subtitle: safe(1, 120),
+          price: z.coerce.number().min(0).max(10_000_000),
+          original_price: z.coerce.number().min(0).max(10_000_000),
+          discount_percent: percent,
+          rating: z.coerce.number().int().min(0).max(5),
+          main_image: path,
+          thumb_image: path,
+          alt: safe(1, 120),
+          href: storefrontHref,
+        }),
+      )
+      .min(1)
+      .max(8),
+    right_slides: z
+      .array(
+        z.object({
+          name: safe(1, 120),
+          price: z.coerce.number().min(0).max(10_000_000),
+          original_price: z.coerce.number().min(0).max(10_000_000),
+          discount_percent: percent,
+          rating: z.coerce.number().int().min(0).max(5),
+          available: z.coerce.number().int().min(0).max(1_000_000),
+          sold_out: z.coerce.number().int().min(0).max(1_000_000),
+          main_image: path,
+          thumb_image: path,
+          alt: safe(1, 120),
+          href: storefrontHref,
+        }),
+      )
+      .min(1)
+      .max(8),
   }),
   laptop_repair: z.object({
     badge_label: safe(1, 40),

@@ -3,6 +3,7 @@ import { prisma } from "../lib/prisma.js";
 import {
   DEFAULT_HOME_BLOCKS,
   HOME_BLOCK_KEYS,
+  repairLegacyDealsOfDayContent,
   repairLegacyPromoSliderContent,
   type HomeBlockKey,
 } from "../lib/homeBlocks.js";
@@ -32,6 +33,7 @@ export async function ensureHomeBlocks() {
   }
 
   await repairLegacyPromoSliderContent();
+  await repairLegacyDealsOfDayContent();
 
   const rows = await prisma.homeBlockContent.findMany({
     orderBy: { key: "asc" },

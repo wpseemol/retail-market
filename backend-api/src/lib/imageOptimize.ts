@@ -47,6 +47,12 @@ export const IMAGE_PRESETS = {
   homePromoImage: { width: 500, height: 460, format: "webp" },
   homeDealsLeftImage: { width: 520, height: 480, format: "webp" },
   homeDealsLeftBg: { width: 720, height: 920, format: "webp" },
+  /** Center deal hero product (4:3). */
+  homeDealsCenterMain: { width: 960, height: 720, format: "webp" },
+  homeDealsCenterThumb: { width: 320, height: 240, format: "webp" },
+  /** Right flash-deal hero (~10:9). */
+  homeDealsRightMain: { width: 800, height: 720, format: "webp" },
+  homeDealsRightThumb: { width: 240, height: 216, format: "webp" },
   homeGeneric: { width: 1600, height: 1600, format: "webp" },
 } as const satisfies Record<string, { width: number; height: number; format: "webp" | "png" }>;
 
@@ -65,12 +71,22 @@ const HOME_BLOCK_PRESETS: Record<string, ImagePresetKey> = {
   "best_sellers.promo_image": "homePromoImage",
   "deals_of_day.left_image": "homeDealsLeftImage",
   "deals_of_day.left_bg": "homeDealsLeftBg",
+  "deals_of_day.center_slides.main_image": "homeDealsCenterMain",
+  "deals_of_day.center_slides.thumb_image": "homeDealsCenterThumb",
+  "deals_of_day.right_slides.main_image": "homeDealsRightMain",
+  "deals_of_day.right_slides.thumb_image": "homeDealsRightThumb",
 };
 
 /** Preset for a home-block upload, e.g. (`promo_slider`, `slides.2.image`) → `homePromoSlide`. */
 export function homeBlockImagePreset(blockKey: string, fieldPath: string): ImagePresetKey {
+  // Strip numeric indices: center_slides.2.main_image → center_slides.main_image
+  const normalized = fieldPath.replace(/\.\d+(?=\.|$)/g, "");
   const leaf = fieldPath.split(".").pop() ?? fieldPath;
-  return HOME_BLOCK_PRESETS[`${blockKey}.${leaf}`] ?? "homeGeneric";
+  return (
+    HOME_BLOCK_PRESETS[`${blockKey}.${normalized}`] ??
+    HOME_BLOCK_PRESETS[`${blockKey}.${leaf}`] ??
+    "homeGeneric"
+  );
 }
 
 /**
