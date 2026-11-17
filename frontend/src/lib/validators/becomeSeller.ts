@@ -27,7 +27,7 @@ export type BecomeSellerDraftInput = z.infer<typeof becomeSellerDraftSchema>;
 
 export const becomeSellerSubmitSchema = z.object({
   accept_fee_terms: z.literal(true, {
-    errorMap: () => ({ message: "Accept the partner fee and rent terms to continue" }),
+    message: "Accept the partner fee and rent terms to continue",
   }),
 });
 

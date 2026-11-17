@@ -74,7 +74,7 @@ function statusBadge(status: SellerApplicationStatus) {
 }
 
 export function SellerApplicationsPage() {
-  const token = useAuthStore((s) => s.accessToken) ?? "";
+  const token = useAuthStore((s) => s.token) ?? "";
   const confirm = useConfirm();
   const [status, setStatus] = useState("submitted");
   const [q, setQ] = useState("");

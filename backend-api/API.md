@@ -592,6 +592,47 @@ Google sign-in marks the email as verified automatically.
 
 ---
 
+## Become a seller — `/api/seller-applications`
+
+Storefront onboarding (footer **Customer care → Become a seller** → `/become-seller`).
+
+| Method | Path | Auth | Notes |
+|--------|------|------|--------|
+| GET | `/terms` | Public | Partner fee/rent copy + staff authenticity checklist (no secrets) |
+| GET | `/me` | Bearer customer/vendor | Current application + account verification flags |
+| POST | `/` | Bearer customer | Create/update **draft** shop fields. Requires verified email **and** phone. Codes: `EMAIL_NOT_VERIFIED`, `PHONE_NOT_VERIFIED`, `ALREADY_SELLER`, `APPLICATION_PENDING`, `APPLICATION_LOCKED` |
+| POST | `/me/documents` | Bearer customer | Multipart field `document` + `doc_type` (`nid_front`\|`nid_back`\|`birth_certificate`\|`trade_license`\|`other`). JPEG/PNG/WebP/GIF · max **2 MB** · always resized (`sellerKyc`). Replaces same `doc_type` |
+| POST | `/me/submit` | Bearer customer | Body `{ accept_fee_terms: true }`. Needs shop name + identity docs (NID front+back **or** birth certificate) + fee terms. Sets status `submitted`. Optional paid KYC stub runs when Settings → KYC mode is `paid_api` |
+
+**Identity docs:** NID front+back together, or a birth certificate alone. Trade license is optional.
+
+### How staff check whether a document is “real”
+
+The API **does not** cryptographically prove a Bangladesh NID or birth certificate is authentic unless a paid KYC provider is connected. Default mode is **staff review**.
+
+Before **admin / super_admin** approve (`POST /api/dashboard/seller-applications/:id/review`), they must tick the checklist returned as `staff_checklist`:
+
+1. Image is sharp and fully readable (no heavy blur or crop).
+2. Name on the document matches the applicant / shop name.
+3. If NID: number looks like a BD NID (10 or 17 digits) and both sides match.
+4. If birth certificate: official seal/header visible; details consistent.
+5. No obvious photoshop / mismatched fonts / copy-paste artifacts.
+6. Document does not appear expired (when dates are visible).
+
+**Paid KYC (optional):** Settings → Integrations → KYC (`mode: paid_api`, provider e.g. `porichoy`, encrypted API key). When enabled on submit, `verifyIdentityWithProvider` runs (stub until HTTP wiring ships). Failures → `502 KYC_PROVIDER_FAILED`. Provider results are **advisory**; staff still approve or reject.
+
+### Dashboard queue — `/api/dashboard/seller-applications`
+
+Roles: **`super_admin` \| `admin` only**.
+
+| Method | Path | Notes |
+|--------|------|--------|
+| GET | `/` | `?status=&q=&page=&limit=` · `{ applications, pagination, staff_checklist }` |
+| GET | `/:id` | Detail + documents |
+| POST | `/:id/review` | Body `{ action: "approve"\|"reject", rejection_reason?, activate_shop? }` · reject requires reason · approve creates `Vendor` + owner `VendorMember`, promotes `customer` → `vendor`, default fee `commission` 3% (super_admin may change later) · `activate_shop: true` → store `active`, else `pending` |
+
+---
+
 ## Customer addresses — `/api/customer/addresses`
 
 Auth: Bearer **`customer`**.
@@ -1105,6 +1146,9 @@ Callback URLs are built from `PUBLIC_API_URL` (not editable in the dashboard). W
 |--------|------|--------|
 | GET | `/recaptcha` | `{ recaptcha: { is_enabled, version, site_key, has_site_key, has_secret_key, v3_min_score, ready, updated_at } }` · secret is **never** returned here |
 | PATCH | `/recaptcha` | Body `{ is_enabled?, version?: "v2"\|"v3", site_key?, secret_key?, v3_min_score? }` · default version **v2** · omit → keep · `null` clears key · enabling without both keys → 400 `RECAPTCHA_INCOMPLETE` · history `recaptcha_updated` |
+| GET | `/kyc` | `{ kyc: { mode, is_enabled, provider, has_api_key, api_base_url, ready, partner_terms, staff_checklist, updated_at } }` · API key never returned here |
+| PATCH | `/kyc` | Body `{ mode?: "staff"\|"paid_api", is_enabled?, provider?, api_key?, api_base_url?, partner_terms? }` · paid + enabled without provider/key → 400 `KYC_INCOMPLETE` · history `kyc_settings_updated` |
+| POST | `/kyc/reveal` | Body `{ password }` · returns decrypted `api_key` |
 | POST | `/recaptcha/reveal` | Body `{ password }` · shared re-auth + rate limit · returns `{ secrets: { site_key, secret_key, version, v3_min_score } }` · history `recaptcha_secrets_revealed` |
 
 **Google reCAPTCHA** (table `recaptcha_settings`, secret AES-256-GCM). When `is_enabled` and both keys are set, storefront login/register and dashboard password login require `captchaToken` (verified via Google `siteverify`). v3 also enforces `v3_min_score` (default `0.5`). Disabled → captcha optional (dev-friendly).
@@ -1124,7 +1168,7 @@ Callback URLs are built from `PUBLIC_API_URL` (not editable in the dashboard). W
 **Analytics IDs:** Google Analytics (`G-…`), GTM (`GTM-…`), Hotjar, Plerdy
 **Pixels:** Google Ads (`AW-…`), TikTok, LinkedIn, Twitter/X, Meta (Facebook)
 
-Dashboard UI: `/settings/:tab` (shadcn Form + Zod), one page per tab — `identity`, `header`, `footer`, `home`, `shop`, `social`, `social-login`, `sms`, `whatsapp`, `email`, `payment`, `shipping`, `recaptcha`, `analytics`, `pixels`, `history`. `/settings` redirects to `identity`.
+Dashboard UI: `/settings/:tab` (shadcn Form + Zod), one page per tab — `identity`, `header`, `footer`, `home`, `shop`, `social`, `social-login`, `sms`, `whatsapp`, `email`, `payment`, `shipping`, `recaptcha`, `kyc`, `analytics`, `pixels`, `history`. `/settings` redirects to `identity`. Seller applications queue: `/support/seller-applications` (admin + super_admin).
 
 ---
 

@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-17
 
+### Become a seller storefront + footer
+
+- Footer: dropped fallback Quick Links → `/shop`; Customer care includes Become a seller → `/become-seller`.
+- `/become-seller` multi-step flow (account → verify → shop → docs → fee terms) via `BecomeSellerContent` + `lib/validators/becomeSeller.ts`; en/bn copy.
+
 ### Local Docker mail + SMS catcher (workspace)
 
 - Root `docker-compose.db.yml` / `pnpm docker:db` (+ `docker:dev`): Mailpit + SMS catcher for storefront email/phone OTP testing while apps run via `pnpm dev`. See root README.

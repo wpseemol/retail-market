@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-17
 
+### Become a seller + footer cleanup
+
+- `lib/siteChrome.ts`: removed Find-it-fast “Quick Links” → `/shop`; ensure deletes existing rows; Customer care “Become a seller” → `/become-seller`.
+- Prisma `SellerApplication` / `SellerApplicationDocument` / `KycSettings` + `seller_kyc` media; migration `20261117200000_seller_applications_kyc`.
+- Customer `/api/seller-applications` (terms, me, draft, document upload, submit) + dashboard queue `/api/dashboard/seller-applications` (admin/super_admin approve/reject) + Settings `/kyc` (staff vs paid API stub).
+- `API.md` documents staff authenticity checklist and optional paid KYC.
+
 ### Docker Mailpit + SMS catcher for local OTP testing
 
 - Root `docker-compose.db.yml`: Mailpit (SMTP 1025 / UI 8025) and `dev/sms-catcher` (BulkSMSBD-shaped inbox on 8026) alongside MySQL/phpMyAdmin; `pnpm docker:db` / `pnpm docker:dev` build and start them.
