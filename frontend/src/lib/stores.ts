@@ -134,10 +134,14 @@ export async function fetchStores(options?: {
         headers: appKeyHeaders(),
         next: { revalidate: 60, tags: ["stores"] },
       });
-      if (!res.ok) return empty;
+      if (!res.ok) {
+        if (typeof window === "undefined") return empty;
+        throw new Error(`Shops list failed (${res.status})`);
+      }
       return (await res.json()) as StoresListPayload;
-    } catch {
-      return empty;
+    } catch (err) {
+      if (typeof window === "undefined") return empty;
+      throw err;
     }
   });
 }
@@ -172,10 +176,14 @@ export async function fetchStoreBySlug(
         next: { revalidate: 60, tags: ["stores", `store:${slug}`] },
       });
       if (res.status === 404) return null;
-      if (!res.ok) return null;
+      if (!res.ok) {
+        if (typeof window === "undefined") return null;
+        throw new Error(`Shop detail failed (${res.status})`);
+      }
       return (await res.json()) as StorePagePayload;
-    } catch {
-      return null;
+    } catch (err) {
+      if (typeof window === "undefined") return null;
+      throw err;
     }
   });
 }

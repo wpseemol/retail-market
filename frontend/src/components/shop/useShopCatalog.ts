@@ -11,6 +11,7 @@ import {
 import {
     hashQuery,
     queryCacheId,
+    subscribeCatalogCache,
     withCatalogCache,
 } from "@/lib/rxdb/withCache";
 import type { ShopProduct, ShopSortOption } from "./types";
@@ -111,6 +112,26 @@ export function useShopCatalog(args: CatalogArgs) {
         totalPagesRef.current = totalPages;
     }, [totalPages]);
 
+    const listCacheId = useCallback((nextPage: number) => {
+        const current = argsRef.current;
+        const priced =
+            current.priceMin > current.priceBounds.min ||
+            current.priceMax < current.priceBounds.max;
+        return queryCacheId(
+            "products:list",
+            hashQuery({
+                page: nextPage,
+                limit: current.perPage,
+                q: current.search,
+                category: current.category ?? undefined,
+                brands: current.brands?.join(","),
+                min: priced ? current.priceMin : undefined,
+                max: priced ? current.priceMax : undefined,
+                sort: apiSort(current.sort),
+            }),
+        );
+    }, []);
+
     const fetchPage = useCallback(async (nextPage: number) => {
         const current = argsRef.current;
         const priced =
@@ -127,24 +148,12 @@ export function useShopCatalog(args: CatalogArgs) {
                 ? { minPrice: current.priceMin, maxPrice: current.priceMax }
                 : {}),
         };
-        const cacheId = queryCacheId(
-            "products:list",
-            hashQuery({
-                page: query.page,
-                limit: query.limit,
-                q: query.q,
-                category: query.category,
-                brands: query.brands?.join(","),
-                min: query.minPrice,
-                max: query.maxPrice,
-                sort: query.sort,
-            }),
-        );
+        const cacheId = listCacheId(nextPage);
         // RxDB read-through; apiFetch still throws so offline/load errors work.
         return withCatalogCache(cacheId, () =>
             apiFetch<ProductsListPayload>(productListPath(query)),
         );
-    }, []);
+    }, [listCacheId]);
 
     const mapProducts = useCallback((data: ProductsListPayload) => {
         return (data.products ?? []).map((product) =>
@@ -200,6 +209,26 @@ export function useShopCatalog(args: CatalogArgs) {
                 if (filterGen.current === gen) setLoading(false);
             });
     }, [applyPage, fetchPage, key]);
+
+    /** Apply background SWR upserts for the visible page-1 cache key. */
+    useEffect(() => {
+        let cancelled = false;
+        let unsub: (() => void) | undefined;
+        const cacheId = listCacheId(1);
+        void subscribeCatalogCache<ProductsListPayload>(cacheId, (next) => {
+            if (cancelled || !next) return;
+            // Only replace when filters still match this subscription's key.
+            if (keyRef.current !== key) return;
+            applyPage(next, true, 1);
+        }).then((fn) => {
+            if (cancelled) fn();
+            else unsub = fn;
+        });
+        return () => {
+            cancelled = true;
+            unsub?.();
+        };
+    }, [applyPage, key, listCacheId]);
 
     useEffect(() => {
         if (args.mode !== "infinite") return;

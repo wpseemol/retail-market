@@ -5,6 +5,17 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Redis cache write hygiene
+
+- `cacheJsonGet` no longer stores `null`, error-only JSON envelopes, or bodies over ~1.5 MB (avoids poisoning / Redis bloat).
+
+### Cache invalidation audit fixes
+
+- Product create/update/delete/images + bulk import/edit/delete call `revalidateFrontend(["products", …])`.
+- Home CMS block save/reset/image calls `revalidateFrontend(["home"])`.
+- Brand detail + reviews GETs use `cacheJsonGet`; invalidate also accepts `home-blocks` / `home-hero` tags.
+- Review status/reply/delete clears brands/stores/products public caches.
+
 ### Redis public GET cache expansion
 
 - `cacheJsonGet` on products list/detail/price-range, shops list/detail/reviews, home blocks, pages, search suggest; catalog TTL ~90s, search ~20s, pages ~120s.

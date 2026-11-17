@@ -4,6 +4,11 @@ import { Prisma, type ProductReviewStatus } from "@prisma/client";
 import { z } from "zod";
 import { env } from "../lib/env.js";
 import { prisma } from "../lib/prisma.js";
+import {
+  CACHE_TTL_CATALOG_MS,
+  cacheJsonGet,
+} from "../lib/responseCache.js";
+import { revalidateFrontend } from "../lib/revalidate.js";
 import { rateLimit } from "../lib/rateLimit.js";
 import { finalizeReviewImageUpload, REVIEW_IMAGE_MAX_FILES, REVIEW_IMAGES_RELATIVE } from "../lib/reviewImage.js";
 import { sanitizeOriginalName } from "../lib/avatarImage.js";
@@ -80,8 +85,13 @@ async function resolveProduct(req: Request) {
   const key = parsed.data;
   return prisma.product.findFirst({
     where: { AND: [/^\d{1,19}$/.test(key) ? { id: BigInt(key) } : { slug: key }, activeProductScope()] },
-    select: { id: true, name: true },
+    select: { id: true, name: true, slug: true },
   });
+}
+
+/** Clear Redis + Next tags when a review becomes/leaves public. */
+function revalidateProductReviews(slug: string) {
+  revalidateFrontend(["reviews", "products", `product:${slug}`]);
 }
 
 function removeTempUploads(files: Array<Express.Multer.File | undefined>) {
@@ -199,6 +209,7 @@ async function loadOwnReview(req: Request, contact: ReviewContact) {
 
 productReviewsRouter.get(
   "/",
+  cacheJsonGet({ name: "products:reviews", ttlMs: CACHE_TTL_CATALOG_MS }),
   asyncHandler(async (req, res) => {
     const parsed = publicReviewsQuerySchema.safeParse(req.query);
     if (!parsed.success) return validationError(res, parsed.error, "Invalid query");
@@ -329,6 +340,7 @@ productReviewsRouter.post(
 
       const media = await loadReviewMedia([review]);
       const pending = review.status === "pending";
+      if (!pending) revalidateProductReviews(product.slug);
       return res.status(201).json({
         message: pending
           ? "Thanks! Your review will appear once our team has checked it."
@@ -413,6 +425,9 @@ productReviewsRouter.patch(
       await removeReviewMediaFiles(dropped);
 
       const media = await loadReviewMedia([updated]);
+      if (review.status === "approved" || updated.status === "approved") {
+        revalidateProductReviews(product.slug);
+      }
       return res.json({
         message:
           updated.status === "approved"
@@ -440,7 +455,7 @@ productReviewsRouter.delete(
 
     const loaded = await loadOwnReview(req, parsed.data);
     if (!loaded.ok) return res.status(loaded.status).json({ message: loaded.message, code: loaded.code });
-    const { review } = loaded;
+    const { product, review } = loaded;
 
     const imageIds = reviewImageIds(review);
     const media = imageIds.length
@@ -452,6 +467,7 @@ productReviewsRouter.delete(
     ]);
     await removeReviewMediaFiles(media);
 
+    if (review.status === "approved") revalidateProductReviews(product.slug);
     return res.json({ message: "Your review has been deleted.", id: review.id.toString() });
   }),
 );

@@ -23,6 +23,7 @@ import {
   MODERATOR_BULK_FIELDS,
   type BulkProductChanges,
 } from "../validators/productBulk.js";
+import { revalidateFrontend } from "../lib/revalidate.js";
 
 /**
  * Bulk tools for `/api/dashboard/products` (mounted before `/:id`).
@@ -257,6 +258,10 @@ dashboardProductsBulkRouter.post(
       dryRun: options.data.dry_run,
     });
 
+    if (!result.dry_run && (result.summary.create > 0 || result.summary.update > 0)) {
+      revalidateFrontend(["products"]);
+    }
+
     return res.json({
       message: result.dry_run
         ? "Preview ready — nothing was saved"
@@ -406,6 +411,8 @@ dashboardProductsBulkRouter.post(
       }
     });
 
+    if (updated > 0) revalidateFrontend(["products"]);
+
     return res.json({
       message: `${updated} product${updated === 1 ? "" : "s"} updated`,
       updated,
@@ -442,6 +449,8 @@ dashboardProductsBulkRouter.post(
       });
       return result.count;
     });
+
+    if (deleted > 0) revalidateFrontend(["products"]);
 
     return res.json({
       message: `${deleted} product${deleted === 1 ? "" : "s"} deleted`,

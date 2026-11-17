@@ -106,6 +106,7 @@ publicBrandsRouter.get(
  */
 publicBrandsRouter.get(
   "/:slug",
+  cacheJsonGet({ name: "brands:detail", ttlMs: CACHE_TTL_CATALOG_MS }),
   asyncHandler(async (req, res) => {
     const slug = slugParamSchema.safeParse(req.params.slug);
     if (!slug.success) return res.status(400).json({ message: "Invalid brand slug" });
@@ -193,6 +194,7 @@ publicBrandsRouter.get(
  */
 publicBrandsRouter.get(
   "/:slug/reviews",
+  cacheJsonGet({ name: "brands:reviews", ttlMs: CACHE_TTL_CATALOG_MS }),
   asyncHandler(async (req, res) => {
     const slug = slugParamSchema.safeParse(req.params.slug);
     if (!slug.success) return res.status(400).json({ message: "Invalid brand slug" });

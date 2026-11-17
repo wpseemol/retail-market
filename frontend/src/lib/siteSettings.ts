@@ -1,5 +1,6 @@
 import { appKeyHeaders, publicApiUrl } from "@/lib/api";
 import { siteConfig } from "@/config/site";
+import { withCatalogCache } from "@/lib/rxdb/withCache";
 
 export type TrackerConfig = {
   enabled: boolean;
@@ -182,27 +183,29 @@ function normalizeShopSettings(
   };
 }
 
-/** Fetch live site settings from the API (cached ~60s). Falls back to static config. */
+/** Fetch live site settings from the API (API + browser RxDB). Falls back to static config. */
 export async function getSiteSettings(): Promise<PublicSiteSettings> {
-  try {
-    const res = await fetch(publicApiUrl("/api/site-settings"), {
-      headers: appKeyHeaders(),
-      next: { revalidate: 60, tags: ["site-settings"] },
-    });
-    if (!res.ok) return FALLBACK;
-    const data = (await res.json()) as { settings?: PublicSiteSettings };
-    if (!data.settings) return FALLBACK;
-    return {
-      ...data.settings,
-      login_image: data.settings.login_image ?? null,
-      seo: {
-        ...EMPTY_SEO,
-        ...data.settings.seo,
-        pages: { ...EMPTY_SEO.pages, ...data.settings.seo?.pages },
-      },
-      shop: normalizeShopSettings(data.settings.shop),
-    };
-  } catch {
-    return FALLBACK;
-  }
+  return withCatalogCache("site-settings", async () => {
+    try {
+      const res = await fetch(publicApiUrl("/api/site-settings"), {
+        headers: appKeyHeaders(),
+        next: { revalidate: 60, tags: ["site-settings"] },
+      });
+      if (!res.ok) return FALLBACK;
+      const data = (await res.json()) as { settings?: PublicSiteSettings };
+      if (!data.settings) return FALLBACK;
+      return {
+        ...data.settings,
+        login_image: data.settings.login_image ?? null,
+        seo: {
+          ...EMPTY_SEO,
+          ...data.settings.seo,
+          pages: { ...EMPTY_SEO.pages, ...data.settings.seo?.pages },
+        },
+        shop: normalizeShopSettings(data.settings.shop),
+      };
+    } catch {
+      return FALLBACK;
+    }
+  });
 }

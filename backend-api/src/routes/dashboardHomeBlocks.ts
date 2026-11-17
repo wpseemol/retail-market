@@ -19,6 +19,7 @@ import { deleteMediaFile } from "../lib/storage/files.js";
 import { toPublicMedia } from "../lib/user.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
 import { categoryImageUpload, uploadBytes } from "../middleware/upload.js";
+import { revalidateFrontend } from "../lib/revalidate.js";
 import {
   homeBlockContentSchemas,
   homeBlockKeySchema,
@@ -127,6 +128,7 @@ dashboardHomeBlocksRouter.patch("/:key", async (req, res) => {
     data: { content: validated.content as Prisma.InputJsonValue },
   });
 
+  revalidateFrontend(["home"]);
   return res.json({
     message: "Home block saved",
     key,
@@ -145,6 +147,7 @@ dashboardHomeBlocksRouter.post("/:key/reset", async (req, res) => {
     where: { key },
     data: { content: DEFAULT_HOME_BLOCKS[key] },
   });
+  revalidateFrontend(["home"]);
   return res.json({
     message: "Home block reset to defaults",
     key,
@@ -315,6 +318,7 @@ dashboardHomeBlocksRouter.post(
         data: { content: toSave as Prisma.InputJsonValue },
       });
 
+      revalidateFrontend(["home"]);
       return res.json({
         message: "Image updated",
         key,

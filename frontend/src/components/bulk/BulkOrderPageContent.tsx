@@ -19,7 +19,12 @@ import {
 import { format } from "@/i18n/config";
 import { ApiError, apiFetch } from "@/lib/api";
 import { formatPrice } from "@/lib/money";
-import type { ApiProduct } from "@/lib/products";
+import { productListPath, type ApiProduct } from "@/lib/products";
+import {
+    hashQuery,
+    queryCacheId,
+    withCatalogCache,
+} from "@/lib/rxdb/withCache";
 import { saveLastOnlineOrder } from "@/lib/payment";
 import type { CustomerAddress } from "@/lib/validators/customerAddress";
 import {
@@ -202,26 +207,35 @@ function BulkOrderForm({ account }: { account: AccountContact }) {
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [placed, setPlaced] = useState<{ number: string; total: string } | null>(null);
 
-    const catalogUrl = useCallback(
-        (nextPage: number) => {
-            const params = new URLSearchParams({
-                limit: "12",
-                page: String(nextPage),
-                sort: "name-asc",
-            });
-            const q = query.trim();
-            if (q.length >= 2) params.set("q", q);
-            if (category) params.set("category", category);
-            return `/api/products?${params.toString()}`;
-        },
-        [category, query],
-    );
+    const fetchCatalogPage = useCallback(async (nextPage: number) => {
+        const q = query.trim();
+        const listQuery = {
+            page: nextPage,
+            limit: 12,
+            sort: "name-asc" as const,
+            ...(q.length >= 2 ? { q } : {}),
+            ...(category ? { category } : {}),
+        };
+        const cacheId = queryCacheId(
+            "products:list",
+            hashQuery({
+                page: listQuery.page,
+                limit: listQuery.limit,
+                q: listQuery.q,
+                category: listQuery.category,
+                sort: listQuery.sort,
+            }),
+        );
+        return withCatalogCache(cacheId, () =>
+            apiFetch<CatalogResponse>(productListPath(listQuery)),
+        );
+    }, [category, query]);
 
     useEffect(() => {
         let cancelled = false;
         const handle = setTimeout(() => {
             setSearching(true);
-            void apiFetch<CatalogResponse>(catalogUrl(1))
+            void fetchCatalogPage(1)
                 .then((data) => {
                     if (cancelled) return;
                     setCatalog(data.products ?? []);
@@ -243,7 +257,7 @@ function BulkOrderForm({ account }: { account: AccountContact }) {
             cancelled = true;
             clearTimeout(handle);
         };
-    }, [catalogUrl, copy.catalogFailed, query]);
+    }, [copy.catalogFailed, fetchCatalogPage, query]);
 
     useEffect(() => {
         let cancelled = false;
@@ -325,7 +339,7 @@ function BulkOrderForm({ account }: { account: AccountContact }) {
         if (loadingMore || page >= totalPages) return;
         setLoadingMore(true);
         try {
-            const data = await apiFetch<CatalogResponse>(catalogUrl(page + 1));
+            const data = await fetchCatalogPage(page + 1);
             setCatalog((prev) => {
                 const seen = new Set(prev.map((item) => item.id));
                 return [...prev, ...(data.products ?? []).filter((item) => !seen.has(item.id))];

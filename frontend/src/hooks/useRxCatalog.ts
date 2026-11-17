@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import {
-  readThrough,
-  subscribeCacheDoc,
-  type StaleMs,
+  withCatalogCache,
+  subscribeCatalogCache,
   STALE_MS,
+  type StaleMs,
 } from "@/lib/rxdb";
 
 /**
@@ -37,12 +37,12 @@ export function useRxCatalog<T>(
 
     void (async () => {
       try {
-        const initial = await readThrough(id, fetcher, staleMs);
+        const initial = await withCatalogCache(id, fetcher, staleMs);
         if (!cancelled) {
           setData(initial);
           setLoading(false);
         }
-        unsub = await subscribeCacheDoc<T>(id, (next) => {
+        unsub = await subscribeCatalogCache<T>(id, (next) => {
           if (!cancelled && next != null) setData(next);
         });
       } catch (err) {

@@ -22,8 +22,15 @@ import {
   productBulkPermissions,
 } from "./dashboardProductsBulk.js";
 import { actorPrimaryShopId, actorStoreIds } from "../lib/vendorAccess.js";
+import { revalidateFrontend } from "../lib/revalidate.js";
 
 export const dashboardProductsRouter = Router();
+
+function productCacheTags(...slugs: (string | null | undefined)[]) {
+  const tags = ["products"];
+  for (const slug of slugs) if (slug) tags.push(`product:${slug}`);
+  return tags;
+}
 
 dashboardProductsRouter.use(
   requireAuth,
@@ -605,6 +612,7 @@ dashboardProductsRouter.post("/", async (req, res) => {
       include: productWithCatalogInclude,
     });
 
+    revalidateFrontend(productCacheTags(full.slug));
     return res.status(201).json({
       message: "Product created",
       product: await toPublicProductDetail(full),
@@ -800,6 +808,9 @@ dashboardProductsRouter.patch("/:id", async (req, res) => {
       include: productWithCatalogInclude,
     });
 
+    revalidateFrontend(
+      productCacheTags(existing.slug, full.slug),
+    );
     return res.json({
       message: "Product updated",
       product: await toPublicProductDetail(full),
@@ -885,6 +896,7 @@ dashboardProductsRouter.post(
       include: productWithCatalogInclude,
     });
 
+    revalidateFrontend(productCacheTags(full.slug));
     return res.json({
       message: "Product image updated",
       product: await toPublicProductDetail(full),
@@ -976,6 +988,7 @@ dashboardProductsRouter.post(
       include: productWithCatalogInclude,
     });
 
+    revalidateFrontend(productCacheTags(full.slug));
     return res.status(201).json({
       message: "Product images uploaded",
       product: await toPublicProductDetail(full),
@@ -1024,6 +1037,7 @@ dashboardProductsRouter.post("/:id/images/:mediaId/primary", async (req, res) =>
     include: productWithCatalogInclude,
   });
 
+  revalidateFrontend(productCacheTags(full.slug));
   return res.json({
     message: "Primary image updated",
     product: await toPublicProductDetail(full),
@@ -1085,6 +1099,7 @@ dashboardProductsRouter.delete("/:id/images/:mediaId", async (req, res) => {
     include: productWithCatalogInclude,
   });
 
+  revalidateFrontend(productCacheTags(full.slug));
   return res.json({
     message: "Product image deleted",
     product: await toPublicProductDetail(full),
@@ -1117,5 +1132,6 @@ dashboardProductsRouter.delete("/:id", async (req, res) => {
     data: { deleted_at: new Date(), is_active: false },
   });
 
+  revalidateFrontend(productCacheTags(existing.slug));
   return res.json({ message: "Product deleted" });
 });

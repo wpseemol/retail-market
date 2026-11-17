@@ -1,3 +1,10 @@
+import { fetchProducts } from "@/lib/products";
+import {
+  hashQuery,
+  queryCacheId,
+  STALE_MS,
+  withCatalogCache,
+} from "@/lib/rxdb/withCache";
 import {
   readSealedJson,
   removeSealed,
@@ -206,36 +213,30 @@ function keywordsFromProducts(
 
 /** Popular keywords, product photos, and a cover image per category for the empty search panel. */
 export async function fetchBrowseShelf(
-  signal?: AbortSignal,
+  _signal?: AbortSignal,
 ): Promise<BrowseShelf> {
-  const res = await fetch("/api/backend/products?limit=48&sort=newest", {
-    signal,
-    headers: { Accept: "application/json" },
-  });
   const empty: BrowseShelf = {
     products: [],
     keywords: [],
     keywordsBySlug: {},
     covers: {},
   };
-  if (!res.ok) return empty;
-  const data = (await res.json()) as {
-    products?: {
-      id: string;
-      name: string;
-      slug: string;
-      price: number;
-      thumbnail?: { path?: string | null } | null;
-      category?: { name?: string | null; slug?: string | null } | null;
-      brand_name?: string | null;
-      vendor?: { shop_name?: string | null } | null;
-    }[];
-  };
+  // Shares RxDB + Redis product list cache (newest page).
+  const data = await fetchProducts({ limit: 48, sort: "newest" });
+  if (!data.products.length) return empty;
+
   const products: BrowseShelfProduct[] = [];
   const covers: Record<string, string> = {};
-  const keywordRows: { name: string; brand?: string | null; category?: string | null }[] = [];
-  const bySlug = new Map<string, { name: string; brand?: string | null; category?: string | null }[]>();
-  for (const product of data.products ?? []) {
+  const keywordRows: {
+    name: string;
+    brand?: string | null;
+    category?: string | null;
+  }[] = [];
+  const bySlug = new Map<
+    string,
+    { name: string; brand?: string | null; category?: string | null }[]
+  >();
+  for (const product of data.products) {
     const slug = product.category?.slug ?? null;
     const thumb = product.thumbnail?.path ?? null;
     products.push({
@@ -275,38 +276,17 @@ export async function fetchBrowseShelf(
 
 /** One product photo per category, used when the category itself has no image. */
 export async function fetchCategoryCovers(
-  signal?: AbortSignal,
+  _signal?: AbortSignal,
 ): Promise<Record<string, string>> {
-  const res = await fetch("/api/backend/products?limit=48&sort=newest", {
-    signal,
-    headers: { Accept: "application/json" },
-  });
-  if (!res.ok) return {};
-  const data = (await res.json()) as {
-    products?: {
-      category?: { slug?: string | null } | null;
-      thumbnail?: { path?: string | null } | null;
-    }[];
-  };
-  const covers: Record<string, string> = {};
-  for (const product of data.products ?? []) {
-    const slug = product.category?.slug;
-    const path = product.thumbnail?.path;
-    if (slug && path && !covers[slug]) covers[slug] = path;
-  }
-  return covers;
+  const shelf = await fetchBrowseShelf();
+  return shelf.covers;
 }
 
 /** Featured/newest products for the empty search window. */
 export async function fetchSuggestedProducts(
-  signal?: AbortSignal,
+  _signal?: AbortSignal,
 ): Promise<SearchSuggestProduct[]> {
-  const res = await fetch("/api/backend/products?limit=8&sort=newest", {
-    signal,
-    headers: { Accept: "application/json" },
-  });
-  if (!res.ok) return [];
-  const data = (await res.json()) as { products?: CatalogProduct[] };
+  const data = await fetchProducts({ limit: 8, sort: "newest" });
   return (data.products ?? []).map((product) => ({
     id: product.id,
     name: product.name,
@@ -322,13 +302,25 @@ export async function fetchSearchSuggestions(
   q: string,
   signal?: AbortSignal,
 ): Promise<SearchSuggestPayload> {
-  const res = await fetch(
-    `/api/backend/search/suggest?q=${encodeURIComponent(q)}&limit=8`,
-    { signal, headers: { Accept: "application/json" } },
+  const cacheId = queryCacheId(
+    "search:suggest",
+    hashQuery({ q: q.trim().toLowerCase(), limit: 8 }),
   );
-  if (!res.ok) {
-    const data = (await res.json().catch(() => ({}))) as { message?: string };
-    throw new Error(data.message ?? "Search failed");
-  }
-  return (await res.json()) as SearchSuggestPayload;
+  return withCatalogCache(
+    cacheId,
+    async () => {
+      const res = await fetch(
+        `/api/backend/search/suggest?q=${encodeURIComponent(q)}&limit=8`,
+        { signal, headers: { Accept: "application/json" } },
+      );
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as {
+          message?: string;
+        };
+        throw new Error(data.message ?? "Search failed");
+      }
+      return (await res.json()) as SearchSuggestPayload;
+    },
+    STALE_MS.search,
+  );
 }

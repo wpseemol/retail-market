@@ -9,6 +9,33 @@ export const CACHE_TTL_SEARCH_MS = 20_000;
 export const CACHE_TTL_PAGES_MS = 120_000;
 
 const DEFAULT_TTL_MS = CACHE_TTL_CATALOG_MS;
+/** Skip Redis writes that would bloat memory or poison readers. */
+const MAX_CACHE_BODY_BYTES = 1_500_000;
+
+function isCacheableJsonBody(body: unknown): boolean {
+  if (body == null) return false;
+  if (typeof body === "object" && !Array.isArray(body)) {
+    const obj = body as Record<string, unknown>;
+    if (typeof obj.error === "string") {
+      const hasPayload =
+        "products" in obj ||
+        "categories" in obj ||
+        "brands" in obj ||
+        "shops" in obj ||
+        "blocks" in obj ||
+        "settings" in obj ||
+        "hero" in obj ||
+        "page" in obj ||
+        "id" in obj;
+      if (!hasPayload) return false;
+    }
+  }
+  try {
+    return JSON.stringify(body).length <= MAX_CACHE_BODY_BYTES;
+  } catch {
+    return false;
+  }
+}
 
 function stableQuery(req: Request): string {
   const entries = Object.entries(req.query)
@@ -54,7 +81,11 @@ export function cacheJsonGet(options: { name: string; ttlMs?: number }) {
 
       const originalJson = res.json.bind(res);
       res.json = ((body: unknown) => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
+        if (
+          res.statusCode >= 200 &&
+          res.statusCode < 300 &&
+          isCacheableJsonBody(body)
+        ) {
           try {
             void getKvStore().set(key, JSON.stringify(body), ttlMs);
           } catch {
@@ -75,15 +106,14 @@ export function invalidatePublicCache(tags: string[]) {
   const prefixes = new Set<string>();
   for (const tag of tags) {
     if (!tag) continue;
-    if (tag === "site-settings" || tag.startsWith("page:")) {
+    if (tag === "site-settings") {
       prefixes.add("cache:site-settings:");
       prefixes.add("cache:home:");
-      prefixes.add("cache:pages:");
     }
     if (tag === "pages" || tag.startsWith("page:")) {
       prefixes.add("cache:pages:");
     }
-    if (tag === "home") {
+    if (tag === "home" || tag === "home-blocks" || tag === "home-hero") {
       prefixes.add("cache:home:");
     }
     if (tag === "brands" || tag.startsWith("brand:")) {
@@ -95,9 +125,17 @@ export function invalidatePublicCache(tags: string[]) {
     if (tag === "products" || tag.startsWith("product:")) {
       prefixes.add("cache:products:");
       prefixes.add("cache:search:");
+      // Shop/brand detail payloads embed product lists + review_summary.
+      prefixes.add("cache:shops:");
+      prefixes.add("cache:brands:");
     }
     if (tag === "stores" || tag.startsWith("store:")) {
       prefixes.add("cache:shops:");
+    }
+    if (tag === "reviews") {
+      prefixes.add("cache:shops:");
+      prefixes.add("cache:brands:");
+      prefixes.add("cache:products:");
     }
   }
   if (prefixes.size === 0) return;

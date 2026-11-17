@@ -84,7 +84,7 @@ Limits are per client IP (or account field where noted). Storage is **in-memory*
 
 | TTL | Routes |
 |-----|--------|
-| **~90 s** (catalog/home) | `GET /api/home/hero`, `/api/home/blocks`, `/api/site-settings`, `/api/categories`, `/api/brands`, `/api/products`, `/api/products/:idOrSlug`, `/api/shops`, `/api/shops/:slug`, `/api/shops/:slug/reviews` |
+| **~90 s** (catalog/home) | `GET /api/home/hero`, `/api/home/blocks`, `/api/site-settings`, `/api/categories`, `/api/brands`, `/api/brands/:slug`, `/api/brands/:slug/reviews`, `/api/products`, `/api/products/:idOrSlug`, `/api/products/:idOrSlug/reviews`, `/api/shops`, `/api/shops/:slug`, `/api/shops/:slug/reviews` |
 | **~20 s** (search) | `GET /api/products/price-range`, `/api/search/suggest` |
 | **~120 s** (pages) | `GET /api/pages/:key` |
 

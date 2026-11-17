@@ -300,7 +300,7 @@ dashboardCategoriesRouter.post(
           .catch(() => undefined);
       }
 
-      revalidateFrontend(["categories"]);
+      revalidateFrontend(["categories", "products"]);
       return res.json({
         message: "Category icon updated",
         category: toPublicCategory(row),
@@ -356,7 +356,7 @@ dashboardCategoriesRouter.delete("/:id/image", async (req, res) => {
   });
   if (!row) return res.status(404).json({ message: "Category not found" });
 
-  revalidateFrontend(["categories"]);
+  revalidateFrontend(["categories", "products"]);
   return res.json({
     message: "Category cover removed",
     category: toPublicCategory(row),
@@ -414,7 +414,7 @@ dashboardCategoriesRouter.post("/", async (req, res) => {
     include: categoryInclude,
   });
 
-  revalidateFrontend(["categories"]);
+  revalidateFrontend(["categories", "products"]);
   return res.status(201).json({
     message: "Category created",
     category: toPublicCategory(row),
@@ -489,7 +489,7 @@ dashboardCategoriesRouter.patch("/:id", async (req, res) => {
     include: categoryInclude,
   });
 
-  revalidateFrontend(["categories"]);
+  revalidateFrontend(["categories", "products"]);
   return res.json({
     message: "Category updated",
     category: toPublicCategory(row),
@@ -519,7 +519,7 @@ dashboardCategoriesRouter.delete("/:id", async (req, res) => {
     include: categoryInclude,
   });
 
-  revalidateFrontend(["categories"]);
+  revalidateFrontend(["categories", "products"]);
   return res.json({
     message: "Category deleted",
     category: toPublicCategory(row),

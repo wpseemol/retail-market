@@ -1,4 +1,5 @@
 import { appKeyHeaders, publicApiUrl } from "@/lib/api";
+import { withCatalogCache } from "@/lib/rxdb/withCache";
 
 export type ContentPageKey = "faq" | "terms" | "privacy";
 
@@ -52,15 +53,22 @@ export type ContentPage<K extends ContentPageKey> = {
 
 /** `null` = unpublished, unknown or API down. Metadata and page call this with the same URL so Next dedupes it. */
 export async function fetchContentPage<K extends ContentPageKey>(key: K): Promise<ContentPage<K> | null> {
-    try {
-        const res = await fetch(publicApiUrl(`/api/pages/${key}`), {
-            headers: appKeyHeaders(),
-            next: { revalidate: 300, tags: ["pages", `page:${key}`] },
-        });
-        if (!res.ok) return null;
-        const data = (await res.json()) as { page: ContentPage<K> };
-        return data.page;
-    } catch {
-        return null;
-    }
+    return withCatalogCache(`pages:${key}`, async () => {
+        try {
+            const res = await fetch(publicApiUrl(`/api/pages/${key}`), {
+                headers: appKeyHeaders(),
+                next: { revalidate: 300, tags: ["pages", `page:${key}`] },
+            });
+            if (res.status === 404) return null;
+            if (!res.ok) {
+                if (typeof window === "undefined") return null;
+                throw new Error(`Content page failed (${res.status})`);
+            }
+            const data = (await res.json()) as { page: ContentPage<K> };
+            return data.page;
+        } catch (err) {
+            if (typeof window === "undefined") return null;
+            throw err;
+        }
+    });
 }

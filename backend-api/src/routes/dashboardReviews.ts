@@ -10,8 +10,14 @@ import {
   type DashboardReviewRow,
 } from "../lib/productReviews.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
+import { revalidateFrontend } from "../lib/revalidate.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { parseBigIntId } from "../utils/ids.js";
+
+/** Public brand/shop/PDP review lists are Redis-cached — clear on moderation. */
+function reviewPublicCacheTags() {
+  return ["reviews", "brands", "stores", "products"] as const;
+}
 import {
   flagReviewSchema,
   listReviewsQuerySchema,
@@ -183,6 +189,7 @@ dashboardReviewsRouter.patch(
         code: "REVIEW_CHANGED",
       });
     }
+    revalidateFrontend([...reviewPublicCacheTags()]);
     return respondWithReview(req, res, review.id, `Review ${next === "approved" ? "approved" : `marked ${next}`}`);
   }),
 );
@@ -223,6 +230,7 @@ dashboardReviewsRouter.patch(
       where: { id: loaded.review.id },
       data: reply ? { vendor_reply: reply, vendor_replied_at: new Date() } : { vendor_reply: null, vendor_replied_at: null },
     });
+    revalidateFrontend([...reviewPublicCacheTags()]);
     return respondWithReview(req, res, loaded.review.id, reply ? "Reply published" : "Reply removed");
   }),
 );
@@ -246,6 +254,7 @@ dashboardReviewsRouter.delete(
     ]);
 
     await removeReviewMediaFiles(media);
+    revalidateFrontend([...reviewPublicCacheTags()]);
     return res.json({ message: "Review permanently deleted", id: review.id.toString() });
   }),
 );

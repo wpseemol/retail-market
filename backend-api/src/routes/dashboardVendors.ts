@@ -427,7 +427,8 @@ function toVendorSafeHistoryActor(
 }
 
 function storeTags(...slugs: string[]) {
-  return ["stores", "brands", ...slugs.map((s) => `store:${s}`)];
+  // products: shop pages + list facets embed store/brand catalog data
+  return ["stores", "brands", "products", ...slugs.map((s) => `store:${s}`)];
 }
 
 const shopListQuerySchema = z.object({

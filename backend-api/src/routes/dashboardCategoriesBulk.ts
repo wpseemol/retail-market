@@ -16,6 +16,7 @@ import { toCsv } from "../lib/productCsv.js";
 import { readMediaFile } from "../lib/storage/files.js";
 import { toPublicMedia } from "../lib/user.js";
 import { isZipBuffer } from "../lib/zipArchive.js";
+import { revalidateFrontend } from "../lib/revalidate.js";
 import { runCategoryImport } from "../services/categoryImport.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {
@@ -221,6 +222,13 @@ dashboardCategoriesBulkRouter.post(
       dryRun: options.data.dry_run,
       userId: req.auth!.userId,
     });
+
+    if (
+      !result.dry_run &&
+      (result.summary.create > 0 || result.summary.update > 0 || result.summary.images > 0)
+    ) {
+      revalidateFrontend(["categories", "products"]);
+    }
 
     return res.json({
       message: result.dry_run

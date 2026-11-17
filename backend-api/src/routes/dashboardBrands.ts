@@ -67,7 +67,8 @@ async function canEditShowcase(
 }
 
 function brandTags(...slugs: (string | null | undefined)[]) {
-  const tags = ["brands"];
+  // products: list facets / search suggest use brand labels
+  const tags = ["brands", "products"];
   for (const slug of slugs) if (slug) tags.push(`brand:${slug}`);
   return tags;
 }

@@ -29,11 +29,15 @@ export async function getCategories(): Promise<PublicCategory[]> {
         headers: appKeyHeaders(),
         next: { revalidate: 60, tags: ["categories"] },
       });
-      if (!res.ok) return [];
+      if (!res.ok) {
+        if (typeof window === "undefined") return [];
+        throw new Error(`Categories failed (${res.status})`);
+      }
       const data = (await res.json()) as { categories?: PublicCategory[] };
       return Array.isArray(data.categories) ? data.categories : [];
-    } catch {
-      return [];
+    } catch (err) {
+      if (typeof window === "undefined") return [];
+      throw err;
     }
   });
 }

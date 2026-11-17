@@ -5,6 +5,21 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Next revalidate tag allowlist
+
+- `app/api/revalidate/route.ts` `TAG_RE` now accepts `products` / `product:*`, `pages` / `page:*`, `categories` / `category:*`, `home` / `home-blocks` / `home-hero` (backend was sending these; Next previously dropped them).
+
+### RxDB / cache hygiene follow-up
+
+- `lib/rxdb/sync.ts`: skip `null` / error envelopes / payloads over 1.5 MB; ignore poisoned local docs; `seedCatalogCache` + `subscribeCatalogCache` via `withCache`.
+- Barrel (`lib/rxdb/index.ts`) only exports safe helpers (no Dexie on SSR import path).
+- Soft-empty on network failure is SSR-only for products/brands/shops/categories/pages/home; browser throws so IndexedDB stays clean.
+- Shop catalog subscribes to page-1 cache for background SWR; `usePriceRange` uses `useRxCatalog`; bulk-order catalog uses `withCatalogCache`.
+
+### RxDB coverage audit
+
+- Wired `withCatalogCache` for site settings, home hero, content pages, search suggest + browse shelf/covers/suggested products (reuse product list cache).
+
 ### Storefront RxDB local-first catalog cache
 
 - `lib/rxdb/`: Dexie IndexedDB DB + `readThrough` / `withCatalogCache` (stale-while-revalidate); SSR skips RxDB.

@@ -31,6 +31,20 @@ services:
     networks:
       - retail_market_network
 
+  redis:
+    image: redis:7-alpine
+    container_name: retail_market_prod_redis
+    restart: unless-stopped
+    logging: *default-logging
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - retail_market_network
+
   backend:
     build:
       context: .
@@ -53,6 +67,8 @@ services:
       PUBLIC_API_URL: ${API_URL:?Set API_URL}
       FRONTEND_URL: ${STOREFRONT_URL:?Set STOREFRONT_URL}
       REVALIDATE_SECRET: ${REVALIDATE_SECRET:?Set REVALIDATE_SECRET}
+      # Override with Upstash / external Redis if preferred; empty falls back to in-memory.
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       APP_NAME: ${APP_NAME:-Niyenin}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
@@ -69,6 +85,8 @@ services:
       - retail_market_prod_uploads:/app/uploads
     depends_on:
       mysql:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - retail_market_network

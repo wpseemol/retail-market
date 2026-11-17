@@ -5,8 +5,35 @@ import { STALE_MS, type StaleMs } from "./types";
 
 const inflight = new Map<string, Promise<unknown>>();
 
+/** Stay under IndexedDB / Dexie practical limits; oversized docs are skipped silently. */
+const MAX_PAYLOAD_BYTES = 1_500_000;
+
 function isBrowser() {
   return typeof window !== "undefined";
+}
+
+/**
+ * Refuse to persist null/undefined, empty strings, or error-shaped envelopes.
+ * Empty product lists with a real pagination object are still cacheable (valid search).
+ */
+export function isCacheablePayload(data: unknown): boolean {
+  if (data == null) return false;
+  if (typeof data === "string" && data.length === 0) return false;
+  if (typeof data === "object" && !Array.isArray(data)) {
+    const obj = data as Record<string, unknown>;
+    if ("error" in obj && typeof obj.error === "string") {
+      const hasCatalog =
+        "products" in obj ||
+        "categories" in obj ||
+        "brands" in obj ||
+        "shops" in obj ||
+        "blocks" in obj ||
+        "id" in obj ||
+        "settings" in obj;
+      if (!hasCatalog) return false;
+    }
+  }
+  return true;
 }
 
 async function readLocal<T>(id: string): Promise<{ data: T; updatedAt: number } | null> {
@@ -21,8 +48,11 @@ async function readLocal<T>(id: string): Promise<{ data: T; updatedAt: number } 
 }
 
 async function writeLocal<T>(id: string, data: T): Promise<void> {
-  const db = await getStorefrontDb();
+  if (!isCacheablePayload(data)) return;
   const payload = JSON.stringify(data);
+  if (payload.length > MAX_PAYLOAD_BYTES) return;
+
+  const db = await getStorefrontDb();
   const updatedAt = Date.now();
   const existing = await db.catalog.findOne(id).exec();
   if (existing) {
@@ -69,17 +99,31 @@ export async function readThrough<T>(
   try {
     const local = await readLocal<T>(id);
     if (local) {
-      const age = Date.now() - local.updatedAt;
-      if (age >= staleMs) {
-        void fetchAndStore(id, fetcher).catch(() => undefined);
+      if (!isCacheablePayload(local.data)) {
+        /* poisoned empty/error — ignore and refetch */
+      } else {
+        const age = Date.now() - local.updatedAt;
+        if (age >= staleMs) {
+          void fetchAndStore(id, fetcher).catch(() => undefined);
+        }
+        return local.data;
       }
-      return local.data;
     }
   } catch {
     /* fall through to network */
   }
 
   return fetchAndStore(id, fetcher);
+}
+
+/** Upsert SSR / known-good payload into IndexedDB (no network). */
+export async function seedCatalogCache<T>(id: string, data: T): Promise<void> {
+  if (!isBrowser()) return;
+  try {
+    await writeLocal(id, data);
+  } catch {
+    /* ignore */
+  }
 }
 
 export { hashQuery, queryCacheId } from "./hash";
@@ -102,7 +146,8 @@ export async function subscribeCacheDoc<T>(
         return;
       }
       try {
-        onChange(JSON.parse(doc.payload) as T);
+        const parsed = JSON.parse(doc.payload) as T;
+        onChange(isCacheablePayload(parsed) ? parsed : null);
       } catch {
         onChange(null);
       }

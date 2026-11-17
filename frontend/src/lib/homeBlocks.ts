@@ -23,7 +23,10 @@ export async function getHomePageContent(): Promise<HomePagePayload> {
         next: { revalidate: 60, tags: ["home-blocks", "home-hero"] },
       });
       if (!res.ok) {
-        return { blocks: EMPTY_BLOCKS, hero: DEFAULT_HOME_HERO };
+        if (typeof window === "undefined") {
+          return { blocks: EMPTY_BLOCKS, hero: DEFAULT_HOME_HERO };
+        }
+        throw new Error(`Home blocks failed (${res.status})`);
       }
       const data = (await res.json()) as {
         blocks?: HomeBlocksMap;
@@ -36,8 +39,11 @@ export async function getHomePageContent(): Promise<HomePagePayload> {
             : EMPTY_BLOCKS,
         hero: data.hero?.main?.headline ? data.hero : DEFAULT_HOME_HERO,
       };
-    } catch {
-      return { blocks: EMPTY_BLOCKS, hero: DEFAULT_HOME_HERO };
+    } catch (err) {
+      if (typeof window === "undefined") {
+        return { blocks: EMPTY_BLOCKS, hero: DEFAULT_HOME_HERO };
+      }
+      throw err;
     }
   });
 }

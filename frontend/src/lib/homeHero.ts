@@ -1,4 +1,5 @@
 import { appKeyHeaders, publicApiUrl } from "@/lib/api";
+import { withCatalogCache } from "@/lib/rxdb/withCache";
 
 export type HeroMedia = {
   path: string;
@@ -57,20 +58,22 @@ export const DEFAULT_HOME_HERO: HomeHeroBanner = {
   },
 };
 
-/** Fetch home hero for SSR (cached ~60s). */
+/** Fetch home hero for SSR (API + browser RxDB). */
 export async function getHeroBanner(): Promise<HomeHeroBanner> {
-  try {
-    const res = await fetch(publicApiUrl("/api/home/hero"), {
-      headers: appKeyHeaders(),
-      next: { revalidate: 60, tags: ["home-hero"] },
-    });
-    if (!res.ok) return DEFAULT_HOME_HERO;
-    const data = (await res.json()) as { hero?: HomeHeroBanner };
-    if (!data.hero?.main?.headline || !data.hero?.side?.headline) {
+  return withCatalogCache("home:hero", async () => {
+    try {
+      const res = await fetch(publicApiUrl("/api/home/hero"), {
+        headers: appKeyHeaders(),
+        next: { revalidate: 60, tags: ["home-hero"] },
+      });
+      if (!res.ok) return DEFAULT_HOME_HERO;
+      const data = (await res.json()) as { hero?: HomeHeroBanner };
+      if (!data.hero?.main?.headline || !data.hero?.side?.headline) {
+        return DEFAULT_HOME_HERO;
+      }
+      return data.hero;
+    } catch {
       return DEFAULT_HOME_HERO;
     }
-    return data.hero;
-  } catch {
-    return DEFAULT_HOME_HERO;
-  }
+  });
 }

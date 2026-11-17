@@ -245,10 +245,15 @@ export async function fetchProducts(options?: ProductListQuery): Promise<Product
         headers: appKeyHeaders(),
         next: { revalidate: 60, tags: ["products"] },
       });
-      if (!res.ok) return empty;
+      if (!res.ok) {
+        // Soft-empty only on SSR so IndexedDB never caches error payloads in the browser.
+        if (typeof window === "undefined") return empty;
+        throw new Error(`Products list failed (${res.status})`);
+      }
       return (await res.json()) as ProductsListPayload;
-    } catch {
-      return empty;
+    } catch (err) {
+      if (typeof window === "undefined") return empty;
+      throw err;
     }
   });
 }
@@ -303,10 +308,14 @@ export async function fetchProductByIdOrSlug(
         next: { revalidate: 60, tags: [`product:${idOrSlug}`] },
       });
       if (res.status === 404) return null;
-      if (!res.ok) return null;
+      if (!res.ok) {
+        if (typeof window === "undefined") return null;
+        throw new Error(`Product detail failed (${res.status})`);
+      }
       return (await res.json()) as ProductDetailPayload;
-    } catch {
-      return null;
+    } catch (err) {
+      if (typeof window === "undefined") return null;
+      throw err;
     }
   });
 }

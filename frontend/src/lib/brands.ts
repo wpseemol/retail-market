@@ -90,10 +90,14 @@ export async function fetchBrands(options?: { q?: string; limit?: number }): Pro
         headers: appKeyHeaders(),
         next: { revalidate: 60, tags: ["brands"] },
       });
-      if (!res.ok) return EMPTY_LIST;
+      if (!res.ok) {
+        if (typeof window === "undefined") return EMPTY_LIST;
+        throw new Error(`Brands list failed (${res.status})`);
+      }
       return (await res.json()) as BrandsListPayload;
-    } catch {
-      return EMPTY_LIST;
+    } catch (err) {
+      if (typeof window === "undefined") return EMPTY_LIST;
+      throw err;
     }
   });
 }
@@ -129,10 +133,15 @@ export async function fetchBrandBySlug(
           next: { revalidate: 60, tags: ["brands", `brand:${slug}`] },
         },
       );
-      if (!res.ok) return null;
+      if (res.status === 404) return null;
+      if (!res.ok) {
+        if (typeof window === "undefined") return null;
+        throw new Error(`Brand detail failed (${res.status})`);
+      }
       return (await res.json()) as BrandPagePayload;
-    } catch {
-      return null;
+    } catch (err) {
+      if (typeof window === "undefined") return null;
+      throw err;
     }
   });
 }

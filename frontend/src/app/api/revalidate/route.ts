@@ -2,8 +2,9 @@ import { timingSafeEqual } from "node:crypto";
 import { revalidateTag } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 
-const TAG_RE = /^(site-settings|stores|brands|sitemap|reviews|(store|brand):[a-z0-9]+(?:-[a-z0-9]+)*)$/;
-const MAX_TAGS = 20;
+const TAG_RE =
+  /^(site-settings|stores|brands|sitemap|reviews|products|pages|categories|home|home-blocks|home-hero|(store|brand|product|page|category):[a-z0-9]+(?:-[a-z0-9]+)*)$/;
+const MAX_TAGS = 40;
 
 function secretMatches(given: string | null) {
     const expected = process.env.REVALIDATE_SECRET ?? "";
