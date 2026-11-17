@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Promo slider art + image presets
+
+- `homePromoSlide` → 1000×750; `homePromoBg` → 1920×870 (synced with dashboard).
+- Defaults use `PromoBannerSlider_Product_2/3.png`; repair upgrades placeholder slide images.
+
 ### Promo slider CMS (dynamic slides + admin)
 
 - `promo_slider` defaults: distinct product images per slide; CTA paths `/shop/{slug}`.

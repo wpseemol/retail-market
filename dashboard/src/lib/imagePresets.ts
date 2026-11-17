@@ -32,8 +32,10 @@ export const IMAGE_PRESETS = {
   heroSideProduct: { width: 440, height: 480, ratio: "11:12", transparent: true },
   homeIcon: { width: 128, height: 128, ratio: "1:1", transparent: true },
   homeDealCard: { width: 300, height: 260, ratio: "15:13", transparent: true },
-  homePromoBg: { width: 1920, height: 500, ratio: "~4:1" },
-  homePromoSlide: { width: 760, height: 540, ratio: "~7:5", transparent: true },
+  /** Matches storefront promo strip art (~2.21:1). */
+  homePromoBg: { width: 1920, height: 870, ratio: "~11:5" },
+  /** Promo slide product cutouts — 4:3, transparent PNG/WebP preferred. */
+  homePromoSlide: { width: 1000, height: 750, ratio: "4:3", transparent: true },
   homeRepairBg: { width: 1920, height: 520, ratio: "~4:1" },
   homeRepairProduct: { width: 960, height: 620, ratio: "~3:2", transparent: true },
   homeBrandLogo: { width: 240, height: 80, ratio: "3:1", transparent: true },

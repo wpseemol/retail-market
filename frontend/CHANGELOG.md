@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Promo slider product art + ratio presets
+
+- Added `PromoBannerSlider_Product_2.png` (UltraWide) and `Product_3.png` (Yoga); refreshed `PromoBannerSlider_bg.png` (1920×870).
+- Defaults point slides 2–3 at the new art; Tailwind dark bg filter uses canonical `dark:filter-[…]`.
+
 ### Become-seller KYC thumb types
 
 - `SellerKycDocThumb`: plain `<img>` for blob previews; no sync `setState` in the effect (loading derived from `forUrl` vs `fileUrl`) to satisfy React’s cascading-render rule.

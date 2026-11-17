@@ -73,7 +73,7 @@ const EMPTY_PROMO_SLIDE: PromoSliderFormValues["slides"][number] = {
   title_line2: "Second line",
   cta_label: "SHOP NOW",
   cta_href: "/shop",
-  image: "/images/PromoBannerSlider_Product_1.png",
+  image: "/images/PromoBannerSlider_Product_2.png",
   image_alt: "Product",
 };
 

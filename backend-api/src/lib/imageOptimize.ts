@@ -35,8 +35,10 @@ export const IMAGE_PRESETS = {
   heroSideProduct: { width: 440, height: 480, format: "webp" },
   homeIcon: { width: 128, height: 128, format: "webp" },
   homeDealCard: { width: 300, height: 260, format: "webp" },
-  homePromoBg: { width: 1920, height: 500, format: "webp" },
-  homePromoSlide: { width: 760, height: 540, format: "webp" },
+  /** Matches storefront promo strip (~2.21:1). Keep in sync with dashboard presets. */
+  homePromoBg: { width: 1920, height: 870, format: "webp" },
+  /** Promo slide product cutouts — 4:3 (1000×750). */
+  homePromoSlide: { width: 1000, height: 750, format: "webp" },
   homeRepairBg: { width: 1920, height: 520, format: "webp" },
   homeRepairProduct: { width: 960, height: 620, format: "webp" },
   homeBrandLogo: { width: 240, height: 80, format: "webp" },

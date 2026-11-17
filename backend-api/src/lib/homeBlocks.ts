@@ -39,8 +39,16 @@ export async function repairLegacyPromoSliderContent() {
   const slides = content.slides;
   if (!Array.isArray(slides) || slides.length < 2) return;
 
+  const PLACEHOLDER_IMAGES = new Set([
+    LEGACY_PROMO_IMAGE,
+    "/images/top_products (4).png",
+    "/images/Deals of The Day left product image.png",
+  ]);
+  const usesPlaceholders = slides.some(
+    (s) => typeof s.image === "string" && PLACEHOLDER_IMAGES.has(s.image),
+  );
   const allSameLegacyImage = slides.every((s) => s.image === LEGACY_PROMO_IMAGE);
-  if (allSameLegacyImage) {
+  if (allSameLegacyImage || usesPlaceholders) {
     await prisma.homeBlockContent.update({
       where: { key: "promo_slider" },
       data: { content: DEFAULT_HOME_BLOCKS.promo_slider },
@@ -192,7 +200,7 @@ export const DEFAULT_HOME_BLOCKS: Record<
         title_line2: "Display Edition",
         cta_label: "EXPLORE DEALS",
         cta_href: "/shop/curved-ultrawide-display",
-        image: "/images/top_products (4).png",
+        image: "/images/PromoBannerSlider_Product_2.png",
         image_alt: "Curved UltraWide Monitor",
       },
       {
@@ -205,8 +213,8 @@ export const DEFAULT_HOME_BLOCKS: Record<
         title_line2: "Slim Pro Series",
         cta_label: "VIEW PRODUCT",
         cta_href: "/shop/yoga-slim-pro",
-        image: "/images/Deals of The Day left product image.png",
-        image_alt: "Convertible Touch Laptop",
+        image: "/images/PromoBannerSlider_Product_3.png",
+        image_alt: "Convertible Yoga Slim Pro",
       },
     ],
   },

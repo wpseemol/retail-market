@@ -215,7 +215,7 @@ export default function PromoBannerSlider({
         >
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-cover bg-center dark:mix-blend-screen dark:[filter:invert(1)_hue-rotate(180deg)_saturate(1.6)_brightness(1.8)]"
+            className="pointer-events-none absolute inset-0 bg-cover bg-center dark:mix-blend-screen dark:filter-[invert(1)_hue-rotate(180deg)_saturate(1.6)_brightness(1.8)]"
             style={{ backgroundImage: `url('${bgImage}')` }}
           />
 

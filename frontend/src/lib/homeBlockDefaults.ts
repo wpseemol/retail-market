@@ -222,7 +222,7 @@ export const DEFAULT_PROMO_SLIDER: PromoSliderContent = {
       title_line2: "Display Edition",
       cta_label: "EXPLORE DEALS",
       cta_href: "/shop/curved-ultrawide-display",
-      image: "/images/top_products (4).png",
+      image: "/images/PromoBannerSlider_Product_2.png",
       image_alt: "Curved UltraWide Monitor",
     },
     {
@@ -235,8 +235,8 @@ export const DEFAULT_PROMO_SLIDER: PromoSliderContent = {
       title_line2: "Slim Pro Series",
       cta_label: "VIEW PRODUCT",
       cta_href: "/shop/yoga-slim-pro",
-      image: "/images/Deals of The Day left product image.png",
-      image_alt: "Convertible Touch Laptop",
+      image: "/images/PromoBannerSlider_Product_3.png",
+      image_alt: "Convertible Yoga Slim Pro",
     },
   ],
 };

@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Promo slider upload ratio
+
+- `homePromoSlide` preset is **1000×750 (4:3)**; `homePromoBg` is **1920×870 (~11:5)** so dashboard uploads match the storefront strip (was wrongly 760×540 / 1920×500).
+
 ### Seller KYC thumb effect
 
 - `SellerKycDocThumb`: no synchronous `setState` in the effect; loading is derived when `forUrl` ≠ current `fileUrl`.
