@@ -5,6 +5,13 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Redis invalidation + PDP reviews cache
+
+- `invalidatePublicCache`: `reviews` tag; product tags also clear shop/brand caches; `page:*` no longer wipes site-settings/home.
+- `GET /api/products/:idOrSlug/reviews` uses `cacheJsonGet`; customer create/update/delete revalidate when public.
+- Dashboard review moderation tags include `reviews`; category bulk import + brand/category/store writes also clear `products`.
+- `docker-compose.prod.yml` + `.env.production.example`: bundled Redis + `REDIS_URL`; API.md catalog cache row lists brand detail/reviews + PDP reviews.
+
 ### Redis cache write hygiene
 
 - `cacheJsonGet` no longer stores `null`, error-only JSON envelopes, or bodies over ~1.5 MB (avoids poisoning / Redis bloat).
