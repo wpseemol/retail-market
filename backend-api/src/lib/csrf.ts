@@ -102,10 +102,16 @@ export function setCsrfCookie(res: Response, token: string, expiresAt: number) {
     "Path=/",
     `Max-Age=${maxAge}`,
     "SameSite=Lax",
+    // HttpOnly: clients use the JSON `csrfToken` body, not document.cookie.
+    "HttpOnly",
   ];
   if (env.nodeEnv === "production") {
     parts.push("Secure");
   }
-  // Not HttpOnly — clients may mirror into X-CSRF-Token; integrity is HMAC.
   res.append("Set-Cookie", parts.join("; "));
+}
+
+/** Constant-time string compare for CSRF cookie vs submitted token. */
+export function csrfTokensMatch(a: string, b: string): boolean {
+  return safeEqualStr(a, b);
 }

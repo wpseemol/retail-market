@@ -98,10 +98,11 @@ dashboardAuthRouter.post(
     });
   }
 
-  const captcha = await requireCaptchaIfEnabled(
-    req.body?.captchaToken,
-    req.ip,
-  );
+  const captcha = await requireCaptchaIfEnabled({
+    token: req.body?.captchaToken,
+    remoteIp: req.ip,
+    expectedAction: "dashboard_login",
+  });
   if (!captcha.ok) {
     return res.status(captcha.status).json(captcha.body);
   }

@@ -138,10 +138,11 @@ export async function register(req: Request, res: Response) {
     });
   }
 
-  const captcha = await requireCaptchaIfEnabled(
-    req.body?.captchaToken,
-    req.ip,
-  );
+  const captcha = await requireCaptchaIfEnabled({
+    token: req.body?.captchaToken,
+    remoteIp: req.ip,
+    expectedAction: "register",
+  });
   if (!captcha.ok) {
     return res.status(captcha.status).json(captcha.body);
   }
@@ -203,10 +204,11 @@ export async function login(req: Request, res: Response) {
     });
   }
 
-  const captcha = await requireCaptchaIfEnabled(
-    req.body?.captchaToken,
-    req.ip,
-  );
+  const captcha = await requireCaptchaIfEnabled({
+    token: req.body?.captchaToken,
+    remoteIp: req.ip,
+    expectedAction: "login",
+  });
   if (!captcha.ok) {
     return res.status(captcha.status).json(captcha.body);
   }

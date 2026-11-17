@@ -3,6 +3,7 @@ import {
   readCookie,
   readSubmittedCsrf,
   CSRF_COOKIE,
+  csrfTokensMatch,
   verifyCsrfToken,
 } from "../lib/csrf.js";
 
@@ -22,7 +23,7 @@ export function requireCsrf(req: Request, res: Response, next: NextFunction) {
   }
 
   const cookie = readCookie(req, CSRF_COOKIE);
-  if (cookie && cookie !== submitted) {
+  if (cookie && !csrfTokensMatch(cookie, submitted)) {
     return res.status(403).json({
       message: "CSRF token mismatch. Refresh the page and try again.",
       code: "CSRF_MISMATCH",
