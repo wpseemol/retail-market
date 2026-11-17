@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from "react";
 
+type ThumbState = {
+  /** `fileUrl` this state belongs to — mismatch means a newer URL is loading. */
+  forUrl: string;
+  src: string;
+  failed: boolean;
+};
+
 /** Loads a private KYC image through the storefront BFF (cookie session). */
 export function SellerKycDocThumb({
   fileUrl,
@@ -11,14 +18,15 @@ export function SellerKycDocThumb({
   fileUrl: string;
   alt: string;
 }) {
-  const [src, setSrc] = useState("");
-  const [failed, setFailed] = useState(false);
+  const [state, setState] = useState<ThumbState>({
+    forUrl: fileUrl,
+    src: "",
+    failed: false,
+  });
 
   useEffect(() => {
     let objectUrl = "";
     let cancelled = false;
-    setSrc("");
-    setFailed(false);
 
     const url = fileUrl.startsWith("/api/backend/")
       ? fileUrl
@@ -36,9 +44,12 @@ export function SellerKycDocThumb({
         const blob = await response.blob();
         if (cancelled) return;
         objectUrl = URL.createObjectURL(blob);
-        setSrc(objectUrl);
+        // setState only in the async callback — not synchronously in the effect body.
+        setState({ forUrl: fileUrl, src: objectUrl, failed: false });
       } catch {
-        if (!cancelled) setFailed(true);
+        if (!cancelled) {
+          setState({ forUrl: fileUrl, src: "", failed: true });
+        }
       }
     })();
 
@@ -47,6 +58,10 @@ export function SellerKycDocThumb({
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [fileUrl]);
+
+  const ready = state.forUrl === fileUrl;
+  const failed = ready && state.failed;
+  const src = ready ? state.src : "";
 
   if (failed) {
     return (

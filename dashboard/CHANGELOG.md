@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Seller KYC thumb effect
+
+- `SellerKycDocThumb`: no synchronous `setState` in the effect; loading is derived when `forUrl` ≠ current `fileUrl`.
+
 ### Dynamic promo slider + Home content for admin
 
 - **Content → Home content** (`HOME_CONTENT_ROLES`): admin + super_admin edit hero, welcome modal, promo slider without full Site settings.

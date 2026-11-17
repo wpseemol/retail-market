@@ -7,7 +7,7 @@ Format: date heading, then one bullet per change with the files touched.
 
 ### Become-seller KYC thumb types
 
-- `SellerKycDocThumb`: `src` state is `string` (not `null`) to clear the `setSrc(null)` type error; preview stays a plain `<img>` (blob URL), not `next/image`.
+- `SellerKycDocThumb`: plain `<img>` for blob previews; no sync `setState` in the effect (loading derived from `forUrl` vs `fileUrl`) to satisfy React’s cascading-render rule.
 
 ### Promo slider dynamic images / product URLs
 
