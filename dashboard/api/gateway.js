@@ -119,8 +119,12 @@ export default async function handler(req, res) {
     };
     const bearer = staffBearer(req);
     const contentType = header(req, "content-type");
+    const csrf = header(req, "x-csrf-token");
     if (bearer) headers.Authorization = `Bearer ${bearer}`;
     if (contentType) headers["Content-Type"] = contentType;
+    if (csrf) headers["X-CSRF-Token"] = csrf;
+    const cookie = header(req, "cookie");
+    if (cookie) headers.Cookie = cookie;
 
     const upstream = await fetch(upstreamUrl, { method, headers, body });
     const payload = Buffer.from(await upstream.arrayBuffer());
@@ -131,6 +135,13 @@ export default async function handler(req, res) {
     if (disposition) out["Content-Disposition"] = disposition;
     const total = upstream.headers.get("x-total-rows");
     if (total) out["X-Total-Rows"] = total;
+    const setCookie = upstream.headers.getSetCookie?.() ?? [];
+    if (setCookie.length) {
+      res.setHeader("Set-Cookie", setCookie);
+    } else {
+      const single = upstream.headers.get("set-cookie");
+      if (single) out["Set-Cookie"] = single;
+    }
     send(res, upstream.status, payload, out);
   } catch (err) {
     console.error("[gateway] upstream failed", err);

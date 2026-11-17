@@ -300,8 +300,15 @@ export function RecaptchaSettingsPanel({ token }: { token: string }) {
                           min={0}
                           max={1}
                           className="max-w-xs"
-                          {...field}
+                          name={field.name}
+                          ref={field.ref}
+                          onBlur={field.onBlur}
+                          value={field.value}
                           disabled={isSubmitting}
+                          onChange={(e) => {
+                            const n = Number(e.target.value);
+                            field.onChange(Number.isFinite(n) ? n : 0.5);
+                          }}
                         />
                       </FormControl>
                       <FormDescription>

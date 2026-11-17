@@ -43,26 +43,21 @@ const keyField = withSafeInput(
     ),
 );
 
-export const recaptchaFormSchema = z
-  .object({
-    is_enabled: z.boolean(),
-    version: z.enum(RECAPTCHA_VERSIONS),
-    site_key: keyField,
-    clear_site_key: z.boolean(),
-    secret_key: z
-      .string()
-      .max(255)
-      .regex(
-        /^[A-Za-z0-9_-]*$/,
-        "Only letters, numbers, dash and underscore",
-      ),
-    clear_secret_key: z.boolean(),
-    v3_min_score: z.coerce.number().min(0).max(1),
-  })
-  .superRefine((values, ctx) => {
-    if (!values.is_enabled) return;
-    // Enabling needs keys typed now or already stored (and not cleared).
-  });
+export const recaptchaFormSchema = z.object({
+  is_enabled: z.boolean(),
+  version: z.enum(RECAPTCHA_VERSIONS),
+  site_key: keyField,
+  clear_site_key: z.boolean(),
+  secret_key: z
+    .string()
+    .max(255)
+    .regex(/^[A-Za-z0-9_-]*$/, "Only letters, numbers, dash and underscore"),
+  clear_secret_key: z.boolean(),
+  v3_min_score: z
+    .number()
+    .min(0, "Score must be at least 0")
+    .max(1, "Score must be at most 1"),
+});
 
 export type RecaptchaFormValues = z.infer<typeof recaptchaFormSchema>;
 
