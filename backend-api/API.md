@@ -80,7 +80,15 @@ Limits are per client IP (or account field where noted). Storage is **in-memory*
 | Coupon preview | 20 / 10 min / IP | existing |
 | Reviews | eligibility / submit / manage | existing |
 
-**Public GET cache (45 s):** `GET /api/home/hero`, `GET /api/site-settings`, `GET /api/categories`, `GET /api/brands`. Skipped when `Authorization` is present. Cleared when dashboard writes call `revalidateFrontend` (and category / home-hero mutations). Response may include `X-Cache: HIT|MISS`.
+**Public GET cache** (`cacheJsonGet` via `REDIS_URL` or in-memory): skipped when `Authorization` is present. Response may include `X-Cache: HIT|MISS`. Cleared when dashboard writes call `revalidateFrontend` (tag → prefix map in `lib/responseCache.ts`).
+
+| TTL | Routes |
+|-----|--------|
+| **~90 s** (catalog/home) | `GET /api/home/hero`, `/api/home/blocks`, `/api/site-settings`, `/api/categories`, `/api/brands`, `/api/products`, `/api/products/:idOrSlug`, `/api/shops`, `/api/shops/:slug`, `/api/shops/:slug/reviews` |
+| **~20 s** (search) | `GET /api/products/price-range`, `/api/search/suggest` |
+| **~120 s** (pages) | `GET /api/pages/:key` |
+
+Local Docker: `pnpm docker:db` starts Redis on `6379`; set `REDIS_URL=redis://127.0.0.1:6379` (leave empty on Spaceship).
 
 ### Security (all string bodies)
 

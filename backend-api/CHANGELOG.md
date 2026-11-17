@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Redis public GET cache expansion
+
+- `cacheJsonGet` on products list/detail/price-range, shops list/detail/reviews, home blocks, pages, search suggest; catalog TTL ~90s, search ~20s, pages ~120s.
+- Cache keys include route params + query; `invalidatePublicCache` covers products/shops/pages/home.
+- Optional Redis service in `docker-compose.db.yml` + `docker-compose.yml`; `.env.example` documents `REDIS_URL`.
+
 ### Vendor staff-discovery hardening + seller CSRF
 
 - Shop history for vendors redacts elevated actor email/phone/role (`Niyenin team`); elevated staff still see full `toPublicUser`.

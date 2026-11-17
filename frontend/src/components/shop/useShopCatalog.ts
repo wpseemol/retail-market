@@ -2,11 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Locale } from "@/i18n/config";
+import { apiFetch } from "@/lib/api";
 import {
-    fetchProducts,
+    productListPath,
     toShopProduct,
     type ProductsListPayload,
 } from "@/lib/products";
+import {
+    hashQuery,
+    queryCacheId,
+    withCatalogCache,
+} from "@/lib/rxdb/withCache";
 import type { ShopProduct, ShopSortOption } from "./types";
 
 export type ShopPaginationMode = "pages" | "infinite";
@@ -110,8 +116,7 @@ export function useShopCatalog(args: CatalogArgs) {
         const priced =
             current.priceMin > current.priceBounds.min ||
             current.priceMax < current.priceBounds.max;
-        // Goes through RxDB read-through (browser) → API Redis cache.
-        return fetchProducts({
+        const query = {
             page: nextPage,
             limit: current.perPage,
             q: current.search,
@@ -121,7 +126,24 @@ export function useShopCatalog(args: CatalogArgs) {
             ...(priced
                 ? { minPrice: current.priceMin, maxPrice: current.priceMax }
                 : {}),
-        });
+        };
+        const cacheId = queryCacheId(
+            "products:list",
+            hashQuery({
+                page: query.page,
+                limit: query.limit,
+                q: query.q,
+                category: query.category,
+                brands: query.brands?.join(","),
+                min: query.minPrice,
+                max: query.maxPrice,
+                sort: query.sort,
+            }),
+        );
+        // RxDB read-through; apiFetch still throws so offline/load errors work.
+        return withCatalogCache(cacheId, () =>
+            apiFetch<ProductsListPayload>(productListPath(query)),
+        );
     }, []);
 
     const mapProducts = useCallback((data: ProductsListPayload) => {

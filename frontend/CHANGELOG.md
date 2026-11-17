@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Storefront RxDB local-first catalog cache
+
+- `lib/rxdb/`: Dexie IndexedDB DB + `readThrough` / `withCatalogCache` (stale-while-revalidate); SSR skips RxDB.
+- Wired into products, categories, brands, shops, home blocks; shop catalog infinite scroll uses the same cache.
+- `hooks/useRxCatalog.ts` for live cache subscriptions; cart/wishlist unchanged (Redux).
+
 ### Become a seller page + CSRF
 
 - `/become-seller`: ContentHero + step rail; tighter shadcn Form + Zod (phone / safe-input / fee-terms checkbox).
