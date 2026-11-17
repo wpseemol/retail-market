@@ -5,6 +5,16 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### API route validation hardening
+
+- Orders/reviews id params use `parseBigIntId` (BIGINT max guard); `reviewIdParamSchema` aligned.
+- Backups download: Zod `backupDownloadParamsSchema` for `:stamp` / `:kind`.
+- Home blocks `:key` via `homeBlockKeySchema` (`z.enum`).
+- Shop slug-preview: `exclude_id` in Zod (`productIdField`).
+- Staff `POST /2fa/setup`: Zod body for optional `setupToken`.
+- Customer auth: route-level `validateBody` + Facebook `signed_request` Zod; addresses: body Zod + id guard.
+- New `middleware/validate.ts`, `validators/backup.ts`.
+
 ### Footer care FAQ + Become a seller ensure
 
 - `siteChrome`: Customer Care seed order matches design; `ensureFooterBecomeSellerLink` also repairs bad become-seller/FAQ hrefs and ensures both rows exist.

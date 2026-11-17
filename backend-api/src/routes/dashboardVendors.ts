@@ -19,6 +19,7 @@ import { deleteMediaFile } from "../lib/storage/files.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
 import { categoryImageUpload, discardTempUpload, shopImageUpload, uploadBytes } from "../middleware/upload.js";
 import { findUnsafeInputReason } from "../validators/customerAuth.js";
+import { productIdField } from "../validators/productId.js";
 import { updateShowcaseSchema } from "../validators/showcase.js";
 import { buildShowcaseUpdate, toDashboardShowcase } from "../lib/showcase.js";
 import {
@@ -413,20 +414,28 @@ const shopListQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
+const shopSlugPreviewQuerySchema = z.object({
+  name: withSafeInput(z.string().trim().min(2).max(200)),
+  exclude_id: productIdField.optional(),
+});
+
 dashboardVendorsRouter.get("/slug-preview", async (req, res) => {
-  const parsed = z
-    .object({
-      name: withSafeInput(z.string().trim().min(2).max(200)),
-    })
-    .safeParse({ name: String(req.query.name ?? "") });
+  const parsed = shopSlugPreviewQuerySchema.safeParse({
+    name: String(req.query.name ?? ""),
+    ...(req.query.exclude_id !== undefined &&
+    String(req.query.exclude_id).trim() !== ""
+      ? { exclude_id: String(req.query.exclude_id) }
+      : {}),
+  });
   if (!parsed.success) {
     return res.status(400).json({
       message: parsed.error.issues[0]?.message ?? "Shop name is required",
+      errors: parsed.error.flatten().fieldErrors,
     });
   }
 
-  const excludeId = req.query.exclude_id
-    ? parseId(String(req.query.exclude_id))
+  const excludeId = parsed.data.exclude_id
+    ? parseId(parsed.data.exclude_id)
     : null;
 
   const slug = await uniqueVendorSlug(parsed.data.name, (s) =>

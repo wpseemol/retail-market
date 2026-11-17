@@ -1,4 +1,5 @@
 import express, { Router } from "express";
+import { z } from "zod";
 import {
   appleLogin,
   confirmEmailCode,
@@ -25,6 +26,7 @@ import {
   parseFacebookSignedRequest,
 } from "../lib/facebookDataDeletion.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
+import { validateBody } from "../middleware/validate.js";
 import { avatarUpload } from "../middleware/upload.js";
 import { AVATAR_MAX_BYTES } from "../lib/avatarImage.js";
 import {
@@ -38,7 +40,32 @@ import {
 } from "../lib/rateLimit.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { requireCsrf } from "../middleware/csrf.js";
+import {
+  appleAuthSchema,
+  confirmCodeSchema,
+  facebookAuthSchema,
+  googleAuthSchema,
+  loginSchema,
+  refreshSchema,
+  registerSchema,
+  sendPhoneCodeSchema,
+  setPasswordSchema,
+  updateProfileSchema,
+} from "../validators/customerAuth.js";
 import multer from "multer";
+
+/** Meta signed_request: base64url(sig).base64url(payload). */
+const facebookDataDeletionSchema = z.object({
+  signed_request: z
+    .string()
+    .trim()
+    .min(1, "signed_request is required.")
+    .max(8192)
+    .regex(
+      /^[A-Za-z0-9_-]+=*\.[A-Za-z0-9_-]+=*$/,
+      "Invalid signed_request.",
+    ),
+});
 
 export const customerAuthRouter = Router();
 
@@ -69,6 +96,7 @@ customerAuthRouter.post(
   requireCsrf,
   registerIpLimiter,
   registerAccountLimiter,
+  validateBody(registerSchema),
   asyncHandler(register),
 );
 customerAuthRouter.post(
@@ -76,14 +104,35 @@ customerAuthRouter.post(
   requireCsrf,
   loginIpLimiter,
   loginAccountLimiter,
+  validateBody(loginSchema),
   asyncHandler(login),
 );
 customerAuthRouter.get("/captcha-config", asyncHandler(captchaConfig));
 customerAuthRouter.get("/social-providers", asyncHandler(socialProviders));
-customerAuthRouter.post("/google", socialLoginLimiter, asyncHandler(googleLogin));
-customerAuthRouter.post("/facebook", socialLoginLimiter, asyncHandler(facebookLogin));
-customerAuthRouter.post("/apple", socialLoginLimiter, asyncHandler(appleLogin));
-customerAuthRouter.post("/refresh", refreshLimiter, asyncHandler(refresh));
+customerAuthRouter.post(
+  "/google",
+  socialLoginLimiter,
+  validateBody(googleAuthSchema),
+  asyncHandler(googleLogin),
+);
+customerAuthRouter.post(
+  "/facebook",
+  socialLoginLimiter,
+  validateBody(facebookAuthSchema),
+  asyncHandler(facebookLogin),
+);
+customerAuthRouter.post(
+  "/apple",
+  socialLoginLimiter,
+  validateBody(appleAuthSchema),
+  asyncHandler(appleLogin),
+);
+customerAuthRouter.post(
+  "/refresh",
+  refreshLimiter,
+  validateBody(refreshSchema),
+  asyncHandler(refresh),
+);
 
 /**
  * Meta App Review — User data deletion callback.
@@ -111,16 +160,23 @@ customerAuthRouter.post(
       });
     }
 
-    const signed =
-      typeof req.body?.signed_request === "string" ? req.body.signed_request.trim() : "";
-    if (!signed) {
+    const body = facebookDataDeletionSchema.safeParse(req.body ?? {});
+    if (!body.success) {
+      const message =
+        body.error.issues[0]?.message ?? "signed_request is required.";
       return res.status(400).json({
-        message: "signed_request is required.",
-        code: "SIGNED_REQUEST_REQUIRED",
+        message,
+        code: message.includes("required")
+          ? "SIGNED_REQUEST_REQUIRED"
+          : "SIGNED_REQUEST_INVALID",
+        errors: body.error.flatten().fieldErrors,
       });
     }
 
-    const parsed = parseFacebookSignedRequest(signed, creds.appSecret);
+    const parsed = parseFacebookSignedRequest(
+      body.data.signed_request,
+      creds.appSecret,
+    );
     if (!parsed) {
       return res.status(400).json({
         message: "Invalid signed_request.",
@@ -140,6 +196,7 @@ customerAuthRouter.patch(
   "/me",
   requireAuth,
   requireRoles("customer"),
+  validateBody(updateProfileSchema),
   asyncHandler(updateMe),
 );
 
@@ -147,6 +204,7 @@ customerAuthRouter.post(
   "/me/password",
   requireAuth,
   requireRoles("customer"),
+  validateBody(setPasswordSchema),
   asyncHandler(setPassword),
 );
 
@@ -167,6 +225,7 @@ customerAuthRouter.post(
   "/me/verify/email/confirm",
   ...customerOnly,
   verifyConfirmLimiter,
+  validateBody(confirmCodeSchema),
   asyncHandler(confirmEmailCode),
 );
 customerAuthRouter.post(
@@ -174,12 +233,14 @@ customerAuthRouter.post(
   ...customerOnly,
   verifySendLimiter,
   phoneSendLimiter,
+  validateBody(sendPhoneCodeSchema),
   asyncHandler(sendPhoneCode),
 );
 customerAuthRouter.post(
   "/me/verify/phone/confirm",
   ...customerOnly,
   verifyConfirmLimiter,
+  validateBody(confirmCodeSchema),
   asyncHandler(confirmPhoneCode),
 );
 

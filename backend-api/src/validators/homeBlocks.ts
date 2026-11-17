@@ -1,6 +1,10 @@
 import { z } from "zod";
+import { HOME_BLOCK_KEYS } from "../lib/homeBlocks.js";
 import { withSafeInput } from "./customerAuth.js";
 import { updateWelcomeModalSchema } from "./welcomeModal.js";
+
+/** CMS home-block path param (`:key`). */
+export const homeBlockKeySchema = z.enum(HOME_BLOCK_KEYS);
 
 const safe = (min: number, max: number) =>
   withSafeInput(z.string().trim().min(min).max(max));

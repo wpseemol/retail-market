@@ -4,6 +4,7 @@ import { prisma } from "../lib/prisma.js";
 import { toPublicMedia } from "../lib/user.js";
 import { requireAuth, requireRoles, STAFF_ROLES } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { parseBigIntId } from "../utils/ids.js";
 import {
   bulkOrderDeleteSchema,
   bulkOrderStatusSchema,
@@ -308,8 +309,7 @@ function validationError(res: Response, error: { flatten: () => { fieldErrors: u
 }
 
 function parseOrderId(req: Request) {
-  const raw = String(req.params.id ?? "");
-  return /^\d{1,19}$/.test(raw) ? BigInt(raw) : null;
+  return parseBigIntId(req.params.id);
 }
 
 class StatusChangeError extends Error {

@@ -19,7 +19,10 @@ import { deleteMediaFile } from "../lib/storage/files.js";
 import { toPublicMedia } from "../lib/user.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
 import { categoryImageUpload, uploadBytes } from "../middleware/upload.js";
-import { homeBlockContentSchemas } from "../validators/homeBlocks.js";
+import {
+  homeBlockContentSchemas,
+  homeBlockKeySchema,
+} from "../validators/homeBlocks.js";
 import {
   ensureHomeBlocks,
   toPublicBlocks,
@@ -30,8 +33,9 @@ export const dashboardHomeBlocksRouter = Router();
 /** Storefront home CMS — super_admin + admin (not moderator). */
 dashboardHomeBlocksRouter.use(requireAuth, requireRoles("super_admin", "admin"));
 
-function isHomeBlockKey(key: string): key is HomeBlockKey {
-  return (HOME_BLOCK_KEYS as readonly string[]).includes(key);
+function parseHomeBlockKey(raw: unknown): HomeBlockKey | null {
+  const parsed = homeBlockKeySchema.safeParse(raw);
+  return parsed.success ? parsed.data : null;
 }
 
 const patchBodySchema = z.object({
@@ -79,8 +83,8 @@ dashboardHomeBlocksRouter.get("/", async (_req, res) => {
 });
 
 dashboardHomeBlocksRouter.get("/:key", async (req, res) => {
-  const key = req.params.key;
-  if (!isHomeBlockKey(key)) {
+  const key = parseHomeBlockKey(req.params.key);
+  if (!key) {
     return res.status(400).json({ message: "Unknown home block key" });
   }
   await ensureHomeBlocks();
@@ -93,8 +97,8 @@ dashboardHomeBlocksRouter.get("/:key", async (req, res) => {
 });
 
 dashboardHomeBlocksRouter.patch("/:key", async (req, res) => {
-  const key = req.params.key;
-  if (!isHomeBlockKey(key)) {
+  const key = parseHomeBlockKey(req.params.key);
+  if (!key) {
     return res.status(400).json({ message: "Unknown home block key" });
   }
 
@@ -132,8 +136,8 @@ dashboardHomeBlocksRouter.patch("/:key", async (req, res) => {
 });
 
 dashboardHomeBlocksRouter.post("/:key/reset", async (req, res) => {
-  const key = req.params.key;
-  if (!isHomeBlockKey(key)) {
+  const key = parseHomeBlockKey(req.params.key);
+  if (!key) {
     return res.status(400).json({ message: "Unknown home block key" });
   }
   await ensureHomeBlocks();
@@ -223,8 +227,8 @@ dashboardHomeBlocksRouter.post(
     });
   },
   async (req, res) => {
-    const key = req.params.key;
-    if (!isHomeBlockKey(key)) {
+    const key = parseHomeBlockKey(req.params.key);
+    if (!key) {
       return res.status(400).json({ message: "Unknown home block key" });
     }
 

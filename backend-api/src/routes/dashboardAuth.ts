@@ -348,10 +348,23 @@ async function optionalStaffOrSetup(
   return next();
 }
 
+const twoFactorSetupBodySchema = z.object({
+  setupToken: z.string().trim().min(20).max(2000).optional(),
+});
+
 dashboardAuthRouter.post(
   "/2fa/setup",
   optionalStaffOrSetup,
   asyncHandler(async (req, res) => {
+    const bodyParsed = twoFactorSetupBodySchema.safeParse(req.body ?? {});
+    if (!bodyParsed.success) {
+      return res.status(400).json({
+        message: bodyParsed.error.issues[0]?.message ?? "Validation failed",
+        errors: bodyParsed.error.flatten().fieldErrors,
+      });
+    }
+    req.body = bodyParsed.data;
+
     const ctx = readSetupOrBearer(req);
     if (!ctx) {
       return res.status(401).json({

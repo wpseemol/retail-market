@@ -11,6 +11,7 @@ import {
 } from "../lib/productReviews.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { parseBigIntId } from "../utils/ids.js";
 import {
   flagReviewSchema,
   listReviewsQuerySchema,
@@ -40,8 +41,7 @@ function validationError(res: Response, error: { flatten: () => { fieldErrors: u
 }
 
 function parseReviewId(req: Request) {
-  const raw = String(req.params.id ?? "");
-  return /^\d{1,19}$/.test(raw) ? BigInt(raw) : null;
+  return parseBigIntId(req.params.id);
 }
 
 /** `undefined` = staff (no scope); `null` = vendor without a shop. */

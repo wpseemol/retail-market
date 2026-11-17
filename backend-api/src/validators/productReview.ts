@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseBigIntId } from "../utils/ids.js";
 import { phoneField, withSafeInput } from "./customerAuth.js";
 
 export const PRODUCT_REVIEW_STATUSES = ["pending", "approved", "hidden", "rejected"] as const;
@@ -71,7 +72,11 @@ export const updateOwnReviewSchema = createReviewSchema.extend({
     .pipe(z.array(z.string().regex(/^\d{1,19}$/, "Invalid photo id")).max(4)),
 });
 
-export const reviewIdParamSchema = z.string().regex(/^\d{1,19}$/, "Invalid review id");
+/** Positive review id that fits a signed MySQL BIGINT. */
+export const reviewIdParamSchema = z
+  .string()
+  .trim()
+  .refine((value) => parseBigIntId(value) !== null, "Invalid review id");
 
 export const publicReviewsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),

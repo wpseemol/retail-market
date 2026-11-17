@@ -1212,7 +1212,7 @@ Auth: Bearer **`super_admin`** or **`admin`** (others → 403). Edits the storef
 
 ### Facebook data deletion callback
 
-`POST /api/auth/facebook/data-deletion` — no app keys (Meta calls it). Body: `application/x-www-form-urlencoded` with `signed_request`. Verifies HMAC with the Facebook app secret from Dashboard → Social login. Unlinks or soft-deletes the matching customer, then returns `{ url, confirmation_code }` where `url` is the storefront privacy page with that code. Rate limit 60 / 15 min / IP.
+`POST /api/auth/facebook/data-deletion` — no app keys (Meta calls it). Body: `application/x-www-form-urlencoded` with `signed_request` (Zod: base64url `sig.payload`, max 8 KB). Verifies HMAC with the Facebook app secret from Dashboard → Social login. Unlinks or soft-deletes the matching customer, then returns `{ url, confirmation_code }` where `url` is the storefront privacy page with that code. Rate limit 60 / 15 min / IP.
 
 **Text formatting** (answers, intro, section bodies): plain text only. A blank line starts a new paragraph; lines starting with `- ` become a bullet list.
 
@@ -1248,7 +1248,7 @@ Access uses **`VendorMember`** (not only `vendors.user_id`). Cap: **1 owner + 2 
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| GET | `/slug-preview?name=` | `{ slug, base }` · `exclude_id?` |
+| GET | `/slug-preview?name=` | `{ slug, base }` · optional `exclude_id` (positive BIGINT, Zod) |
 | GET | `/helper-candidates?q=&limit=` | Active `vendor`-role users not already on a store team · **super_admin / admin / moderator** |
 | GET | `/` | List shops (elevated: all; vendor: member shops) |
 | GET | `/me` | Current vendor’s primary shop (or `null`) |
@@ -1311,7 +1311,7 @@ Stamp format: `YYYY-MM-DD_HHmm` (server local time). Developers can SSH/copy the
 |--------|------|--------|
 | GET | `/` | `{ backups[], config: { enabled, cron, retention_days, dir } }` |
 | POST | `/run` | Create a backup now · `201` `{ message, backup }` · `409 BACKUP_IN_PROGRESS` |
-| GET | `/:stamp/uploads` | ZIP download · `Content-Disposition` filename · DB role re-verified |
+| GET | `/:stamp/uploads` | ZIP download · stamp `YYYY-MM-DD_HHmm` + kind Zod · DB role re-verified |
 | GET | `/:stamp/database` | SQL ZIP download · same |
 
 ---

@@ -3,15 +3,10 @@ import type { Response } from "express";
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { env } from "../lib/env.js";
-import {
-  isValidBackupStamp,
-  listBackups,
-  resolveBackupFile,
-  runBackup,
-  type BackupKind,
-} from "../lib/backup.js";
+import { listBackups, resolveBackupFile, runBackup } from "../lib/backup.js";
 import { requireAuth, requireRoles } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { backupDownloadParamsSchema } from "../validators/backup.js";
 
 export const dashboardBackupsRouter = Router();
 
@@ -87,17 +82,17 @@ dashboardBackupsRouter.get(
     const ok = await assertActiveSuperAdmin(req.auth!.userId, res);
     if (!ok) return;
 
-    const stamp = String(req.params.stamp ?? "");
-    const kind = String(req.params.kind ?? "") as BackupKind;
-    if (!isValidBackupStamp(stamp)) {
-      return res.status(400).json({ message: "Invalid backup stamp", code: "INVALID_STAMP" });
-    }
-    if (kind !== "uploads" && kind !== "database") {
+    const parsed = backupDownloadParamsSchema.safeParse(req.params);
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      const code =
+        issue?.path[0] === "kind" ? "INVALID_KIND" : "INVALID_STAMP";
       return res.status(400).json({
-        message: "kind must be uploads or database",
-        code: "INVALID_KIND",
+        message: issue?.message ?? "Invalid backup params",
+        code,
       });
     }
+    const { stamp, kind } = parsed.data;
 
     const file = await resolveBackupFile(stamp, kind);
     if (!file) {
