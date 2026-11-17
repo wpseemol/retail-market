@@ -4,6 +4,8 @@ import * as React from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
 import { cn } from "@/lib/utils";
 
+type DrawerDirection = "top" | "bottom" | "left" | "right";
+
 function Drawer({
   shouldScaleBackground = true,
   ...props
@@ -51,8 +53,13 @@ function DrawerOverlay({
 function DrawerContent({
   className,
   children,
+  direction = "bottom",
+  showHandle = direction === "bottom" || direction === "top",
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Content>) {
+}: React.ComponentProps<typeof DrawerPrimitive.Content> & {
+  direction?: DrawerDirection;
+  showHandle?: boolean;
+}) {
   return (
     <DrawerPortal>
       <DrawerOverlay />
@@ -60,15 +67,25 @@ function DrawerContent({
         data-slot="drawer-content"
         data-lenis-prevent
         className={cn(
-          "fixed inset-x-0 bottom-0 z-[91] mt-24 flex h-auto max-h-[92dvh] flex-col rounded-t-2xl border border-border-default bg-bg-surface text-text-primary outline-none",
+          "fixed z-[91] flex flex-col border-border-default bg-bg-surface text-text-primary outline-none",
+          direction === "bottom" &&
+            "inset-x-0 bottom-0 mt-24 h-auto max-h-[92dvh] rounded-t-2xl border",
+          direction === "top" &&
+            "inset-x-0 top-0 mb-24 h-auto max-h-[92dvh] rounded-b-2xl border",
+          direction === "right" &&
+            "inset-y-0 right-0 h-dvh w-[85%] max-w-[85vw] rounded-l-2xl border-l",
+          direction === "left" &&
+            "inset-y-0 left-0 h-dvh w-[85%] max-w-[85vw] rounded-r-2xl border-r",
           className,
         )}
         {...props}
       >
-        <div
-          className="mx-auto mt-3 mb-1 h-1.5 w-10 shrink-0 rounded-full bg-border-default"
-          aria-hidden
-        />
+        {showHandle ? (
+          <div
+            className="mx-auto mt-3 mb-1 h-1.5 w-10 shrink-0 rounded-full bg-border-default"
+            aria-hidden
+          />
+        ) : null}
         {children}
       </DrawerPrimitive.Content>
     </DrawerPortal>
@@ -80,7 +97,7 @@ function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="drawer-header"
       className={cn(
-        "grid gap-1 border-b border-border-default px-4 pb-3 pt-1 text-left",
+        "grid gap-1 border-b border-border-default px-4 pb-3 pt-3 text-left",
         className,
       )}
       {...props}

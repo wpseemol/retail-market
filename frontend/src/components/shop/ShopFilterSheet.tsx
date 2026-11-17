@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
+import { XIcon } from "lucide-react";
 import { useI18n } from "@/components/providers/LocaleProvider";
 import {
   Drawer,
@@ -40,11 +41,16 @@ export default function ShopFilterSheet({
       onOpenChange={(next) => {
         if (!next) onClose();
       }}
+      direction="right"
       shouldScaleBackground={false}
       repositionInputs={false}
     >
-      <DrawerContent className="lg:hidden">
-        <DrawerHeader className="flex-row items-center justify-between gap-3 space-y-0">
+      <DrawerContent
+        direction="right"
+        showHandle={false}
+        className="lg:hidden"
+      >
+        <DrawerHeader className="flex flex-row items-center justify-between gap-3 space-y-0 pr-3">
           <div className="min-w-0">
             <DrawerTitle className="m-0 flex items-center gap-2">
               {copy.filters}
@@ -58,6 +64,15 @@ export default function ShopFilterSheet({
               {copy.filters}
             </DrawerDescription>
           </div>
+          <DrawerClose asChild>
+            <button
+              type="button"
+              className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-text-secondary hover:bg-bg-subtle hover:text-text-primary"
+            >
+              <XIcon className="size-5" />
+              <span className="sr-only">{copy.closeFilters}</span>
+            </button>
+          </DrawerClose>
         </DrawerHeader>
 
         <div
