@@ -33,11 +33,12 @@ frontend/src/
 ├── app/            # (auth), about, account, actions, api (incl. api/revalidate), auth, brands,
 │                   # cart, checkout, contact, faq, shop, stores, terms, wishlist, sitemap.ts, robots.ts, manifest.ts
 ├── components/     # auth/, cart/, content/ (FAQ / Terms hero, FaqExplorer, HelpCta, PlainRichText),
-│                   # layout, product UI, reviews/ (PDP reviews + write dialog),
+│                   # home/ (Header, MobileAppTabBar, Footer, hero + home sections),
+│                   # product UI, reviews/ (PDP reviews + write dialog),
 │                   # seo/ (JsonLd), showcase/ (store + brand page sections, theme, hero, directory),
 │                   # ui/ (shadcn form, label, dialog, tooltip)
 ├── config/
-├── hooks/
+├── hooks/          # useScrollChrome (hide header + mobile tabs on scroll down), wishlist, social login, …
 ├── i18n/           # config.ts (en | bn, cookie), dictionaries/{en,bn}.ts, server.ts (getLocale)
 ├── lib/            # api.ts, cart.ts, guestCartCookie.ts, cartTypes.ts, reviews.ts, utils.ts (cn), validators/,
 │                   # seo.ts (buildMetadata, JSON-LD), showcase.ts, stores.ts, brands.ts, contentPages.ts

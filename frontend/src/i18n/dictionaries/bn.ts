@@ -40,6 +40,14 @@ const bn: Dictionary = {
         about: "আমাদের সম্পর্কে",
         contact: "যোগাযোগ",
     },
+    mobileNav: {
+        label: "অ্যাপ নেভিগেশন",
+        home: "হোম",
+        shop: "শপ",
+        cart: "কার্ট",
+        cartCount: "কার্ট, {count}টি পণ্য",
+        account: "অ্যাকাউন্ট",
+    },
     account: {
         login: "লগইন",
         signUp: "সাইন আপ",

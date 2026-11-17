@@ -5,6 +5,14 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-17
 
+### Mobile-app chrome — bottom tabs + hide on scroll
+
+- `hooks/useScrollChrome.ts`: shared hide-on-scroll-down / show-on-scroll-up for sticky chrome.
+- `components/home/MobileAppTabBar.tsx`: fixed phone tab bar (Home · Shop · Cart · Account); cart badge + login vs account link.
+- `Header.tsx`: uses the hook; compact mobile app-bar padding; renders the tab bar; both hide/show together.
+- `app/page.tsx`: home `<main>` bottom padding clears the tab bar; `ScrollToTopButton` lifts above it on mobile.
+- i18n `mobileNav.*` (en/bn); `AGENTS.md` folder notes.
+
 ### Upgrade Next.js 16.4.4 → 16.4.6
 
 - `package.json`: `next` and `eslint-config-next` bumped to **16.4.6** (latest stable LTS patch — route-handler compression, Turbopack GC fixes).

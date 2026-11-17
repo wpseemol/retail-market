@@ -26,7 +26,7 @@ export default function ScrollToTopButton() {
             aria-hidden={!visible}
             tabIndex={visible ? 0 : -1}
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className={`fixed bottom-6 right-5 z-40 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-brand-primary text-white shadow-lg transition-[opacity,transform,background-color] duration-300 hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary ${
+            className={`fixed bottom-20 right-5 z-40 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-brand-primary text-white shadow-lg transition-[opacity,transform,background-color] duration-300 hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary lg:bottom-6 ${
                 visible
                     ? "pointer-events-auto translate-y-0 opacity-100"
                     : "pointer-events-none translate-y-3 opacity-0"

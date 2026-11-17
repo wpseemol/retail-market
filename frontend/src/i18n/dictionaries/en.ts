@@ -38,6 +38,14 @@ const en = {
         about: "About Us",
         contact: "Contact",
     },
+    mobileNav: {
+        label: "App navigation",
+        home: "Home",
+        shop: "Shop",
+        cart: "Cart",
+        cartCount: "Cart, {count} items",
+        account: "Account",
+    },
     account: {
         login: "Login",
         signUp: "Sign Up",

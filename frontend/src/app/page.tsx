@@ -233,7 +233,7 @@ export default async function Home() {
     seo.pages.home.description?.trim() || HOME_SEO_DESCRIPTION;
 
   return (
-    <main>
+    <main className="pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0">
       {/* Single homepage H1 — brand/value prop for Google + AI crawlers (hero promo is h2). */}
       <h1 className="sr-only">{homeTitle}</h1>
       <JsonLd

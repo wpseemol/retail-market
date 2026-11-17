@@ -8,6 +8,7 @@ import PromoAdSlider from "./PromoAdSlider";
 import AccountMenu from "./AccountMenu";
 import CategoryBrowseMenu from "./CategoryBrowseMenu";
 import HeaderSearch from "./HeaderSearch";
+import MobileAppTabBar from "./MobileAppTabBar";
 import { ThemeToggle } from "./theme/ThemeToggle";
 import { useAppSelector } from "@/store/hooks";
 import { formatPrice } from "@/lib/money";
@@ -23,6 +24,8 @@ import type { PublicCategory } from "@/lib/categories";
 import { useI18n } from "@/components/providers/LocaleProvider";
 import { format } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
+import { useScrollChrome } from "@/hooks/useScrollChrome";
+import { cn } from "@/lib/utils";
 
 function fallbackHeaderNav(nav: Dictionary["nav"]) {
     return [
@@ -115,6 +118,10 @@ export default function Header({
     const chromeSpacerRef = useRef<HTMLDivElement | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+    const { stuck, hidden: navHidden } = useScrollChrome({
+        chromeRef,
+        forceShow: isMobileMenuOpen,
+    });
     const cartCount = useAppSelector(selectCartItemCount);
     const cartTotal = useAppSelector(selectCartSubtotal);
     const cartHeaderReady = useAppSelector(selectCartHeaderReady);
@@ -137,64 +144,13 @@ export default function Header({
 
     const isCart = linkActive("/cart");
 
+    // Reserve space when the chrome is fixed so the page does not jump.
     useEffect(() => {
         const chrome = chromeRef.current;
         const spacer = chromeSpacerRef.current;
         if (!chrome || !spacer) return;
-
-        let threshold = 0;
-        let lastY = window.scrollY;
-        let hidden = false;
-
-        const showChrome = () => {
-            if (!hidden) return;
-            chrome.removeAttribute("data-nav-hidden");
-            hidden = false;
-        };
-
-        const hideChrome = () => {
-            if (hidden || isMobileMenuOpen) return;
-            chrome.setAttribute("data-nav-hidden", "");
-            hidden = true;
-        };
-
-        const mark = () => {
-            if (!chrome.hasAttribute("data-stuck")) {
-                threshold = chrome.getBoundingClientRect().top + window.scrollY;
-            }
-
-            const y = window.scrollY;
-            const stuck = y > threshold;
-
-            if (stuck) {
-                chrome.setAttribute("data-stuck", "");
-            } else {
-                chrome.removeAttribute("data-stuck");
-                showChrome();
-            }
-            spacer.style.height = stuck ? `${chrome.offsetHeight}px` : "0px";
-
-            // Hide on scroll down; show on scroll up / top / mobile menu open.
-            // TopBar is outside this chrome, so it never sticks.
-            if (stuck && !isMobileMenuOpen) {
-                const delta = y - lastY;
-                if (delta > 6 && y > threshold + 64) hideChrome();
-                else if (delta < -6) showChrome();
-            } else {
-                showChrome();
-            }
-
-            lastY = y;
-        };
-
-        mark();
-        window.addEventListener("scroll", mark, { passive: true });
-        window.addEventListener("resize", mark);
-        return () => {
-            window.removeEventListener("scroll", mark);
-            window.removeEventListener("resize", mark);
-        };
-    }, [isMobileMenuOpen]);
+        spacer.style.height = stuck ? `${chrome.offsetHeight}px` : "0px";
+    }, [stuck, isMobileMenuOpen]);
 
     // Prevent background scroll when mobile drawer is open
     useEffect(() => {
@@ -217,12 +173,17 @@ export default function Header({
             {/* Sticky chrome: logo, ad, cart, nav — TopBar above scrolls away and never sticks. */}
             <div
                 ref={chromeRef}
-                className="relative z-50 w-full bg-bg-base transition-transform duration-300 ease-out will-change-transform data-stuck:fixed data-stuck:inset-x-0 data-stuck:top-0 data-stuck:shadow-[0_4px_20px_rgba(0,0,0,0.12)] data-nav-hidden:-translate-y-full dark:data-stuck:shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
+                className={cn(
+                    "relative z-50 w-full bg-bg-base transition-transform duration-300 ease-out will-change-transform",
+                    stuck &&
+                        "fixed inset-x-0 top-0 shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]",
+                    navHidden && "-translate-y-full",
+                )}
             >
             {/* ================= 1. Middle Main Section ================= */}
             <section
                 aria-label={t.header.mainInfo}
-                className="w-full py-2.5 sm:py-3"
+                className="w-full py-1.5 sm:py-3"
             >
                 <div className="container mx-auto flex items-center justify-between gap-2 sm:gap-4 px-4 sm:px-6">
                     {/* Brand Logo */}
@@ -351,13 +312,13 @@ export default function Header({
                 aria-label={t.header.primaryNav}
                 className="relative w-full border-y border-border-default/50 bg-bg-base"
             >
-                <div className="flex items-center gap-2 px-4 py-2 lg:hidden">
+                <div className="flex items-center gap-2 px-3 py-1.5 lg:hidden">
                     <button
                         type="button"
                         aria-label={t.header.toggleMenu}
                         aria-expanded={isMobileMenuOpen}
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        className="shrink-0 rounded-md p-2 text-text-primary hover:bg-bg-subtle focus:outline-none"
+                        className="shrink-0 rounded-md p-1.5 text-text-primary hover:bg-bg-subtle focus:outline-none"
                     >
                         <svg
                             width="24"
@@ -713,6 +674,8 @@ export default function Header({
                     </div>
                 </div>
             </div>
+
+            <MobileAppTabBar hidden={navHidden} />
         </header>
     );
 }
