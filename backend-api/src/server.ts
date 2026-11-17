@@ -41,6 +41,8 @@ import { dashboardSeoRouter } from "./routes/dashboardSeo.js";
 import { publicPagesRouter } from "./routes/publicPages.js";
 import { dashboardPagesRouter } from "./routes/dashboardPages.js";
 import { dashboardBackupsRouter } from "./routes/dashboardBackups.js";
+import { sellerApplicationsRouter } from "./routes/sellerApplications.js";
+import { dashboardSellerApplicationsRouter } from "./routes/dashboardSellerApplications.js";
 import { requireAppKeys } from "./middleware/appKeys.js";
 import { closeKvStore, initKvStore } from "./lib/kvStore.js";
 import {
@@ -117,6 +119,7 @@ app.use("/api/categories", publicCategoriesRouter);
 app.use("/api/search", publicSearchRouter);
 app.use("/api/home", publicHomeRouter);
 app.use("/api/home", publicHomeBlocksRouter);
+app.use("/api/seller-applications", sellerApplicationsRouter);
 app.use("/api/dashboard/auth", dashboardAuthRouter);
 app.use("/api/dashboard/users", dashboardUsersRouter);
 app.use("/api/dashboard/shops", dashboardVendorsRouter);
@@ -133,6 +136,7 @@ app.use("/api/dashboard/reviews", dashboardReviewsRouter);
 app.use("/api/dashboard/seo", dashboardSeoRouter);
 app.use("/api/dashboard/pages", dashboardPagesRouter);
 app.use("/api/dashboard/backups", dashboardBackupsRouter);
+app.use("/api/dashboard/seller-applications", dashboardSellerApplicationsRouter);
 
 app.use(
   (
