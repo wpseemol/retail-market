@@ -9,6 +9,7 @@ Format: date heading, then one bullet per change with the files touched.
 
 - Block public `/uploads/seller-kyc/*`; auth-only file streams for owner + admin/super_admin; document `file_url` in API responses.
 - Rate limits on draft/doc/submit/review; customer-only apply; optimistic lock on submit/approve/reject; require identity docs before approve; reuse rejected drafts (no duplicate rows).
+- KYC serializer no longer leaks storage keys; S3 KYC objects use `private, no-store`; serve checks `seller_kyc` + `seller-kyc` path; approve requires `staff_checklist_confirmed`; orphan file cleanup if DB write fails after upload.
 
 ### Become a seller + footer cleanup
 

@@ -11,6 +11,7 @@ Format: date heading, then one bullet per change with the files touched.
 - Settings → Integrations → **KYC**: staff vs paid API mode (Porichoy stub), encrypted API key reveal.
 - `SELLER_APPLICATION_ROLES` in `rbac.ts`; sidebar + settings tabs wired.
 - KYC previews use Bearer `apiDownload` blobs (`SellerKycDocThumb`); public `/uploads/seller-kyc` is blocked.
+- Approve review sends `staff_checklist_confirmed: true` (API-enforced with the UI checklist).
 
 ### Local Docker mail + SMS catcher (workspace)
 
