@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-17
 
+### Header hamburger — animated left drawer
+
+- `Header.tsx`: mobile menu uses Vaul **left** Drawer (slide in/out) instead of instant `hidden`/`block` panel; X close + same nav content.
+
 ### Shop filters — floating FAB + shadcn Drawer
 
 - `vaul` + `components/ui/drawer.tsx`: animated shadcn Drawer (supports right/left/top/bottom).

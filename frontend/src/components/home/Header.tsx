@@ -26,6 +26,15 @@ import { format } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { useScrollChrome } from "@/hooks/useScrollChrome";
 import { cn } from "@/lib/utils";
+import {
+    Drawer,
+    DrawerClose,
+    DrawerContent,
+    DrawerDescription,
+    DrawerHeader,
+    DrawerTitle,
+} from "@/components/ui/drawer";
+import { XIcon } from "lucide-react";
 
 function fallbackHeaderNav(nav: Dictionary["nav"]) {
     return [
@@ -152,17 +161,7 @@ export default function Header({
         spacer.style.height = stuck ? `${chrome.offsetHeight}px` : "0px";
     }, [stuck, isMobileMenuOpen]);
 
-    // Prevent background scroll when mobile drawer is open
-    useEffect(() => {
-        if (isMobileMenuOpen) {
-            document.body.style.overflow = "hidden";
-        } else {
-            document.body.style.overflow = "unset";
-        }
-        return () => {
-            document.body.style.overflow = "unset";
-        };
-    }, [isMobileMenuOpen]);
+    const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
     const toggleDropdown = (name: string) => {
         setOpenDropdown(openDropdown === name ? null : name);
@@ -476,204 +475,196 @@ export default function Header({
             </div>
             <div ref={chromeSpacerRef} aria-hidden="true" />
 
-            {/* ================= 4. Mobile & Tablet Slide-over Drawer ================= */}
-            <div
-                className={`lg:hidden fixed inset-0 z-70 bg-black/50 ${
-                    isMobileMenuOpen ? "block" : "hidden"
-                }`}
-                onClick={() => setIsMobileMenuOpen(false)}
+            {/* Mobile hamburger — animated left drawer (Vaul / shadcn) */}
+            <Drawer
+                open={isMobileMenuOpen}
+                onOpenChange={setIsMobileMenuOpen}
+                direction="left"
+                shouldScaleBackground={false}
+                repositionInputs={false}
             >
-                <div
-                    data-lenis-prevent
-                    className={`fixed top-0 left-0 bottom-0 w-70 sm:w-80 bg-bg-base border-r border-border-default p-5 flex flex-col justify-between overflow-y-auto`}
-                    onClick={(e) => e.stopPropagation()}
+                <DrawerContent
+                    direction="left"
+                    showHandle={false}
+                    className="w-[min(85vw,20rem)] max-w-[85vw] gap-0 p-0 lg:hidden will-change-transform"
                 >
-                    <div className="flex flex-col gap-6">
-                        {/* Drawer Header */}
-                        <div className="flex items-center justify-between pb-3 border-b border-border-default">
-                            <span className="text-sm font-semibold text-text-primary">
+                    <DrawerHeader className="flex flex-row items-center justify-between gap-3 space-y-0 border-b border-border-default px-4 py-3">
+                        <div className="min-w-0">
+                            <DrawerTitle className="m-0 text-sm font-semibold">
                                 {t.header.menu}
-                            </span>
+                            </DrawerTitle>
+                            <DrawerDescription className="sr-only">
+                                {t.header.primaryNav}
+                            </DrawerDescription>
+                        </div>
+                        <DrawerClose asChild>
                             <button
                                 type="button"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="p-1.5 rounded-full hover:bg-bg-subtle text-text-secondary"
+                                className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-text-secondary hover:bg-bg-subtle hover:text-text-primary"
                                 aria-label={t.header.closeMenu}
                             >
-                                <svg
-                                    width="20"
-                                    height="20"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                >
-                                    <path d="M18 6L6 18M6 6l12 12" />
-                                </svg>
+                                <XIcon className="size-5" />
                             </button>
+                        </DrawerClose>
+                    </DrawerHeader>
+
+                    <div
+                        data-lenis-prevent
+                        className="flex min-h-0 flex-1 flex-col justify-between gap-6 overflow-y-auto overscroll-y-contain px-4 py-4 touch-pan-y [-webkit-overflow-scrolling:touch]"
+                    >
+                        <div className="flex flex-col gap-6">
+                            <CategoryBrowseMenu
+                                categories={categories}
+                                variant="mobile"
+                                onNavigate={closeMobileMenu}
+                            />
+
+                            <nav className="flex flex-col gap-1 text-[15px] font-medium">
+                                {headerNav.map((item) => {
+                                    const hasChildren = Boolean(
+                                        item.children?.length,
+                                    );
+                                    const resolved = resolveStorefrontHref(
+                                        item.href,
+                                    );
+                                    const active = linkActive(resolved.href);
+                                    if (hasChildren) {
+                                        return (
+                                            <div key={item.id}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        toggleDropdown(item.id)
+                                                    }
+                                                    className="w-full flex items-center justify-between px-3 py-2 rounded-md text-text-primary hover:bg-bg-subtle"
+                                                >
+                                                    <span>{item.label}</span>
+                                                    <svg
+                                                        width="10"
+                                                        height="6"
+                                                        viewBox="0 0 10 6"
+                                                        fill="none"
+                                                        className={`stroke-current stroke-[1.5] transition-transform ${
+                                                            openDropdown ===
+                                                            item.id
+                                                                ? "rotate-180"
+                                                                : ""
+                                                        }`}
+                                                    >
+                                                        <path d="M1 1L5 5L9 1" />
+                                                    </svg>
+                                                </button>
+                                                {openDropdown === item.id ? (
+                                                    <div className="pl-6 flex flex-col gap-1 py-1 text-sm text-text-secondary">
+                                                        {item.children!.map(
+                                                            (child) => {
+                                                                const c =
+                                                                    resolveStorefrontHref(
+                                                                        child.href,
+                                                                    );
+                                                                return c.external ? (
+                                                                    <a
+                                                                        key={
+                                                                            child.id
+                                                                        }
+                                                                        href={
+                                                                            c.href
+                                                                        }
+                                                                        onClick={
+                                                                            closeMobileMenu
+                                                                        }
+                                                                        className="py-1 hover:text-brand-primary"
+                                                                    >
+                                                                        {
+                                                                            child.label
+                                                                        }
+                                                                    </a>
+                                                                ) : (
+                                                                    <Link
+                                                                        key={
+                                                                            child.id
+                                                                        }
+                                                                        href={
+                                                                            c.href
+                                                                        }
+                                                                        onClick={
+                                                                            closeMobileMenu
+                                                                        }
+                                                                        className="py-1 hover:text-brand-primary"
+                                                                    >
+                                                                        {
+                                                                            child.label
+                                                                        }
+                                                                    </Link>
+                                                                );
+                                                            },
+                                                        )}
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                        );
+                                    }
+                                    return resolved.external ? (
+                                        <a
+                                            key={item.id}
+                                            href={resolved.href}
+                                            onClick={closeMobileMenu}
+                                            className="px-3 py-2 rounded-md text-text-primary hover:bg-bg-subtle"
+                                        >
+                                            {item.label}
+                                        </a>
+                                    ) : (
+                                        <Link
+                                            key={item.id}
+                                            href={resolved.href}
+                                            onClick={closeMobileMenu}
+                                            className={`px-3 py-2 rounded-md hover:bg-bg-subtle ${
+                                                active
+                                                    ? "text-brand-primary font-semibold"
+                                                    : "text-text-primary"
+                                            }`}
+                                        >
+                                            {item.label}
+                                        </Link>
+                                    );
+                                })}
+                                <Link
+                                    href="/bulk-order"
+                                    onClick={closeMobileMenu}
+                                    className={`px-3 py-2 rounded-md hover:bg-bg-subtle ${
+                                        linkActive("/bulk-order")
+                                            ? "text-brand-primary font-semibold"
+                                            : "text-text-primary"
+                                    }`}
+                                >
+                                    {t.nav.wholesale}
+                                </Link>
+                                <Link
+                                    href="/wishlist"
+                                    onClick={closeMobileMenu}
+                                    className="sm:hidden px-3 py-2 rounded-md text-text-primary hover:bg-bg-subtle flex items-center justify-between"
+                                >
+                                    <span>{t.header.wishlist}</span>
+                                    {wishlistCount > 0 ? (
+                                        <span className="bg-brand-primary text-white text-2.5 px-1.5 py-0.5 rounded-full">
+                                            {wishlistCount > 99
+                                                ? "99+"
+                                                : wishlistCount}
+                                        </span>
+                                    ) : null}
+                                </Link>
+                            </nav>
                         </div>
 
-                        {/* Category Button in Mobile */}
-                        <CategoryBrowseMenu
-                            categories={categories}
-                            variant="mobile"
-                            onNavigate={() => setIsMobileMenuOpen(false)}
-                        />
-
-                        {/* Navigation List */}
-                        <nav className="flex flex-col gap-1 text-[15px] font-medium">
-                            {headerNav.map((item) => {
-                                const hasChildren = Boolean(
-                                    item.children?.length,
-                                );
-                                const resolved = resolveStorefrontHref(
-                                    item.href,
-                                );
-                                const active = linkActive(resolved.href);
-                                if (hasChildren) {
-                                    return (
-                                        <div key={item.id}>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    toggleDropdown(item.id)
-                                                }
-                                                className="w-full flex items-center justify-between px-3 py-2 rounded-md text-text-primary hover:bg-bg-subtle"
-                                            >
-                                                <span>{item.label}</span>
-                                                <svg
-                                                    width="10"
-                                                    height="6"
-                                                    viewBox="0 0 10 6"
-                                                    fill="none"
-                                                    className={`stroke-current stroke-[1.5] transition-transform ${
-                                                        openDropdown === item.id
-                                                            ? "rotate-180"
-                                                            : ""
-                                                    }`}
-                                                >
-                                                    <path d="M1 1L5 5L9 1" />
-                                                </svg>
-                                            </button>
-                                            {openDropdown === item.id ? (
-                                                <div className="pl-6 flex flex-col gap-1 py-1 text-sm text-text-secondary">
-                                                    {item.children!.map(
-                                                        (child) => {
-                                                            const c =
-                                                                resolveStorefrontHref(
-                                                                    child.href,
-                                                                );
-                                                            return c.external ? (
-                                                                <a
-                                                                    key={
-                                                                        child.id
-                                                                    }
-                                                                    href={
-                                                                        c.href
-                                                                    }
-                                                                    onClick={() =>
-                                                                        setIsMobileMenuOpen(
-                                                                            false,
-                                                                        )
-                                                                    }
-                                                                    className="py-1 hover:text-brand-primary"
-                                                                >
-                                                                    {
-                                                                        child.label
-                                                                    }
-                                                                </a>
-                                                            ) : (
-                                                                <Link
-                                                                    key={
-                                                                        child.id
-                                                                    }
-                                                                    href={
-                                                                        c.href
-                                                                    }
-                                                                    onClick={() =>
-                                                                        setIsMobileMenuOpen(
-                                                                            false,
-                                                                        )
-                                                                    }
-                                                                    className="py-1 hover:text-brand-primary"
-                                                                >
-                                                                    {
-                                                                        child.label
-                                                                    }
-                                                                </Link>
-                                                            );
-                                                        },
-                                                    )}
-                                                </div>
-                                            ) : null}
-                                        </div>
-                                    );
-                                }
-                                return resolved.external ? (
-                                    <a
-                                        key={item.id}
-                                        href={resolved.href}
-                                        onClick={() =>
-                                            setIsMobileMenuOpen(false)
-                                        }
-                                        className="px-3 py-2 rounded-md text-text-primary hover:bg-bg-subtle"
-                                    >
-                                        {item.label}
-                                    </a>
-                                ) : (
-                                    <Link
-                                        key={item.id}
-                                        href={resolved.href}
-                                        onClick={() =>
-                                            setIsMobileMenuOpen(false)
-                                        }
-                                        className={`px-3 py-2 rounded-md hover:bg-bg-subtle ${
-                                            active
-                                                ? "text-brand-primary font-semibold"
-                                                : "text-text-primary"
-                                        }`}
-                                    >
-                                        {item.label}
-                                    </Link>
-                                );
-                            })}
-                            <Link
-                                href="/bulk-order"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className={`px-3 py-2 rounded-md hover:bg-bg-subtle ${
-                                    linkActive("/bulk-order")
-                                        ? "text-brand-primary font-semibold"
-                                        : "text-text-primary"
-                                }`}
-                            >
-                                {t.nav.wholesale}
-                            </Link>
-                            <Link
-                                href="/wishlist"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="sm:hidden px-3 py-2 rounded-md text-text-primary hover:bg-bg-subtle flex items-center justify-between"
-                            >
-                                <span>{t.header.wishlist}</span>
-                                {wishlistCount > 0 ? (
-                                    <span className="bg-brand-primary text-white text-2.5 px-1.5 py-0.5 rounded-full">
-                                        {wishlistCount > 99
-                                            ? "99+"
-                                            : wishlistCount}
-                                    </span>
-                                ) : null}
-                            </Link>
-                        </nav>
+                        <div className="border-t border-border-default pt-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+                            <AccountMenu
+                                variant="mobile"
+                                onNavigate={closeMobileMenu}
+                            />
+                        </div>
                     </div>
-
-                    {/* Drawer Bottom Action */}
-                    <div className="pt-4 border-t border-border-default flex flex-col gap-3">
-                        <AccountMenu
-                            variant="mobile"
-                            onNavigate={() => setIsMobileMenuOpen(false)}
-                        />
-                    </div>
-                </div>
-            </div>
+                </DrawerContent>
+            </Drawer>
 
             <MobileAppTabBar hidden={navHidden} />
         </header>
