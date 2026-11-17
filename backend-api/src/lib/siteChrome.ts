@@ -92,7 +92,6 @@ export const DEFAULT_NAV_SEED: Array<{
     position: 6,
   },
   { menu: "footer_find", label: "All stores", href: "/stores", position: 7 },
-  { menu: "footer_find", label: "Quick Links", href: "/shop", position: 8 },
 
   { menu: "footer_care", label: "My Account", href: "/account", position: 0 },
   {
@@ -112,6 +111,12 @@ export const DEFAULT_NAV_SEED: Array<{
   { menu: "footer_care", label: "Returns/Exchange", href: "/faq", position: 5 },
   { menu: "footer_care", label: "FAQ", href: "/faq", position: 6 },
   { menu: "footer_care", label: "Product Support", href: "/contact", position: 7 },
+  {
+    menu: "footer_care",
+    label: "Become a seller",
+    href: "/become-seller",
+    position: 8,
+  },
 
   {
     menu: "footer_sell",
@@ -257,6 +262,8 @@ export async function ensureSiteChromeDefaults() {
   }
 
   await ensureFooterAllStoresQuickLink();
+  await removeFooterFindQuickLinksItem();
+  await ensureFooterBecomeSellerLink();
 }
 
 /** Add Find-it-fast “All stores” → /stores when missing (existing DBs). */
@@ -283,6 +290,52 @@ export async function ensureFooterAllStoresQuickLink() {
       menu: "footer_find",
       label: "All stores",
       href: "/stores",
+      external: false,
+      position: (maxPos._max.position ?? -1) + 1,
+      is_enabled: true,
+    },
+  });
+}
+
+/** Drop the mistaken Find-it-fast “Quick Links” → /shop row (column title, not a link). */
+export async function removeFooterFindQuickLinksItem() {
+  await prisma.siteNavItem.deleteMany({
+    where: {
+      settings_id: 1,
+      menu: "footer_find",
+      parent_id: null,
+      OR: [
+        { label: "Quick Links", href: "/shop" },
+        { label: "Quick Links" },
+      ],
+    },
+  });
+}
+
+/** Add Customer care “Become a seller” → /become-seller when missing. */
+export async function ensureFooterBecomeSellerLink() {
+  const existing = await prisma.siteNavItem.findFirst({
+    where: {
+      settings_id: 1,
+      menu: "footer_care",
+      href: "/become-seller",
+      parent_id: null,
+    },
+    select: { id: true },
+  });
+  if (existing) return;
+
+  const maxPos = await prisma.siteNavItem.aggregate({
+    where: { settings_id: 1, menu: "footer_care", parent_id: null },
+    _max: { position: true },
+  });
+
+  await prisma.siteNavItem.create({
+    data: {
+      settings_id: 1,
+      menu: "footer_care",
+      label: "Become a seller",
+      href: "/become-seller",
       external: false,
       position: (maxPos._max.position ?? -1) + 1,
       is_enabled: true,

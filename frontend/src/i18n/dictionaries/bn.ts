@@ -132,7 +132,6 @@ const bn: Dictionary = {
             gadgets: "গ্যাজেট",
             headphones: "ওয়াটারপ্রুফ হেডফোন",
             allStores: "সব স্টোর",
-            quickLinks: "দ্রুত লিংক",
             myAccount: "আমার অ্যাকাউন্ট",
             trackOrder: "অর্ডার ট্র্যাক করুন",
             wishlist: "উইশলিস্ট",
@@ -143,6 +142,7 @@ const bn: Dictionary = {
             terms: "শর্তাবলি",
             privacy: "গোপনীয়তা নীতি",
             support: "পণ্য সহায়তা",
+            becomeSeller: "বিক্রেতা হোন",
         },
     },
     reviews: {

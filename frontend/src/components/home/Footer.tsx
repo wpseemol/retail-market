@@ -40,7 +40,6 @@ const findItFastLinks: FallbackLink[] = [
     { key: "gadgets", href: "/shop?category=gadgets" },
     { key: "headphones", href: "/shop?category=headphones" },
     { key: "allStores", href: "/stores" },
-    { key: "quickLinks", href: "/shop" },
 ];
 
 const customerCareLinks: FallbackLink[] = [
@@ -52,6 +51,7 @@ const customerCareLinks: FallbackLink[] = [
     { key: "returns", href: "/faq" },
     { key: "faq", href: "/faq" },
     { key: "support", href: "/contact" },
+    { key: "becomeSeller", href: "/become-seller" },
 ];
 
 const FOOTER_SOCIAL = [

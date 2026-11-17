@@ -47,6 +47,30 @@ enum MediaCollection {
   review_images
   brand_banners
   showcase_og
+  seller_kyc
+}
+
+/// Customer → vendor onboarding application.
+enum SellerApplicationStatus {
+  draft
+  submitted
+  under_review
+  approved
+  rejected
+}
+
+enum SellerDocType {
+  nid_front
+  nid_back
+  birth_certificate
+  trade_license
+  other
+}
+
+/// How identity documents are checked before staff approve a seller.
+enum KycMode {
+  staff
+  paid_api
 }
 
 enum DeviceType {
@@ -183,6 +207,8 @@ model User {
   vendorHistory       VendorHistory[]       @relation("VendorHistoryActor")
   siteSettingsHistory SiteSettingsHistory[] @relation("SiteSettingsHistoryActor")
   verificationCodes   VerificationCode[]
+  sellerApplications  SellerApplication[]   @relation("SellerApplicationApplicant")
+  sellerReviews       SellerApplication[]   @relation("SellerApplicationReviewer")
 
   @@map("users")
 }
@@ -250,6 +276,7 @@ model Media {
   vendorOgImages      Vendor[]         @relation("VendorOgImage")
   brandBanners        Brand[]          @relation("BrandBanner")
   brandOgImages       Brand[]          @relation("BrandOgImage")
+  sellerDocuments     SellerApplicationDocument[]
 
   @@index([user_id])
   @@index([collection_name])
@@ -437,8 +464,9 @@ model Vendor {
   brands       Brand[]                  @relation("VendorBrands")
   products     Product[]
   history      VendorHistory[]
-  members      VendorMember[]
-  settlements  OrderVendorSettlement[]
+  members             VendorMember[]
+  settlements         OrderVendorSettlement[]
+  sellerApplications  SellerApplication[]
 
   @@map("vendors")
 }
@@ -1155,6 +1183,72 @@ model RecaptchaSettings {
   updated_at     DateTime @updatedAt
 
   @@map("recaptcha_settings")
+}
+
+/// Seller KYC mode + optional paid provider (super_admin). Default = staff review.
+model KycSettings {
+  id              Int      @id @default(1)
+  mode            KycMode  @default(staff)
+  /// e.g. porichoy — only used when mode = paid_api.
+  provider        String?  @db.VarChar(40)
+  api_key_enc     String?  @db.Text
+  api_base_url    String?  @db.VarChar(255)
+  is_enabled      Boolean  @default(false)
+  /// Public partner fee/rent copy shown on /become-seller (JSON).
+  partner_terms   Json?
+  updated_by      BigInt?  @db.UnsignedBigInt
+  updated_at      DateTime @updatedAt
+
+  @@map("kyc_settings")
+}
+
+/// Customer application to become a partner seller.
+model SellerApplication {
+  id                    BigInt                   @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id               BigInt                   @db.UnsignedBigInt
+  shop_name             String?                  @db.VarChar(200)
+  shop_name_bn          String?                  @db.VarChar(200)
+  description           String?                  @db.Text
+  contact_phone         String?                  @db.VarChar(30)
+  business_address      String?                  @db.VarChar(500)
+  status                SellerApplicationStatus  @default(draft)
+  rejection_reason      String?                  @db.VarChar(1000)
+  accepted_fee_terms_at DateTime?
+  /// Snapshot of fee/rent terms shown when the applicant submitted.
+  fee_snapshot          Json?
+  /// Optional paid-KYC provider result (advisory).
+  kyc_provider_result   Json?
+  vendor_id             BigInt?                  @unique @db.UnsignedBigInt
+  reviewed_by_id        BigInt?                  @db.UnsignedBigInt
+  reviewed_at           DateTime?
+  created_at            DateTime                 @default(now())
+  updated_at            DateTime                 @updatedAt
+
+  user       User                        @relation("SellerApplicationApplicant", fields: [user_id], references: [id], onDelete: Cascade)
+  reviewer   User?                       @relation("SellerApplicationReviewer", fields: [reviewed_by_id], references: [id], onDelete: SetNull)
+  vendor     Vendor?                     @relation(fields: [vendor_id], references: [id], onDelete: SetNull)
+  documents  SellerApplicationDocument[]
+
+  @@index([user_id, status])
+  @@index([status, created_at])
+  @@map("seller_applications")
+}
+
+model SellerApplicationDocument {
+  id             BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  application_id BigInt        @db.UnsignedBigInt
+  doc_type       SellerDocType
+  media_id       BigInt        @db.UnsignedBigInt
+  label          String?       @db.VarChar(120)
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
+
+  application SellerApplication @relation(fields: [application_id], references: [id], onDelete: Cascade)
+  media       Media             @relation(fields: [media_id], references: [id], onDelete: Cascade)
+
+  @@unique([application_id, doc_type])
+  @@index([media_id])
+  @@map("seller_application_documents")
 }
 
 /// Outgoing email (verification codes etc.) managed from Dashboard → Settings → Email provider.

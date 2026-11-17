@@ -131,7 +131,6 @@ const en = {
             gadgets: "Gadgets",
             headphones: "Waterproof Headphones",
             allStores: "All stores",
-            quickLinks: "Quick Links",
             myAccount: "My Account",
             trackOrder: "Track Your Order",
             wishlist: "Wishlist",
@@ -142,6 +141,7 @@ const en = {
             terms: "Terms & Conditions",
             privacy: "Privacy Policy",
             support: "Product Support",
+            becomeSeller: "Become a seller",
         },
     } satisfies {
         logoAlt: string;
