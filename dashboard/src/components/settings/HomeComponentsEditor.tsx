@@ -54,11 +54,27 @@ import {
   WhereItShows,
 } from "@/components/settings/home/HomeEditorChrome";
 import { HomeImageField } from "@/components/settings/home/HomeImageField";
+import { PromoProductLinkField } from "@/components/settings/home/PromoProductLinkField";
+import { useConfirm } from "@/components/providers/ConfirmProvider";
 
 type Props = {
   token: string;
   onError: (message: string) => void;
   onSuccess: (message: string) => void;
+};
+
+const EMPTY_PROMO_SLIDE: PromoSliderFormValues["slides"][number] = {
+  price: "৳0",
+  tagline: "NEW",
+  highlight_text: "NEW",
+  sub_highlight: "STARTING AT",
+  category_tag: "Product",
+  title_line1: "New slide title",
+  title_line2: "Second line",
+  cta_label: "SHOP NOW",
+  cta_href: "/shop",
+  image: "/images/PromoBannerSlider_Product_1.png",
+  image_alt: "Product",
 };
 
 type BlockResponse = {
@@ -828,11 +844,15 @@ function TopBrandsEditor(props: Props) {
 /* ── Promo slider ─────────────────────────────────────────────────────── */
 
 function PromoSliderEditor(props: Props) {
+  const confirm = useConfirm();
   const form = useForm<PromoSliderFormValues>({
     resolver: zodResolver(promoSliderFormSchema),
     defaultValues: { slides: [], autoplay_ms: 4500, bg_image: "" },
   });
-  const { fields } = useFieldArray({ control: form.control, name: "slides" });
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "slides",
+  });
   const resetForm = useCallback(
     (c: Record<string, unknown>) => {
       form.reset({
@@ -853,6 +873,21 @@ function PromoSliderEditor(props: Props) {
     resetForm,
   );
   const meta = HOME_COMPONENT_META.find((m) => m.key === "promo_slider")!;
+
+  async function onRemoveSlide(index: number) {
+    if (fields.length <= 1) {
+      props.onError("Keep at least one slide");
+      return;
+    }
+    const title = form.getValues(`slides.${index}.title_line1`) || `Slide ${index + 1}`;
+    const ok = await confirm({
+      title: `Remove “${title}”?`,
+      description: "This slide is removed from the form. Save to publish. This cannot be undone after save.",
+      confirmLabel: "Remove slide",
+    });
+    if (!ok) return;
+    remove(index);
+  }
 
   if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
@@ -875,7 +910,7 @@ function PromoSliderEditor(props: Props) {
                     <FormControl>
                       <HomeImageField
                         label="Background image"
-                        description="Shared backdrop behind every slide."
+                        description="Shared backdrop behind every slide · JPEG/PNG/WebP/GIF · max 1 MB · always resized on the server"
                         value={field.value}
                         blockKey="promo_slider"
                         fieldPath="bg_image"
@@ -925,7 +960,7 @@ function PromoSliderEditor(props: Props) {
             <EditorCard
               key={field.id}
               title={`Slide ${index + 1}`}
-              hint="Price + tagline · highlight · two-line title · CTA · product image."
+              hint="Upload a unique product image per slide. Link CTA to /shop/{slug}."
             >
               <div className="mb-3">
                 <FormField
@@ -936,7 +971,7 @@ function PromoSliderEditor(props: Props) {
                       <FormControl>
                         <HomeImageField
                           label="Product image"
-                          description={`Slide ${index + 1} product art.`}
+                          description={`Slide ${index + 1} art · JPEG/PNG/WebP/GIF · max 1 MB · always resized on the server`}
                           value={f.value}
                           blockKey="promo_slider"
                           fieldPath={`slides.${index}.image`}
@@ -944,7 +979,7 @@ function PromoSliderEditor(props: Props) {
                           disabled={form.formState.isSubmitting}
                           onUploaded={(path) =>
                             form.setValue(`slides.${index}.image`, path, {
-                              shouldDirty: false,
+                              shouldDirty: true,
                               shouldValidate: true,
                             })
                           }
@@ -967,7 +1002,6 @@ function PromoSliderEditor(props: Props) {
                     ["title_line1", "Title line 1"],
                     ["title_line2", "Title line 2"],
                     ["cta_label", "CTA label"],
-                    ["cta_href", "CTA link"],
                     ["image_alt", "Product image alt"],
                   ] as const
                 ).map(([name, label]) => (
@@ -987,8 +1021,69 @@ function PromoSliderEditor(props: Props) {
                   />
                 ))}
               </div>
+              <FormField
+                control={form.control}
+                name={`slides.${index}.cta_href`}
+                render={({ field: f }) => (
+                  <FormItem className="mt-3">
+                    <FormLabel>Product / CTA link</FormLabel>
+                    <FormControl>
+                      <PromoProductLinkField
+                        token={props.token}
+                        value={f.value}
+                        disabled={form.formState.isSubmitting}
+                        onChange={f.onChange}
+                        onProductPicked={(picked) => {
+                          form.setValue(`slides.${index}.cta_href`, picked.href, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
+                          if (picked.priceLabel) {
+                            form.setValue(`slides.${index}.price`, picked.priceLabel, {
+                              shouldDirty: true,
+                            });
+                          }
+                          form.setValue(`slides.${index}.image_alt`, picked.name, {
+                            shouldDirty: true,
+                          });
+                          if (picked.image) {
+                            form.setValue(`slides.${index}.image`, picked.image, {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            });
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Use a storefront path such as <code className="text-xs">/shop/your-product-slug</code>.
+                      Search picks an active product and can fill image, alt, and price.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="mt-3 text-destructive"
+                disabled={form.formState.isSubmitting || fields.length <= 1}
+                onClick={() => void onRemoveSlide(index)}
+              >
+                Remove slide
+              </Button>
             </EditorCard>
-          ))}          <StickyEditorActions
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            disabled={form.formState.isSubmitting || fields.length >= 8}
+            onClick={() => append({ ...EMPTY_PROMO_SLIDE })}
+          >
+            Add slide
+          </Button>
+          <StickyEditorActions
             dirty={form.formState.isDirty}
             saving={form.formState.isSubmitting}
             onReset={() => void reset()}

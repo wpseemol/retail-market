@@ -27,7 +27,8 @@ import {
 
 export const dashboardHomeBlocksRouter = Router();
 
-dashboardHomeBlocksRouter.use(requireAuth, requireRoles("super_admin"));
+/** Storefront home CMS — super_admin + admin (not moderator). */
+dashboardHomeBlocksRouter.use(requireAuth, requireRoles("super_admin", "admin"));
 
 function isHomeBlockKey(key: string): key is HomeBlockKey {
   return (HOME_BLOCK_KEYS as readonly string[]).includes(key);

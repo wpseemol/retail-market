@@ -20,7 +20,7 @@ import {
 import { StoreCreatePage, StoreDesignPage, StoreEditPage, StoresPage } from "./pages/stores";
 import { UserEditPage, UsersPage } from "./pages/access";
 import { ReviewsModerationPage, SellerApplicationsPage } from "./pages/support";
-import { SeoSettingsPage } from "./pages/marketing";
+import { HomeContentPage, SeoSettingsPage } from "./pages/marketing";
 import { FaqPageEditor, PrivacyPageEditor, TermsPageEditor } from "./pages/content";
 import {
   AnalyticsSettingsPage,
@@ -48,6 +48,7 @@ import type { StaffRole } from "./lib/api";
 import {
   BRAND_SHOWCASE_ROLES,
   CONTENT_PAGE_ROLES,
+  HOME_CONTENT_ROLES,
   NOTIFICATION_ROLES,
   ORDER_ROLES,
   OVERVIEW_ROLES,
@@ -123,6 +124,10 @@ export default function App() {
             <Route path="content/faq" element={<FaqPageEditor />} />
             <Route path="content/terms" element={<TermsPageEditor />} />
             <Route path="content/privacy" element={<PrivacyPageEditor />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={HOME_CONTENT_ROLES} />}>
+            <Route path="content/home" element={<HomeContentPage />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={STAFF_MANAGEMENT_ROLES} />}>

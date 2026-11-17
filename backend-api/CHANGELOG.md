@@ -3,6 +3,14 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-18
+
+### Promo slider CMS (dynamic slides + admin)
+
+- `promo_slider` defaults: distinct product images per slide; CTA paths `/shop/{slug}`.
+- Zod `cta_href` must be a storefront path; legacy `?product=` normalized; `repairLegacyPromoSliderContent` upgrades old same-image seeds.
+- `/api/dashboard/home-blocks` + home hero: **`super_admin` and `admin`**.
+
 ## 2026-11-17
 
 ### Become a seller security hardening

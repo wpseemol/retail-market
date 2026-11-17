@@ -68,6 +68,12 @@ export const SEO_ROLES: readonly StaffRole[] = ["super_admin", "admin"];
 export const CONTENT_PAGE_ROLES: readonly StaffRole[] = ["super_admin", "admin"];
 
 /**
+ * Home hero + home blocks (promo slider, welcome modal, etc.).
+ * Super admin also keeps Settings → Home (section order + full site chrome).
+ */
+export const HOME_CONTENT_ROLES: readonly StaffRole[] = ["super_admin", "admin"];
+
+/**
  * Brand showcase pages: admins edit any brand; vendors only brands linked to their
  * store (the API checks ownership). Linking a brand to a store is admin-only.
  */

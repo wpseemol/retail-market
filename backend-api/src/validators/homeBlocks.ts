@@ -7,6 +7,31 @@ const safe = (min: number, max: number) =>
 const safeOpt = (max: number) => withSafeInput(z.string().trim().max(max));
 const percent = z.coerce.number().int().min(0).max(100);
 const path = safe(1, 500);
+
+/** Storefront-relative path (`/shop/slug`). Rejects schemes and protocol-relative URLs. */
+const storefrontHref = safe(1, 300).superRefine((value, ctx) => {
+  if (!value.startsWith("/") || value.startsWith("//")) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Link must start with / (e.g. /shop/your-product-slug)",
+    });
+    return;
+  }
+  if (/^[a-z][a-z0-9+.-]*:/i.test(value)) {
+    ctx.addIssue({ code: "custom", message: "Link cannot use a URL scheme" });
+  }
+});
+
+/** Legacy `/shop?product=slug` → canonical `/shop/slug`. */
+const promoCtaHref = storefrontHref.transform((value) => {
+  const match = value.match(/^\/shop\/?\?product=([^&/#]+)/i);
+  if (!match?.[1]) return value;
+  try {
+    return `/shop/${decodeURIComponent(match[1])}`;
+  } catch {
+    return `/shop/${match[1]}`;
+  }
+});
 const sortEnum = z.enum([
   "newest",
   "default",
@@ -64,7 +89,7 @@ export const homeBlockContentSchemas = {
           title_line1: safe(1, 80),
           title_line2: safe(1, 80),
           cta_label: safe(1, 40),
-          cta_href: safe(1, 300),
+          cta_href: promoCtaHref,
           image: path,
           image_alt: safe(1, 120),
         }),

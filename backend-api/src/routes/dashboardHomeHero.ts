@@ -24,7 +24,8 @@ import {
 
 export const dashboardHomeHeroRouter = Router();
 
-dashboardHomeHeroRouter.use(requireAuth, requireRoles("super_admin"));
+/** Home hero CMS — super_admin + admin. */
+dashboardHomeHeroRouter.use(requireAuth, requireRoles("super_admin", "admin"));
 
 const HERO_MEDIA_INCLUDE = {
   main_product_image: true,

@@ -5,6 +5,15 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Become-seller KYC thumb types
+
+- `SellerKycDocThumb`: `src` state is `string` (not `null`) to clear the `setSrc(null)` type error; preview stays a plain `<img>` (blob URL), not `next/image`.
+
+### Promo slider dynamic images / product URLs
+
+- Default slides use distinct images and `/shop/{slug}` CTAs; uploaded `/uploads/…` art renders on the storefront.
+- CMS (admin/super_admin) can edit slides, images, and product links via home blocks.
+
 ### Promo banner slider motion
 
 - `PromoBannerSlider`: real slide motion via Web Animations API (site disables framer-motion + CSS keyframes) — exit/enter, staggered copy/CTA, product rise + idle float, autoplay progress on the active pill; respects `prefers-reduced-motion`.

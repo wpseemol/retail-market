@@ -10,6 +10,10 @@ const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 const EXIT_MS = 320;
 const ENTER_MS = 560;
 
+function isRemoteSrc(src: string) {
+  return /^https?:\/\//i.test(src) || src.startsWith("/uploads/");
+}
+
 function prefersReducedMotion() {
   if (typeof window === "undefined") return false;
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -229,14 +233,24 @@ export default function PromoBannerSlider({
               ref={productRef}
               className="relative flex h-47.5 w-60 shrink-0 items-center justify-center sm:h-60 sm:w-80 lg:h-67.5 lg:w-95"
             >
-              <Image
-                src={slide.image}
-                alt={slide.image_alt}
-                fill
-                sizes="(max-width: 768px) 240px, 380px"
-                className="object-contain drop-shadow-xl"
-                priority={shown === 0}
-              />
+              {isRemoteSrc(slide.image) ? (
+                // Uploaded CMS art (API /uploads or absolute CDN URL).
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={slide.image}
+                  alt={slide.image_alt}
+                  className="absolute inset-0 size-full object-contain drop-shadow-xl"
+                />
+              ) : (
+                <Image
+                  src={slide.image}
+                  alt={slide.image_alt}
+                  fill
+                  sizes="(max-width: 768px) 240px, 380px"
+                  className="object-contain drop-shadow-xl"
+                  priority={shown === 0}
+                />
+              )}
             </div>
 
             <div className="flex w-full max-w-lg flex-col items-start md:pl-6">

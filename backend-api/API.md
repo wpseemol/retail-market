@@ -119,7 +119,7 @@ String fields are checked for SQL-like payloads, PHP tags/code, JavaScript (`eva
 | `/api/dashboard/reviews` | `routes/dashboardReviews.ts` | Staff (vendors: own store only) |
 | `/api/dashboard/site-settings` | `routes/dashboardSiteSettings.ts` | `super_admin` |
 | `/api/dashboard/home-hero` | `routes/dashboardHomeHero.ts` | `super_admin` |
-| `/api/dashboard/home-blocks` | `routes/dashboardHomeBlocks.ts` | `super_admin` |
+| `/api/dashboard/home-blocks` | `routes/dashboardHomeBlocks.ts` | `super_admin` · `admin` |
 | `/api/dashboard/shops` | `routes/dashboardVendors.ts` | `super_admin`, `admin` (read + design), `moderator` (read + team), `vendor` (member shops) |
 | `/api/dashboard/seo` | `routes/dashboardSeo.ts` | `super_admin`, `admin` |
 | `/api/dashboard/pages` | `routes/dashboardPages.ts` | `super_admin`, `admin` |
@@ -301,15 +301,17 @@ Table: `home_hero_banners` (id = 1).
 
 ## Dashboard home blocks — `/api/dashboard/home-blocks`
 
-Auth: Bearer **`super_admin`**. Drives **Settings → Home → Other home sections**.
+Auth: Bearer **`super_admin`** or **`admin`**. Drives **Content → Home content** and **Settings → Home → Other home sections** (super_admin).
 
 | Method | Path | Notes |
 |--------|------|--------|
 | GET | `/` | `{ blocks, keys }` |
 | GET | `/:key` | One block content |
-| PATCH | `/:key` | Body `{ content: object }` · recursive safe-input · **`welcome_modal`** uses dedicated Zod schema |
+| PATCH | `/:key` | Body `{ content: object }` · Zod per block · safe-input · **`promo_slider`** slides require unique image paths + storefront `cta_href` starting with `/` (legacy `/shop?product=slug` normalized to `/shop/slug`) |
 | POST | `/:key/reset` | Restore seeded defaults |
-| POST | `/:key/images` | Multipart field **`image`** · query/body **`field`** (dot path, e.g. `product_image` or `cards.0.image`) · max **1 MB** · always resized · writes URL into block JSON |
+| POST | `/:key/images` | Multipart field **`image`** · query/body **`field`** (dot path, e.g. `product_image` or `slides.0.image`) · max **1 MB** · always resized · writes URL into block JSON |
+
+**Promo slider:** `bg_image`, `autoplay_ms` (2000–20000), `slides[]` (`price`, `tagline`, `highlight_text`, `sub_highlight`, `category_tag`, `title_line1`, `title_line2`, `cta_label`, `cta_href`, `image`, `image_alt`) · 1–8 slides.
 
 **Welcome modal fields:** `badge_label`, `eyebrow`, `headline_before`, `discount_percent` (0–100), `headline_after`, `body`, `cta_label`, `cta_href`, `dismiss_label`, `countdown_seconds` (5–120), `product_image`, `bg_image`.
 

@@ -11,13 +11,13 @@ export function SellerKycDocThumb({
   fileUrl: string;
   alt: string;
 }) {
-  const [src, setSrc] = useState<string | null>(null);
+  const [src, setSrc] = useState("");
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    let objectUrl: string | null = null;
+    let objectUrl = "";
     let cancelled = false;
-    setSrc(null);
+    setSrc("");
     setFailed(false);
 
     const url = fileUrl.startsWith("/api/backend/")
@@ -50,21 +50,23 @@ export function SellerKycDocThumb({
 
   if (failed) {
     return (
-      <div className="mt-2 flex aspect-[4/3] w-full items-center justify-center rounded-lg bg-bg-muted text-xs text-text-secondary">
+      <div className="mt-2 flex aspect-4/3 w-full items-center justify-center rounded-lg bg-bg-muted text-xs text-text-secondary">
         Could not load
       </div>
     );
   }
   if (!src) {
     return (
-      <div className="mt-2 aspect-[4/3] w-full animate-pulse rounded-lg bg-bg-muted" />
+      <div className="mt-2 aspect-4/3 w-full animate-pulse rounded-lg bg-bg-muted" />
     );
   }
   return (
+    // Blob object URL from the BFF — plain <img>, not next/image.
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}
       alt={alt}
-      className="mt-2 aspect-[4/3] w-full rounded-lg bg-bg-muted object-cover"
+      className="mt-2 aspect-4/3 w-full rounded-lg bg-bg-muted object-cover"
     />
   );
 }

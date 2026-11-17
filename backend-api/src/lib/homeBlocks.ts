@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { prisma } from "./prisma.js";
 
 /** Keys that store CMS JSON (hero stays on home_hero_banners). */
 export const HOME_BLOCK_KEYS = [
@@ -15,6 +16,64 @@ export const HOME_BLOCK_KEYS = [
 ] as const;
 
 export type HomeBlockKey = (typeof HOME_BLOCK_KEYS)[number];
+
+const LEGACY_PROMO_IMAGE = "/images/PromoBannerSlider_Product_1.png";
+
+/**
+ * Older seeds reused one product PNG on every slide and `/shop?product=…` links.
+ * - Same legacy image on every slide → replace with distinct default slides.
+ * - Otherwise only rewrite `/shop?product=slug` → `/shop/slug` (keep custom copy/images).
+ */
+export async function repairLegacyPromoSliderContent() {
+  const row = await prisma.homeBlockContent.findUnique({
+    where: { key: "promo_slider" },
+  });
+  if (!row?.content || typeof row.content !== "object" || Array.isArray(row.content)) {
+    return;
+  }
+  const content = row.content as {
+    bg_image?: string;
+    autoplay_ms?: number;
+    slides?: Array<Record<string, unknown>>;
+  };
+  const slides = content.slides;
+  if (!Array.isArray(slides) || slides.length < 2) return;
+
+  const allSameLegacyImage = slides.every((s) => s.image === LEGACY_PROMO_IMAGE);
+  if (allSameLegacyImage) {
+    await prisma.homeBlockContent.update({
+      where: { key: "promo_slider" },
+      data: { content: DEFAULT_HOME_BLOCKS.promo_slider },
+    });
+    return;
+  }
+
+  let changed = false;
+  const nextSlides = slides.map((slide) => {
+    const href = typeof slide.cta_href === "string" ? slide.cta_href : "";
+    const match = href.match(/^\/shop\/?\?product=([^&/#]+)/i);
+    if (!match?.[1]) return slide;
+    changed = true;
+    let slug = match[1];
+    try {
+      slug = decodeURIComponent(match[1]);
+    } catch {
+      /* keep raw */
+    }
+    return { ...slide, cta_href: `/shop/${slug}` };
+  });
+  if (!changed) return;
+
+  await prisma.homeBlockContent.update({
+    where: { key: "promo_slider" },
+    data: {
+      content: {
+        ...content,
+        slides: nextSlides,
+      } as Prisma.InputJsonValue,
+    },
+  });
+}
 
 export const DEFAULT_HOME_BLOCKS: Record<
   HomeBlockKey,
@@ -119,7 +178,7 @@ export const DEFAULT_HOME_BLOCKS: Record<
         title_line1: "Acer Chromebook Tab",
         title_line2: "10 Is Official",
         cta_label: "SHOP NOW",
-        cta_href: "/shop?product=acer-chromebook-tab-10",
+        cta_href: "/shop/acer-chromebook-tab-10",
         image: "/images/PromoBannerSlider_Product_1.png",
         image_alt: "Acer Chromebook Tab 10",
       },
@@ -132,8 +191,8 @@ export const DEFAULT_HOME_BLOCKS: Record<
         title_line1: "Curved UltraWide",
         title_line2: "Display Edition",
         cta_label: "EXPLORE DEALS",
-        cta_href: "/shop?product=curved-display-edition",
-        image: "/images/PromoBannerSlider_Product_1.png",
+        cta_href: "/shop/curved-ultrawide-display",
+        image: "/images/top_products (4).png",
         image_alt: "Curved UltraWide Monitor",
       },
       {
@@ -145,8 +204,8 @@ export const DEFAULT_HOME_BLOCKS: Record<
         title_line1: "Convertible Yoga",
         title_line2: "Slim Pro Series",
         cta_label: "VIEW PRODUCT",
-        cta_href: "/shop?product=yoga-slim-pro",
-        image: "/images/PromoBannerSlider_Product_1.png",
+        cta_href: "/shop/yoga-slim-pro",
+        image: "/images/Deals of The Day left product image.png",
         image_alt: "Convertible Touch Laptop",
       },
     ],

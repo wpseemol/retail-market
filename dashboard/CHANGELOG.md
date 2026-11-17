@@ -3,6 +3,13 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-18
+
+### Dynamic promo slider + Home content for admin
+
+- **Content → Home content** (`HOME_CONTENT_ROLES`): admin + super_admin edit hero, welcome modal, promo slider without full Site settings.
+- Promo slider editor: add/remove slides (confirm), per-slide image upload, product search → `/shop/{slug}` CTA; storefront href Zod validation.
+
 ## 2026-11-17
 
 ### Seller applications queue + KYC settings

@@ -4,6 +4,7 @@ import {
   ClipboardList,
   FolderTree,
   LayoutDashboard,
+  LayoutTemplate,
   MessageSquareText,
   Package,
   Palette,
@@ -40,6 +41,7 @@ import {
 import type { StaffRole } from "@/lib/api";
 import {
   CONTENT_PAGE_ROLES,
+  HOME_CONTENT_ROLES,
   REVIEW_ROLES,
   SELLER_APPLICATION_ROLES,
   SEO_ROLES,
@@ -125,6 +127,12 @@ const marketingLinks: NavItem[] = [
 ];
 
 const contentLinks: NavItem[] = [
+  {
+    to: "/content/home",
+    label: "Home content",
+    icon: LayoutTemplate,
+    roles: HOME_CONTENT_ROLES,
+  },
   {
     to: "/content/faq",
     label: "FAQ page",

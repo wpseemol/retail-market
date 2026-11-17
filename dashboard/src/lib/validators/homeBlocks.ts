@@ -22,6 +22,30 @@ const safeOpt = (max: number) =>
 const percent = z.number().int().min(0).max(100);
 const path = safe(1, 500, "Image path");
 
+/** Storefront-relative path only (`/shop/slug`, `/shop?category=…`). No absolute URLs. */
+export const storefrontHref = (label: string) =>
+  withSafeInput(
+    z
+      .string()
+      .trim()
+      .min(1, `${label} is required`)
+      .max(300, `${label} is too long`),
+  ).superRefine((value, ctx) => {
+    if (!value.startsWith("/") || value.startsWith("//")) {
+      ctx.addIssue({
+        code: "custom",
+        message: `${label} must start with / (e.g. /shop/your-product-slug)`,
+      });
+      return;
+    }
+    if (/^[a-z][a-z0-9+.-]*:/i.test(value)) {
+      ctx.addIssue({
+        code: "custom",
+        message: `${label} cannot use a URL scheme`,
+      });
+    }
+  });
+
 export const featuredItemSchema = z.object({
   title: safe(1, 80, "Title"),
   description: safe(1, 160, "Description"),
@@ -84,7 +108,7 @@ export const promoSlideSchema = z.object({
   title_line1: safe(1, 80, "Title line 1"),
   title_line2: safe(1, 80, "Title line 2"),
   cta_label: safe(1, 40, "CTA label"),
-  cta_href: safe(1, 300, "CTA link"),
+  cta_href: storefrontHref("Product / CTA link"),
   image: path,
   image_alt: safe(1, 120, "Image alt"),
 });

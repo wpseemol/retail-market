@@ -8,6 +8,7 @@ Talks to `backend-api` (port 8001) with Bearer auth.
 - **Staff TOTP 2FA:** Optional for all roles. Profile “Authenticator (2FA)” card enables / regenerates recovery / disables. Login only shows a code challenge when 2FA is already on (`LoginPage` + `TotpCodeInput` auto-submit). Validators in `lib/validators/twoFactor.ts`.
 - **CSRF + reCAPTCHA:** Login fetches `/api/csrf` and `/api/auth/captcha-config`, sends `X-CSRF-Token` + body tokens. Super admin configures Google reCAPTCHA under Settings → Integrations → reCAPTCHA (v2 default, optional v3).
 - **Become a seller:** Support → Seller applications (`SELLER_APPLICATION_ROLES` = admin + super_admin). Settings → KYC for staff vs paid API mode. Approving creates the store; fee plan remains super_admin-editable afterward.
+- **Home content:** Content → Home content (`HOME_CONTENT_ROLES` = admin + super_admin) edits hero / welcome modal / promo slider and other home blocks. Promo slides need a unique image each and a storefront CTA (`/shop/{slug}`). Full Site settings (payments, SMS, etc.) stay super_admin; Settings → Home remains for section order.
 - **API reference:** [`../backend-api/API.md`](../backend-api/API.md)
 - **Change log:** [`CHANGELOG.md`](./CHANGELOG.md) — append every change you make here.
 - **Security audit:** [`SECURITY_AUDIT.md`](./SECURITY_AUDIT.md) — mark items `Fixed YYYY-MM-DD` when resolved and update the root [`../SECURITY_AUDIT.md`](../SECURITY_AUDIT.md) counts.
