@@ -218,18 +218,26 @@ export default function PromoBannerSlider({
                 <div
                     onMouseEnter={() => setIsPaused(true)}
                     onMouseLeave={() => setIsPaused(false)}
-                    className="relative flex min-h-77.5 w-full items-center justify-between overflow-hidden rounded-2xl border border-border-default bg-bg-surface p-6 pr-10 shadow-xs sm:min-h-85 sm:p-10 sm:pr-12 lg:p-12"
+                    className="relative flex min-h-77.5 w-full items-center justify-between overflow-hidden rounded-2xl border border-border-default bg-bg-surface p-6 pr-10 shadow-xs sm:min-h-85 sm:p-10 sm:pr-12 lg:p-12 dark:bg-[#121417]"
                 >
+                    {/*
+                      Pattern asset is charcoal. Light mode inverts it to a light strip;
+                      dark mode shows the charcoal art as-is.
+                    */}
                     <div
                         aria-hidden="true"
-                        className="pointer-events-none absolute inset-0 bg-cover bg-center dark:mix-blend-screen dark:filter-[invert(1)_hue-rotate(180deg)_saturate(1.6)_brightness(1.8)]"
+                        className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-80 filter-[invert(1)_hue-rotate(180deg)_saturate(1.45)_brightness(1.2)] dark:opacity-95 dark:filter-none"
                         style={{ backgroundImage: `url('${bgImage}')` }}
+                    />
+                    <div
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 bg-linear-to-r from-bg-surface/70 via-bg-surface/20 to-bg-surface/50 dark:from-black/55 dark:via-transparent dark:to-black/35"
                     />
 
                     {/* Soft ambient glow under product */}
                     <div
                         aria-hidden
-                        className="pointer-events-none absolute bottom-[18%] left-[8%] z-1 h-16 w-48 rounded-[100%] bg-brand-primary/15 blur-2xl sm:left-[12%] sm:w-64"
+                        className="pointer-events-none absolute bottom-[18%] left-[8%] z-1 h-16 w-48 rounded-[100%] bg-brand-primary/15 blur-2xl sm:left-[12%] sm:w-64 dark:bg-brand-primary/20"
                     />
 
                     <div
@@ -269,7 +277,7 @@ export default function PromoBannerSlider({
                                     <span className="block text-xl leading-none font-bold text-brand-primary sm:text-2xl">
                                         {slide.price}
                                     </span>
-                                    <span className="text-2.5 sm:text-[11px] font-semibold tracking-wider text-text-secondary uppercase">
+                                    <span className="text-2.5 sm:text-[11px] font-semibold tracking-wider text-text-secondary uppercase dark:text-white/55">
                                         {slide.tagline}
                                     </span>
                                 </div>
@@ -278,10 +286,10 @@ export default function PromoBannerSlider({
                                         {slide.highlight_text}
                                     </span>
                                     <div className="flex flex-col">
-                                        <span className="text-[9px] sm:text-2.5 leading-tight font-bold tracking-tight text-text-primary uppercase">
+                                        <span className="text-[9px] sm:text-2.5 leading-tight font-bold tracking-tight text-text-primary uppercase dark:text-white/80">
                                             {slide.sub_highlight}
                                         </span>
-                                        <span className="text-[13px] sm:text-[15px] leading-tight font-bold text-text-primary">
+                                        <span className="text-[13px] sm:text-[15px] leading-tight font-bold text-text-primary dark:text-white">
                                             {slide.category_tag}
                                         </span>
                                     </div>
@@ -290,7 +298,7 @@ export default function PromoBannerSlider({
 
                             <h2
                                 data-promo-part
-                                className="mb-5 text-2xl leading-[1.2] font-bold tracking-tight text-text-primary sm:text-3xl lg:text-8.5"
+                                className="mb-5 text-2xl leading-[1.2] font-bold tracking-tight text-text-primary sm:text-3xl lg:text-8.5 dark:text-white"
                             >
                                 <span>{slide.title_line1}</span>
                                 <br />
@@ -332,8 +340,8 @@ export default function PromoBannerSlider({
                                     tabIndex={active ? 0 : -1}
                                     className={`relative cursor-pointer overflow-hidden rounded-full transition-all duration-300 ${
                                         active
-                                            ? "h-7 w-2.5 bg-border-default/80"
-                                            : "h-2.5 w-2.5 bg-border-default hover:bg-text-secondary"
+                                            ? "h-7 w-2.5 bg-border-default/90 dark:bg-white/25"
+                                            : "h-2.5 w-2.5 bg-border-default hover:bg-text-secondary dark:bg-white/35 dark:hover:bg-white/60"
                                     }`}
                                 >
                                     {active ? (

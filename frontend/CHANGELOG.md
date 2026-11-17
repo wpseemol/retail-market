@@ -10,6 +10,8 @@ Format: date heading, then one bullet per change with the files touched.
 - Added `PromoBannerSlider_Product_2.png` (UltraWide) and `Product_3.png` (Yoga); refreshed `PromoBannerSlider_bg.png` (1920×870).
 - Defaults point slides 2–3 at the new art; Tailwind dark bg filter uses canonical `dark:filter-[…]`.
 - Slide dots: `role="tab"` + `aria-selected` (fixes button/`aria-selected` warning); UltraWide product art replaced with a higher-quality 1000×750 PNG.
+- Banner stays charcoal in light + dark (removed invert-to-white); Product 2/3 white studio backdrops punched to transparent; copy forced to light text on the dark strip.
+- Promo slider theme split: light mode = light surface + inverted pattern; dark mode = charcoal art; text/CTA/dots follow each theme.
 
 ### Become-seller KYC thumb types
 
