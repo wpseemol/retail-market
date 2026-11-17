@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
 import { formatPrice } from "@/lib/money";
 import LatestItemsSidebar from "./LatestItemsSidebar";
 import BottomBanners from "./BottomBanners";
@@ -17,6 +16,14 @@ interface ProductItem {
     currentPrice: number;
     originalPrice: number;
     isNew?: boolean;
+}
+
+const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+const TAB_DWELL_MS = 4500;
+
+function prefersReducedMotion() {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 const tabOptions = [
@@ -266,9 +273,76 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export default function LatestProductsSection(_props: {
-  content?: import("@/lib/homeBlockDefaults").LatestProductsContent;
+    content?: import("@/lib/homeBlockDefaults").LatestProductsContent;
 } = {}) {
     const [activeTab, setActiveTab] = useState<TabOption>("New Arrivals");
+    const [tabDir, setTabDir] = useState<1 | -1>(1);
+    const [paused, setPaused] = useState(false);
+    const stageRef = useRef<HTMLDivElement>(null);
+    const skipFirstAnim = useRef(true);
+
+    const goToTab = (tab: TabOption, dir?: 1 | -1) => {
+        if (tab === activeTab) return;
+        const from = tabOptions.indexOf(activeTab);
+        const to = tabOptions.indexOf(tab);
+        setTabDir(dir ?? (to >= from ? 1 : -1));
+        setActiveTab(tab);
+    };
+
+    // Auto-loop tabs after dwell time (pauses on hover / reduced motion).
+    useEffect(() => {
+        if (paused || prefersReducedMotion()) return;
+        const id = window.setInterval(() => {
+            setTabDir(1);
+            setActiveTab((current) => {
+                const i = tabOptions.indexOf(current);
+                return tabOptions[(i + 1) % tabOptions.length];
+            });
+        }, TAB_DWELL_MS);
+        return () => window.clearInterval(id);
+    }, [paused, activeTab]);
+
+    // Tab product enter animation (WAAPI — framer-motion is skipped site-wide).
+    useLayoutEffect(() => {
+        const stage = stageRef.current;
+        if (!stage) return;
+        if (skipFirstAnim.current) {
+            skipFirstAnim.current = false;
+            return;
+        }
+        stage.getAnimations().forEach((a) => a.cancel());
+        if (prefersReducedMotion()) return;
+
+        stage.animate(
+            [
+                {
+                    opacity: 0,
+                    transform: `translate3d(${tabDir > 0 ? 24 : -24}px, 8px, 0)`,
+                },
+                { opacity: 1, transform: "translate3d(0, 0, 0)" },
+            ],
+            { duration: 400, easing: EASE, fill: "both" },
+        );
+
+        stage.querySelectorAll<HTMLElement>("[data-lp-card]").forEach((card, i) => {
+            card.getAnimations().forEach((a) => a.cancel());
+            card.animate(
+                [
+                    {
+                        opacity: 0,
+                        transform: `translate3d(0, ${tabDir > 0 ? 14 : -14}px, 0)`,
+                    },
+                    { opacity: 1, transform: "translate3d(0, 0, 0)" },
+                ],
+                {
+                    duration: 380,
+                    delay: 40 + i * 55,
+                    easing: EASE,
+                    fill: "both",
+                },
+            );
+        });
+    }, [activeTab, tabDir]);
 
     return (
         <section
@@ -277,14 +351,11 @@ export default function LatestProductsSection(_props: {
         >
             <div className="container mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-                    {/* ================= Left: Latest Items Vertical List (Sidebar) ================= */}
                     <div className="lg:col-span-3 w-full h-full flex flex-col">
                         <LatestItemsSidebar />
                     </div>
 
-                    {/* ================= Right: Tab Showcase + Dual Banners ================= */}
                     <div className="lg:col-span-9 w-full flex flex-col justify-between">
-                        {/* Tab Header Row */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 mb-4 border-b border-border-default/60">
                             <div className="relative">
                                 <h2 className="text-text-primary text-xl sm:text-2xl font-bold tracking-tight pb-2">
@@ -303,7 +374,8 @@ export default function LatestProductsSection(_props: {
                                         <button
                                             key={tab}
                                             type="button"
-                                            onClick={() => setActiveTab(tab)}
+                                            aria-pressed={isActive}
+                                            onClick={() => goToTab(tab)}
                                             className={`text-xs sm:text-sm font-medium transition-colors relative pb-2 whitespace-nowrap cursor-pointer ${
                                                 isActive
                                                     ? "text-brand-primary font-semibold"
@@ -320,78 +392,66 @@ export default function LatestProductsSection(_props: {
                             </nav>
                         </div>
 
-                        {/* Product Card Row with Border Dividers */}
-                        <div className="relative w-full rounded-xl border border-border-default bg-bg-surface p-4 sm:p-6 shadow-xs">
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={activeTab}
-                                    initial={{ opacity: 0, y: 8 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -8 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border-default/50"
-                                >
-                                    {showcaseProducts[activeTab].map(
-                                        (product) => (
-                                            <article
-                                                key={product.id}
-                                                className="group relative flex flex-col justify-between items-center text-center px-4 py-4 sm:py-0 transition-colors"
-                                            >
-                                                {/* Parallelogram 'NEW' Ribbon Badge */}
-                                                {product.isNew && (
-                                                    <div className="self-start -skew-x-12 bg-brand-primary text-white text-2.5 font-bold px-2 py-0.5 rounded-xs tracking-wider mb-2">
-                                                        <span className="skew-x-12 inline-block">
-                                                            NEW
-                                                        </span>
-                                                    </div>
-                                                )}
+                        <div
+                            className="relative w-full rounded-xl border border-border-default bg-bg-surface p-4 sm:p-6 shadow-xs overflow-hidden"
+                            onMouseEnter={() => setPaused(true)}
+                            onMouseLeave={() => setPaused(false)}
+                            onFocusCapture={() => setPaused(true)}
+                            onBlurCapture={(e) => {
+                                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                                    setPaused(false);
+                                }
+                            }}
+                        >
+                            <div
+                                ref={stageRef}
+                                className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border-default/50 will-change-transform"
+                            >
+                                {showcaseProducts[activeTab].map((product) => (
+                                    <article
+                                        key={`${activeTab}-${product.id}`}
+                                        data-lp-card
+                                        className="group relative flex flex-col justify-between items-center text-center px-4 py-4 sm:py-0 transition-colors"
+                                    >
+                                        {product.isNew && (
+                                            <div className="self-start -skew-x-12 bg-brand-primary text-white text-2.5 font-bold px-2 py-0.5 rounded-xs tracking-wider mb-2">
+                                                <span className="skew-x-12 inline-block">
+                                                    NEW
+                                                </span>
+                                            </div>
+                                        )}
 
-                                                {/* Product Thumbnail */}
-                                                <div className="relative w-full h-35 sm:h-40 flex items-center justify-center">
-                                                    <Image
-                                                        src={product.image}
-                                                        alt={product.alt}
-                                                        fill
-                                                        sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
-                                                        className="object-contain p-2 transition-transform duration-300 group-hover:scale-105"
-                                                    />
-                                                </div>
+                                        <div className="relative w-full h-35 sm:h-40 flex items-center justify-center">
+                                            <Image
+                                                src={product.image}
+                                                alt={product.alt}
+                                                fill
+                                                sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
+                                                className="object-contain p-2 transition-transform duration-300 group-hover:scale-105"
+                                            />
+                                        </div>
 
-                                                {/* Metadata */}
-                                                <div className="w-full flex flex-col items-center mt-3">
-                                                    <StarRating
-                                                        rating={product.rating}
-                                                    />
+                                        <div className="w-full flex flex-col items-center mt-3">
+                                            <StarRating rating={product.rating} />
 
-                                                    <h3 className="text-text-primary text-[13px] sm:text-sm font-medium leading-snug line-clamp-2 h-9.5 my-1 group-hover:text-brand-primary transition-colors">
-                                                        <Link
-                                                            href="/shop"
-                                                        >
-                                                            {product.name}
-                                                        </Link>
-                                                    </h3>
+                                            <h3 className="text-text-primary text-[13px] sm:text-sm font-medium leading-snug line-clamp-2 h-9.5 my-1 group-hover:text-brand-primary transition-colors">
+                                                <Link href="/shop">{product.name}</Link>
+                                            </h3>
 
-                                                    <div className="flex items-center gap-1.5 text-xs sm:text-[13px] font-semibold mt-1">
-                                                        <span className="text-brand-primary">
-                                                            {formatPrice(
-                                                                product.currentPrice,
-                                                            )}
-                                                        </span>
-                                                        <span className="text-text-secondary line-through font-normal">
-                                                            {formatPrice(
-                                                                product.originalPrice,
-                                                            )}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </article>
-                                        ),
-                                    )}
-                                </motion.div>
-                            </AnimatePresence>
+                                            <div className="flex items-center gap-1.5 text-xs sm:text-[13px] font-semibold mt-1">
+                                                <span className="text-brand-primary">
+                                                    {formatPrice(product.currentPrice)}
+                                                </span>
+                                                <span className="text-text-secondary line-through font-normal">
+                                                    {formatPrice(product.originalPrice)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </article>
+                                ))}
+                            </div>
                         </div>
 
-                        {/* Dual Promotional Banners underneath */}
                         <BottomBanners />
                     </div>
                 </div>

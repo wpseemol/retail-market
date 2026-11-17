@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatPrice } from "@/lib/money";
@@ -12,6 +12,14 @@ interface LatestItem {
     originalPrice: number;
     image: string;
     alt: string;
+}
+
+const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+const PAGE_DWELL_MS = 5000;
+
+function prefersReducedMotion() {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 const latestProductsPage1: LatestItem[] = [
@@ -116,16 +124,98 @@ const latestProductsPage2: LatestItem[] = [
     },
 ];
 
+const pages = [latestProductsPage1, latestProductsPage2] as const;
+
 export default function LatestItemsSidebar() {
-    const [page, setPage] = useState<1 | 2>(1);
-    const items = page === 1 ? latestProductsPage1 : latestProductsPage2;
+    const [page, setPage] = useState(0);
+    const [dir, setDir] = useState<1 | -1>(1);
+    const [paused, setPaused] = useState(false);
+    const listRef = useRef<HTMLUListElement>(null);
+    const skipFirstAnim = useRef(true);
+
+    const items = pages[page];
+    const canPrev = page > 0;
+    const canNext = page < pages.length - 1;
+
+    const goPrev = () => {
+        if (!canPrev) return;
+        setDir(-1);
+        setPage((p) => p - 1);
+    };
+
+    const goNext = () => {
+        if (!canNext) return;
+        setDir(1);
+        setPage((p) => p + 1);
+    };
+
+    // Auto-loop pages (pause on hover / reduced motion).
+    useEffect(() => {
+        if (paused || prefersReducedMotion()) return;
+        const id = window.setInterval(() => {
+            setDir(1);
+            setPage((p) => (p + 1) % pages.length);
+        }, PAGE_DWELL_MS);
+        return () => window.clearInterval(id);
+    }, [paused, page]);
+
+    useLayoutEffect(() => {
+        const list = listRef.current;
+        if (!list) return;
+        if (skipFirstAnim.current) {
+            skipFirstAnim.current = false;
+            return;
+        }
+        list.getAnimations().forEach((a) => a.cancel());
+        if (prefersReducedMotion()) return;
+
+        list.animate(
+            [
+                {
+                    opacity: 0,
+                    transform: `translate3d(0, ${dir > 0 ? 12 : -12}px, 0)`,
+                },
+                { opacity: 1, transform: "translate3d(0, 0, 0)" },
+            ],
+            { duration: 360, easing: EASE, fill: "both" },
+        );
+
+        list.querySelectorAll<HTMLElement>("[data-li-row]").forEach((row, i) => {
+            row.getAnimations().forEach((a) => a.cancel());
+            row.animate(
+                [
+                    {
+                        opacity: 0,
+                        transform: `translate3d(${dir > 0 ? 14 : -14}px, 0, 0)`,
+                    },
+                    { opacity: 1, transform: "translate3d(0, 0, 0)" },
+                ],
+                {
+                    duration: 340,
+                    delay: 30 + i * 40,
+                    easing: EASE,
+                    fill: "both",
+                },
+            );
+        });
+    }, [page, dir]);
+
+    const arrowBtn =
+        "p-1 rounded text-text-secondary hover:text-brand-primary transition-all duration-200 cursor-pointer hover:scale-110 active:scale-95 disabled:opacity-40 disabled:pointer-events-none disabled:hover:scale-100";
 
     return (
         <aside
             aria-label="Latest Products"
-            className="w-full h-full bg-bg-surface border border-border-default rounded-xl p-4 sm:p-5 flex flex-col justify-between shadow-xs transition-colors duration-200"
+            className="w-full h-full bg-bg-surface border border-border-default rounded-xl p-4 sm:p-5 flex flex-col justify-between shadow-xs transition-colors duration-200 overflow-hidden"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            onFocusCapture={() => setPaused(true)}
+            onBlurCapture={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setPaused(false);
+                }
+            }}
         >
-            {/* Header */}
             <div className="flex items-center justify-between pb-2 mb-2 border-b border-border-default/60">
                 <div className="relative">
                     <h2 className="text-text-primary text-4.25 sm:text-4.75 font-bold tracking-tight pb-2">
@@ -137,12 +227,10 @@ export default function LatestItemsSidebar() {
                 <div className="flex items-center gap-1">
                     <button
                         type="button"
-                        onClick={() => setPage(1)}
+                        onClick={goPrev}
                         aria-label="Previous items"
-                        className={`p-1 rounded text-text-secondary hover:text-brand-primary transition-colors cursor-pointer ${
-                            page === 1 ? "opacity-40 cursor-not-allowed" : ""
-                        }`}
-                        disabled={page === 1}
+                        disabled={!canPrev}
+                        className={arrowBtn}
                     >
                         <svg
                             width="14"
@@ -159,12 +247,10 @@ export default function LatestItemsSidebar() {
                     </button>
                     <button
                         type="button"
-                        onClick={() => setPage(2)}
+                        onClick={goNext}
                         aria-label="Next items"
-                        className={`p-1 rounded text-text-secondary hover:text-brand-primary transition-colors cursor-pointer ${
-                            page === 2 ? "opacity-40 cursor-not-allowed" : ""
-                        }`}
-                        disabled={page === 2}
+                        disabled={!canNext}
+                        className={arrowBtn}
                     >
                         <svg
                             width="14"
@@ -182,10 +268,12 @@ export default function LatestItemsSidebar() {
                 </div>
             </div>
 
-            {/* Item List automatically balances height across the column */}
-            <ul className="flex flex-col justify-between flex-1 list-none m-0 p-0 py-1 gap-2">
+            <ul
+                ref={listRef}
+                className="flex flex-col justify-between flex-1 list-none m-0 p-0 py-1 gap-2 will-change-transform"
+            >
                 {items.map((item) => (
-                    <li key={item.id}>
+                    <li key={item.id} data-li-row>
                         <Link
                             href="/shop"
                             className="group flex items-center gap-3.5 transition-transform duration-200 hover:translate-x-0.5"

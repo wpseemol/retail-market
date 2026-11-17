@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Latest products tab + sidebar motion
+
+- `LatestProductsSection`: WAAPI staggered product enter on tab change; tabs auto-advance every 4.5s (pause on hover/focus); dropped framer-motion.
+- `LatestItemsSidebar`: page change animates list rows via WAAPI; pages auto-loop every 5s with animated arrows.
+
 ### Best seller tab + arrow motion
 
 - `BestSellerSection`: tab switches animate via Web Animations API (staggered cards); carousel uses CSS `translate3d` transitions (framer-motion is skipped site-wide); arrow buttons stay visible with hover/press scale and disable at ends.
