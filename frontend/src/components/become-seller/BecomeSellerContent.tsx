@@ -22,6 +22,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { SellerKycDocThumb } from "@/components/become-seller/SellerKycDocThumb";
 
 type PartnerTerms = {
   title: string;
@@ -45,6 +46,7 @@ type Application = {
     id: string;
     doc_type: string;
     media: { path: string } | null;
+    file_url?: string;
   }>;
   docs_checklist: {
     nid_front: boolean;
@@ -413,11 +415,10 @@ export default function BecomeSellerContent() {
                     <p className="text-sm font-medium text-text-primary">
                       {copy[doc.labelKey]}
                     </p>
-                    {existing?.media?.path ? (
-                      <img
-                        src={existing.media.path}
+                    {existing?.file_url || existing?.media?.path ? (
+                      <SellerKycDocThumb
+                        fileUrl={existing.file_url || existing.media!.path}
                         alt={copy[doc.labelKey]}
-                        className="mt-2 aspect-[4/3] w-full rounded-lg bg-bg-muted object-cover"
                       />
                     ) : (
                       <div className="mt-2 flex aspect-[4/3] items-center justify-center rounded-lg bg-bg-muted text-xs text-text-secondary">

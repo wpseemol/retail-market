@@ -84,7 +84,21 @@ export async function getPublicSellerTerms(): Promise<{
   };
 }
 
-export function toPublicApplication(row: ApplicationWithDocs) {
+export type ApplicationSerializeOpts = {
+  /**
+   * Base path for authenticated KYC file downloads (no trailing slash).
+   * Customer: `/api/seller-applications/me/documents`
+   * Staff: `/api/dashboard/seller-applications/documents`
+   * Public `/uploads/seller-kyc` is blocked — never return a static URL for these.
+   */
+  documentFileBase: string;
+};
+
+/** Serialize an application. KYC images use auth-only file URLs (not public /uploads). */
+export function toPublicApplication(
+  row: ApplicationWithDocs,
+  opts: ApplicationSerializeOpts,
+) {
   const docTypes = row.documents.map((d) => d.doc_type);
   return {
     id: row.id.toString(),
@@ -102,13 +116,25 @@ export function toPublicApplication(row: ApplicationWithDocs) {
     reviewed_at: row.reviewed_at?.toISOString() ?? null,
     created_at: row.created_at.toISOString(),
     updated_at: row.updated_at.toISOString(),
-    documents: row.documents.map((d) => ({
-      id: d.id.toString(),
-      doc_type: d.doc_type,
-      label: d.label,
-      media: toPublicMedia(d.media),
-      created_at: d.created_at.toISOString(),
-    })),
+    documents: row.documents.map((d) => {
+      const media = toPublicMedia(d.media);
+      const filePath = `${opts.documentFileBase}/${d.id.toString()}/file`;
+      return {
+        id: d.id.toString(),
+        doc_type: d.doc_type,
+        label: d.label,
+        media: media
+          ? {
+              ...media,
+              // Override public /uploads path — KYC must be fetched with Bearer auth.
+              path: filePath,
+              is_public: false,
+            }
+          : null,
+        file_url: filePath,
+        created_at: d.created_at.toISOString(),
+      };
+    }),
     docs_checklist: docsChecklist(docTypes),
     user: row.user
       ? {
@@ -124,6 +150,9 @@ export function toPublicApplication(row: ApplicationWithDocs) {
       : undefined,
   };
 }
+
+export const CUSTOMER_DOC_FILE_BASE = "/api/seller-applications/me/documents";
+export const DASHBOARD_DOC_FILE_BASE = "/api/dashboard/seller-applications/documents";
 
 export async function findOpenApplicationForUser(userId: bigint) {
   return prisma.sellerApplication.findFirst({

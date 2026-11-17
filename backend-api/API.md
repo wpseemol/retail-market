@@ -601,10 +601,13 @@ Storefront onboarding (footer **Customer care → Become a seller** → `/become
 | GET | `/terms` | Public | Partner fee/rent copy + staff authenticity checklist (no secrets) |
 | GET | `/me` | Bearer customer/vendor | Current application + account verification flags |
 | POST | `/` | Bearer customer | Create/update **draft** shop fields. Requires verified email **and** phone. Codes: `EMAIL_NOT_VERIFIED`, `PHONE_NOT_VERIFIED`, `ALREADY_SELLER`, `APPLICATION_PENDING`, `APPLICATION_LOCKED` |
-| POST | `/me/documents` | Bearer customer | Multipart field `document` + `doc_type` (`nid_front`\|`nid_back`\|`birth_certificate`\|`trade_license`\|`other`). JPEG/PNG/WebP/GIF · max **2 MB** · always resized (`sellerKyc`). Replaces same `doc_type` |
-| POST | `/me/submit` | Bearer customer | Body `{ accept_fee_terms: true }`. Needs shop name + identity docs (NID front+back **or** birth certificate) + fee terms. Sets status `submitted`. Optional paid KYC stub runs when Settings → KYC mode is `paid_api` |
+| POST | `/me/documents` | Bearer customer | Multipart field `document` + `doc_type` (`nid_front`\|`nid_back`\|`birth_certificate`\|`trade_license`\|`other`). JPEG/PNG/WebP/GIF · max **2 MB** · always resized (`sellerKyc`). Replaces same `doc_type`. Rate limit 30/hour/user |
+| GET | `/me/documents/:docId/file` | Bearer owner | Streams the KYC image (`Cache-Control: private, no-store`). **Not** available under public `/uploads` |
+| POST | `/me/submit` | Bearer customer | Body `{ accept_fee_terms: true }`. Needs shop name + identity docs (NID front+back **or** birth certificate) + fee terms. Optimistic lock on `draft`/`rejected`. Optional paid KYC stub when Settings → KYC is `paid_api`. Rate limit 10/hour/user |
 
 **Identity docs:** NID front+back together, or a birth certificate alone. Trade license is optional.
+
+**Privacy:** `seller_kyc` files are `is_public: false`. Direct `GET /uploads/seller-kyc/*` returns **404**. Clients must use the authenticated file routes (customer owner or admin/super_admin). Draft save is rate-limited 20/hour/user. Only **`customer`** role may apply.
 
 ### How staff check whether a document is “real”
 
@@ -628,8 +631,9 @@ Roles: **`super_admin` \| `admin` only**.
 | Method | Path | Notes |
 |--------|------|--------|
 | GET | `/` | `?status=&q=&page=&limit=` · `{ applications, pagination, staff_checklist }` |
-| GET | `/:id` | Detail + documents |
-| POST | `/:id/review` | Body `{ action: "approve"\|"reject", rejection_reason?, activate_shop? }` · reject requires reason · approve creates `Vendor` + owner `VendorMember`, promotes `customer` → `vendor`, default fee `commission` 3% (super_admin may change later) · `activate_shop: true` → store `active`, else `pending` |
+| GET | `/documents/:docId/file` | Streams KYC image for staff review (auth-only) |
+| GET | `/:id` | Detail + documents (`file_url` points at the staff file route) |
+| POST | `/:id/review` | Body `{ action: "approve"\|"reject", rejection_reason?, activate_shop? }` · reject requires reason · approve requires identity docs · optimistic lock · creates `Vendor` + owner `VendorMember`, promotes `customer` → `vendor`, default fee `commission` 3% · `activate_shop: true` → store `active`, else `pending` · 409 `ALREADY_REVIEWED` on double review |
 
 ---
 

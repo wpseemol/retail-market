@@ -40,6 +40,7 @@ import {
   type SellerApplicationStatus,
   type StaffChecklistItem,
 } from "@/lib/validators/sellerApplication";
+import { SellerKycDocThumb } from "@/components/support/SellerKycDocThumb";
 import { useAuthStore } from "@/store/auth";
 import { cn } from "@/lib/utils";
 
@@ -320,25 +321,32 @@ export function SellerApplicationsPage() {
                 <div>
                   <p className="mb-2 font-medium">Documents</p>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    {selected.documents.map((doc) => (
-                      <a
-                        key={doc.id}
-                        href={doc.media?.path}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="group overflow-hidden rounded-xl border border-border/80"
-                      >
-                        <img
-                          src={doc.media?.path}
-                          alt={DOC_TYPE_LABELS[doc.doc_type]}
-                          className="aspect-[4/3] w-full bg-muted object-cover"
-                        />
-                        <div className="flex items-center justify-between px-3 py-2 text-xs">
-                          <span>{DOC_TYPE_LABELS[doc.doc_type]}</span>
-                          <ExternalLink className="size-3.5 opacity-60 group-hover:opacity-100" />
+                    {selected.documents.map((doc) => {
+                      const fileUrl =
+                        doc.file_url || doc.media?.path || "";
+                      return (
+                        <div
+                          key={doc.id}
+                          className="overflow-hidden rounded-xl border border-border/80"
+                        >
+                          {fileUrl ? (
+                            <SellerKycDocThumb
+                              fileUrl={fileUrl}
+                              token={token}
+                              alt={DOC_TYPE_LABELS[doc.doc_type]}
+                            />
+                          ) : (
+                            <div className="flex aspect-[4/3] items-center justify-center bg-muted text-xs text-muted-foreground">
+                              No file
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between px-3 py-2 text-xs">
+                            <span>{DOC_TYPE_LABELS[doc.doc_type]}</span>
+                            <ExternalLink className="size-3.5 opacity-40" aria-hidden />
+                          </div>
                         </div>
-                      </a>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 

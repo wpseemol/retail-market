@@ -39,6 +39,8 @@ export type SellerApplicationDto = {
     doc_type: SellerDocType;
     label: string | null;
     media: { path: string; file_name: string } | null;
+    /** Auth-only download path (Bearer). Prefer this over media.path for img tags. */
+    file_url?: string;
     created_at: string;
   }>;
   docs_checklist: {

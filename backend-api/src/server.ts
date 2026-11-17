@@ -91,6 +91,11 @@ app.use("/api", (req, res, next) => {
 });
 
 // Public uploaded files — e.g. /uploads/users/photos/<file>
+// KYC scans stay private: never serve /uploads/seller-kyc/* without auth
+// (use /api/seller-applications/.../file or dashboard document file routes).
+app.use("/uploads/seller-kyc", (_req, res) => {
+  res.status(404).json({ message: "Not found", code: "PRIVATE_UPLOAD" });
+});
 app.use(
   "/uploads",
   express.static(path.resolve(process.cwd(), "uploads"), {

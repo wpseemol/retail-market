@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-17
 
+### Become a seller security hardening
+
+- Block public `/uploads/seller-kyc/*`; auth-only file streams for owner + admin/super_admin; document `file_url` in API responses.
+- Rate limits on draft/doc/submit/review; customer-only apply; optimistic lock on submit/approve/reject; require identity docs before approve; reuse rejected drafts (no duplicate rows).
+
 ### Become a seller + footer cleanup
 
 - `lib/siteChrome.ts`: removed Find-it-fast “Quick Links” → `/shop`; ensure deletes existing rows; Customer care “Become a seller” → `/become-seller`.

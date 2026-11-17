@@ -9,6 +9,7 @@ Format: date heading, then one bullet per change with the files touched.
 
 - Footer: dropped fallback Quick Links → `/shop`; Customer care includes Become a seller → `/become-seller`.
 - `/become-seller` multi-step flow (account → verify → shop → docs → fee terms) via `BecomeSellerContent` + `lib/validators/becomeSeller.ts`; en/bn copy.
+- KYC thumbs load via authenticated BFF blob URLs (`SellerKycDocThumb`) — not public `/uploads`.
 
 ### Local Docker mail + SMS catcher (workspace)
 

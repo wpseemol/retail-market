@@ -1,4 +1,5 @@
-import { Router } from "express";
+import { Router, type NextFunction, type Request, type Response } from "express";
+import multer from "multer";
 import type { Prisma } from "@prisma/client";
 import { currentMediaDisk } from "../config/storage.config.js";
 import { prisma } from "../lib/prisma.js";
@@ -17,16 +18,20 @@ import {
 import { deleteMediaFile } from "../lib/storage/files.js";
 import {
   applicationInclude,
+  CUSTOMER_DOC_FILE_BASE,
   findOpenApplicationForUser,
   getPublicSellerTerms,
   hasRequiredIdentityDocs,
   toPublicApplication,
 } from "../lib/sellerApplication.js";
+import { sendSellerKycFile } from "../lib/sellerKycServe.js";
 import {
   ensureKycSettings,
   parsePartnerTerms,
   verifyIdentityWithProvider,
 } from "../lib/kyc.js";
+import { rateLimit } from "../lib/rateLimit.js";
+import { parseBigIntId } from "../utils/ids.js";
 import {
   submitSellerApplicationSchema,
   uploadSellerDocumentSchema,
@@ -34,6 +39,34 @@ import {
 } from "../validators/sellerApplication.js";
 
 export const sellerApplicationsRouter = Router();
+
+const draftLimiter = rateLimit({
+  name: "SELLER_APP_DRAFT",
+  max: 20,
+  windowMs: 60 * 60 * 1000,
+  message: "Too many seller application saves. Try again later.",
+  key: (req) => String(req.auth?.userId ?? "anon"),
+});
+
+const docUploadLimiter = rateLimit({
+  name: "SELLER_APP_DOC",
+  max: 30,
+  windowMs: 60 * 60 * 1000,
+  message: "Too many document uploads. Try again later.",
+  key: (req) => String(req.auth?.userId ?? "anon"),
+});
+
+const submitLimiter = rateLimit({
+  name: "SELLER_APP_SUBMIT",
+  max: 10,
+  windowMs: 60 * 60 * 1000,
+  message: "Too many submission attempts. Try again later.",
+  key: (req) => String(req.auth?.userId ?? "anon"),
+});
+
+function serialize(app: Parameters<typeof toPublicApplication>[0]) {
+  return toPublicApplication(app, { documentFileBase: CUSTOMER_DOC_FILE_BASE });
+}
 
 async function loadUserVerification(userId: bigint) {
   return prisma.user.findFirst({
@@ -51,8 +84,11 @@ async function loadUserVerification(userId: bigint) {
   });
 }
 
-function verificationGate(user: NonNullable<Awaited<ReturnType<typeof loadUserVerification>>>) {
-  if (user.role !== "customer" && user.role !== "vendor") {
+function verificationGate(
+  user: NonNullable<Awaited<ReturnType<typeof loadUserVerification>>>,
+) {
+  // Only customers may apply. Existing vendors already have (or had) a store path.
+  if (user.role !== "customer") {
     return {
       status: 403 as const,
       body: {
@@ -82,7 +118,21 @@ function verificationGate(user: NonNullable<Awaited<ReturnType<typeof loadUserVe
   return null;
 }
 
-/** Public fee/rent terms + staff checklist (no auth). */
+function wrapSellerKycUpload(req: Request, res: Response, next: NextFunction) {
+  sellerKycImageUpload.single("document")(req, res, (err: unknown) => {
+    if (!err) return next();
+    if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({
+        message: "Each document image must be 2 MB or smaller",
+        code: "SELLER_KYC_TOO_LARGE",
+      });
+    }
+    const message = err instanceof Error ? err.message : "Upload failed";
+    return res.status(400).json({ message, code: "SELLER_KYC_UPLOAD_FAILED" });
+  });
+}
+
+/** Public fee/rent terms (no staff secrets). Checklist is also public so applicants know the bar. */
 sellerApplicationsRouter.get(
   "/terms",
   asyncHandler(async (_req, res) => {
@@ -108,7 +158,7 @@ sellerApplicationsRouter.get(
     const terms = await getPublicSellerTerms();
 
     return res.json({
-      application: open ? toPublicApplication(open) : null,
+      application: open ? serialize(open) : null,
       account: {
         email_verified: Boolean(user.email_verified_at),
         phone_verified: Boolean(user.phone_verified_at),
@@ -126,8 +176,31 @@ sellerApplicationsRouter.get(
   }),
 );
 
+/** Owner-only KYC file download (Bearer). Public /uploads/seller-kyc is blocked. */
+sellerApplicationsRouter.get(
+  "/me/documents/:docId/file",
+  asyncHandler(async (req, res) => {
+    const docId = parseBigIntId(req.params.docId);
+    if (docId === null) {
+      return res.status(400).json({ message: "Invalid document id" });
+    }
+    const doc = await prisma.sellerApplicationDocument.findFirst({
+      where: {
+        id: docId,
+        application: { user_id: req.auth!.userId },
+      },
+      include: { media: true },
+    });
+    if (!doc?.media) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+    return sendSellerKycFile(res, doc.media);
+  }),
+);
+
 sellerApplicationsRouter.post(
   "/",
+  draftLimiter,
   asyncHandler(async (req, res) => {
     const user = await loadUserVerification(req.auth!.userId);
     if (!user) return res.status(401).json({ message: "User not found" });
@@ -142,6 +215,17 @@ sellerApplicationsRouter.post(
       return res.status(409).json({
         message: "You already have a store",
         code: "ALREADY_SELLER",
+      });
+    }
+
+    const alreadyMember = await prisma.vendorMember.findFirst({
+      where: { user_id: user.id },
+      select: { id: true },
+    });
+    if (alreadyMember) {
+      return res.status(409).json({
+        message: "You are already on a store team",
+        code: "ALREADY_MEMBER",
       });
     }
 
@@ -167,6 +251,12 @@ sellerApplicationsRouter.post(
         application_id: blocking.id.toString(),
       });
     }
+    if (blocking?.status === "approved") {
+      return res.status(409).json({
+        message: "You already have an approved seller application",
+        code: "ALREADY_APPROVED",
+      });
+    }
 
     let app = await findOpenApplicationForUser(user.id);
     if (app && (app.status === "submitted" || app.status === "under_review")) {
@@ -177,7 +267,8 @@ sellerApplicationsRouter.post(
     }
 
     const data = parsed.data;
-    if (!app || app.status === "rejected") {
+    // Reuse a rejected/draft row instead of creating duplicates.
+    if (!app) {
       app = await prisma.sellerApplication.create({
         data: {
           user_id: user.id,
@@ -205,25 +296,31 @@ sellerApplicationsRouter.post(
             : {}),
           status: "draft",
           rejection_reason: null,
+          reviewed_by_id: null,
+          reviewed_at: null,
         },
         include: applicationInclude,
       });
     }
 
-    return res.status(app ? 200 : 201).json({
+    return res.status(200).json({
       message: "Application saved",
-      application: toPublicApplication(app),
+      application: serialize(app),
     });
   }),
 );
 
 sellerApplicationsRouter.post(
   "/me/documents",
-  sellerKycImageUpload.single("document"),
+  docUploadLimiter,
+  wrapSellerKycUpload,
   asyncHandler(async (req, res) => {
     const file = req.file;
     if (!file) {
-      return res.status(400).json({ message: "Document image is required", code: "DOCUMENT_REQUIRED" });
+      return res.status(400).json({
+        message: "Document image is required",
+        code: "DOCUMENT_REQUIRED",
+      });
     }
 
     const user = await loadUserVerification(req.auth!.userId);
@@ -264,66 +361,81 @@ sellerApplicationsRouter.post(
     if (app.status === "rejected") {
       app = await prisma.sellerApplication.update({
         where: { id: app.id },
-        data: { status: "draft", rejection_reason: null },
+        data: {
+          status: "draft",
+          rejection_reason: null,
+          reviewed_by_id: null,
+          reviewed_at: null,
+        },
         include: { documents: { include: { media: true } } },
       });
     }
 
-    const finalized = await finalizeSellerKycImageUpload(uploadBytes(file), file.mimetype);
+    const finalized = await finalizeSellerKycImageUpload(
+      uploadBytes(file),
+      file.mimetype,
+    );
     if (!finalized.ok) {
       return res.status(400).json({ message: finalized.message, code: finalized.code });
     }
 
     const existingDoc = app.documents.find((d) => d.doc_type === parsed.data.doc_type);
+
+    const refreshed = await prisma.$transaction(async (tx) => {
+      if (existingDoc) {
+        await tx.sellerApplicationDocument.delete({ where: { id: existingDoc.id } });
+        await tx.media.delete({ where: { id: existingDoc.media_id } }).catch(() => undefined);
+      }
+
+      const media = await tx.media.create({
+        data: {
+          user_id: user.id,
+          disk: currentMediaDisk(),
+          file_name: finalized.fileName,
+          original_name: sanitizeOriginalName(file.originalname),
+          file_path: SELLER_KYC_IMAGES_RELATIVE,
+          file_size: BigInt(finalized.size),
+          mime_type: finalized.detected.mime,
+          collection_name: "seller_kyc",
+          is_public: false,
+          mediable_type: "SellerApplication",
+          mediable_id: app!.id,
+        },
+      });
+
+      await tx.sellerApplicationDocument.create({
+        data: {
+          application_id: app!.id,
+          doc_type: parsed.data.doc_type,
+          media_id: media.id,
+          label: parsed.data.label ?? null,
+        },
+      });
+
+      return tx.sellerApplication.findUniqueOrThrow({
+        where: { id: app!.id },
+        include: applicationInclude,
+      });
+    });
+
     if (existingDoc) {
-      await prisma.sellerApplicationDocument.delete({ where: { id: existingDoc.id } });
       try {
         await deleteMediaFile(existingDoc.media.file_path, existingDoc.media.file_name);
       } catch {
-        /* ignore orphan cleanup */
+        /* orphan cleanup best-effort */
       }
-      await prisma.media.delete({ where: { id: existingDoc.media_id } }).catch(() => undefined);
     }
-
-    const media = await prisma.media.create({
-      data: {
-        user_id: user.id,
-        disk: currentMediaDisk(),
-        file_name: finalized.fileName,
-        original_name: sanitizeOriginalName(file.originalname),
-        file_path: SELLER_KYC_IMAGES_RELATIVE,
-        file_size: BigInt(finalized.size),
-        mime_type: finalized.detected.mime,
-        collection_name: "seller_kyc",
-        is_public: false,
-        mediable_type: "SellerApplication",
-        mediable_id: app.id,
-      },
-    });
-
-    await prisma.sellerApplicationDocument.create({
-      data: {
-        application_id: app.id,
-        doc_type: parsed.data.doc_type,
-        media_id: media.id,
-        label: parsed.data.label ?? null,
-      },
-    });
-
-    const refreshed = await prisma.sellerApplication.findUniqueOrThrow({
-      where: { id: app.id },
-      include: applicationInclude,
-    });
 
     return res.status(201).json({
       message: "Document uploaded",
-      application: toPublicApplication(refreshed),
+      application: serialize(refreshed),
     });
   }),
 );
 
 sellerApplicationsRouter.post(
   "/me/submit",
+  submitLimiter,
   asyncHandler(async (req, res) => {
     const user = await loadUserVerification(req.auth!.userId);
     if (!user) return res.status(401).json({ message: "User not found" });
@@ -341,13 +453,16 @@ sellerApplicationsRouter.post(
 
     const app = await findOpenApplicationForUser(user.id);
     if (!app) {
-      return res.status(404).json({ message: "No draft application found", code: "APPLICATION_REQUIRED" });
+      return res.status(404).json({
+        message: "No draft application found",
+        code: "APPLICATION_REQUIRED",
+      });
     }
     if (app.status === "submitted" || app.status === "under_review") {
       return res.status(409).json({
         message: "Application already submitted",
         code: "ALREADY_SUBMITTED",
-        application: toPublicApplication(app),
+        application: serialize(app),
       });
     }
 
@@ -382,8 +497,9 @@ sellerApplicationsRouter.post(
       });
     }
 
-    const updated = await prisma.sellerApplication.update({
-      where: { id: app.id },
+    // Optimistic lock: only draft/rejected can become submitted.
+    const locked = await prisma.sellerApplication.updateMany({
+      where: { id: app.id, status: { in: ["draft", "rejected"] } },
       data: {
         status: "submitted",
         accepted_fee_terms_at: new Date(),
@@ -393,12 +509,22 @@ sellerApplicationsRouter.post(
         reviewed_by_id: null,
         reviewed_at: null,
       },
+    });
+    if (locked.count === 0) {
+      return res.status(409).json({
+        message: "Application already submitted",
+        code: "ALREADY_SUBMITTED",
+      });
+    }
+
+    const updated = await prisma.sellerApplication.findUniqueOrThrow({
+      where: { id: app.id },
       include: applicationInclude,
     });
 
     return res.json({
       message: "Application submitted for review",
-      application: toPublicApplication(updated),
+      application: serialize(updated),
       kyc: providerResult,
     });
   }),
