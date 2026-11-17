@@ -126,7 +126,7 @@ function ActionButton({
                     e.stopPropagation();
                     if (!disabled) onClick?.();
                 }}
-                className={`h-8 w-8 rounded-full border flex items-center justify-center cursor-pointer shadow-sm transition-colors ${
+                className={`flex size-9 items-center justify-center rounded-full border shadow-sm transition-colors cursor-pointer sm:size-8 ${
                     pressed
                         ? "bg-brand-primary border-brand-primary text-white hover:bg-brand-hover hover:border-brand-hover"
                         : "bg-bg-surface border-border-default text-text-secondary hover:text-brand-primary hover:border-brand-primary"
@@ -224,11 +224,11 @@ function CompareIcon() {
     );
 }
 
-function CartIcon() {
+function CartIcon({ size = 14 }: { size?: number }) {
     return (
         <svg
-            width="14"
-            height="14"
+            width={size}
+            height={size}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -244,11 +244,11 @@ function CartIcon() {
     );
 }
 
-function CheckIcon() {
+function CheckIcon({ size = 14 }: { size?: number }) {
     return (
         <svg
-            width="14"
-            height="14"
+            width={size}
+            height={size}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -262,11 +262,11 @@ function CheckIcon() {
     );
 }
 
-function BoltIcon() {
+function BoltIcon({ size = 14 }: { size?: number }) {
     return (
         <svg
-            width="14"
-            height="14"
+            width={size}
+            height={size}
             viewBox="0 0 24 24"
             fill="currentColor"
             aria-hidden="true"
@@ -276,27 +276,33 @@ function BoltIcon() {
     );
 }
 
+function NewBadge() {
+    return (
+        <span className="absolute top-2 left-2 z-10 rounded-md bg-brand-primary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm sm:top-3 sm:left-0 sm:rounded-none sm:-skew-x-12 sm:px-2.5 sm:py-1 sm:text-2.5 sm:tracking-wider">
+            <span className="inline-block sm:skew-x-12">NEW</span>
+        </span>
+    );
+}
+
 function PurchaseButtons({
     added,
     onAddToCart,
     onBuyNow,
     compact = false,
-    hideLabelsOnPhone = false,
     className = "",
 }: {
     added: boolean;
     onAddToCart: () => void;
     onBuyNow: () => void;
     compact?: boolean;
-    hideLabelsOnPhone?: boolean;
     className?: string;
 }) {
-    const base = `group/btn relative inline-flex flex-1 items-center justify-center gap-1.5 overflow-hidden rounded-lg font-semibold whitespace-nowrap cursor-pointer transition-all duration-150 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface ${
-        compact ? "h-9 px-2 text-[11.5px]" : "h-10 px-3 text-[13px]"
-    }`;
+    // Phone: equal-width twins with short labels. Larger screens: keep denser compact/desktop sizing.
+    const base =
+        "group/btn relative inline-flex min-w-0 flex-1 items-center justify-center gap-1 overflow-hidden rounded-xl font-semibold whitespace-nowrap cursor-pointer transition-all duration-150 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface h-10 px-2 text-[12px] sm:h-9 sm:rounded-lg sm:px-2.5 sm:text-[11.5px] md:gap-1.5";
 
     return (
-        <div className={`flex gap-2 ${className}`}>
+        <div className={`grid grid-cols-2 gap-1.5 sm:flex sm:gap-2 ${className}`}>
             <button
                 type="button"
                 aria-label={added ? "Added to cart" : "Add to cart"}
@@ -308,16 +314,24 @@ function PurchaseButtons({
                 className={`${base} border ${
                     added
                         ? "border-brand-primary bg-brand-primary/15 text-brand-primary"
-                        : "border-brand-primary/50 bg-brand-primary/5 text-brand-primary hover:border-brand-primary hover:bg-brand-primary hover:text-white"
+                        : "border-brand-primary/55 bg-brand-primary/5 text-brand-primary hover:border-brand-primary hover:bg-brand-primary hover:text-white"
                 }`}
             >
-                <span className="transition-transform duration-150 group-hover/btn:-translate-y-px group-hover/btn:scale-110">
-                    {added ? <CheckIcon /> : <CartIcon />}
+                <span className="shrink-0 transition-transform duration-150 group-hover/btn:-translate-y-px group-hover/btn:scale-110">
+                    {added ? (
+                        <CheckIcon size={compact ? 15 : 16} />
+                    ) : (
+                        <CartIcon size={compact ? 15 : 16} />
+                    )}
                 </span>
-                <span className={hideLabelsOnPhone ? "max-sm:sr-only" : ""}>{added ? "Added" : "Add to Cart"}</span>
+                <span className="truncate sm:hidden">{added ? "Added" : "Cart"}</span>
+                <span className="hidden truncate sm:inline">
+                    {added ? "Added" : "Add to Cart"}
+                </span>
             </button>
             <button
                 type="button"
+                aria-label="Buy now"
                 onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -329,10 +343,11 @@ function PurchaseButtons({
                     aria-hidden="true"
                     className="pointer-events-none absolute inset-y-0 -left-full w-1/2 -skew-x-12 bg-linear-to-r from-transparent via-white/30 to-transparent transition-[left] duration-500 ease-out group-hover/btn:left-[150%]"
                 />
-                <span className="transition-transform duration-150 group-hover/btn:scale-110">
-                    <BoltIcon />
+                <span className="shrink-0 transition-transform duration-150 group-hover/btn:scale-110">
+                    <BoltIcon size={compact ? 15 : 16} />
                 </span>
-                <span className={hideLabelsOnPhone ? "max-sm:sr-only" : ""}>Buy Now</span>
+                <span className="truncate sm:hidden">Buy</span>
+                <span className="hidden truncate sm:inline">Buy Now</span>
             </button>
         </div>
     );
@@ -396,11 +411,7 @@ export default function ShopProductCard({
         return (
             <article className="group relative flex flex-row gap-3 p-3 sm:gap-6 sm:p-5 bg-bg-surface border border-border-default rounded-lg transition-all duration-200 hover:border-brand-primary hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
                 <div className="relative w-28 shrink-0 aspect-square sm:aspect-auto sm:h-52 sm:w-52 md:w-60 rounded-md overflow-hidden bg-white dark:bg-bg-subtle">
-                    {product.isNew && (
-                        <span className="absolute top-2 left-0 z-10 -skew-x-12 bg-brand-primary text-white text-[9px] sm:text-2.5 font-bold px-2 py-0.5 sm:top-3 sm:px-2.5 sm:py-1 tracking-wider">
-                            <span className="skew-x-12 inline-block">NEW</span>
-                        </span>
-                    )}
+                    {product.isNew ? <NewBadge /> : null}
                     <Link
                         href={`/shop/${product.slug}`}
                         className="absolute inset-0"
@@ -478,7 +489,6 @@ export default function ShopProductCard({
                             onAddToCart={handleAddToCart}
                             onBuyNow={handleBuyNow}
                             compact
-                            hideLabelsOnPhone
                             className="w-full sm:ml-1 sm:max-w-xs"
                         />
                     </div>
@@ -510,11 +520,7 @@ export default function ShopProductCard({
                             : "w-full aspect-square rounded-t-lg"
                     }`}
                 >
-                    {product.isNew && (
-                        <span className="absolute top-3 left-0 z-10 -skew-x-12 bg-brand-primary text-white text-2.5 font-bold px-2.5 py-1 tracking-wider">
-                            <span className="skew-x-12 inline-block">NEW</span>
-                        </span>
-                    )}
+                    {product.isNew ? <NewBadge /> : null}
 
                     <Link
                         href={`/shop/${product.slug}`}
@@ -653,7 +659,6 @@ export default function ShopProductCard({
                         onAddToCart={handleAddToCart}
                         onBuyNow={handleBuyNow}
                         compact
-                        hideLabelsOnPhone
                         className="mt-2 w-full max-w-xs"
                     />
                 )}
@@ -664,13 +669,13 @@ export default function ShopProductCard({
                     <div className="min-h-0 overflow-hidden">
                         <div
                             className={`translate-y-1.5 opacity-0 transition-all duration-150 ease-out delay-0 [@media(hover:hover)]:group-hover:translate-y-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:duration-200 [@media(hover:hover)]:group-hover:delay-75 [@media(hover:hover)]:group-focus-within:translate-y-0 [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100 motion-reduce:transition-none ${
-                                isCompact ? "px-2.5 pb-2.5 sm:px-3 sm:pb-3" : "px-3 pb-3 sm:px-4 sm:pb-4"
+                                isCompact ? "px-2 pb-3 sm:px-3 sm:pb-3" : "px-2.5 pb-3.5 sm:px-4 sm:pb-4"
                             }`}
                         >
                             <div
                                 aria-hidden="true"
                                 className={`h-px bg-border-default/70 ${
-                                    isCompact ? "mb-2" : "mb-2.5 sm:mb-3"
+                                    isCompact ? "mb-2" : "mb-2 sm:mb-3"
                                 }`}
                             />
                             <PurchaseButtons
@@ -678,7 +683,6 @@ export default function ShopProductCard({
                                 onAddToCart={handleAddToCart}
                                 onBuyNow={handleBuyNow}
                                 compact
-                                hideLabelsOnPhone
                             />
                         </div>
                     </div>

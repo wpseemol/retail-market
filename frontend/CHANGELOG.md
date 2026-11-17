@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-17
 
+### Shop product cards — mobile Cart / Buy + NEW badge
+
+- `ShopProductCard.tsx`: phone Cart/Buy are equal `grid-cols-2` twins (`h-10`) with short **Cart** / **Buy** labels; NEW badge is a small rounded pill on mobile; wishlist/quick-view hits are `size-9` on phone.
+
 ### Header hamburger — animated left drawer
 
 - `Header.tsx`: mobile menu uses Vaul **left** Drawer (slide in/out); app-style rows (`min-h-12`, active tint), sticky auth footer, safe-area padding.
