@@ -13,6 +13,7 @@ export { WhatsAppGatewaySettingsPage } from "./integrations/WhatsAppGatewaySetti
 export { EmailProviderSettingsPage } from "./integrations/EmailProviderSettingsPage";
 export { PaymentSettingsPage } from "./integrations/PaymentSettingsPage";
 export { ShippingSettingsPage } from "./integrations/ShippingSettingsPage";
+export { RecaptchaSettingsPage } from "./integrations/RecaptchaSettingsPage";
 
 export { AnalyticsSettingsPage } from "./tracking/AnalyticsSettingsPage";
 export { PixelsSettingsPage } from "./tracking/PixelsSettingsPage";

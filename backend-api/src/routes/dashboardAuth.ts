@@ -42,6 +42,8 @@ import {
   loginIpLimiter,
   refreshLimiter,
 } from "../lib/rateLimit.js";
+import { requireCsrf } from "../middleware/csrf.js";
+import { requireCaptchaIfEnabled } from "../lib/recaptcha.js";
 import type { Request } from "express";
 
 export const dashboardAuthRouter = Router();
@@ -67,7 +69,12 @@ const ROLE_HOME: Record<Exclude<UserRole, "customer">, string> = {
 };
 
 /** Dashboard only — staff roles; customers are rejected. */
-dashboardAuthRouter.post("/login", loginIpLimiter, loginAccountLimiter, async (req, res) => {
+dashboardAuthRouter.post(
+  "/login",
+  requireCsrf,
+  loginIpLimiter,
+  loginAccountLimiter,
+  async (req, res) => {
   // Accept `identifier`, or legacy `email` / `phone` / `username`.
   const body = {
     identifier:
@@ -89,6 +96,14 @@ dashboardAuthRouter.post("/login", loginIpLimiter, loginAccountLimiter, async (r
       message: "Validation failed",
       errors: parsed.error.flatten().fieldErrors,
     });
+  }
+
+  const captcha = await requireCaptchaIfEnabled(
+    req.body?.captchaToken,
+    req.ip,
+  );
+  if (!captcha.ok) {
+    return res.status(captcha.status).json(captcha.body);
   }
 
   const raw = parsed.data.identifier.trim();

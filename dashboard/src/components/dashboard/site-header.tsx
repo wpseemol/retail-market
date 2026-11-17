@@ -46,6 +46,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   email: "Email provider",
   payment: "Payment",
   shipping: "Shipping",
+  recaptcha: "reCAPTCHA",
   analytics: "Analytics",
   pixels: "Pixels",
   history: "History",

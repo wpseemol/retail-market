@@ -21,6 +21,7 @@ import { dashboardWhatsAppGatewayRouter } from "./dashboardWhatsAppGateway.js";
 import { dashboardEmailProviderRouter } from "./dashboardEmailProvider.js";
 import { dashboardShippingRouter } from "./dashboardShipping.js";
 import { dashboardPaymentGatewayRouter } from "./dashboardPaymentGateway.js";
+import { dashboardRecaptchaRouter } from "./dashboardRecaptcha.js";
 import {
   createSiteNavItemSchema,
   reorderHomeSectionsSchema,
@@ -50,6 +51,7 @@ dashboardSiteSettingsRouter.use("/whatsapp-gateway", dashboardWhatsAppGatewayRou
 dashboardSiteSettingsRouter.use("/email-provider", dashboardEmailProviderRouter);
 dashboardSiteSettingsRouter.use("/shipping", dashboardShippingRouter);
 dashboardSiteSettingsRouter.use("/payment-gateway", dashboardPaymentGatewayRouter);
+dashboardSiteSettingsRouter.use("/recaptcha", dashboardRecaptchaRouter);
 
 type ChangeMap = Record<string, { from: unknown; to: unknown }>;
 

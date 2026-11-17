@@ -1139,6 +1139,24 @@ model PaymentGateway {
   @@map("payment_gateways")
 }
 
+/// Google reCAPTCHA for storefront + dashboard auth forms.
+/// Managed from Dashboard → Settings → reCAPTCHA (super_admin). Default version is v2.
+model RecaptchaSettings {
+  id             Int      @id @default(1)
+  is_enabled     Boolean  @default(false)
+  /// v2 | v3 — default v2 (checkbox). Super admin can switch to v3 (score).
+  version        String   @default("v2") @db.VarChar(8)
+  site_key       String?  @db.VarChar(255)
+  /// Google secret key (AES-256-GCM via secretBox).
+  secret_key_enc String?  @db.Text
+  /// Minimum score for v3 (0–1). Ignored for v2.
+  v3_min_score   Float    @default(0.5)
+  updated_by     BigInt?  @db.UnsignedBigInt
+  updated_at     DateTime @updatedAt
+
+  @@map("recaptcha_settings")
+}
+
 /// Outgoing email (verification codes etc.) managed from Dashboard → Settings → Email provider.
 /// Every preset sends over SMTP. With none active, sending falls back to SMTP_* env vars.
 model EmailProvider {

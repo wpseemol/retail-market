@@ -55,6 +55,14 @@ async function callBackendAuth(
   path: string,
   body: unknown,
 ): Promise<AuthTokenResponse> {
+  const csrfToken =
+    body &&
+    typeof body === "object" &&
+    "csrfToken" in body &&
+    typeof (body as { csrfToken?: unknown }).csrfToken === "string"
+      ? (body as { csrfToken: string }).csrfToken.trim()
+      : "";
+
   let res: Response;
   try {
     res = await backendAuthFetch(`${BACKEND_URL}${path}`, {
@@ -62,6 +70,7 @@ async function callBackendAuth(
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
+        ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
         ...(await trustedClientHeaders()),
         ...appKeyRecord(),
       },
@@ -175,15 +184,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        csrfToken: {},
+        captchaToken: {},
       },
       async authorize(credentials) {
         const email = String(credentials?.email ?? "");
         const password = String(credentials?.password ?? "");
+        const csrfToken = String(credentials?.csrfToken ?? "").trim();
+        const captchaToken = String(credentials?.captchaToken ?? "").trim();
         if (!email || !password) return null;
         try {
           const data = await callBackendAuth("/api/auth/login", {
             email,
             password,
+            ...(csrfToken ? { csrfToken } : {}),
+            ...(captchaToken ? { captchaToken } : {}),
           });
           return toAuthUser(data);
         } catch (err) {
@@ -200,9 +215,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: {},
         password: {},
         phone: {},
+        csrfToken: {},
+        captchaToken: {},
       },
       async authorize(credentials) {
         try {
+          const csrfToken = String(credentials?.csrfToken ?? "").trim();
+          const captchaToken = String(credentials?.captchaToken ?? "").trim();
           const data = await callBackendAuth("/api/auth/register", {
             first_name: String(credentials?.first_name ?? ""),
             last_name: String(credentials?.last_name ?? ""),
@@ -211,6 +230,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             phone: credentials?.phone
               ? String(credentials.phone)
               : undefined,
+            ...(csrfToken ? { csrfToken } : {}),
+            ...(captchaToken ? { captchaToken } : {}),
           });
           return toAuthUser(data);
         } catch (err) {

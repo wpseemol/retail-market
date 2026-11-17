@@ -14,6 +14,7 @@ import {
     MessageSquareText,
     PanelBottom,
     Share2,
+    Shield,
     Truck,
     type LucideIcon,
 } from "lucide-react";
@@ -45,6 +46,7 @@ export const SETTINGS_TABS: SettingsTab[] = [
     { path: "email", label: "Email provider", icon: Mail },
     { path: "payment", label: "Payment", icon: CreditCard },
     { path: "shipping", label: "Shipping", icon: Truck },
+    { path: "recaptcha", label: "reCAPTCHA", icon: Shield },
     { path: "analytics", label: "Analytics", icon: BarChart3 },
     { path: "pixels", label: "Pixels", icon: Megaphone },
     { path: "history", label: "History", icon: History },
@@ -75,6 +77,7 @@ export const SETTINGS_TAB_GROUPS: SettingsTabGroup[] = [
             { path: "email", label: "Email provider", icon: Mail },
             { path: "payment", label: "Payment", icon: CreditCard },
             { path: "shipping", label: "Shipping", icon: Truck },
+            { path: "recaptcha", label: "reCAPTCHA", icon: Shield },
         ],
     },
     {

@@ -49,6 +49,8 @@ type ApiOptions = {
   token?: string | null;
   /** Skip refresh+retry (used by the refresh call itself). */
   skipRefresh?: boolean;
+  /** Double-submit CSRF for auth forms — sent as `X-CSRF-Token`. */
+  csrfToken?: string | null;
 };
 
 export class ApiError extends Error {
@@ -174,9 +176,15 @@ async function requestJson(
     headers["Content-Type"] = "application/json";
   }
 
+  const csrf = options.csrfToken?.trim();
+  if (csrf) {
+    headers["X-CSRF-Token"] = csrf;
+  }
+
   return fetch(`${API_URL}${path}`, {
     method: options.method ?? (options.body !== undefined ? "POST" : "GET"),
     headers,
+    credentials: "include",
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   });
 }

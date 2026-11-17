@@ -40,6 +40,13 @@ export function messageForAuthCode(
       return "Please check your details and try again.";
     case "REGISTER_FAILED":
       return "Registration failed. Please try again.";
+    case "CSRF_INVALID":
+    case "CSRF_MISMATCH":
+      return "Your session expired. Refresh the page and try again.";
+    case "CAPTCHA_REQUIRED":
+      return "Please complete the captcha and try again.";
+    case "CAPTCHA_FAILED":
+      return "Captcha verification failed. Please try again.";
     case "INVALID_CREDENTIALS":
     case "credentials":
       return fallback;

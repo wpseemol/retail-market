@@ -1,24 +1,36 @@
 "use client";
 
-import { type FormEvent, useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getSession, signIn } from "next-auth/react";
 import AuthInput from "./AuthInput";
 import OrDivider from "./OrDivider";
+import RecaptchaField from "./RecaptchaField";
 import SocialAuthButtons from "./SocialAuthButtons";
 import { EnvelopeIcon, LockIcon } from "./icons";
-import {
-  type LoginField,
-  validateLoginField,
-  validateLoginForm,
-} from "@/lib/validators/customerAuth";
+import { loginSchema, type LoginInput } from "@/lib/validators/customerAuth";
 import { messageForAuthCode } from "@/lib/authErrors";
+import { clearCsrfCache, fetchCsrfToken } from "@/lib/csrf";
+import {
+  executeRecaptchaV3,
+  fetchCaptchaConfig,
+  type PublicCaptchaConfig,
+} from "@/lib/recaptcha";
 import { useSocialLogin } from "@/hooks/useSocialLogin";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/authSlice";
 import type { ApiUser } from "@/lib/api";
 import { authSwitchHref, safeNextPath } from "@/lib/authRedirect";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
 
 const STAFF_ROLES = new Set([
   "super_admin",
@@ -27,22 +39,45 @@ const STAFF_ROLES = new Set([
   "vendor",
 ]);
 
-type FieldErrors = Partial<Record<LoginField, string>>;
-
 export default function LoginForm() {
   const searchParams = useSearchParams();
   const rawNext = searchParams.get("next");
   const nextPath = safeNextPath(rawNext);
   const dispatch = useAppDispatch();
   const [rememberMe, setRememberMe] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [touched, setTouched] = useState<Partial<Record<LoginField, boolean>>>(
-    {},
-  );
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [captchaConfig, setCaptchaConfig] = useState<PublicCaptchaConfig | null>(
+    null,
+  );
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
+
+  const form = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+    mode: "onBlur",
+  });
+
+  const onCaptchaToken = useCallback((token: string | null) => {
+    setCaptchaToken(token);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        await fetchCsrfToken();
+        const config = await fetchCaptchaConfig();
+        if (!cancelled) setCaptchaConfig(config);
+      } catch {
+        /* submit will refresh CSRF */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const finishAuth = useCallback(
     (user: ApiUser) => {
@@ -53,7 +88,6 @@ export default function LoginForm() {
 
       dispatch(setCredentials({ user }));
       void rememberMe;
-      // Full navigation so middleware + Auth.js cookie are in sync
       window.location.assign(nextPath);
     },
     [dispatch, rememberMe, nextPath],
@@ -61,61 +95,40 @@ export default function LoginForm() {
 
   const social = useSocialLogin(finishAuth);
 
-  const setFieldValue = (field: LoginField, value: string) => {
-    if (field === "email") setEmail(value);
-    else setPassword(value);
-
-    if (touched[field] || fieldErrors[field]) {
-      const message = validateLoginField(field, value);
-      setFieldErrors((prev) => {
-        if (!message) {
-          if (!(field in prev)) return prev;
-          const next = { ...prev };
-          delete next[field];
-          return next;
-        }
-        if (prev[field] === message) return prev;
-        return { ...prev, [field]: message };
-      });
-    }
-  };
-
-  const handleBlur = (field: LoginField, value: string) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-    const message = validateLoginField(field, value);
-    setFieldErrors((prev) => {
-      if (!message) {
-        if (!(field in prev)) return prev;
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      }
-      return { ...prev, [field]: message };
-    });
-  };
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const onSubmit = (values: LoginInput) => {
     setError(null);
-    setTouched({ email: true, password: true });
-
-    const validated = validateLoginForm({ email, password });
-    if (!validated.success) {
-      setFieldErrors(validated.errors);
-      return;
-    }
-
-    setFieldErrors({});
     startTransition(async () => {
       try {
-        // Client signIn sets the httpOnly cookie; avoid Server Action auth() race.
+        const csrfToken = await fetchCsrfToken();
+        let nextCaptcha = captchaToken;
+        if (
+          captchaConfig?.enabled &&
+          captchaConfig.version === "v3" &&
+          captchaConfig.site_key
+        ) {
+          nextCaptcha = await executeRecaptchaV3(
+            captchaConfig.site_key,
+            "login",
+          );
+        }
+        if (captchaConfig?.enabled && !nextCaptcha) {
+          setError("Please complete the captcha and try again.");
+          return;
+        }
+
         const result = await signIn("credentials", {
-          email: validated.data.email,
-          password: validated.data.password,
+          email: values.email,
+          password: values.password,
+          csrfToken,
+          captchaToken: nextCaptcha ?? "",
           redirect: false,
         });
 
         if (result?.error) {
+          clearCsrfCache();
+          setCaptchaToken(null);
+          setCaptchaResetKey((k) => k + 1);
+          void fetchCsrfToken(true).catch(() => undefined);
           setError(
             messageForAuthCode(result.code, "Invalid email or password"),
           );
@@ -130,6 +143,8 @@ export default function LoginForm() {
 
         finishAuth(session.backendUser);
       } catch {
+        clearCsrfCache();
+        setCaptchaResetKey((k) => k + 1);
         setError("Login failed");
       }
     });
@@ -165,56 +180,88 @@ export default function LoginForm() {
         </>
       ) : null}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
-        <AuthInput
-          name="email"
-          type="email"
-          autoComplete="email"
-          placeholder="Ex. Maguire@FlexUI.com"
-          leadingIcon={<EnvelopeIcon />}
-          value={email}
-          onChange={(e) => setFieldValue("email", e.target.value)}
-          onBlur={(e) => handleBlur("email", e.target.value)}
-          error={fieldErrors.email}
-        />
-
-        <AuthInput
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          placeholder="Enter your password"
-          leadingIcon={<LockIcon />}
-          showPasswordToggle
-          value={password}
-          onChange={(e) => setFieldValue("password", e.target.value)}
-          onBlur={(e) => handleBlur("password", e.target.value)}
-          error={fieldErrors.password}
-        />
-
-        <label className="flex items-center gap-2.5 cursor-pointer select-none mt-1">
-          <input
-            type="checkbox"
-            checked={rememberMe}
-            onChange={(e) => setRememberMe(e.target.checked)}
-            className="size-4 shrink-0 rounded border-border-default accent-brand-primary cursor-pointer"
-          />
-          <span className="text-sm text-text-secondary">Remember Me?</span>
-        </label>
-
-        {displayError ? (
-          <p className="text-sm text-rose-600" role="alert">
-            {displayError}
-          </p>
-        ) : null}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-1 w-full h-11 rounded bg-brand-primary hover:bg-brand-hover text-white text-sm font-semibold transition-colors cursor-pointer disabled:opacity-60"
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-4"
+          noValidate
         >
-          {loading ? "Logging in…" : "Login"}
-        </button>
-      </form>
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <AuthInput
+                    {...field}
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="Ex. Maguire@FlexUI.com"
+                    leadingIcon={<EnvelopeIcon />}
+                    error={form.formState.errors.email?.message}
+                    disabled={loading}
+                  />
+                </FormControl>
+                <FormMessage className="sr-only" />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <AuthInput
+                    {...field}
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    placeholder="Enter your password"
+                    leadingIcon={<LockIcon />}
+                    showPasswordToggle
+                    error={form.formState.errors.password?.message}
+                    disabled={loading}
+                  />
+                </FormControl>
+                <FormMessage className="sr-only" />
+              </FormItem>
+            )}
+          />
+
+          <label className="flex items-center gap-2.5 cursor-pointer select-none mt-1">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="size-4 shrink-0 rounded border-border-default accent-brand-primary cursor-pointer"
+            />
+            <span className="text-sm text-text-secondary">Remember Me?</span>
+          </label>
+
+          <RecaptchaField
+            config={captchaConfig}
+            onToken={onCaptchaToken}
+            resetKey={captchaResetKey}
+          />
+
+          {displayError ? (
+            <p className="text-sm text-rose-600" role="alert">
+              {displayError}
+            </p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-1 w-full h-11 rounded bg-brand-primary hover:bg-brand-hover text-white text-sm font-semibold transition-colors cursor-pointer disabled:opacity-60"
+          >
+            {loading ? "Logging in…" : "Login"}
+          </button>
+        </form>
+      </Form>
 
       <p className="mt-6 mb-0 text-center text-sm text-text-secondary">
         New here?{" "}

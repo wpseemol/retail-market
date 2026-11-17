@@ -14,6 +14,7 @@ import {
   sendPhoneCode,
   setPassword,
   socialProviders,
+  captchaConfig,
   updateMe,
   uploadAvatar,
 } from "../controllers/customerAuthController.js";
@@ -36,6 +37,7 @@ import {
   socialLoginLimiter,
 } from "../lib/rateLimit.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { requireCsrf } from "../middleware/csrf.js";
 import multer from "multer";
 
 export const customerAuthRouter = Router();
@@ -64,11 +66,19 @@ const phoneSendLimiter = rateLimit({
 
 customerAuthRouter.post(
   "/register",
+  requireCsrf,
   registerIpLimiter,
   registerAccountLimiter,
   asyncHandler(register),
 );
-customerAuthRouter.post("/login", loginIpLimiter, loginAccountLimiter, asyncHandler(login));
+customerAuthRouter.post(
+  "/login",
+  requireCsrf,
+  loginIpLimiter,
+  loginAccountLimiter,
+  asyncHandler(login),
+);
+customerAuthRouter.get("/captcha-config", asyncHandler(captchaConfig));
 customerAuthRouter.get("/social-providers", asyncHandler(socialProviders));
 customerAuthRouter.post("/google", socialLoginLimiter, asyncHandler(googleLogin));
 customerAuthRouter.post("/facebook", socialLoginLimiter, asyncHandler(facebookLogin));

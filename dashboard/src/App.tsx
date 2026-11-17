@@ -33,6 +33,7 @@ import {
   IdentitySettingsPage,
   PaymentSettingsPage,
   PixelsSettingsPage,
+  RecaptchaSettingsPage,
   ShippingSettingsPage,
   ShopSettingsPage,
   SiteSettingsLayout,
@@ -138,6 +139,7 @@ export default function App() {
               <Route path="email" element={<EmailProviderSettingsPage />} />
               <Route path="payment" element={<PaymentSettingsPage />} />
               <Route path="shipping" element={<ShippingSettingsPage />} />
+              <Route path="recaptcha" element={<RecaptchaSettingsPage />} />
               <Route path="analytics" element={<AnalyticsSettingsPage />} />
               <Route path="pixels" element={<PixelsSettingsPage />} />
               <Route path="history" element={<HistorySettingsPage />} />

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
@@ -12,6 +12,12 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { ApiError, apiFetch, type StaffRole, type StaffUser } from "@/lib/api";
+import { clearCsrfCache, fetchCsrfToken } from "@/lib/csrf";
+import {
+  executeRecaptchaV3,
+  fetchCaptchaConfig,
+} from "@/lib/recaptcha";
+import type { PublicCaptchaConfig } from "@/lib/validators/recaptcha";
 import { useLoginBranding } from "@/lib/siteBranding";
 import { staffLoginSchema, type StaffLoginValues } from "@/lib/validators/auth";
 import {
@@ -21,6 +27,7 @@ import {
   type TotpCodeValues,
 } from "@/lib/validators/twoFactor";
 import { useAuthStore } from "@/store/auth";
+import { RecaptchaField } from "@/components/auth/RecaptchaField";
 import { TotpCodeInput } from "@/components/auth/TotpCodeInput";
 import { TotpQrCode } from "@/components/auth/TotpQrCode";
 import { FadeUp, MotionProvider } from "@/components/motion";
@@ -104,6 +111,11 @@ export function LoginPage() {
   const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
   const [pendingHome, setPendingHome] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [captchaConfig, setCaptchaConfig] = useState<PublicCaptchaConfig | null>(
+    null,
+  );
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
 
   const passwordForm = useForm<StaffLoginValues>({
     resolver: zodResolver(staffLoginSchema),
@@ -117,6 +129,26 @@ export function LoginPage() {
     resolver: zodResolver(recoveryCodeSchema),
     defaultValues: { code: "" },
   });
+
+  const onCaptchaToken = useCallback((token: string | null) => {
+    setCaptchaToken(token);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        await fetchCsrfToken();
+        const config = await fetchCaptchaConfig();
+        if (!cancelled) setCaptchaConfig(config);
+      } catch {
+        /* login still possible if CSRF fetch fails later on submit */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const sessionNotice = useMemo(() => {
     const reason = searchParams.get("reason");
@@ -147,6 +179,23 @@ export function LoginPage() {
   async function onPasswordSubmit(values: StaffLoginValues) {
     setError(null);
     try {
+      const csrfToken = await fetchCsrfToken();
+      let nextCaptcha = captchaToken;
+      if (
+        captchaConfig?.enabled &&
+        captchaConfig.version === "v3" &&
+        captchaConfig.site_key
+      ) {
+        nextCaptcha = await executeRecaptchaV3(
+          captchaConfig.site_key,
+          "dashboard_login",
+        );
+      }
+      if (captchaConfig?.enabled && !nextCaptcha) {
+        setError("Please complete the captcha and try again.");
+        return;
+      }
+
       const data = await apiFetch<{
         accessToken?: string;
         refreshToken?: string;
@@ -161,7 +210,10 @@ export function LoginPage() {
         body: {
           identifier: values.identifier.trim(),
           password: values.password,
+          csrfToken,
+          ...(nextCaptcha ? { captchaToken: nextCaptcha } : {}),
         },
+        csrfToken,
         skipRefresh: true,
       });
 
@@ -204,7 +256,17 @@ export function LoginPage() {
       });
       navigate(home);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 403) {
+      clearCsrfCache();
+      setCaptchaToken(null);
+      setCaptchaResetKey((k) => k + 1);
+      void fetchCsrfToken(true).catch(() => undefined);
+      if (err instanceof ApiError && err.code === "CUSTOMER_USE_STOREFRONT") {
+        setError(
+          `${err.message} Customers should use ${STOREFRONT_URL}/login`,
+        );
+      } else if (err instanceof ApiError && err.status === 403 && err.code?.startsWith("CSRF")) {
+        setError(err.message);
+      } else if (err instanceof ApiError && err.status === 403) {
         setError(
           `${err.message} Customers should use ${STOREFRONT_URL}/login`,
         );
@@ -432,6 +494,12 @@ export function LoginPage() {
                           <FormMessage />
                         </FormItem>
                       )}
+                    />
+
+                    <RecaptchaField
+                      config={captchaConfig}
+                      onToken={onCaptchaToken}
+                      resetKey={captchaResetKey}
                     />
 
                     {error ? (

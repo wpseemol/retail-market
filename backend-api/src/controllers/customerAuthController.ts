@@ -13,6 +13,10 @@ import {
   isSocialProvider,
   type SocialProvider,
 } from "../lib/socialLogin.js";
+import {
+  getPublicCaptchaConfig,
+  requireCaptchaIfEnabled,
+} from "../lib/recaptcha.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
 import { verifyRefreshToken } from "../lib/token.js";
 import { createUserSession, rotateUserSession } from "../lib/userSession.js";
@@ -118,6 +122,13 @@ async function markLoginAndIssueTokens(
 }
 
 /** Storefront only — always creates a customer account. */
+/** Public reCAPTCHA config for login/register widgets (never includes secret). */
+export async function captchaConfig(_req: Request, res: Response) {
+  const config = await getPublicCaptchaConfig();
+  res.setHeader("Cache-Control", "no-store");
+  return res.json(config);
+}
+
 export async function register(req: Request, res: Response) {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -125,6 +136,14 @@ export async function register(req: Request, res: Response) {
       message: "Validation failed",
       errors: parsed.error.flatten().fieldErrors,
     });
+  }
+
+  const captcha = await requireCaptchaIfEnabled(
+    req.body?.captchaToken,
+    req.ip,
+  );
+  if (!captcha.ok) {
+    return res.status(captcha.status).json(captcha.body);
   }
 
   const { first_name, last_name, email, password, phone } = parsed.data;
@@ -182,6 +201,14 @@ export async function login(req: Request, res: Response) {
       message: "Validation failed",
       errors: parsed.error.flatten().fieldErrors,
     });
+  }
+
+  const captcha = await requireCaptchaIfEnabled(
+    req.body?.captchaToken,
+    req.ip,
+  );
+  if (!captcha.ok) {
+    return res.status(captcha.status).json(captcha.body);
   }
 
   const email = parsed.data.email.toLowerCase();

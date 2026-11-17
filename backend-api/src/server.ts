@@ -48,6 +48,7 @@ import {
   isGlobalRateLimitExempt,
 } from "./lib/rateLimit.js";
 import { startBackupScheduler, stopBackupScheduler } from "./lib/backupScheduler.js";
+import { csrfRouter } from "./routes/csrf.js";
 
 const app = express();
 
@@ -68,7 +69,15 @@ app.use(
   cors({
     origin: env.corsOrigins,
     credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Public-Key", "X-Api-Secret"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Accept",
+      "X-Public-Key",
+      "X-Api-Secret",
+      "X-CSRF-Token",
+      "X-Staff-Token",
+    ],
     exposedHeaders: ["Content-Disposition", "X-Total-Rows"],
   }),
 );
@@ -88,6 +97,7 @@ app.use(
 );
 
 app.use("/api/health", healthRouter);
+app.use("/api/csrf", csrfRouter);
 app.use("/api/auth", customerAuthRouter);
 app.use("/api/customer/addresses", customerAddressRouter);
 app.use("/api/customer/orders", customerOrdersRouter);
