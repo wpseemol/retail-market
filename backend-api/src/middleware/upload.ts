@@ -21,6 +21,10 @@ import {
   REVIEW_IMAGE_MAX_FILES,
   REVIEW_IMAGES_DIR,
 } from "../lib/reviewImage.js";
+import {
+  SELLER_KYC_IMAGE_MAX_BYTES,
+  SELLER_KYC_IMAGES_DIR,
+} from "../lib/sellerKycImage.js";
 
 /** Disk folder for all customer profile photos. */
 export const USER_PHOTOS_DIR = path.resolve(
@@ -148,6 +152,20 @@ export const reviewImageUpload = multer({
     files: REVIEW_IMAGE_MAX_FILES,
     fields: 10,
     parts: 14,
+  },
+  fileFilter: imageFileFilter,
+});
+
+ensureLocalUploadDir(SELLER_KYC_IMAGES_DIR);
+
+/** Seller KYC document scans → `medias` · max 2 MB · resized. */
+export const sellerKycImageUpload = multer({
+  storage: imageStorage(SELLER_KYC_IMAGES_DIR),
+  limits: {
+    fileSize: SELLER_KYC_IMAGE_MAX_BYTES,
+    files: 1,
+    fields: 8,
+    parts: 10,
   },
   fileFilter: imageFileFilter,
 });

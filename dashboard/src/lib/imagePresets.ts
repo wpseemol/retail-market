@@ -20,6 +20,8 @@ export const IMAGE_PRESETS = {
   shopBanner: { width: 1920, height: 640, ratio: "3:1" },
   brandBanner: { width: 1920, height: 640, ratio: "3:1" },
   avatar: { width: 400, height: 400, ratio: "1:1" },
+  /** Seller KYC scans (NID / birth certificate) — free-form. */
+  sellerKyc: { width: 1600, height: 1600, ratio: "any" },
   loginLogo: { width: 480, height: 120, ratio: "4:1" },
   loginPanel: { width: 960, height: 1200, ratio: "4:5" },
   favicon: { width: 512, height: 512, ratio: "1:1", format: "PNG" },
@@ -69,7 +71,11 @@ export function homeBlockImagePreset(
 }
 
 /** Presets with no size rule. Avatars are shared with storefront customers. */
-const FREE_FORM_PRESETS: ReadonlySet<ImagePresetKey> = new Set(["avatar", "homeGeneric"]);
+const FREE_FORM_PRESETS: ReadonlySet<ImagePresetKey> = new Set([
+  "avatar",
+  "homeGeneric",
+  "sellerKyc",
+]);
 
 /** Allowed aspect-ratio difference; must match `IMAGE_RATIO_TOLERANCE` in the API. */
 export const IMAGE_RATIO_TOLERANCE = 0.03;

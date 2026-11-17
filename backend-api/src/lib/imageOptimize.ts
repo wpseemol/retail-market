@@ -17,6 +17,8 @@ import { saveMediaFile, StorageError } from "./storage/files.js";
 export const IMAGE_PRESETS = {
   product: { width: 1200, height: 1200, format: "webp" },
   review: { width: 1200, height: 1200, format: "webp" },
+  /** NID / birth certificate scans — free-form aspect ratio. */
+  sellerKyc: { width: 1600, height: 1600, format: "webp" },
   category: { width: 400, height: 400, format: "webp" },
   brand: { width: 600, height: 300, format: "webp" },
   shopLogo: { width: 512, height: 512, format: "webp" },
@@ -73,7 +75,12 @@ export function homeBlockImagePreset(blockKey: string, fieldPath: string): Image
  * Uploads with no dimension rule: customer photos (reviews, avatars — the avatar
  * endpoint is shared with storefront customers) and free-form home images.
  */
-const FREE_FORM_PRESETS: ReadonlySet<ImagePresetKey> = new Set(["review", "avatar", "homeGeneric"]);
+const FREE_FORM_PRESETS: ReadonlySet<ImagePresetKey> = new Set([
+  "review",
+  "avatar",
+  "homeGeneric",
+  "sellerKyc",
+]);
 
 /** Allowed difference between the upload's aspect ratio and the preset's. Mirrors the dashboard. */
 export const IMAGE_RATIO_TOLERANCE = 0.03;
