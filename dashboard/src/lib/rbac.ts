@@ -85,6 +85,9 @@ export const REVIEW_FLAG_ROLES: readonly StaffRole[] = ["super_admin", "admin", 
 export const REVIEW_REPLY_ROLES: readonly StaffRole[] = ["super_admin", "admin", "vendor"];
 export const REVIEW_DELETE_ROLES: readonly StaffRole[] = ["super_admin", "admin"];
 
+/** Become-a-seller application queue — admin + super_admin only. */
+export const SELLER_APPLICATION_ROLES: readonly StaffRole[] = ["super_admin", "admin"];
+
 /** Per-role workspace landing pages; super_admin can open all of them. */
 export const WORKSPACE_ROLES: Record<StaffRole, readonly StaffRole[]> = {
   super_admin: ["super_admin"],

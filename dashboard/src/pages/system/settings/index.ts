@@ -14,6 +14,7 @@ export { EmailProviderSettingsPage } from "./integrations/EmailProviderSettingsP
 export { PaymentSettingsPage } from "./integrations/PaymentSettingsPage";
 export { ShippingSettingsPage } from "./integrations/ShippingSettingsPage";
 export { RecaptchaSettingsPage } from "./integrations/RecaptchaSettingsPage";
+export { KycSettingsPage } from "./integrations/KycSettingsPage";
 
 export { AnalyticsSettingsPage } from "./tracking/AnalyticsSettingsPage";
 export { PixelsSettingsPage } from "./tracking/PixelsSettingsPage";

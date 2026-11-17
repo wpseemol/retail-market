@@ -124,7 +124,7 @@ export function KycSettingsPanel({ token }: { token: string }) {
       const data = await apiFetch<KycApiResponse>(ENDPOINT, {
         method: "PATCH",
         token,
-        body: JSON.stringify(toKycApiBody(values)),
+        body: toKycApiBody(values),
       });
       setDto(data.kyc);
       form.reset(toKycFormValues(data.kyc));

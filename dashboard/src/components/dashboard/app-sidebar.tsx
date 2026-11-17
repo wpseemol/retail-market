@@ -16,6 +16,7 @@ import {
   Tag,
   UserCog,
   Users,
+  UserRoundPlus,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { NavUser } from "@/components/dashboard/nav-user";
@@ -40,6 +41,7 @@ import type { StaffRole } from "@/lib/api";
 import {
   CONTENT_PAGE_ROLES,
   REVIEW_ROLES,
+  SELLER_APPLICATION_ROLES,
   SEO_ROLES,
   STORE_ROLES,
   SYSTEM_SETTINGS_ROLES,
@@ -166,6 +168,12 @@ const supportLinks: NavItem[] = [
     label: "Product reviews",
     icon: MessageSquareText,
     roles: REVIEW_ROLES,
+  },
+  {
+    to: "/support/seller-applications",
+    label: "Seller applications",
+    icon: UserRoundPlus,
+    roles: SELLER_APPLICATION_ROLES,
   },
 ];
 

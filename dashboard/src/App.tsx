@@ -19,7 +19,7 @@ import {
 } from "./pages/catalog";
 import { StoreCreatePage, StoreDesignPage, StoreEditPage, StoresPage } from "./pages/stores";
 import { UserEditPage, UsersPage } from "./pages/access";
-import { ReviewsModerationPage } from "./pages/support";
+import { ReviewsModerationPage, SellerApplicationsPage } from "./pages/support";
 import { SeoSettingsPage } from "./pages/marketing";
 import { FaqPageEditor, PrivacyPageEditor, TermsPageEditor } from "./pages/content";
 import {
@@ -31,6 +31,7 @@ import {
   HistorySettingsPage,
   HomeSettingsPage,
   IdentitySettingsPage,
+  KycSettingsPage,
   PaymentSettingsPage,
   PixelsSettingsPage,
   RecaptchaSettingsPage,
@@ -52,6 +53,7 @@ import {
   OVERVIEW_ROLES,
   PRODUCT_ROLES,
   REVIEW_ROLES,
+  SELLER_APPLICATION_ROLES,
   SEO_ROLES,
   STAFF_MANAGEMENT_ROLES,
   STORE_MANAGE_ROLES,
@@ -109,6 +111,10 @@ export default function App() {
             <Route path="reviews" element={<Navigate to="/support/reviews" replace />} />
           </Route>
 
+          <Route element={<ProtectedRoute roles={SELLER_APPLICATION_ROLES} />}>
+            <Route path="support/seller-applications" element={<SellerApplicationsPage />} />
+          </Route>
+
           <Route element={<ProtectedRoute roles={SEO_ROLES} />}>
             <Route path="seo" element={<SeoSettingsPage />} />
           </Route>
@@ -140,6 +146,7 @@ export default function App() {
               <Route path="payment" element={<PaymentSettingsPage />} />
               <Route path="shipping" element={<ShippingSettingsPage />} />
               <Route path="recaptcha" element={<RecaptchaSettingsPage />} />
+              <Route path="kyc" element={<KycSettingsPage />} />
               <Route path="analytics" element={<AnalyticsSettingsPage />} />
               <Route path="pixels" element={<PixelsSettingsPage />} />
               <Route path="history" element={<HistorySettingsPage />} />
