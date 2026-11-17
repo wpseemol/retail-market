@@ -8,7 +8,8 @@ Format: date heading, then one bullet per change with the files touched.
 ### Shop filters — floating FAB + shadcn Drawer
 
 - `vaul` + `components/ui/drawer.tsx`: animated shadcn Drawer (supports right/left/top/bottom).
-- `ShopFilterFab.tsx`: floating **Filters** pill, bottom-center above the mobile tab bar.
+- `globals.css`: allow Vaul `[data-vaul-drawer]` / overlay keyframes (site `animation: none` was killing slide).
+- `ShopFilterFab.tsx`: compact phone FAB (`h-9`, 12px type) bottom-center above the tab bar.
 - `ShopFilterSheet.tsx`: **right** drawer at **85%** width with X close, filter menu, clear / show.
 - `ShopToolbar.tsx`: filter chip removed (FAB only on mobile).
 

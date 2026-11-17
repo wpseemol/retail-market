@@ -10,7 +10,7 @@ type Props = {
   onClick: () => void;
 };
 
-/** Floating bottom-center filter control — mobile shop only. */
+/** Floating bottom-center filter control — compact for phone thumbs. */
 export default function ShopFilterFab({ count, hidden = false, onClick }: Props) {
   const { t } = useI18n();
   const copy = t.shopPage;
@@ -18,10 +18,10 @@ export default function ShopFilterFab({ count, hidden = false, onClick }: Props)
   return (
     <div
       className={cn(
-        "pointer-events-none fixed inset-x-0 z-40 flex justify-center px-4 transition-[opacity,transform] duration-300 ease-out lg:hidden",
-        "bottom-[calc(4.75rem+env(safe-area-inset-bottom))]",
+        "pointer-events-none fixed inset-x-0 z-40 flex justify-center px-3 transition-[opacity,transform] duration-300 ease-out lg:hidden",
+        "bottom-[calc(4.25rem+env(safe-area-inset-bottom))]",
         hidden
-          ? "translate-y-3 opacity-0"
+          ? "translate-y-2 opacity-0"
           : "translate-y-0 opacity-100",
       )}
     >
@@ -31,16 +31,16 @@ export default function ShopFilterFab({ count, hidden = false, onClick }: Props)
         aria-hidden={hidden}
         tabIndex={hidden ? -1 : 0}
         className={cn(
-          "pointer-events-auto inline-flex h-12 items-center gap-2 rounded-full bg-brand-primary px-5 text-sm font-semibold text-white shadow-[0_8px_28px_rgba(0,0,0,0.28)]",
-          "hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary",
+          "pointer-events-auto inline-flex h-9 max-w-[min(100%,11.5rem)] items-center gap-1.5 rounded-full bg-brand-primary px-3.5 text-[12px] font-semibold leading-none text-white shadow-[0_6px_20px_rgba(0,0,0,0.22)]",
+          "active:scale-[0.97] hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary",
           hidden && "pointer-events-none",
         )}
       >
-        <SlidersHorizontal className="size-4 shrink-0" aria-hidden />
-        {copy.filters}
+        <SlidersHorizontal className="size-3.5 shrink-0" aria-hidden />
+        <span className="truncate">{copy.filters}</span>
         {count > 0 ? (
-          <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-white/20 px-1.5 py-0.5 text-[11px] font-semibold text-white">
-            {count}
+          <span className="inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-white/20 px-1 text-[10px] font-semibold text-white">
+            {count > 99 ? "99+" : count}
           </span>
         ) : null}
       </button>

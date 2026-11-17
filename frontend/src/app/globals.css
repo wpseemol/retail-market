@@ -116,9 +116,10 @@
  * Site-wide: no keyframe / page animations. Short hover & focus transitions are allowed
  * (they are the hover feedback), except for visitors who ask for reduced motion.
  * Loading spinners are kept as a status indicator.
+ * Vaul drawer/overlay keep enter/exit slides (shop filter FAB).
  */
 @layer base {
-  *,
+  *:not([data-vaul-drawer]):not([data-vaul-overlay]),
   *::before,
   *::after {
     animation: none !important;
@@ -134,6 +135,7 @@
     *::before,
     *::after {
       transition: none !important;
+      animation: none !important;
     }
   }
 }

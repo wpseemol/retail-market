@@ -44,11 +44,12 @@ export default function ShopFilterSheet({
       direction="right"
       shouldScaleBackground={false}
       repositionInputs={false}
+      modal
     >
       <DrawerContent
         direction="right"
         showHandle={false}
-        className="lg:hidden"
+        className="lg:hidden will-change-transform"
       >
         <DrawerHeader className="flex flex-row items-center justify-between gap-3 space-y-0 pr-3">
           <div className="min-w-0">
