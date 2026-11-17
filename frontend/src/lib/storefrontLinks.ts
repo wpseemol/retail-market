@@ -22,6 +22,7 @@ const KNOWN_TOP_SEGMENTS = new Set([
   "offline",
   "privacy-policy",
   "bulk-order",
+  "become-seller",
   "api",
   "auth",
   "icons",
@@ -59,6 +60,11 @@ export function normalizeStorefrontPath(href: string): string {
 
   const legacy = LEGACY_EXACT[pathOnly];
   if (legacy) return `${legacy}${query}${hash}`;
+
+  // Accidental CMS / rewrite: /shop?category=become-seller → real apply page.
+  if (pathOnly === "/shop" && /(?:^|[?&])category=become-seller(?:&|$)/i.test(query)) {
+    return `/become-seller${hash}`;
+  }
 
   const categoryMatch = pathOnly.match(/^\/category\/([^/]+)\/?$/i);
   if (categoryMatch?.[1]) {

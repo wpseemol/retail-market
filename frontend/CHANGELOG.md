@@ -3,6 +3,12 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-18
+
+### Footer Become a seller link
+
+- `lib/storefrontLinks.ts`: add `become-seller` to known top segments so Footer CMS href `/become-seller` is not rewritten to `/shop?category=become-seller`; also remap that mistaken shop query back to `/become-seller`.
+
 ## 2026-11-17
 
 ### Become a seller storefront + footer
