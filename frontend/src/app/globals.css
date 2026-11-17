@@ -120,7 +120,7 @@
  * Shop catalog view switches use [data-shop-card-anim] + view-transition pseudos.
  */
 @layer base {
-  *:not([data-vaul-drawer]):not([data-vaul-overlay]):not([data-shop-card-anim]),
+  *:not([data-vaul-drawer]):not([data-vaul-overlay]):not([data-shop-card-anim]):not([data-promo-progress]),
   *::before,
   *::after {
     animation: none !important;
@@ -138,6 +138,36 @@
       transition: none !important;
       animation: none !important;
     }
+  }
+}
+
+/* Home promo slider — autoplay progress on the active pill (WAAPI handles slide content). */
+@keyframes promo-progress {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+[data-promo-progress] {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: var(--color-brand-primary, #00b207);
+  transform-origin: top center;
+  animation: promo-progress var(--promo-autoplay, 4500ms) linear forwards !important;
+}
+
+[data-promo-progress].is-paused {
+  animation-play-state: paused !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-promo-progress] {
+    animation: none !important;
+    transform: none;
   }
 }
 

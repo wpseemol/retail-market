@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Promo banner slider motion
+
+- `PromoBannerSlider`: real slide motion via Web Animations API (site disables framer-motion + CSS keyframes) — exit/enter, staggered copy/CTA, product rise + idle float, autoplay progress on the active pill; respects `prefers-reduced-motion`.
+- `globals.css`: exempt `[data-promo-progress]` so the pill fill can animate.
+
 ### Footer Become a seller link
 
 - `lib/storefrontLinks.ts`: add `become-seller` to known top segments so Footer CMS href `/become-seller` is not rewritten to `/shop?category=become-seller`; also remap that mistaken shop query back to `/become-seller`.
