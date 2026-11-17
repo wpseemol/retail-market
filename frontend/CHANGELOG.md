@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-17
 
+### Shop filters — right Sheet drawer + mobile chip
+
+- `components/ui/sheet.tsx`: shadcn-style Sheet (Dialog-based) with right/left/top/bottom sides.
+- `ShopFilterSheet.tsx`: bottom sheet → **right drawer** with filter menu, clear / show actions.
+- `ShopToolbar.tsx` + `ShopPageContent.tsx`: compact sticky Filters chip (not full-width); opens the drawer; shop section clears the mobile tab bar.
+
 ### Mobile-app chrome — bottom tabs + hide on scroll
 
 - `hooks/useScrollChrome.ts`: shared hide-on-scroll-down / show-on-scroll-up for sticky chrome.

@@ -36,7 +36,7 @@ frontend/src/
 │                   # home/ (Header, MobileAppTabBar, Footer, hero + home sections),
 │                   # product UI, reviews/ (PDP reviews + write dialog),
 │                   # seo/ (JsonLd), showcase/ (store + brand page sections, theme, hero, directory),
-│                   # ui/ (shadcn form, label, dialog, tooltip)
+│                   # ui/ (shadcn form, label, dialog, sheet, tooltip)
 ├── config/
 ├── hooks/          # useScrollChrome (hide header + mobile tabs on scroll down), wishlist, social login, …
 ├── i18n/           # config.ts (en | bn, cookie), dictionaries/{en,bn}.ts, server.ts (getLocale)
