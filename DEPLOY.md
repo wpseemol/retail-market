@@ -65,7 +65,9 @@ Upload both with the app. If cPanel already wrote a `CLOUDLINUX PASSENGER CONFIG
 
 ### Environment variables
 
-Local values live in `backend-api/.env.dev`. Live values live in `backend-api/.env.prod`. The storefront and dashboard use the same two names. Set the live values in the Node.js app UI as well (not only in a file). Passenger reads the UI values, and those win over the file. Restart the app after every change.
+Local values live in `backend-api/.env.dev`. Live values live in `backend-api/.env.prod` (keep that file complete — it is the Spaceship source of truth). The storefront and dashboard use their own `.env.prod` on Vercel. Set the live API values in the Node.js app UI as well (not only in a file). Passenger reads the UI values, and those win over the file. Restart the app after every change.
+
+Do **not** put `AUTH_SECRET` or any `NEXT_PUBLIC_*` / `VITE_*` key on the API — those belong on the storefront/dashboard hosts.
 
 Generate secrets locally:
 
@@ -83,15 +85,19 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
 | `API_PUBLIC_KEY` | same value on the API, the storefront, and the dashboard. 32+ bytes |
 | `API_SECRET_KEY` | same secret on those three hosts. Server-only. Do not put it in `NEXT_PUBLIC_` or `VITE_` |
 | `PUBLIC_API_URL` | `https://api.yourdomain.com` |
-| `FRONTEND_URL` | the storefront origin, `https://your-store.vercel.app` |
-| `PROXY_IP_SECRET` | same hex string you put on the Vercel storefront. Server-only. |
+| `FRONTEND_URL` | the storefront origin (`https://www.niyenin.com`) |
+| `PROXY_IP_SECRET` | same value on the Vercel storefront. Server-only |
 | `REVALIDATE_SECRET` | same value as the storefront, if you want instant cache refresh |
-| `REDIS_URL` | optional. Leave empty on Spaceship (in-memory rate limits + public GET cache). Local: `redis://127.0.0.1:6379` via `pnpm docker:db`. Upstash/Redis for shared limits + catalog cache across workers |
+| `REDIS_URL` | **leave empty on Spaceship** (in-memory rate limits + public GET cache). Local: `redis://127.0.0.1:6379` via `pnpm docker:db`. Upstash only if you later run multiple workers |
 | `APP_NAME` | `Niyenin` |
-| `STORAGE_DRIVER` | `local` on this host, or `s3` if you already have object storage |
+| `STORAGE_DRIVER` | `local` on this host (writable `uploads/`), or `s3` with all `S3_*` set |
+| `SMS_PROVIDER` | `console` until Dashboard → Settings has a gateway |
 | `SMS_MAX_PER_HOUR` | `40` (whole API, protects the SMS wallet) |
 | `EMAIL_MAX_PER_HOUR` | `200` |
 | `WHATSAPP_MAX_PER_HOUR` | `40` |
+| `BACKUP_ENABLED` | `true` (prefer a system crontab on Passenger — see `.env.prod` comments) |
+
+Copy every key from `backend-api/.env.example` into `.env.prod` / the cPanel UI. Empty SMTP/SMS/WhatsApp/SSLCOMMERZ env vars are fine when providers are configured in the dashboard.
 
 Leave `SMS_PROVIDER=console` until the gateway is saved in the dashboard. Production will not send SMS or email until Dashboard → Settings has an active provider. Codes are not printed in production.
 

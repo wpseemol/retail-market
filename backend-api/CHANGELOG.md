@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### cPanel `.env.prod` ready
+
+- Completed `backend-api/.env.prod` for Spaceship/Passenger: all example keys, `STORAGE_DRIVER=local`, empty `REDIS_URL`, removed misplaced `AUTH_SECRET` / `NEXT_PUBLIC_API_URL`, generated `PROXY_IP_SECRET` (must match storefront).
+- `DEPLOY.md` env table notes cPanel-only rules (no frontend keys, Redis empty, backup crontab).
+
 ### Redis invalidation + PDP reviews cache
 
 - `invalidatePublicCache`: `reviews` tag; product tags also clear shop/brand caches; `page:*` no longer wipes site-settings/home.

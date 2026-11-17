@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Deploy docs (API cPanel env)
+
+- Root `DEPLOY.md` Spaceship API env notes: empty `REDIS_URL`, shared app keys / `PROXY_IP_SECRET` with the API (dashboard uses `API_PUBLIC_KEY` + `API_SECRET_KEY`).
+
 ### Deals of the Day editor + ratios
 
 - `DealsOfDayEditor`: edit left promo, countdown, autoplay, and center/right slide arrays with confirm-on-remove; image uploads via `HomeImageField`.

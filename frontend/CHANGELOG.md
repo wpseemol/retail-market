@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Deploy docs (API cPanel env)
+
+- Root `DEPLOY.md`: Spaceship API env table clarifies empty `REDIS_URL`, no storefront-only keys on the API, and matching `PROXY_IP_SECRET` / `REVALIDATE_SECRET` with Vercel.
+
 ### Next revalidate tag allowlist
 
 - `app/api/revalidate/route.ts` `TAG_RE` now accepts `products` / `product:*`, `pages` / `page:*`, `categories` / `category:*`, `home` / `home-blocks` / `home-hero` (backend was sending these; Next previously dropped them).
