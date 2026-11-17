@@ -60,5 +60,8 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vite": "^6.3.5"
+  },
+  "allowScripts": {
+    "esbuild": true
   }
 }
