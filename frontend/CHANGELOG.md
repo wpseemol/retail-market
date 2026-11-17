@@ -5,11 +5,16 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-17
 
+### Shop filters — floating FAB + shadcn Drawer
+
+- `vaul` + `components/ui/drawer.tsx`: animated shadcn Drawer (bottom sheet).
+- `ShopFilterFab.tsx`: floating **Filters** pill, bottom-center above the mobile tab bar.
+- `ShopFilterSheet.tsx`: opens the Drawer with filter menu + clear / show actions.
+- `ShopToolbar.tsx`: filter chip removed (FAB only on mobile).
+
 ### Shop filters — right Sheet drawer + mobile chip
 
-- `components/ui/sheet.tsx`: shadcn-style Sheet (Dialog-based) with right/left/top/bottom sides.
-- `ShopFilterSheet.tsx`: bottom sheet → **right drawer** with filter menu, clear / show actions.
-- `ShopToolbar.tsx` + `ShopPageContent.tsx`: compact sticky Filters chip (not full-width); opens the drawer; shop section clears the mobile tab bar.
+- `components/ui/sheet.tsx`: shadcn-style Sheet (Dialog-based) with right/left/top/bottom sides (kept for reuse).
 
 ### Mobile-app chrome — bottom tabs + hide on scroll
 

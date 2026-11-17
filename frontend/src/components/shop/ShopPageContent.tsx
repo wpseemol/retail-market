@@ -10,6 +10,7 @@ import QuickViewModal from "./QuickViewModal";
 import ShopBreadcrumb from "./ShopBreadcrumb";
 import ShopPagination from "./ShopPagination";
 import ShopProductGrid from "./ShopProductGrid";
+import ShopFilterFab from "./ShopFilterFab";
 import ShopFilterSheet from "./ShopFilterSheet";
 import ShopSidebar from "./ShopSidebar";
 import ShopToolbar from "./ShopToolbar";
@@ -295,8 +296,6 @@ const { t } = useI18n();
                 perPageOptions={perPageOptions}
                 onPerPageChange={handlePerPageChange}
                 showPerPage={paginationMode === "pages"}
-                filterCount={activeFilterCount}
-                onOpenFilters={() => setFiltersOpen(true)}
               />
 
               {hasActiveFilters ? (
@@ -374,6 +373,12 @@ const { t } = useI18n();
           </div>
         </div>
       </section>
+
+      <ShopFilterFab
+        count={activeFilterCount}
+        hidden={filtersOpen}
+        onClick={() => setFiltersOpen(true)}
+      />
 
       <ShopFilterSheet
         open={filtersOpen}

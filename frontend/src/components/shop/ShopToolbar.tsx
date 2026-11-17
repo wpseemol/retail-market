@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { SlidersHorizontal } from "lucide-react";
 import { format } from "@/i18n/config";
 import { useI18n } from "@/components/providers/LocaleProvider";
 import type { ShopSortOption, ShopViewMode } from "./types";
@@ -19,9 +18,6 @@ interface ShopToolbarProps {
     onPerPageChange: (perPage: number) => void;
     /** Numbered pages let shoppers pick a page size. Infinite scroll does not. */
     showPerPage?: boolean;
-    /** Mobile filter chip — opens the right-side sheet. */
-    filterCount?: number;
-    onOpenFilters?: () => void;
 }
 
 function ChevronDown() {
@@ -84,15 +80,15 @@ const VIEW_OPTIONS: {
                 fill="currentColor"
                 aria-hidden="true"
             >
-                <rect x="1" y="1" width="4.5" height="4.5" rx="0.75" />
-                <rect x="6.75" y="1" width="4.5" height="4.5" rx="0.75" />
-                <rect x="12.5" y="1" width="4.5" height="4.5" rx="0.75" />
-                <rect x="1" y="6.75" width="4.5" height="4.5" rx="0.75" />
-                <rect x="6.75" y="6.75" width="4.5" height="4.5" rx="0.75" />
-                <rect x="12.5" y="6.75" width="4.5" height="4.5" rx="0.75" />
-                <rect x="1" y="12.5" width="4.5" height="4.5" rx="0.75" />
-                <rect x="6.75" y="12.5" width="4.5" height="4.5" rx="0.75" />
-                <rect x="12.5" y="12.5" width="4.5" height="4.5" rx="0.75" />
+                <rect x="1" y="1" width="4.5" height="4.5" rx="0.5" />
+                <rect x="6.75" y="1" width="4.5" height="4.5" rx="0.5" />
+                <rect x="12.5" y="1" width="4.5" height="4.5" rx="0.5" />
+                <rect x="1" y="6.75" width="4.5" height="4.5" rx="0.5" />
+                <rect x="6.75" y="6.75" width="4.5" height="4.5" rx="0.5" />
+                <rect x="12.5" y="6.75" width="4.5" height="4.5" rx="0.5" />
+                <rect x="1" y="12.5" width="4.5" height="4.5" rx="0.5" />
+                <rect x="6.75" y="12.5" width="4.5" height="4.5" rx="0.5" />
+                <rect x="12.5" y="12.5" width="4.5" height="4.5" rx="0.5" />
             </svg>
         ),
     },
@@ -145,8 +141,6 @@ export default function ShopToolbar({
     perPageOptions,
     onPerPageChange,
     showPerPage = true,
-    filterCount = 0,
-    onOpenFilters,
 }: ShopToolbarProps) {
     const { t } = useI18n();
     const copy = t.shopPage;
@@ -163,37 +157,18 @@ export default function ShopToolbar({
         "name-asc": copy.sortName,
         "rating-desc": copy.sortRating,
     };
-    const resultsLabel = showPerPage
-        ? format(copy.showingResults, {
-              from: total === 0 ? 0 : from,
-              to,
-              total,
-          })
-        : format(copy.showingProducts, { shown: to, total });
 
     return (
-        <div className="sticky top-14 z-30 -mx-4 mb-3 border-b border-border-default bg-bg-base/95 px-4 py-2.5 backdrop-blur supports-backdrop-filter:bg-bg-base/90 sm:mb-5 lg:static lg:top-auto lg:z-auto lg:mx-0 lg:border-b lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none lg:supports-backdrop-filter:bg-transparent">
-            <div className="flex flex-col gap-2.5 sm:gap-3 lg:flex-row lg:items-center lg:justify-between lg:border-b lg:border-border-default lg:pb-4">
-            <div className="flex items-center gap-2">
-                {onOpenFilters ? (
-                    <button
-                        type="button"
-                        onClick={onOpenFilters}
-                        className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-border-default bg-bg-surface px-3.5 text-[13px] font-semibold text-text-primary shadow-sm lg:hidden"
-                    >
-                        <SlidersHorizontal className="size-4 shrink-0" aria-hidden="true" />
-                        {copy.filters}
-                        {filterCount > 0 ? (
-                            <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-brand-primary px-1.5 py-0.5 text-[11px] font-semibold text-white">
-                                {filterCount}
-                            </span>
-                        ) : null}
-                    </button>
-                ) : null}
-                <p className="m-0 min-w-0 flex-1 truncate text-[12px] text-text-secondary sm:text-[13px] lg:text-sm">
-                    {resultsLabel}
-                </p>
-            </div>
+        <div className="mb-4 flex flex-col gap-3 border-b border-border-default pb-4 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="m-0 text-[13px] text-text-secondary sm:text-sm">
+                {showPerPage
+                    ? format(copy.showingResults, {
+                          from: total === 0 ? 0 : from,
+                          to,
+                          total,
+                      })
+                    : format(copy.showingProducts, { shown: to, total })}
+            </p>
 
             <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-4">
                 {showPerPage ? (
@@ -262,7 +237,6 @@ export default function ShopToolbar({
                     </select>
                     <ChevronDown />
                 </div>
-            </div>
             </div>
         </div>
     );
