@@ -475,7 +475,7 @@ export default function Header({
             </div>
             <div ref={chromeSpacerRef} aria-hidden="true" />
 
-            {/* Mobile hamburger — animated left drawer (Vaul / shadcn) */}
+            {/* Mobile hamburger — app-style left drawer */}
             <Drawer
                 open={isMobileMenuOpen}
                 onOpenChange={setIsMobileMenuOpen}
@@ -486,11 +486,11 @@ export default function Header({
                 <DrawerContent
                     direction="left"
                     showHandle={false}
-                    className="w-[min(85vw,20rem)] max-w-[85vw] gap-0 p-0 lg:hidden will-change-transform"
+                    className="gap-0 overflow-hidden bg-bg-base p-0 lg:hidden will-change-transform"
                 >
-                    <DrawerHeader className="flex flex-row items-center justify-between gap-3 space-y-0 border-b border-border-default px-4 py-3">
+                    <DrawerHeader className="flex shrink-0 flex-row items-center justify-between gap-3 space-y-0 border-b border-border-default/80 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
                         <div className="min-w-0">
-                            <DrawerTitle className="m-0 text-sm font-semibold">
+                            <DrawerTitle className="m-0 text-[17px] font-semibold tracking-tight">
                                 {t.header.menu}
                             </DrawerTitle>
                             <DrawerDescription className="sr-only">
@@ -500,7 +500,7 @@ export default function Header({
                         <DrawerClose asChild>
                             <button
                                 type="button"
-                                className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-text-secondary hover:bg-bg-subtle hover:text-text-primary"
+                                className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-bg-subtle text-text-secondary active:bg-border-default active:text-text-primary"
                                 aria-label={t.header.closeMenu}
                             >
                                 <XIcon className="size-5" />
@@ -510,16 +510,19 @@ export default function Header({
 
                     <div
                         data-lenis-prevent
-                        className="flex min-h-0 flex-1 flex-col justify-between gap-6 overflow-y-auto overscroll-y-contain px-4 py-4 touch-pan-y [-webkit-overflow-scrolling:touch]"
+                        className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain touch-pan-y [-webkit-overflow-scrolling:touch]"
                     >
-                        <div className="flex flex-col gap-6">
+                        <div className="flex flex-col gap-5 px-4 py-4">
                             <CategoryBrowseMenu
                                 categories={categories}
                                 variant="mobile"
                                 onNavigate={closeMobileMenu}
                             />
 
-                            <nav className="flex flex-col gap-1 text-[15px] font-medium">
+                            <nav
+                                aria-label={t.header.primaryNav}
+                                className="flex flex-col gap-1"
+                            >
                                 {headerNav.map((item) => {
                                     const hasChildren = Boolean(
                                         item.children?.length,
@@ -528,39 +531,55 @@ export default function Header({
                                         item.href,
                                     );
                                     const active = linkActive(resolved.href);
+                                    const rowClass = (isActive: boolean) =>
+                                        cn(
+                                            "flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl px-3.5 text-[15px] font-medium transition-colors",
+                                            isActive
+                                                ? "bg-brand-tint text-brand-primary"
+                                                : "text-text-primary active:bg-bg-subtle",
+                                        );
+
                                     if (hasChildren) {
+                                        const open = openDropdown === item.id;
                                         return (
-                                            <div key={item.id}>
+                                            <div key={item.id} className="flex flex-col gap-1">
                                                 <button
                                                     type="button"
                                                     onClick={() =>
                                                         toggleDropdown(item.id)
                                                     }
-                                                    className="w-full flex items-center justify-between px-3 py-2 rounded-md text-text-primary hover:bg-bg-subtle"
+                                                    className={rowClass(false)}
                                                 >
                                                     <span>{item.label}</span>
                                                     <svg
-                                                        width="10"
-                                                        height="6"
+                                                        width="12"
+                                                        height="7"
                                                         viewBox="0 0 10 6"
                                                         fill="none"
-                                                        className={`stroke-current stroke-[1.5] transition-transform ${
-                                                            openDropdown ===
-                                                            item.id
-                                                                ? "rotate-180"
-                                                                : ""
-                                                        }`}
+                                                        className={cn(
+                                                            "shrink-0 stroke-current stroke-[1.5] transition-transform",
+                                                            open && "rotate-180",
+                                                        )}
+                                                        aria-hidden
                                                     >
                                                         <path d="M1 1L5 5L9 1" />
                                                     </svg>
                                                 </button>
-                                                {openDropdown === item.id ? (
-                                                    <div className="pl-6 flex flex-col gap-1 py-1 text-sm text-text-secondary">
+                                                {open ? (
+                                                    <div className="ml-2 flex flex-col gap-0.5 border-l border-border-default pl-3">
                                                         {item.children!.map(
                                                             (child) => {
                                                                 const c =
                                                                     resolveStorefrontHref(
                                                                         child.href,
+                                                                    );
+                                                                const childActive =
+                                                                    linkActive(
+                                                                        c.href,
+                                                                    );
+                                                                const childClass =
+                                                                    rowClass(
+                                                                        childActive,
                                                                     );
                                                                 return c.external ? (
                                                                     <a
@@ -573,7 +592,9 @@ export default function Header({
                                                                         onClick={
                                                                             closeMobileMenu
                                                                         }
-                                                                        className="py-1 hover:text-brand-primary"
+                                                                        className={
+                                                                            childClass
+                                                                        }
                                                                     >
                                                                         {
                                                                             child.label
@@ -590,7 +611,9 @@ export default function Header({
                                                                         onClick={
                                                                             closeMobileMenu
                                                                         }
-                                                                        className="py-1 hover:text-brand-primary"
+                                                                        className={
+                                                                            childClass
+                                                                        }
                                                                     >
                                                                         {
                                                                             child.label
@@ -609,7 +632,7 @@ export default function Header({
                                             key={item.id}
                                             href={resolved.href}
                                             onClick={closeMobileMenu}
-                                            className="px-3 py-2 rounded-md text-text-primary hover:bg-bg-subtle"
+                                            className={rowClass(active)}
                                         >
                                             {item.label}
                                         </a>
@@ -618,11 +641,7 @@ export default function Header({
                                             key={item.id}
                                             href={resolved.href}
                                             onClick={closeMobileMenu}
-                                            className={`px-3 py-2 rounded-md hover:bg-bg-subtle ${
-                                                active
-                                                    ? "text-brand-primary font-semibold"
-                                                    : "text-text-primary"
-                                            }`}
+                                            className={rowClass(active)}
                                         >
                                             {item.label}
                                         </Link>
@@ -631,22 +650,23 @@ export default function Header({
                                 <Link
                                     href="/bulk-order"
                                     onClick={closeMobileMenu}
-                                    className={`px-3 py-2 rounded-md hover:bg-bg-subtle ${
+                                    className={cn(
+                                        "flex min-h-12 w-full items-center rounded-2xl px-3.5 text-[15px] font-medium",
                                         linkActive("/bulk-order")
-                                            ? "text-brand-primary font-semibold"
-                                            : "text-text-primary"
-                                    }`}
+                                            ? "bg-brand-tint text-brand-primary"
+                                            : "text-text-primary active:bg-bg-subtle",
+                                    )}
                                 >
                                     {t.nav.wholesale}
                                 </Link>
                                 <Link
                                     href="/wishlist"
                                     onClick={closeMobileMenu}
-                                    className="sm:hidden px-3 py-2 rounded-md text-text-primary hover:bg-bg-subtle flex items-center justify-between"
+                                    className="flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl px-3.5 text-[15px] font-medium text-text-primary active:bg-bg-subtle sm:hidden"
                                 >
                                     <span>{t.header.wishlist}</span>
                                     {wishlistCount > 0 ? (
-                                        <span className="bg-brand-primary text-white text-2.5 px-1.5 py-0.5 rounded-full">
+                                        <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-primary px-1.5 text-[11px] font-semibold text-white">
                                             {wishlistCount > 99
                                                 ? "99+"
                                                 : wishlistCount}
@@ -655,13 +675,13 @@ export default function Header({
                                 </Link>
                             </nav>
                         </div>
+                    </div>
 
-                        <div className="border-t border-border-default pt-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-                            <AccountMenu
-                                variant="mobile"
-                                onNavigate={closeMobileMenu}
-                            />
-                        </div>
+                    <div className="shrink-0 border-t border-border-default/80 bg-bg-base px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                        <AccountMenu
+                            variant="mobile"
+                            onNavigate={closeMobileMenu}
+                        />
                     </div>
                 </DrawerContent>
             </Drawer>

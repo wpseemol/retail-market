@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { UserRound } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logoutSession } from "@/lib/logoutSession";
 import type { ApiUser } from "@/lib/api";
@@ -109,18 +110,19 @@ export default function AccountMenu({
   if (!user) {
     if (variant === "mobile") {
       return (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2.5">
           <Link
             href={loginHref}
             onClick={onNavigate}
-            className="text-center border border-brand-primary text-brand-primary text-sm font-semibold py-2.5 rounded hover:bg-brand-primary hover:text-white transition-colors"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-brand-primary bg-transparent px-3 text-[13px] font-semibold text-brand-primary active:scale-[0.98]"
           >
+            <UserRound className="size-4 shrink-0" aria-hidden />
             {t.account.login}
           </Link>
           <Link
             href={registerHref}
             onClick={onNavigate}
-            className="text-center bg-brand-primary text-white text-sm font-semibold py-2.5 rounded hover:bg-brand-hover transition-colors"
+            className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-brand-primary px-3 text-[13px] font-semibold text-white shadow-[0_6px_16px_rgba(0,178,7,0.28)] active:scale-[0.98]"
           >
             {t.account.signUp}
           </Link>
@@ -152,13 +154,13 @@ export default function AccountMenu({
   if (variant === "mobile") {
     return (
       <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-3 rounded-lg border border-border-default bg-bg-subtle/50 px-3 py-2.5">
-          <UserAvatar user={user} sizeClass="size-10" textClass="text-sm" />
+        <div className="flex items-center gap-3 rounded-2xl border border-border-default bg-bg-subtle/60 px-3.5 py-3">
+          <UserAvatar user={user} sizeClass="size-11" textClass="text-sm" />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-text-primary truncate">
+            <p className="truncate text-[14px] font-semibold text-text-primary">
               {name}
             </p>
-            <p className="text-xs text-text-secondary truncate">{user.email}</p>
+            <p className="truncate text-[12px] text-text-secondary">{user.email}</p>
           </div>
         </div>
         <nav className="flex flex-col gap-1">
@@ -167,7 +169,7 @@ export default function AccountMenu({
               key={link.href}
               href={link.href}
               onClick={onNavigate}
-              className="px-3 py-2 rounded-md text-sm text-text-primary hover:bg-bg-subtle"
+              className="rounded-xl px-3.5 py-3 text-[14px] font-medium text-text-primary active:bg-bg-subtle"
             >
               {t.account[link.key]}
             </Link>
@@ -181,7 +183,7 @@ export default function AccountMenu({
               router.push("/login");
             });
           }}
-          className="w-full text-center border border-border-default text-sm font-semibold py-2.5 rounded hover:border-brand-primary hover:text-brand-primary transition-colors"
+          className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-border-default text-[13px] font-semibold text-text-primary active:border-brand-primary active:text-brand-primary"
         >
           {t.account.logout}
         </button>

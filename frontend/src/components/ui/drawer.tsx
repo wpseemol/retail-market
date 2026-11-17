@@ -75,7 +75,7 @@ function DrawerContent({
           direction === "right" &&
             "inset-y-0 right-0 h-dvh w-[85%] max-w-[85vw] rounded-l-2xl border-l",
           direction === "left" &&
-            "inset-y-0 left-0 h-dvh w-[85%] max-w-[85vw] rounded-r-2xl border-r",
+            "inset-y-0 left-0 h-dvh w-[min(85vw,20rem)] max-w-[85vw] rounded-r-3xl border-r shadow-[8px_0_32px_rgba(0,0,0,0.18)]",
           className,
         )}
         {...props}

@@ -7,7 +7,9 @@ Format: date heading, then one bullet per change with the files touched.
 
 ### Header hamburger — animated left drawer
 
-- `Header.tsx`: mobile menu uses Vaul **left** Drawer (slide in/out) instead of instant `hidden`/`block` panel; X close + same nav content.
+- `Header.tsx`: mobile menu uses Vaul **left** Drawer (slide in/out); app-style rows (`min-h-12`, active tint), sticky auth footer, safe-area padding.
+- `CategoryBrowseMenu` / `AccountMenu` mobile: rounded-2xl CTAs, Login icon, denser touch targets.
+- `drawer.tsx`: left panel `rounded-r-3xl` + soft side shadow.
 
 ### Shop filters — floating FAB + shadcn Drawer
 

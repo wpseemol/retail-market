@@ -112,32 +112,34 @@ export default function CategoryBrowseMenu({
           }}
           className={
             isMobile
-              ? "flex w-full items-center justify-center gap-2 rounded bg-brand-primary py-2.5 text-sm font-semibold text-white"
+              ? "flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl bg-brand-primary px-4 text-[14px] font-semibold text-white shadow-[0_6px_16px_rgba(0,178,7,0.28)] active:scale-[0.99]"
               : "flex cursor-pointer items-center gap-2.5 rounded bg-brand-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-hover"
           }
         >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 18 18"
-            fill="none"
-            className="shrink-0"
-            aria-hidden="true"
-          >
-            <circle cx="5" cy="4" r="1.6" fill="currentColor" />
-            <circle cx="5" cy="9" r="1.6" fill="currentColor" />
-            <circle cx="5" cy="14" r="1.6" fill="currentColor" />
-            <circle cx="13" cy="4" r="1.6" fill="currentColor" />
-            <circle cx="13" cy="9" r="1.6" fill="currentColor" />
-            <circle cx="13" cy="14" r="1.6" fill="currentColor" />
-          </svg>
-          <span>{t.categories.browse}</span>
+          <span className="inline-flex items-center gap-2.5">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 18 18"
+              fill="none"
+              className="shrink-0"
+              aria-hidden="true"
+            >
+              <circle cx="5" cy="4" r="1.6" fill="currentColor" />
+              <circle cx="5" cy="9" r="1.6" fill="currentColor" />
+              <circle cx="5" cy="14" r="1.6" fill="currentColor" />
+              <circle cx="13" cy="4" r="1.6" fill="currentColor" />
+              <circle cx="13" cy="9" r="1.6" fill="currentColor" />
+              <circle cx="13" cy="14" r="1.6" fill="currentColor" />
+            </svg>
+            <span>{t.categories.browse}</span>
+          </span>
           <svg
             width="10"
             height="6"
             viewBox="0 0 10 6"
             fill="none"
-            className={`ml-0.5 stroke-current transition-transform duration-200 ${
+            className={`shrink-0 stroke-current transition-transform duration-200 ${
               open ? "rotate-180" : ""
             }`}
             aria-hidden
@@ -171,7 +173,7 @@ export default function CategoryBrowseMenu({
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
               className={
                 isMobile
-                  ? "mt-2 overflow-hidden rounded-xl border border-border-default bg-bg-base shadow-lg"
+                  ? "mt-2 overflow-hidden rounded-2xl border border-border-default bg-bg-subtle/80 shadow-lg"
                   : "absolute left-0 top-full z-40 w-[min(94vw,840px)] pt-2"
               }
             >
