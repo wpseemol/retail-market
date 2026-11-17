@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Package, SlidersHorizontal } from "lucide-react";
+import { Loader2, Package } from "lucide-react";
 import type { Locale } from "@/i18n/config";
 import { useI18n } from "@/components/providers/LocaleProvider";
 import { usePriceRange } from "@/hooks/usePriceRange";
@@ -276,29 +276,13 @@ const { t } = useI18n();
 
       <section
         aria-label={t.nav.shop}
-        className="w-full bg-bg-base py-4 transition-colors duration-200 sm:py-10"
+        className="w-full bg-bg-base py-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] transition-colors duration-200 sm:py-10 lg:pb-10"
       >
         <div className="container mx-auto px-4 sm:px-6">
           <div className="flex flex-col gap-8 lg:flex-row xl:gap-10">
             {sidebar("sidebar")}
 
             <div ref={listRef} className="min-w-0 flex-1">
-              <div className="sticky top-16 z-30 -mx-4 mb-3 flex items-center gap-2 border-b border-border-default bg-bg-base/95 px-4 py-2.5 backdrop-blur supports-backdrop-filter:bg-bg-base/90 lg:hidden">
-                <button
-                  type="button"
-                  onClick={() => setFiltersOpen(true)}
-                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-border-default bg-bg-surface px-4 text-sm font-semibold text-text-primary shadow-sm"
-                >
-                  <SlidersHorizontal className="size-4 shrink-0" aria-hidden="true" />
-                  {copy.filters}
-                  {activeFilterCount > 0 ? (
-                    <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-brand-primary px-2 py-0.5 text-xs font-semibold text-white">
-                      {activeFilterCount}
-                    </span>
-                  ) : null}
-                </button>
-              </div>
-
               <ShopToolbar
                 from={rangeStart}
                 to={rangeEnd}
@@ -311,6 +295,8 @@ const { t } = useI18n();
                 perPageOptions={perPageOptions}
                 onPerPageChange={handlePerPageChange}
                 showPerPage={paginationMode === "pages"}
+                filterCount={activeFilterCount}
+                onOpenFilters={() => setFiltersOpen(true)}
               />
 
               {hasActiveFilters ? (
