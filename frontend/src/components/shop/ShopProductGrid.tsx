@@ -157,18 +157,18 @@ export default function ShopProductGrid({
                     key={renderMode}
                     className={
                         renderMode === "list"
-                            ? "flex flex-col gap-4"
-                            : VIEW_MODE_GRID_CLASS[renderMode]
+                            ? "flex flex-col gap-4 overflow-visible"
+                            : `${VIEW_MODE_GRID_CLASS[renderMode]} overflow-visible`
                     }
                 >
                     {products.map((product, index) => (
                         <div
                             key={`${renderMode}-${product.id}`}
                             className={cn(
-                                "h-full transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[opacity,transform] motion-reduce:transition-none",
-                                visible
-                                    ? "translate-y-0 scale-100 opacity-100"
-                                    : "translate-y-3 scale-[0.98] opacity-0",
+                                // Opacity-only: transform/scale on this wrapper clips the
+                                // card’s absolute hover Cart/Buy tray (top-full).
+                                "relative h-full overflow-visible transition-opacity duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+                                visible ? "opacity-100" : "opacity-0",
                             )}
                             style={
                                 visible && !reduceMotionRef.current

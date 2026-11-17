@@ -8,7 +8,8 @@ Format: date heading, then one bullet per change with the files touched.
 ### Shop grid/list view — swap animation
 
 - `types.ts`: from `md` up, grid4 / grid3 / grid2 map to **4 / 3 / 2** columns (so toolbar clicks actually change the layout).
-- `ShopProductGrid.tsx`: fade/scale out → column swap → staggered fade/scale in; fixed blank-grid bug when `renderMode` cancelled the enter step.
+- `ShopProductGrid.tsx`: opacity-only enter (no transform on wrappers — that clipped hover Cart/Buy); `overflow-visible` on cells.
+- `ShopProductCard.tsx`: hover buy tray `z-40`; dropped clip-path that trimmed the tray.
 - `ShopToolbar.tsx`: active layout button scales/highlights smoothly.
 
 ### Shop product cards — mobile Cart / Buy + NEW badge
