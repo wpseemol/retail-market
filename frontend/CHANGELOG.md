@@ -5,6 +5,14 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Search result thumbnails blank
+
+- `HeaderSearch` `Thumb`: use `loading="eager"` (lazy + overflow portal left product images blank) and fall back to a letter on `onError`.
+
+### Footer FAQ + Become a seller links
+
+- `Footer.tsx`: Customer Care always keeps **FAQ → `/faq`** and **Become a seller → `/become-seller`** (repairs drifted CMS hrefs); fallback order matches the design column.
+
 ### Deals of the Day slides + motion
 
 - `DealsOfTheDaySection` / left / center / right consume CMS `deals_of_day` (center + right slide arrays).

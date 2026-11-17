@@ -5,6 +5,10 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Footer care FAQ + Become a seller ensure
+
+- `siteChrome`: Customer Care seed order matches design; `ensureFooterBecomeSellerLink` also repairs bad become-seller/FAQ hrefs and ensures both rows exist.
+
 ### Deals of the Day CMS slides + image ratios
 
 - `deals_of_day` content: left promo + `autoplay_ms` + `deal_ends_at` + `center_slides[]` / `right_slides[]` (Zod); `repairLegacyDealsOfDayContent` upgrades old sort/limit-only rows and legacy/non-`-v2` art paths.

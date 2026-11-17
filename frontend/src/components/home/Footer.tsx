@@ -42,17 +42,63 @@ const findItFastLinks: FallbackLink[] = [
     { key: "allStores", href: "/stores" },
 ];
 
+/** Matches the Customer Care column order in the storefront design. */
 const customerCareLinks: FallbackLink[] = [
     { key: "myAccount", href: "/account" },
     { key: "trackOrder", href: "/account/orders" },
     { key: "wishlist", href: "/wishlist" },
     { key: "stores", href: "/stores" },
-    { key: "customerService", href: "/contact" },
     { key: "returns", href: "/faq" },
-    { key: "faq", href: "/faq" },
     { key: "support", href: "/contact" },
+    { key: "customerService", href: "/contact" },
+    { key: "faq", href: "/faq" },
     { key: "becomeSeller", href: "/become-seller" },
 ];
+
+function isFaqHref(href: string): boolean {
+    const path = resolveStorefrontHref(href).href.split(/[?#]/)[0];
+    return path === "/faq";
+}
+
+function isBecomeSellerHref(href: string): boolean {
+    const path = resolveStorefrontHref(href).href.split(/[?#]/)[0];
+    return path === "/become-seller";
+}
+
+/** Keep FAQ + Become a seller on the real pages even if CMS hrefs drift. */
+function withRequiredCareLinks(
+    links: FooterLink[],
+    labels: Dictionary["footer"]["links"],
+): FooterLink[] {
+    const normalized = links.map((link) => {
+        const href = resolveStorefrontHref(link.href).href;
+        const label = link.label.trim().toLowerCase();
+        if (
+            label === "become a seller" ||
+            label === labels.becomeSeller.trim().toLowerCase() ||
+            /become[- ]?seller/i.test(link.href)
+        ) {
+            return { ...link, href: "/become-seller" };
+        }
+        if (
+            label === "faq" ||
+            label === labels.faq.trim().toLowerCase() ||
+            (isFaqHref(link.href) && label.includes("faq"))
+        ) {
+            return { ...link, href: "/faq" };
+        }
+        return { ...link, href };
+    });
+
+    const next = [...normalized];
+    if (!next.some((l) => isFaqHref(l.href) && /faq/i.test(l.label))) {
+        next.push({ label: labels.faq, href: "/faq" });
+    }
+    if (!next.some((l) => isBecomeSellerHref(l.href))) {
+        next.push({ label: labels.becomeSeller, href: "/become-seller" });
+    }
+    return next;
+}
 
 const FOOTER_SOCIAL = [
     {
@@ -182,10 +228,12 @@ export default function Footer() {
               ...findLinksRaw,
               { label: footer.links.allStores, href: "/stores" },
           ];
-    const careLinks =
+    const careLinks = withRequiredCareLinks(
         chrome.nav.footer_care.length > 0
             ? chrome.nav.footer_care
-            : localizeLinks(customerCareLinks, footer.links);
+            : localizeLinks(customerCareLinks, footer.links),
+        footer.links,
+    );
     const logoAlt = format(footer.logoAlt, { name: chrome.siteName });
     const socialItems = FOOTER_SOCIAL.filter(
         (item) => chrome.social[item.key as keyof typeof chrome.social],

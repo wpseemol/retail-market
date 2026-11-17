@@ -111,7 +111,13 @@ function Thumb({
     large?: boolean;
 }) {
     const box = large ? "size-18" : "size-10";
-    if (!src) {
+    const [broken, setBroken] = useState(false);
+    // Reset when the product/category image URL changes.
+    useEffect(() => {
+        setBroken(false);
+    }, [src]);
+
+    if (!src || broken) {
         return (
             <span
                 className={`flex ${box} shrink-0 items-center justify-center rounded-md bg-bg-subtle text-sm font-semibold uppercase text-text-secondary`}
@@ -125,7 +131,10 @@ function Thumb({
         <img
             src={src}
             alt=""
-            loading="lazy"
+            // Eager: lazy + overflow portal often skips thumbs (first/all blank).
+            loading="eager"
+            decoding="async"
+            onError={() => setBroken(true)}
             className={`${box} shrink-0 rounded-md bg-bg-subtle object-contain`}
         />
     );

@@ -102,15 +102,20 @@ export const DEFAULT_NAV_SEED: Array<{
   },
   { menu: "footer_care", label: "Wishlist", href: "/wishlist", position: 2 },
   { menu: "footer_care", label: "Stores", href: "/stores", position: 3 },
+  { menu: "footer_care", label: "Returns/Exchange", href: "/faq", position: 4 },
+  {
+    menu: "footer_care",
+    label: "Product Support",
+    href: "/contact",
+    position: 5,
+  },
   {
     menu: "footer_care",
     label: "Customer Service",
     href: "/contact",
-    position: 4,
+    position: 6,
   },
-  { menu: "footer_care", label: "Returns/Exchange", href: "/faq", position: 5 },
-  { menu: "footer_care", label: "FAQ", href: "/faq", position: 6 },
-  { menu: "footer_care", label: "Product Support", href: "/contact", position: 7 },
+  { menu: "footer_care", label: "FAQ", href: "/faq", position: 7 },
   {
     menu: "footer_care",
     label: "Become a seller",
@@ -312,9 +317,34 @@ export async function removeFooterFindQuickLinksItem() {
   });
 }
 
-/** Add Customer care “Become a seller” → /become-seller when missing. */
+/** Add/fix Customer care FAQ → /faq and Become a seller → /become-seller. */
 export async function ensureFooterBecomeSellerLink() {
-  const existing = await prisma.siteNavItem.findFirst({
+  // Repair mistaken CMS rewrites like /shop?category=become-seller.
+  await prisma.siteNavItem.updateMany({
+    where: {
+      settings_id: 1,
+      menu: "footer_care",
+      parent_id: null,
+      OR: [
+        { href: { contains: "category=become-seller" } },
+        { label: "Become a seller", NOT: { href: "/become-seller" } },
+      ],
+    },
+    data: { href: "/become-seller", external: false, is_enabled: true },
+  });
+
+  await prisma.siteNavItem.updateMany({
+    where: {
+      settings_id: 1,
+      menu: "footer_care",
+      parent_id: null,
+      label: "FAQ",
+      NOT: { href: "/faq" },
+    },
+    data: { href: "/faq", external: false, is_enabled: true },
+  });
+
+  const seller = await prisma.siteNavItem.findFirst({
     where: {
       settings_id: 1,
       menu: "footer_care",
@@ -323,24 +353,51 @@ export async function ensureFooterBecomeSellerLink() {
     },
     select: { id: true },
   });
-  if (existing) return;
+  if (!seller) {
+    const maxPos = await prisma.siteNavItem.aggregate({
+      where: { settings_id: 1, menu: "footer_care", parent_id: null },
+      _max: { position: true },
+    });
+    await prisma.siteNavItem.create({
+      data: {
+        settings_id: 1,
+        menu: "footer_care",
+        label: "Become a seller",
+        href: "/become-seller",
+        external: false,
+        position: (maxPos._max.position ?? -1) + 1,
+        is_enabled: true,
+      },
+    });
+  }
 
-  const maxPos = await prisma.siteNavItem.aggregate({
-    where: { settings_id: 1, menu: "footer_care", parent_id: null },
-    _max: { position: true },
-  });
-
-  await prisma.siteNavItem.create({
-    data: {
+  const faq = await prisma.siteNavItem.findFirst({
+    where: {
       settings_id: 1,
       menu: "footer_care",
-      label: "Become a seller",
-      href: "/become-seller",
-      external: false,
-      position: (maxPos._max.position ?? -1) + 1,
-      is_enabled: true,
+      href: "/faq",
+      label: "FAQ",
+      parent_id: null,
     },
+    select: { id: true },
   });
+  if (!faq) {
+    const maxPos = await prisma.siteNavItem.aggregate({
+      where: { settings_id: 1, menu: "footer_care", parent_id: null },
+      _max: { position: true },
+    });
+    await prisma.siteNavItem.create({
+      data: {
+        settings_id: 1,
+        menu: "footer_care",
+        label: "FAQ",
+        href: "/faq",
+        external: false,
+        position: Math.max(0, (maxPos._max.position ?? 0) - 1),
+        is_enabled: true,
+      },
+    });
+  }
 }
 
 export async function loadSiteNavTree(includeDisabled = false) {
