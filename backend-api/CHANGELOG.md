@@ -5,6 +5,11 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### cPanel npm install (allowScripts)
+
+- `package.json`: `allowScripts` for `prisma` / `@prisma/client` / `@prisma/engines` / `esbuild` (npm 11+ blocks install scripts by default); removed `packageManager` pnpm pin so cPanel npm is not nudged to Corepack pnpm.
+- `.npmrc` notes npm-on-Spaceship; `DEPLOY.md` / `AGENTS.md`: use `npm ci`, never `npm audit fix --force` (Prisma 7).
+
 ### cPanel `.env.prod` ready
 
 - Completed `backend-api/.env.prod` for Spaceship/Passenger: all example keys, `STORAGE_DRIVER=local`, empty `REDIS_URL`, removed misplaced `AUTH_SECRET` / `NEXT_PUBLIC_API_URL`, generated `PROXY_IP_SECRET` (must match storefront).

@@ -10,7 +10,7 @@ This is the current low-cost setup. There is no CI pipeline yet. When the API mo
 
 Spaceship Supreme is shared hosting. It can run this API: cPanel **Setup Node.js App** uses CloudLinux and Passenger, Node.js up to 24, and MariaDB. It cannot run `docker-compose.prod.yml`. Do not upload a `node_modules` folder built on Windows. `sharp` and Prisma must install on the server.
 
-Use **Node.js 22** in the cPanel app.
+Use **Node.js 22** in the cPanel app. cPanel only has **npm** — that is fine. `backend-api/` keeps its own `package-lock.json` and `allowScripts` (Prisma + esbuild). Run `npm install` / `npm ci` in the app folder; do **not** run `npm audit fix --force` (it would jump Prisma to v7 and break the app). The `node-domexception` deprecation and Prisma/`deepmerge-ts` audit notes are known and safe to ignore until a Prisma 6 patch or a planned v7 migration.
 
 ## 1. API on Spaceship
 
@@ -36,13 +36,15 @@ mysql://cpaneluser_api:PASSWORD@localhost:3306/cpaneluser_retail
 
 ### Run it
 
-Upload `backend-api/` into the application root (`package.json` in that folder, no `node_modules`, no `.env`). Then, from that folder:
+Upload `backend-api/` into the application root (`package.json` + `package-lock.json` in that folder, no `node_modules`). Include `.env.prod` or set the same keys in the Node.js app UI. Then, from that folder:
 
 ```bash
-npm install
+npm ci
+# or: npm install
 npm run build
-npm run start
 ```
+
+Upload `package-lock.json` so installs match. After install you should **not** see `install-scripts` warnings — Prisma/esbuild are approved in `package.json` → `allowScripts`. If a new dependency needs a postinstall, run locally `npm install-scripts approve <pkg> --no-allow-scripts-pin` and commit. Do **not** run `npm audit fix --force`.
 
 On cPanel those are two buttons, then a restart:
 

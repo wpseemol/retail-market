@@ -3,7 +3,6 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "packageManager": "pnpm@12.15.0",
     "scripts": {
         "dev": "tsx watch src/server.ts",
         "build": "prisma generate && tsc",
@@ -51,5 +50,11 @@
     },
     "devDependencies": {
         "tsx": "^4.23.15"
+    },
+    "allowScripts": {
+        "@prisma/client": true,
+        "@prisma/engines": true,
+        "prisma": true,
+        "esbuild": true
     }
 }
