@@ -3,6 +3,13 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-17
+
+### Upgrade Next.js 16.4.4 → 16.4.6
+
+- `package.json`: `next` and `eslint-config-next` bumped to **16.4.6** (latest stable LTS patch — route-handler compression, Turbopack GC fixes).
+- `AGENTS.md`: stack version note updated.
+
 ## 2026-11-15
 
 ### Store pages — short description only; search tags

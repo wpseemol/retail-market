@@ -20,7 +20,7 @@
     "jose": "^6.2.12",
     "lenis": "^1.3.26",
     "lucide-react": "^1.48.0",
-    "next": "16.4.4",
+    "next": "16.4.6",
     "next-auth": "5.0.0-beta.32",
     "nextjs-toploader": "^3.9.17",
     "radix-ui": "^1.6.7",
@@ -38,7 +38,7 @@
     "@types/react-dom": "19.3.0",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "10.14.0",
-    "eslint-config-next": "16.4.4",
+    "eslint-config-next": "16.4.6",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

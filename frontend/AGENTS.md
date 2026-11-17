@@ -20,7 +20,7 @@ Data comes from `backend-api` (port 8001).
 
 ## Stack
 
-Next 16.4.4, React, next-auth 5 (beta), Redux Toolkit, framer-motion, Tailwind.
+Next 16.4.6, React, next-auth 5 (beta), Redux Toolkit, framer-motion, Tailwind.
 
 ## Scripts
 
