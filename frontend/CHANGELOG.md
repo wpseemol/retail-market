@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-17
 
+### Shop grid/list view — swap animation
+
+- `types.ts`: from `md` up, grid4 / grid3 / grid2 map to **4 / 3 / 2** columns (so toolbar clicks actually change the layout).
+- `ShopProductGrid.tsx`: fade/scale out → column swap → staggered fade/scale in; fixed blank-grid bug when `renderMode` cancelled the enter step.
+- `ShopToolbar.tsx`: active layout button scales/highlights smoothly.
+
 ### Shop product cards — mobile Cart / Buy + NEW badge
 
 - `ShopProductCard.tsx`: phone Cart/Buy are equal `grid-cols-2` twins (`h-10`) with short **Cart** / **Buy** labels; NEW badge is a small rounded pill on mobile; wishlist/quick-view hits are `size-9` on phone.

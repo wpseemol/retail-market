@@ -65,7 +65,8 @@ export const VIEW_MODE_GRID_CLASS: Record<
     Exclude<ShopViewMode, "list">,
     string
 > = {
-    grid4: "grid grid-cols-2 items-stretch md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4",
-    grid3: "grid grid-cols-2 items-stretch xl:grid-cols-3 gap-2.5 sm:gap-5",
+    // From `md` up, the toolbar choice maps 1:1 to column count (4 / 3 / 2).
+    grid4: "grid grid-cols-2 items-stretch md:grid-cols-4 gap-2.5 sm:gap-4",
+    grid3: "grid grid-cols-2 items-stretch md:grid-cols-3 gap-2.5 sm:gap-5",
     grid2: "grid grid-cols-1 items-stretch md:grid-cols-2 gap-3 sm:gap-6",
 };

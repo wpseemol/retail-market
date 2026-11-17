@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 import ShopProductCard from "./ShopProductCard";
 import { VIEW_MODE_GRID_CLASS, type ShopProduct, type ShopViewMode } from "./types";
 
-const VIEW_FADE_MS = 150;
+const VIEW_OUT_MS = 160;
+const VIEW_IN_MS = 40;
 
 function ProductLoadMoreStatus({ label }: { label: string }) {
     return (
@@ -78,6 +79,7 @@ export default function ShopProductGrid({
     onNearEndRef.current = onNearEnd;
     const [renderMode, setRenderMode] = useState(viewMode);
     const [visible, setVisible] = useState(true);
+    const renderModeRef = useRef(viewMode);
     const reduceMotionRef = useRef(false);
 
     useEffect(() => {
@@ -86,11 +88,19 @@ export default function ShopProductGrid({
         ).matches;
     }, []);
 
-    // Fade out → swap grid/list layout → fade in when the toolbar view changes.
+    // Fade out → swap columns/list → staggered fade in. Only keyed on `viewMode`
+    // so updating `renderMode` cannot cancel the enter step (that blanked the grid).
     useEffect(() => {
-        if (viewMode === renderMode) return;
+        if (viewMode === renderModeRef.current) {
+            setVisible(true);
+            return;
+        }
+
+        let cancelled = false;
+        let inTimer = 0;
 
         if (reduceMotionRef.current) {
+            renderModeRef.current = viewMode;
             setRenderMode(viewMode);
             setVisible(true);
             return;
@@ -98,17 +108,23 @@ export default function ShopProductGrid({
 
         setVisible(false);
         const outTimer = window.setTimeout(() => {
+            if (cancelled) return;
+            renderModeRef.current = viewMode;
             setRenderMode(viewMode);
-            const frame = window.requestAnimationFrame(() => {
-                window.requestAnimationFrame(() => setVisible(true));
-            });
-            // Keep frame id on the timeout closure for cleanup via outTimer only;
-            // cancel the rAF if the effect re-runs before paint.
-            void frame;
-        }, VIEW_FADE_MS);
+            inTimer = window.setTimeout(() => {
+                if (!cancelled) setVisible(true);
+            }, VIEW_IN_MS);
+        }, VIEW_OUT_MS);
 
-        return () => window.clearTimeout(outTimer);
-    }, [viewMode, renderMode]);
+        return () => {
+            cancelled = true;
+            window.clearTimeout(outTimer);
+            window.clearTimeout(inTimer);
+            renderModeRef.current = viewMode;
+            setRenderMode(viewMode);
+            setVisible(true);
+        };
+    }, [viewMode]);
 
     useEffect(() => {
         if (restoreScrollY == null || restoreScrollY <= 0) return;
@@ -138,46 +154,37 @@ export default function ShopProductGrid({
             {/* Extra space under the last row so the hover buy panel is not covered by the footer. */}
             <div className={showStatus ? "pb-24" : undefined}>
                 <div
-                    className={cn(
-                        "transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[opacity,transform] motion-reduce:transition-none",
-                        visible
-                            ? "translate-y-0 opacity-100"
-                            : "translate-y-2 opacity-0",
-                    )}
+                    key={renderMode}
+                    className={
+                        renderMode === "list"
+                            ? "flex flex-col gap-4"
+                            : VIEW_MODE_GRID_CLASS[renderMode]
+                    }
                 >
-                    <div
-                        key={renderMode}
-                        className={
-                            renderMode === "list"
-                                ? "flex flex-col gap-4"
-                                : VIEW_MODE_GRID_CLASS[renderMode]
-                        }
-                    >
-                        {products.map((product, index) => (
-                            <div
-                                key={product.id}
-                                className={cn(
-                                    "transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
-                                    visible
-                                        ? "translate-y-0 opacity-100"
-                                        : "translate-y-1 opacity-0",
-                                )}
-                                style={
-                                    visible && !reduceMotionRef.current
-                                        ? {
-                                              transitionDelay: `${Math.min(index, 12) * 18}ms`,
-                                          }
-                                        : undefined
-                                }
-                            >
-                                <ShopProductCard
-                                    product={product}
-                                    viewMode={renderMode}
-                                    onQuickView={onQuickView}
-                                />
-                            </div>
-                        ))}
-                    </div>
+                    {products.map((product, index) => (
+                        <div
+                            key={`${renderMode}-${product.id}`}
+                            className={cn(
+                                "h-full transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[opacity,transform] motion-reduce:transition-none",
+                                visible
+                                    ? "translate-y-0 scale-100 opacity-100"
+                                    : "translate-y-3 scale-[0.98] opacity-0",
+                            )}
+                            style={
+                                visible && !reduceMotionRef.current
+                                    ? {
+                                          transitionDelay: `${Math.min(index, 16) * 22}ms`,
+                                      }
+                                    : { transitionDelay: "0ms" }
+                            }
+                        >
+                            <ShopProductCard
+                                product={product}
+                                viewMode={renderMode}
+                                onQuickView={onQuickView}
+                            />
+                        </div>
+                    ))}
                 </div>
                 {showStatus ? (
                     <div ref={sentinelRef} className="h-px w-full" aria-hidden />

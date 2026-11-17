@@ -208,10 +208,10 @@ export default function ShopToolbar({
                                 aria-pressed={isActive}
                                 title={label}
                                 onClick={() => onViewModeChange(option.mode)}
-                                className={`${option.className} min-h-9 min-w-9 items-center justify-center rounded p-1.5 transition-colors cursor-pointer ${
+                                className={`${option.className} min-h-9 min-w-9 items-center justify-center rounded-lg p-1.5 transition-[color,background-color,transform] duration-200 ease-out cursor-pointer ${
                                     isActive
-                                        ? "text-brand-primary bg-brand-tint/50"
-                                        : "text-text-secondary hover:text-text-primary"
+                                        ? "scale-105 bg-brand-tint/60 text-brand-primary shadow-sm"
+                                        : "scale-100 text-text-secondary hover:text-text-primary hover:bg-bg-subtle"
                                 }`}
                             >
                                 {option.icon}
