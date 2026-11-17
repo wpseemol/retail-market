@@ -6,7 +6,6 @@ import type {
   User,
 } from "@prisma/client";
 import { prisma } from "./prisma.js";
-import { toPublicMedia } from "./user.js";
 import { ensureKycSettings, parsePartnerTerms, type PartnerTerms } from "./kyc.js";
 
 export type ApplicationWithDocs = SellerApplication & {
@@ -117,18 +116,20 @@ export function toPublicApplication(
     created_at: row.created_at.toISOString(),
     updated_at: row.updated_at.toISOString(),
     documents: row.documents.map((d) => {
-      const media = toPublicMedia(d.media);
+      // Never leak storage keys / publicObjectUrl — KYC is auth-only.
       const filePath = `${opts.documentFileBase}/${d.id.toString()}/file`;
       return {
         id: d.id.toString(),
         doc_type: d.doc_type,
         label: d.label,
-        media: media
+        media: d.media
           ? {
-              ...media,
-              // Override public /uploads path — KYC must be fetched with Bearer auth.
+              id: d.media.id.toString(),
+              mime_type: d.media.mime_type,
+              // Auth download path only (same as file_url).
               path: filePath,
               is_public: false,
+              collection_name: "seller_kyc" as const,
             }
           : null,
         file_url: filePath,

@@ -190,6 +190,17 @@ dashboardSellerApplicationsRouter.post(
     }
 
     // Approve
+    if (parsed.data.staff_checklist_confirmed !== true) {
+      return res.status(400).json({
+        message: "Confirm the staff authenticity checklist before approving",
+        code: "CHECKLIST_REQUIRED",
+        errors: {
+          staff_checklist_confirmed: [
+            "Confirm the staff authenticity checklist before approving",
+          ],
+        },
+      });
+    }
     if (!app.shop_name?.trim()) {
       return res.status(400).json({ message: "Application is missing a shop name" });
     }

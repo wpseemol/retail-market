@@ -71,6 +71,7 @@ export const reviewSellerApplicationSchema = z
     action: z.enum(["approve", "reject"]),
     rejection_reason: withSafeInput(z.string().trim().max(1000)).optional(),
     activate_shop: z.boolean().optional(),
+    staff_checklist_confirmed: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.action === "reject" && !data.rejection_reason?.trim()) {
@@ -78,6 +79,13 @@ export const reviewSellerApplicationSchema = z
         code: "custom",
         path: ["rejection_reason"],
         message: "Rejection reason is required",
+      });
+    }
+    if (data.action === "approve" && data.staff_checklist_confirmed !== true) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["staff_checklist_confirmed"],
+        message: "Confirm the staff authenticity checklist before approving",
       });
     }
   });

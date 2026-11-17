@@ -106,6 +106,8 @@ export async function saveMediaFile(input: {
   fileName: string;
   body: Buffer;
   contentType: string;
+  /** KYC / private media — avoid long-lived public CDN cache hints on the object. */
+  isPrivate?: boolean;
 }): Promise<{ absolutePath: string }> {
   const key = mediaObjectKey(input.relativeDir, input.fileName);
   if (!key) throw new StorageError("STORAGE_KEY_INVALID", "Invalid media path");
@@ -122,7 +124,9 @@ export async function saveMediaFile(input: {
           Body: input.body,
           ContentType: input.contentType,
           ContentLength: input.body.length,
-          CacheControl: "public, max-age=31536000, immutable",
+          CacheControl: input.isPrivate
+            ? "private, no-store"
+            : "public, max-age=31536000, immutable",
         }),
       );
     } catch (error) {

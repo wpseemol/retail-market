@@ -381,42 +381,53 @@ sellerApplicationsRouter.post(
 
     const existingDoc = app.documents.find((d) => d.doc_type === parsed.data.doc_type);
 
-    const refreshed = await prisma.$transaction(async (tx) => {
-      if (existingDoc) {
-        await tx.sellerApplicationDocument.delete({ where: { id: existingDoc.id } });
-        await tx.media.delete({ where: { id: existingDoc.media_id } }).catch(() => undefined);
+    let refreshed;
+    try {
+      refreshed = await prisma.$transaction(async (tx) => {
+        if (existingDoc) {
+          await tx.sellerApplicationDocument.delete({ where: { id: existingDoc.id } });
+          await tx.media.delete({ where: { id: existingDoc.media_id } }).catch(() => undefined);
+        }
+
+        const media = await tx.media.create({
+          data: {
+            user_id: user.id,
+            disk: currentMediaDisk(),
+            file_name: finalized.fileName,
+            original_name: sanitizeOriginalName(file.originalname),
+            file_path: SELLER_KYC_IMAGES_RELATIVE,
+            file_size: BigInt(finalized.size),
+            mime_type: finalized.detected.mime,
+            collection_name: "seller_kyc",
+            is_public: false,
+            mediable_type: "SellerApplication",
+            mediable_id: app!.id,
+          },
+        });
+
+        await tx.sellerApplicationDocument.create({
+          data: {
+            application_id: app!.id,
+            doc_type: parsed.data.doc_type,
+            media_id: media.id,
+            label: parsed.data.label ?? null,
+          },
+        });
+
+        return tx.sellerApplication.findUniqueOrThrow({
+          where: { id: app!.id },
+          include: applicationInclude,
+        });
+      });
+    } catch (err) {
+      // File was written before the DB row — remove orphan on failure.
+      try {
+        await deleteMediaFile(SELLER_KYC_IMAGES_RELATIVE, finalized.fileName);
+      } catch {
+        /* best-effort */
       }
-
-      const media = await tx.media.create({
-        data: {
-          user_id: user.id,
-          disk: currentMediaDisk(),
-          file_name: finalized.fileName,
-          original_name: sanitizeOriginalName(file.originalname),
-          file_path: SELLER_KYC_IMAGES_RELATIVE,
-          file_size: BigInt(finalized.size),
-          mime_type: finalized.detected.mime,
-          collection_name: "seller_kyc",
-          is_public: false,
-          mediable_type: "SellerApplication",
-          mediable_id: app!.id,
-        },
-      });
-
-      await tx.sellerApplicationDocument.create({
-        data: {
-          application_id: app!.id,
-          doc_type: parsed.data.doc_type,
-          media_id: media.id,
-          label: parsed.data.label ?? null,
-        },
-      });
-
-      return tx.sellerApplication.findUniqueOrThrow({
-        where: { id: app!.id },
-        include: applicationInclude,
-      });
-    });
+      throw err;
+    }
 
     if (existingDoc) {
       try {

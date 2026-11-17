@@ -633,7 +633,7 @@ Roles: **`super_admin` \| `admin` only**.
 | GET | `/` | `?status=&q=&page=&limit=` · `{ applications, pagination, staff_checklist }` |
 | GET | `/documents/:docId/file` | Streams KYC image for staff review (auth-only) |
 | GET | `/:id` | Detail + documents (`file_url` points at the staff file route) |
-| POST | `/:id/review` | Body `{ action: "approve"\|"reject", rejection_reason?, activate_shop? }` · reject requires reason · approve requires identity docs · optimistic lock · creates `Vendor` + owner `VendorMember`, promotes `customer` → `vendor`, default fee `commission` 3% · `activate_shop: true` → store `active`, else `pending` · 409 `ALREADY_REVIEWED` on double review |
+| POST | `/:id/review` | Body `{ action: "approve"\|"reject", rejection_reason?, activate_shop?, staff_checklist_confirmed? }` · reject requires reason · approve requires `staff_checklist_confirmed: true` + identity docs · optimistic lock · creates `Vendor` + owner `VendorMember`, promotes `customer` → `vendor`, default fee `commission` 3% · `activate_shop: true` → store `active`, else `pending` · 409 `ALREADY_REVIEWED` on double review · 400 `CHECKLIST_REQUIRED` if checklist not confirmed |
 
 ---
 

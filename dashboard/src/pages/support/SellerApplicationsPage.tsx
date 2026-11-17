@@ -147,7 +147,11 @@ export function SellerApplicationsPage() {
       await apiFetch(`/api/dashboard/seller-applications/${selected.id}/review`, {
         method: "POST",
         token,
-        body: { action: "approve", activate_shop: activateShop },
+        body: {
+          action: "approve",
+          activate_shop: activateShop,
+          staff_checklist_confirmed: true,
+        },
       });
       toastNotice({ tone: "success", text: "Application approved" });
       setSelected(null);

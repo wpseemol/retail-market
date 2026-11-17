@@ -70,6 +70,7 @@ export async function finalizeSellerKycImageUpload(
       fileName,
       body: optimized.output,
       contentType: optimized.mime,
+      isPrivate: true,
     });
     discardUploadSource(source);
     return {
