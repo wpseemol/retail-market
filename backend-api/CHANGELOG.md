@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Vendor staff-discovery hardening + seller CSRF
+
+- Shop history for vendors redacts elevated actor email/phone/role (`Niyenin team`); elevated staff still see full `toPublicUser`.
+- Review `moderated_by` redacted for vendors (`Niyenin team` / generic admin).
+- Become-a-seller mutating routes require `requireCsrf`; API.md updated.
+
 ### API route validation hardening
 
 - Orders/reviews id params use `parseBigIntId` (BIGINT max guard); `reviewIdParamSchema` aligned.

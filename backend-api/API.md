@@ -458,6 +458,8 @@ Send the same value as header `X-CSRF-Token` and/or body field `csrfToken` on pr
 
 **403:** `CSRF_INVALID` / `CSRF_MISMATCH`.
 
+Also required on storefront **Become a seller** mutating routes (`POST /api/seller-applications`, `/me/documents`, `/me/submit`).
+
 ## Customer auth — `/api/auth`
 
 ### `GET /api/auth/captcha-config`
@@ -600,14 +602,16 @@ Google sign-in marks the email as verified automatically.
 
 Storefront onboarding (footer **Customer care → Become a seller** → `/become-seller`).
 
+Mutating POSTs require **CSRF** (`X-CSRF-Token` and/or `csrfToken`, same as login — see `/api/csrf`).
+
 | Method | Path | Auth | Notes |
 |--------|------|------|--------|
 | GET | `/terms` | Public | Partner fee/rent copy + staff authenticity checklist (no secrets) |
 | GET | `/me` | Bearer customer/vendor | Current application + account verification flags |
-| POST | `/` | Bearer customer | Create/update **draft** shop fields. Requires verified email **and** phone. Codes: `EMAIL_NOT_VERIFIED`, `PHONE_NOT_VERIFIED`, `ALREADY_SELLER`, `APPLICATION_PENDING`, `APPLICATION_LOCKED` |
-| POST | `/me/documents` | Bearer customer | Multipart field `document` + `doc_type` (`nid_front`\|`nid_back`\|`birth_certificate`\|`trade_license`\|`other`). JPEG/PNG/WebP/GIF · max **2 MB** · always resized (`sellerKyc`). Replaces same `doc_type`. Rate limit 30/hour/user |
+| POST | `/` | Bearer customer + CSRF | Create/update **draft** shop fields (Zod + safe-input). Requires verified email **and** phone. Codes: `EMAIL_NOT_VERIFIED`, `PHONE_NOT_VERIFIED`, `ALREADY_SELLER`, `APPLICATION_PENDING`, `APPLICATION_LOCKED` |
+| POST | `/me/documents` | Bearer customer + CSRF | Multipart field `document` + `doc_type` (`nid_front`\|`nid_back`\|`birth_certificate`\|`trade_license`\|`other`). JPEG/PNG/WebP/GIF · max **2 MB** · always resized (`sellerKyc`). Replaces same `doc_type`. Rate limit 30/hour/user |
 | GET | `/me/documents/:docId/file` | Bearer owner | Streams the KYC image (`Cache-Control: private, no-store`). **Not** available under public `/uploads` |
-| POST | `/me/submit` | Bearer customer | Body `{ accept_fee_terms: true }`. Needs shop name + identity docs (NID front+back **or** birth certificate) + fee terms. Optimistic lock on `draft`/`rejected`. Optional paid KYC stub when Settings → KYC is `paid_api`. Rate limit 10/hour/user |
+| POST | `/me/submit` | Bearer customer + CSRF | Body `{ accept_fee_terms: true }`. Needs shop name + identity docs (NID front+back **or** birth certificate) + fee terms. Optimistic lock on `draft`/`rejected`. Optional paid KYC stub when Settings → KYC is `paid_api`. Rate limit 10/hour/user |
 
 **Identity docs:** NID front+back together, or a birth certificate alone. Trade license is optional.
 

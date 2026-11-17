@@ -395,6 +395,37 @@ function canManageStoreTeam(role: string) {
   return role === "super_admin" || role === "admin" || role === "moderator";
 }
 
+function isElevatedStaff(role: string) {
+  return role === "super_admin" || role === "admin" || role === "moderator";
+}
+
+const ELEVATED_USER_ROLES = new Set(["super_admin", "admin", "moderator"]);
+
+/**
+ * Vendors may see that “someone” changed their shop, but must not learn staff
+ * emails, phones, or exact elevated roles (staff-discovery / phishing risk).
+ */
+function toVendorSafeHistoryActor(
+  actor: Parameters<typeof toPublicUser>[0],
+) {
+  if (!ELEVATED_USER_ROLES.has(actor.role)) {
+    return {
+      id: actor.id.toString(),
+      first_name: actor.first_name,
+      last_name: actor.last_name,
+      role: actor.role,
+      avatar: toPublicMedia(actor.avatar),
+    };
+  }
+  return {
+    id: "staff",
+    first_name: "Niyenin",
+    last_name: "team",
+    role: "staff",
+    avatar: null,
+  };
+}
+
 function storeTags(...slugs: string[]) {
   return ["stores", "brands", ...slugs.map((s) => `store:${s}`)];
 }
@@ -625,6 +656,8 @@ dashboardVendorsRouter.get("/:idOrSlug/history", async (req, res) => {
     take: 100,
   });
 
+  const elevatedViewer = isElevatedStaff(req.auth!.role);
+
   return res.json({
     history: rows.map((row) => ({
       id: row.id.toString(),
@@ -632,7 +665,11 @@ dashboardVendorsRouter.get("/:idOrSlug/history", async (req, res) => {
       changes: row.changes,
       note: row.note,
       created_at: row.created_at,
-      actor: row.actor ? toPublicUser(row.actor) : null,
+      actor: row.actor
+        ? elevatedViewer
+          ? toPublicUser(row.actor)
+          : toVendorSafeHistoryActor(row.actor)
+        : null,
     })),
   });
 });

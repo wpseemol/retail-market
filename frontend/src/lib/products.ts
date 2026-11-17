@@ -1,6 +1,12 @@
 import { apiFetch, appKeyHeaders, publicApiUrl } from "@/lib/api";
 import type { ShopProduct } from "@/components/shop/types";
 import type { Locale } from "@/i18n/config";
+import {
+  hashQuery,
+  queryCacheId,
+  STALE_MS,
+  withCatalogCache,
+} from "@/lib/rxdb/withCache";
 import { hasRichText, stripHtml } from "@/lib/safeHtml";
 
 export type ApiProductMedia = {
@@ -207,8 +213,6 @@ export function productListPath(options?: ProductListQuery) {
 }
 
 export async function fetchProducts(options?: ProductListQuery): Promise<ProductsListPayload> {
-  const url = publicApiUrl(productListPath(options));
-
   const empty: ProductsListPayload = {
     products: [],
     facets: {
@@ -219,16 +223,34 @@ export async function fetchProducts(options?: ProductListQuery): Promise<Product
     pagination: { page: 1, limit: 24, total: 0, total_pages: 1 },
   };
 
-  try {
-    const res = await fetch(url, {
-      headers: appKeyHeaders(),
-      next: { revalidate: 60, tags: ["products"] },
-    });
-    if (!res.ok) return empty;
-    return (await res.json()) as ProductsListPayload;
-  } catch {
-    return empty;
-  }
+  const cacheId = queryCacheId(
+    "products:list",
+    hashQuery({
+      page: options?.page,
+      limit: options?.limit,
+      q: options?.q,
+      category: options?.category,
+      brand: options?.brand,
+      brands: options?.brands?.join(","),
+      min: options?.minPrice,
+      max: options?.maxPrice,
+      sort: options?.sort,
+    }),
+  );
+
+  return withCatalogCache(cacheId, async () => {
+    const url = publicApiUrl(productListPath(options));
+    try {
+      const res = await fetch(url, {
+        headers: appKeyHeaders(),
+        next: { revalidate: 60, tags: ["products"] },
+      });
+      if (!res.ok) return empty;
+      return (await res.json()) as ProductsListPayload;
+    } catch {
+      return empty;
+    }
+  });
 }
 
 export type PriceRange = { min: number; max: number; count?: number };
@@ -239,34 +261,52 @@ export async function fetchPriceRange(filters: {
   category?: string | null;
   brands?: string[];
 }): Promise<PriceRange> {
-  const params = new URLSearchParams();
-  if (filters.q?.trim()) params.set("q", filters.q.trim());
-  if (filters.category) params.set("category", filters.category);
-  if (filters.brands?.length) params.set("brands", filters.brands.join(","));
-  const qs = params.toString();
-  const data = await apiFetch<PriceRange>(
-    `/api/products/price-range${qs ? `?${qs}` : ""}`,
+  const cacheId = queryCacheId(
+    "products:price-range",
+    hashQuery({
+      q: filters.q,
+      category: filters.category,
+      brands: filters.brands?.join(","),
+    }),
   );
-  return {
-    min: Number(data.min) || 0,
-    max: Number(data.max) || 0,
-    count: Number(data.count) || 0,
-  };
+
+  return withCatalogCache(
+    cacheId,
+    async () => {
+      const params = new URLSearchParams();
+      if (filters.q?.trim()) params.set("q", filters.q.trim());
+      if (filters.category) params.set("category", filters.category);
+      if (filters.brands?.length) params.set("brands", filters.brands.join(","));
+      const qs = params.toString();
+      const data = await apiFetch<PriceRange>(
+        `/api/products/price-range${qs ? `?${qs}` : ""}`,
+      );
+      return {
+        min: Number(data.min) || 0,
+        max: Number(data.max) || 0,
+        count: Number(data.count) || 0,
+      };
+    },
+    STALE_MS.search,
+  );
 }
 
 export async function fetchProductByIdOrSlug(
   idOrSlug: string,
 ): Promise<ProductDetailPayload | null> {
-  const url = publicApiUrl(`/api/products/${encodeURIComponent(idOrSlug)}`);
-  try {
-    const res = await fetch(url, {
-      headers: appKeyHeaders(),
-      next: { revalidate: 60, tags: [`product:${idOrSlug}`] },
-    });
-    if (res.status === 404) return null;
-    if (!res.ok) return null;
-    return (await res.json()) as ProductDetailPayload;
-  } catch {
-    return null;
-  }
+  const cacheId = queryCacheId("products:detail", idOrSlug);
+  return withCatalogCache(cacheId, async () => {
+    const url = publicApiUrl(`/api/products/${encodeURIComponent(idOrSlug)}`);
+    try {
+      const res = await fetch(url, {
+        headers: appKeyHeaders(),
+        next: { revalidate: 60, tags: [`product:${idOrSlug}`] },
+      });
+      if (res.status === 404) return null;
+      if (!res.ok) return null;
+      return (await res.json()) as ProductDetailPayload;
+    } catch {
+      return null;
+    }
+  });
 }

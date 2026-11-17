@@ -1,5 +1,10 @@
 import { appKeyHeaders, publicApiUrl } from "@/lib/api";
 import type { Locale } from "@/i18n/config";
+import {
+  hashQuery,
+  queryCacheId,
+  withCatalogCache,
+} from "@/lib/rxdb/withCache";
 import type { ShowcaseMedia, ShowcasePayload, StorefrontSort } from "@/lib/showcase";
 
 export type StoreMedia = ShowcaseMedia;
@@ -103,53 +108,74 @@ export async function fetchStores(options?: {
   limit?: number;
   q?: string;
 }): Promise<StoresListPayload> {
-  const params = new URLSearchParams();
-  if (options?.page) params.set("page", String(options.page));
-  if (options?.limit) params.set("limit", String(options.limit));
-  if (options?.q?.trim()) params.set("q", options.q.trim());
-  const qs = params.toString();
-  const url = publicApiUrl(`/api/shops${qs ? `?${qs}` : ""}`);
+  const empty: StoresListPayload = {
+    stores: [],
+    pagination: { page: 1, limit: 24, total: 0, total_pages: 1 },
+  };
+  const cacheId = queryCacheId(
+    "shops:list",
+    hashQuery({
+      page: options?.page,
+      limit: options?.limit,
+      q: options?.q,
+    }),
+  );
 
-  try {
-    const res = await fetch(url, {
-      headers: appKeyHeaders(),
-      next: { revalidate: 60, tags: ["stores"] },
-    });
-    if (!res.ok) {
-      return {
-        stores: [],
-        pagination: { page: 1, limit: 24, total: 0, total_pages: 1 },
-      };
+  return withCatalogCache(cacheId, async () => {
+    const params = new URLSearchParams();
+    if (options?.page) params.set("page", String(options.page));
+    if (options?.limit) params.set("limit", String(options.limit));
+    if (options?.q?.trim()) params.set("q", options.q.trim());
+    const qs = params.toString();
+    const url = publicApiUrl(`/api/shops${qs ? `?${qs}` : ""}`);
+
+    try {
+      const res = await fetch(url, {
+        headers: appKeyHeaders(),
+        next: { revalidate: 60, tags: ["stores"] },
+      });
+      if (!res.ok) return empty;
+      return (await res.json()) as StoresListPayload;
+    } catch {
+      return empty;
     }
-    return (await res.json()) as StoresListPayload;
-  } catch {
-    return {
-      stores: [],
-      pagination: { page: 1, limit: 24, total: 0, total_pages: 1 },
-    };
-  }
+  });
 }
 
 export async function fetchStoreBySlug(
   slug: string,
   options?: { page?: number; limit?: number; sort?: StorefrontSort },
 ): Promise<StorePagePayload | null> {
-  const params = new URLSearchParams();
-  if (options?.page) params.set("page", String(options.page));
-  if (options?.limit) params.set("limit", String(options.limit));
-  if (options?.sort) params.set("sort", options.sort);
-  const qs = params.toString();
-  const url = publicApiUrl(`/api/shops/${encodeURIComponent(slug)}${qs ? `?${qs}` : ""}`);
+  const cacheId = queryCacheId(
+    "shops:detail",
+    hashQuery({
+      slug,
+      page: options?.page,
+      limit: options?.limit,
+      sort: options?.sort,
+    }),
+  );
 
-  try {
-    const res = await fetch(url, {
-      headers: appKeyHeaders(),
-      next: { revalidate: 60, tags: ["stores", `store:${slug}`] },
-    });
-    if (res.status === 404) return null;
-    if (!res.ok) return null;
-    return (await res.json()) as StorePagePayload;
-  } catch {
-    return null;
-  }
+  return withCatalogCache(cacheId, async () => {
+    const params = new URLSearchParams();
+    if (options?.page) params.set("page", String(options.page));
+    if (options?.limit) params.set("limit", String(options.limit));
+    if (options?.sort) params.set("sort", options.sort);
+    const qs = params.toString();
+    const url = publicApiUrl(
+      `/api/shops/${encodeURIComponent(slug)}${qs ? `?${qs}` : ""}`,
+    );
+
+    try {
+      const res = await fetch(url, {
+        headers: appKeyHeaders(),
+        next: { revalidate: 60, tags: ["stores", `store:${slug}`] },
+      });
+      if (res.status === 404) return null;
+      if (!res.ok) return null;
+      return (await res.json()) as StorePagePayload;
+    } catch {
+      return null;
+    }
+  });
 }

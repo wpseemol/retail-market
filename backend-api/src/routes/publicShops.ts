@@ -14,6 +14,10 @@ import {
 import { publicReviewsQuerySchema } from "../validators/productReview.js";
 import { listScopedReviews, reviewSummaryFor } from "../lib/productReviews.js";
 import { toPublicShowcase } from "../lib/showcase.js";
+import {
+  CACHE_TTL_CATALOG_MS,
+  cacheJsonGet,
+} from "../lib/responseCache.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 export const publicShopsRouter = Router();
@@ -114,7 +118,10 @@ export function productOrderBy(
  * GET /api/shops
  * Public directory — active stores only.
  */
-publicShopsRouter.get("/", async (req, res) => {
+publicShopsRouter.get(
+  "/",
+  cacheJsonGet({ name: "shops:list", ttlMs: CACHE_TTL_CATALOG_MS }),
+  async (req, res) => {
   const queryParsed = listQuerySchema.safeParse(req.query);
   if (!queryParsed.success) {
     return res.status(400).json({
@@ -173,13 +180,17 @@ publicShopsRouter.get("/", async (req, res) => {
       total_pages: Math.max(1, Math.ceil(total / limit)),
     },
   });
-});
+  },
+);
 
 /**
  * GET /api/shops/:slug
  * Public storefront — layout from dashboard customization.
  */
-publicShopsRouter.get("/:slug", async (req, res) => {
+publicShopsRouter.get(
+  "/:slug",
+  cacheJsonGet({ name: "shops:detail", ttlMs: CACHE_TTL_CATALOG_MS }),
+  async (req, res) => {
   const slugParsed = slugParamSchema.safeParse(req.params.slug);
   if (!slugParsed.success) {
     return res.status(400).json({
@@ -285,7 +296,8 @@ publicShopsRouter.get("/:slug", async (req, res) => {
       total_pages: Math.max(1, Math.ceil(total / limit)),
     },
   });
-});
+  },
+);
 
 /**
  * GET /api/shops/:slug/reviews
@@ -293,6 +305,7 @@ publicShopsRouter.get("/:slug", async (req, res) => {
  */
 publicShopsRouter.get(
   "/:slug/reviews",
+  cacheJsonGet({ name: "shops:reviews", ttlMs: CACHE_TTL_CATALOG_MS }),
   asyncHandler(async (req, res) => {
     const slugParsed = slugParamSchema.safeParse(req.params.slug);
     if (!slugParsed.success) {

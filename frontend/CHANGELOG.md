@@ -5,6 +5,12 @@ Format: date heading, then one bullet per change with the files touched.
 
 ## 2026-11-18
 
+### Become a seller page + CSRF
+
+- `/become-seller`: ContentHero + step rail; tighter shadcn Form + Zod (phone / safe-input / fee-terms checkbox).
+- Draft, document upload, and submit send `X-CSRF-Token` via `fetchCsrfToken` (`apiFetch` / `apiUpload`).
+- i18n (en/bn) copy updated; no staff-role wording for applicants.
+
 ### Search result thumbnails blank
 
 - `HeaderSearch` `Thumb`: use `loading="eager"` (lazy + overflow portal left product images blank) and fall back to a letter on `onError`.

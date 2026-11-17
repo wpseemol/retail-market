@@ -11,6 +11,11 @@ import {
   findUnsafeInputReason,
   withSafeInput,
 } from "../validators/customerAuth.js";
+import {
+  CACHE_TTL_CATALOG_MS,
+  CACHE_TTL_SEARCH_MS,
+  cacheJsonGet,
+} from "../lib/responseCache.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { parseBigIntId } from "../utils/ids.js";
 
@@ -185,7 +190,10 @@ function orderBy(
  * GET /api/products
  * Public catalog list — active products only.
  */
-publicProductsRouter.get("/", async (req, res) => {
+publicProductsRouter.get(
+  "/",
+  cacheJsonGet({ name: "products:list", ttlMs: CACHE_TTL_CATALOG_MS }),
+  async (req, res) => {
   const parsed = listQuerySchema.safeParse(req.query);
   if (!parsed.success) {
     return res.status(400).json({
@@ -314,6 +322,7 @@ publicProductsRouter.get("/", async (req, res) => {
  */
 publicProductsRouter.get(
   "/price-range",
+  cacheJsonGet({ name: "products:price-range", ttlMs: CACHE_TTL_SEARCH_MS }),
   asyncHandler(async (req, res) => {
     const parsed = priceRangeQuerySchema.safeParse(req.query);
     if (!parsed.success) {
@@ -344,7 +353,10 @@ publicProductsRouter.get(
  * GET /api/products/:idOrSlug
  * Public product detail — active products only.
  */
-publicProductsRouter.get("/:idOrSlug", async (req, res) => {
+publicProductsRouter.get(
+  "/:idOrSlug",
+  cacheJsonGet({ name: "products:detail", ttlMs: CACHE_TTL_CATALOG_MS }),
+  async (req, res) => {
   const parsed = idOrSlugSchema.safeParse(req.params.idOrSlug);
   if (!parsed.success) {
     return res.status(400).json({
@@ -398,4 +410,5 @@ publicProductsRouter.get("/:idOrSlug", async (req, res) => {
     product,
     related: relatedRows.map(toPublicProduct),
   });
-});
+  },
+);

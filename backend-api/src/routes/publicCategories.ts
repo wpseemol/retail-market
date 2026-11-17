@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
-import { cacheJsonGet } from "../lib/responseCache.js";
+import {
+  CACHE_TTL_CATALOG_MS,
+  cacheJsonGet,
+} from "../lib/responseCache.js";
 import { toPublicMedia } from "../lib/user.js";
 
 export const publicCategoriesRouter = Router();
@@ -11,7 +14,7 @@ export const publicCategoriesRouter = Router();
  */
 publicCategoriesRouter.get(
   "/",
-  cacheJsonGet({ name: "categories", ttlMs: 45_000 }),
+  cacheJsonGet({ name: "categories", ttlMs: CACHE_TTL_CATALOG_MS }),
   async (_req, res) => {
   const rows = await prisma.category.findMany({
     where: {

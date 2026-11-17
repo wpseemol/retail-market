@@ -51,6 +51,8 @@ type ApiOptions = {
   /** @deprecated Tokens are httpOnly — proxy attaches Bearer server-side. */
   token?: string | null;
   skipRefresh?: boolean;
+  /** Double-submit CSRF (`X-CSRF-Token`) for mutating cookie-session BFF calls. */
+  csrfToken?: string | null;
 };
 
 export class ApiError extends Error {
@@ -88,6 +90,9 @@ export async function apiFetch<T>(
 
   if (options.body !== undefined) {
     headers["Content-Type"] = "application/json";
+  }
+  if (options.csrfToken) {
+    headers["X-CSRF-Token"] = options.csrfToken;
   }
 
   const url = path.startsWith("/api/auth/session")
@@ -128,6 +133,7 @@ export async function apiUpload<T>(
   path: string,
   formData: FormData,
   method: "POST" | "PATCH" | "PUT" = "POST",
+  options: { csrfToken?: string | null } = {},
 ): Promise<T> {
   const url = path.startsWith("/api/backend/")
     ? path
@@ -135,11 +141,16 @@ export async function apiUpload<T>(
       ? `/api/backend/${path.slice("/api/".length)}`
       : path;
 
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (options.csrfToken) {
+    headers["X-CSRF-Token"] = options.csrfToken;
+  }
+
   const response = await fetch(url, {
     method,
     body: formData,
     credentials: "same-origin",
-    headers: { Accept: "application/json" },
+    headers,
   });
 
   const data = (await response.json().catch(() => ({}))) as {

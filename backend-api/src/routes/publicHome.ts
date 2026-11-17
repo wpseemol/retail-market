@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
-import { cacheJsonGet } from "../lib/responseCache.js";
+import {
+  CACHE_TTL_CATALOG_MS,
+  cacheJsonGet,
+} from "../lib/responseCache.js";
 import { toPublicMedia } from "../lib/user.js";
 
 export const publicHomeRouter = Router();
@@ -75,7 +78,7 @@ export function toPublicHomeHero(
 /** Public home hero — no auth. Cached by storefront SSR + short API cache. */
 publicHomeRouter.get(
   "/hero",
-  cacheJsonGet({ name: "home:hero", ttlMs: 45_000 }),
+  cacheJsonGet({ name: "home:hero", ttlMs: CACHE_TTL_CATALOG_MS }),
   async (_req, res) => {
     const row = await ensureHomeHeroBanner();
     return res.json({ hero: toPublicHomeHero(row) });

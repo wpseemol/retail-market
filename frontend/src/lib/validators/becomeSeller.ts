@@ -15,12 +15,18 @@ export const sellerDocTypes = [
   "other",
 ] as const;
 
+/** All fields are strings so RHF + zodResolver input/output types match. */
 export const becomeSellerDraftSchema = z.object({
   shop_name: safe(z.string().trim().min(2, "Shop name is required").max(200)),
-  shop_name_bn: safe(z.string().trim().max(200)).optional().or(z.literal("")),
-  description: safe(z.string().trim().max(5000)).optional().or(z.literal("")),
-  contact_phone: safe(z.string().trim().max(30)).optional().or(z.literal("")),
-  business_address: safe(z.string().trim().max(500)).optional().or(z.literal("")),
+  shop_name_bn: safe(z.string().trim().max(200)),
+  description: safe(z.string().trim().max(5000)),
+  contact_phone: safe(z.string().trim().max(30)).superRefine((value, ctx) => {
+    if (!value) return;
+    if (!/^[+\d][\d\s().-]{5,29}$/.test(value)) {
+      ctx.addIssue({ code: "custom", message: "Enter a valid phone number" });
+    }
+  }),
+  business_address: safe(z.string().trim().max(500)),
 });
 
 export type BecomeSellerDraftInput = z.infer<typeof becomeSellerDraftSchema>;
@@ -30,6 +36,8 @@ export const becomeSellerSubmitSchema = z.object({
     message: "Accept the partner fee and rent terms to continue",
   }),
 });
+
+export type BecomeSellerSubmitInput = z.infer<typeof becomeSellerSubmitSchema>;
 
 export const SELLER_KYC_MAX_BYTES = 2 * 1024 * 1024;
 export const SELLER_KYC_ACCEPT = "image/jpeg,image/png,image/webp,image/gif";

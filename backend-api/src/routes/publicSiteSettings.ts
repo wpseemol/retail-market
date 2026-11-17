@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
-import { cacheJsonGet } from "../lib/responseCache.js";
+import {
+  CACHE_TTL_CATALOG_MS,
+  cacheJsonGet,
+} from "../lib/responseCache.js";
 import {
   ensureSiteChromeDefaults,
   loadHomeSections,
@@ -158,7 +161,7 @@ export function toPublicSiteSettings(
 /** Public storefront SEO + chrome + tracking config (no auth). */
 publicSiteSettingsRouter.get(
   "/",
-  cacheJsonGet({ name: "site-settings", ttlMs: 45_000 }),
+  cacheJsonGet({ name: "site-settings", ttlMs: CACHE_TTL_CATALOG_MS }),
   async (_req, res) => {
     const row = await ensureSiteSettings();
     const [navRows, homeRows] = await Promise.all([

@@ -1,5 +1,5 @@
 # Local Docker deps for day-to-day `pnpm dev` (apps run on the host / WSL):
-#   MySQL + phpMyAdmin + Mailpit (dev mail) + SMS catcher (phone OTP inbox)
+#   MySQL + phpMyAdmin + Mailpit (dev mail) + SMS catcher (phone OTP inbox) + Redis
 # Same MySQL volume name as docker-compose.yml so existing local data is reused.
 #
 # From WSL Ubuntu (current):
@@ -78,6 +78,23 @@ services:
       - "${SMS_CATCHER_PORT:-8026}:8026"
     environment:
       PORT: 8026
+    networks:
+      - retail_market_network
+
+  # Optional shared rate-limit + public GET cache for the API.
+  # Point backend REDIS_URL at redis://127.0.0.1:6379 (leave empty for in-memory).
+  redis:
+    image: redis:7-alpine
+    container_name: retail_market_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     networks:
       - retail_market_network
 

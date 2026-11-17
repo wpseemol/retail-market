@@ -4,6 +4,7 @@ import type { Prisma } from "@prisma/client";
 import { currentMediaDisk } from "../config/storage.config.js";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middleware/auth.js";
+import { requireCsrf } from "../middleware/csrf.js";
 import {
   discardTempUpload,
   sellerKycImageUpload,
@@ -200,6 +201,7 @@ sellerApplicationsRouter.get(
 
 sellerApplicationsRouter.post(
   "/",
+  requireCsrf,
   draftLimiter,
   asyncHandler(async (req, res) => {
     const user = await loadUserVerification(req.auth!.userId);
@@ -312,6 +314,7 @@ sellerApplicationsRouter.post(
 
 sellerApplicationsRouter.post(
   "/me/documents",
+  requireCsrf,
   docUploadLimiter,
   wrapSellerKycUpload,
   asyncHandler(async (req, res) => {
@@ -446,6 +449,7 @@ sellerApplicationsRouter.post(
 
 sellerApplicationsRouter.post(
   "/me/submit",
+  requireCsrf,
   submitLimiter,
   asyncHandler(async (req, res) => {
     const user = await loadUserVerification(req.auth!.userId);

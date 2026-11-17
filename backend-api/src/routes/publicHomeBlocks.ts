@@ -8,6 +8,10 @@ import {
   type HomeBlockKey,
 } from "../lib/homeBlocks.js";
 import {
+  CACHE_TTL_CATALOG_MS,
+  cacheJsonGet,
+} from "../lib/responseCache.js";
+import {
   ensureHomeHeroBanner,
   toPublicHomeHero,
 } from "./publicHome.js";
@@ -57,13 +61,17 @@ export function toPublicBlocks(
 }
 
 /** All home CMS blocks + hero — one round-trip for storefront SSR. */
-publicHomeBlocksRouter.get("/blocks", async (_req, res) => {
-  const [rows, hero] = await Promise.all([
-    ensureHomeBlocks(),
-    ensureHomeHeroBanner(),
-  ]);
-  return res.json({
-    blocks: toPublicBlocks(rows),
-    hero: toPublicHomeHero(hero),
-  });
-});
+publicHomeBlocksRouter.get(
+  "/blocks",
+  cacheJsonGet({ name: "home:blocks", ttlMs: CACHE_TTL_CATALOG_MS }),
+  async (_req, res) => {
+    const [rows, hero] = await Promise.all([
+      ensureHomeBlocks(),
+      ensureHomeHeroBanner(),
+    ]);
+    return res.json({
+      blocks: toPublicBlocks(rows),
+      hero: toPublicHomeHero(hero),
+    });
+  },
+);

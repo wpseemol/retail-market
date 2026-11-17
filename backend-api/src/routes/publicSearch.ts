@@ -3,6 +3,10 @@ import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { toPublicMedia } from "../lib/user.js";
+import {
+  CACHE_TTL_SEARCH_MS,
+  cacheJsonGet,
+} from "../lib/responseCache.js";
 import { findUnsafeInputReason } from "../validators/customerAuth.js";
 
 export const publicSearchRouter = Router();
@@ -35,7 +39,10 @@ function activeProductScope(): Prisma.ProductWhereInput {
  * GET /api/search/suggest?q=
  * Header live search — products, categories, and shops in one round trip.
  */
-publicSearchRouter.get("/suggest", async (req, res) => {
+publicSearchRouter.get(
+  "/suggest",
+  cacheJsonGet({ name: "search:suggest", ttlMs: CACHE_TTL_SEARCH_MS }),
+  async (req, res) => {
   const parsed = suggestQuerySchema.safeParse(req.query);
   if (!parsed.success) {
     return res.status(400).json({
@@ -165,4 +172,5 @@ publicSearchRouter.get("/suggest", async (req, res) => {
       products_count: s._count.products,
     })),
   });
-});
+  },
+);

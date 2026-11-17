@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Locale } from "@/i18n/config";
-import { apiFetch } from "@/lib/api";
 import {
-    productListPath,
+    fetchProducts,
     toShopProduct,
     type ProductsListPayload,
 } from "@/lib/products";
@@ -111,19 +110,18 @@ export function useShopCatalog(args: CatalogArgs) {
         const priced =
             current.priceMin > current.priceBounds.min ||
             current.priceMax < current.priceBounds.max;
-        return apiFetch<ProductsListPayload>(
-            productListPath({
-                page: nextPage,
-                limit: current.perPage,
-                q: current.search,
-                category: current.category ?? undefined,
-                brands: current.brands,
-                sort: apiSort(current.sort),
-                ...(priced
-                    ? { minPrice: current.priceMin, maxPrice: current.priceMax }
-                    : {}),
-            }),
-        );
+        // Goes through RxDB read-through (browser) → API Redis cache.
+        return fetchProducts({
+            page: nextPage,
+            limit: current.perPage,
+            q: current.search,
+            category: current.category ?? undefined,
+            brands: current.brands,
+            sort: apiSort(current.sort),
+            ...(priced
+                ? { minPrice: current.priceMin, maxPrice: current.priceMax }
+                : {}),
+        });
     }, []);
 
     const mapProducts = useCallback((data: ProductsListPayload) => {

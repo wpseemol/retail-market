@@ -3,6 +3,7 @@ import {
   DEFAULT_HOME_HERO,
   type HomeHeroBanner,
 } from "@/lib/homeHero";
+import { withCatalogCache } from "@/lib/rxdb/withCache";
 
 export type HomeBlocksMap = Record<string, unknown>;
 
@@ -13,27 +14,32 @@ export type HomePagePayload = {
 
 const EMPTY_BLOCKS: HomeBlocksMap = {};
 
-/** One SSR fetch for all home CMS blocks + hero (cached ~60s). */
+/** One SSR fetch for all home CMS blocks + hero (API + browser RxDB). */
 export async function getHomePageContent(): Promise<HomePagePayload> {
-  try {
-    const res = await fetch(publicApiUrl("/api/home/blocks"), {
-      headers: appKeyHeaders(),
-      next: { revalidate: 60, tags: ["home-blocks", "home-hero"] },
-    });
-    if (!res.ok) {
+  return withCatalogCache("home:blocks", async () => {
+    try {
+      const res = await fetch(publicApiUrl("/api/home/blocks"), {
+        headers: appKeyHeaders(),
+        next: { revalidate: 60, tags: ["home-blocks", "home-hero"] },
+      });
+      if (!res.ok) {
+        return { blocks: EMPTY_BLOCKS, hero: DEFAULT_HOME_HERO };
+      }
+      const data = (await res.json()) as {
+        blocks?: HomeBlocksMap;
+        hero?: HomeHeroBanner;
+      };
+      return {
+        blocks:
+          data.blocks && typeof data.blocks === "object"
+            ? data.blocks
+            : EMPTY_BLOCKS,
+        hero: data.hero?.main?.headline ? data.hero : DEFAULT_HOME_HERO,
+      };
+    } catch {
       return { blocks: EMPTY_BLOCKS, hero: DEFAULT_HOME_HERO };
     }
-    const data = (await res.json()) as {
-      blocks?: HomeBlocksMap;
-      hero?: HomeHeroBanner;
-    };
-    return {
-      blocks: data.blocks && typeof data.blocks === "object" ? data.blocks : EMPTY_BLOCKS,
-      hero: data.hero?.main?.headline ? data.hero : DEFAULT_HOME_HERO,
-    };
-  } catch {
-    return { blocks: EMPTY_BLOCKS, hero: DEFAULT_HOME_HERO };
-  }
+  });
 }
 
 export function getBlock<T extends Record<string, unknown>>(

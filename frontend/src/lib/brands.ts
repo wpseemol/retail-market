@@ -1,5 +1,10 @@
 import { appKeyHeaders, publicApiUrl } from "@/lib/api";
 import type { Locale } from "@/i18n/config";
+import {
+  hashQuery,
+  queryCacheId,
+  withCatalogCache,
+} from "@/lib/rxdb/withCache";
 import type { ShowcaseMedia, ShowcasePayload, StorefrontSort } from "@/lib/showcase";
 import type { StorefrontProduct } from "@/lib/stores";
 
@@ -70,40 +75,64 @@ const EMPTY_LIST: BrandsListPayload = {
 };
 
 export async function fetchBrands(options?: { q?: string; limit?: number }): Promise<BrandsListPayload> {
-  const params = new URLSearchParams();
-  params.set("limit", String(options?.limit ?? 200));
-  if (options?.q?.trim()) params.set("q", options.q.trim());
+  const cacheId = queryCacheId(
+    "brands:list",
+    hashQuery({ q: options?.q, limit: options?.limit ?? 200 }),
+  );
 
-  try {
-    const res = await fetch(publicApiUrl(`/api/brands?${params}`), {
-      headers: appKeyHeaders(),
-      next: { revalidate: 60, tags: ["brands"] },
-    });
-    if (!res.ok) return EMPTY_LIST;
-    return (await res.json()) as BrandsListPayload;
-  } catch {
-    return EMPTY_LIST;
-  }
+  return withCatalogCache(cacheId, async () => {
+    const params = new URLSearchParams();
+    params.set("limit", String(options?.limit ?? 200));
+    if (options?.q?.trim()) params.set("q", options.q.trim());
+
+    try {
+      const res = await fetch(publicApiUrl(`/api/brands?${params}`), {
+        headers: appKeyHeaders(),
+        next: { revalidate: 60, tags: ["brands"] },
+      });
+      if (!res.ok) return EMPTY_LIST;
+      return (await res.json()) as BrandsListPayload;
+    } catch {
+      return EMPTY_LIST;
+    }
+  });
 }
 
 export async function fetchBrandBySlug(
   slug: string,
   options?: { page?: number; limit?: number; sort?: StorefrontSort },
 ): Promise<BrandPagePayload | null> {
-  const params = new URLSearchParams();
-  if (options?.page) params.set("page", String(options.page));
-  if (options?.limit) params.set("limit", String(options.limit));
-  if (options?.sort) params.set("sort", options.sort);
-  const qs = params.toString();
+  const cacheId = queryCacheId(
+    "brands:detail",
+    hashQuery({
+      slug,
+      page: options?.page,
+      limit: options?.limit,
+      sort: options?.sort,
+    }),
+  );
 
-  try {
-    const res = await fetch(publicApiUrl(`/api/brands/${encodeURIComponent(slug)}${qs ? `?${qs}` : ""}`), {
-      headers: appKeyHeaders(),
-      next: { revalidate: 60, tags: ["brands", `brand:${slug}`] },
-    });
-    if (!res.ok) return null;
-    return (await res.json()) as BrandPagePayload;
-  } catch {
-    return null;
-  }
+  return withCatalogCache(cacheId, async () => {
+    const params = new URLSearchParams();
+    if (options?.page) params.set("page", String(options.page));
+    if (options?.limit) params.set("limit", String(options.limit));
+    if (options?.sort) params.set("sort", options.sort);
+    const qs = params.toString();
+
+    try {
+      const res = await fetch(
+        publicApiUrl(
+          `/api/brands/${encodeURIComponent(slug)}${qs ? `?${qs}` : ""}`,
+        ),
+        {
+          headers: appKeyHeaders(),
+          next: { revalidate: 60, tags: ["brands", `brand:${slug}`] },
+        },
+      );
+      if (!res.ok) return null;
+      return (await res.json()) as BrandPagePayload;
+    } catch {
+      return null;
+    }
+  });
 }

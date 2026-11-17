@@ -194,11 +194,18 @@ export function toDashboardReview(review: DashboardReviewRow, media: Map<string,
     vendor_replied_at: review.vendor_replied_at?.toISOString() ?? null,
     moderated_at: review.moderated_at?.toISOString() ?? null,
     moderated_by: review.moderator
-      ? {
-          id: review.moderator.id.toString(),
-          name: `${review.moderator.first_name} ${review.moderator.last_name}`.trim(),
-          role: review.moderator.role,
-        }
+      ? isVendor
+        ? {
+            /** Redacted — vendors must not discover staff accounts. */
+            id: "staff",
+            name: "Niyenin team",
+            role: "admin" as const,
+          }
+        : {
+            id: review.moderator.id.toString(),
+            name: `${review.moderator.first_name} ${review.moderator.last_name}`.trim(),
+            role: review.moderator.role,
+          }
       : null,
     product: {
       id: review.product.id.toString(),

@@ -1,18 +1,55 @@
 import type { Metadata } from "next";
 import BecomeSellerContent from "@/components/become-seller/BecomeSellerContent";
-import { createPageMetadata } from "@/config/site";
+import { ContentHero, HeroPill } from "@/components/content/ContentHero";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { getDictionary } from "@/i18n/server";
+import { breadcrumbJsonLd, buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = createPageMetadata({
-  title: "Become a seller",
-  description:
-    "Apply to sell on Niyenin: create an account, upload identity documents, and review partner fee and rent terms.",
-  path: "/become-seller",
-});
+const PATH = "/become-seller";
 
-export default function BecomeSellerPage() {
+export async function generateMetadata(): Promise<Metadata> {
+  const dict = await getDictionary();
+  const copy = dict.becomeSeller;
+  return buildMetadata({
+    title: copy.title,
+    description: copy.subtitle,
+    path: PATH,
+  });
+}
+
+export default async function BecomeSellerPage() {
+  const dict = await getDictionary();
+  const copy = dict.becomeSeller;
+  const t = dict.contentPages;
+
   return (
-    <main>
-      <BecomeSellerContent />
+    <main className="showcase-theme flex-1 bg-bg-base">
+      <JsonLd
+        id="become-seller-jsonld"
+        data={breadcrumbJsonLd([
+          { name: t.home, path: "/" },
+          { name: copy.title, path: PATH },
+        ])}
+      />
+      <ContentHero
+        hero={{
+          eyebrow: copy.eyebrow,
+          title: copy.title,
+          subtitle: copy.subtitle,
+        }}
+        crumbs={[{ name: t.home, href: "/" }, { name: copy.title }]}
+        breadcrumbLabel={t.breadcrumb}
+        meta={
+          <>
+            <HeroPill>{copy.heroPillAccount}</HeroPill>
+            <HeroPill>{copy.heroPillVerify}</HeroPill>
+            <HeroPill>{copy.heroPillReview}</HeroPill>
+          </>
+        }
+      />
+      <div className="container mx-auto px-4 py-10 sm:px-6 sm:py-12 lg:py-14">
+        <BecomeSellerContent />
+      </div>
     </main>
   );
 }
