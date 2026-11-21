@@ -3,6 +3,12 @@
 Every change made to this app is recorded here, newest first.
 Format: date heading, then one bullet per change with the files touched.
 
+## 2026-11-21
+
+### Login reCAPTCHA blocked in production
+
+- `vercel.json` and `nginx.conf`: Content-Security-Policy now allows Google reCAPTCHA scripts (`script-src`) and the checkbox iframe (`frame-src`). Production was `script-src 'self'` with no `frame-src`, so the widget never loaded. Vite dev sends no CSP, which is why it worked locally.
+
 ## 2026-11-18
 
 ### Vercel `npm ci` lockfile sync
